@@ -13,7 +13,7 @@ class GradientContainer extends StatelessWidget {
           Color.fromARGB(255, 45, 7, 98)
         ], begin: Alignment.bottomRight, end: Alignment.topLeft),
       ),
-      child: const StyledText('Hello world working')
+      child: const StyledText(outputText: 'outputText with named parameter')
     );
   }
 }

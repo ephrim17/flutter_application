@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StyledText extends StatelessWidget {
-  const StyledText(this.outputText, {super.key});
+  const StyledText({super.key, required this.outputText});
 
   final String outputText;
 
