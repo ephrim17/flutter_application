@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/styled_Text.dart';
 
 class GradientContainer extends StatelessWidget {
-  const GradientContainer({super.key, required this.colors});
+  const GradientContainer(this.colors, {super.key});
+
+const GradientContainer.standardColor({super.key})
+  : colors = const [Color.fromARGB(255, 0, 0, 0), Color.fromARGB(255, 0, 0, 0)];
 
   final List<Color> colors;
   
