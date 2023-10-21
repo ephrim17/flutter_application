@@ -4,10 +4,13 @@ import 'package:flutter_application/styled_Text.dart';
 class GradientContainer extends StatelessWidget {
   const GradientContainer(this.colors, {super.key});
 
-const GradientContainer.standardColor({super.key})
-  : colors = const [Color.fromARGB(255, 0, 0, 0), Color.fromARGB(255, 0, 0, 0)];
+const GradientContainer.standardColor({super.key}) : colors = const [Color.fromARGB(255, 118, 51, 51), Color.fromARGB(255, 0, 0, 0)];
 
   final List<Color> colors;
+
+  void rollDice() {
+
+  }
   
   @override
   Widget build(context) {
@@ -16,8 +19,24 @@ const GradientContainer.standardColor({super.key})
           gradient: LinearGradient(
               colors: colors,
               begin: Alignment.bottomRight,
-              end: Alignment.topLeft),
+              end: Alignment.topLeft
+              ),
         ),
-        child: const StyledText(outputText: 'outputText with named parameter'));
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset('assets/images/dice-2.png', width: 200),
+              TextButton(
+                onPressed: rollDice,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle( color: Colors.white, fontSize: 20)
+                ),
+                child: const Text("Roll Dice"),
+                )
+              ],
+            )
+        ));
   }
 }
