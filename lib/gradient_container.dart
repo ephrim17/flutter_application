@@ -27,9 +27,11 @@ const GradientContainer.standardColor({super.key}) : colors = const [Color.fromA
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset('assets/images/dice-2.png', width: 200),
+              const SizedBox(height: 20),
               TextButton(
                 onPressed: rollDice,
                 style: TextButton.styleFrom(
+                  //padding: const EdgeInsets.only(top: 30),
                   foregroundColor: Colors.white,
                   textStyle: const TextStyle( color: Colors.white, fontSize: 20)
                 ),
