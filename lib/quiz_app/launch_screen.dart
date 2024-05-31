@@ -10,29 +10,24 @@ class LaunchScreen extends StatefulWidget {
 }
 
 class LaunchScreenState extends State<LaunchScreen> {
-  //final screen = activeScreen
-
-  Widget? activeScreen;
+  var activeScreen = "start-screen";
 
   void setActiveScreen(int value) {
     setState(() {
-      activeScreen = const QuizScreen();
+      activeScreen = "questions-screen";
     });
   }
 
   @override
-  void initState() {
-    activeScreen = StartSceen(setActiveScreen);
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final screen = activeScreen == 'start-screen'
+        ? StartScreen(setActiveScreen)
+        : const QuizScreen();
     return MaterialApp(
       home: Scaffold(
           body: Container(
               decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: activeScreen)),
+              child: screen)),
     );
   }
 }
