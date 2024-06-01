@@ -23,11 +23,18 @@ class LaunchScreenState extends State<LaunchScreen> {
     final screen = activeScreen == 'start-screen'
         ? StartScreen(setActiveScreen)
         : const QuizScreen();
+
+    Widget screenWidget = StartScreen(setActiveScreen);
+
+    if (activeScreen == 'questions-screen') {
+        screenWidget = const QuizScreen();
+    }
+
     return MaterialApp(
       home: Scaffold(
           body: Container(
               decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: screen)),
+              child: screenWidget)),
     );
   }
 }
