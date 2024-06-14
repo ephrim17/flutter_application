@@ -23,15 +23,19 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return  SizedBox(
       width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(model.text, style: const TextStyle(color: Colors.white)),
-            const SizedBox(height: 20),
-            ...model.answers.map((answer) => 
-              AnswerButton(answer, answerButtonTapped)
-            )
-          ],
+        child: Container(
+          margin: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(model.text, style: const TextStyle(color: Colors.white), textAlign: TextAlign.center,),
+              const SizedBox(height: 20),
+              ...model.getShuffledAnswers().map((answer) => 
+                AnswerButton(answer, answerButtonTapped)
+              )
+            ],
+          ),
         ),
     );
   }
