@@ -1,4 +1,4 @@
-import 'package:flutter_application/quiz_app/questions/questionModel.dart';
+import 'package:flutter_application/quiz_app/questions/questionmodel.dart';
 
 const questions = [
   QuizQuestion(

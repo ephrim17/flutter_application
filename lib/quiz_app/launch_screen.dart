@@ -18,23 +18,21 @@ class LaunchScreenState extends State<LaunchScreen> {
     });
   }
 
+  void updateSelectedAnswers(String answer){
+    print("Answer $answer");
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screen = activeScreen == 'start-screen'
+    final Widget screen = activeScreen == 'start-screen'
         ? StartScreen(setActiveScreen)
-        : const QuizScreen();
-
-    Widget screenWidget = StartScreen(setActiveScreen);
-
-    if (activeScreen == 'questions-screen') {
-        screenWidget = const QuizScreen();
-    }
+        : QuizScreen(updateSelectedAnswers);
 
     return MaterialApp(
       home: Scaffold(
           body: Container(
               decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: screenWidget)),
+              child: screen)),
     );
   }
 }

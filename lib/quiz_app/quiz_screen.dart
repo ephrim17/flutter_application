@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/quiz_app/questions/answerButton.dart';
-import 'package:flutter_application/quiz_app/questions/questionData.dart';
+import 'package:flutter_application/quiz_app/questions/answerbutton.dart';
+import 'package:flutter_application/quiz_app/questions/questiondata.dart';
+
+import 'package:google_fonts/google_fonts.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  const QuizScreen(this.updateSelectedAnswers,{super.key});
+
+  final void Function(String answer) updateSelectedAnswers;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -11,15 +15,21 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
 
+  var currentQuestionIndex = 0;
+  final List<String> selectedAnswers = [];
 
-  void answerButtonTapped() {
-    print("Answer button tapped");
+  void answerButtonTapped(answer) {
+    setState(() {
+      currentQuestionIndex += 1;  
+    });
+    widget.updateSelectedAnswers(answer);
   }
+
 
   @override
   Widget build(BuildContext context) {
 
-  final model = questions[0];
+  final model = questions[currentQuestionIndex];
 
     return  SizedBox(
       width: double.infinity,
@@ -29,10 +39,15 @@ class _QuizScreenState extends State<QuizScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(model.text, style: const TextStyle(color: Colors.white), textAlign: TextAlign.center,),
+              Text(model.text, style: GoogleFonts.lato(
+                color: Color.fromARGB(255, 202, 163, 255),
+                fontSize: 24,
+                fontWeight: FontWeight.w700
+                
+              ), textAlign: TextAlign.center,),
               const SizedBox(height: 20),
               ...model.getShuffledAnswers().map((answer) => 
-                AnswerButton(answer, answerButtonTapped)
+                AnswerButton(answer, () => answerButtonTapped(answer))
               )
             ],
           ),
