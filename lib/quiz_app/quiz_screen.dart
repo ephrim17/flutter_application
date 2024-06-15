@@ -19,12 +19,15 @@ class _QuizScreenState extends State<QuizScreen> {
   final List<String> selectedAnswers = [];
 
   void answerButtonTapped(answer) {
+    widget.updateSelectedAnswers(answer); 
+    showNextQuestion();
+  }
+
+  void showNextQuestion() {
     setState(() {
       currentQuestionIndex += 1;  
     });
-    widget.updateSelectedAnswers(answer);
   }
-
 
   @override
   Widget build(BuildContext context) {
