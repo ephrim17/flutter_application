@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/quiz_app/questions/questionModel.dart';
 import 'package:flutter_application/quiz_app/questions/questiondata.dart';
 import 'package:flutter_application/quiz_app/quiz_screen.dart';
+import 'package:flutter_application/quiz_app/result_screen.dart';
 import 'package:flutter_application/quiz_app/start_screen.dart';
 
 class LaunchScreen extends StatefulWidget {
@@ -16,9 +17,9 @@ class LaunchScreenState extends State<LaunchScreen> {
 
   List<String> selectedAnswers = [];
 
-  void setActiveScreen(int value) {
+  void setActiveScreen(String value) {
     setState(() {
-      activeScreen = "questions-screen";
+      activeScreen = value;
     });
   }
 
@@ -26,23 +27,29 @@ class LaunchScreenState extends State<LaunchScreen> {
     selectedAnswers.add(answer);
     if (selectedAnswers.length == questions.length){
       setState(() {
-        selectedAnswers = [];
-        activeScreen = "start-screen";
+        setActiveScreen("result-screen");
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Widget screen = activeScreen == 'start-screen'
-        ? StartScreen(setActiveScreen)
-        : QuizScreen(updateSelectedAnswers);
+    Widget screenWidget = StartScreen(setActiveScreen);
+
+    if (activeScreen == 'quiz-screen') {
+         screenWidget = QuizScreen(updateSelectedAnswers);
+    } else if (activeScreen == 'start-screen') { 
+        screenWidget = StartScreen(setActiveScreen);
+    } else {
+      screenWidget = ResultScreen(setActiveScreen, chosenAnswers: selectedAnswers);
+      selectedAnswers = [];
+    }
 
     return MaterialApp(
       home: Scaffold(
           body: Container(
               decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: screen)),
+              child: screenWidget)),
     );
   }
 }
