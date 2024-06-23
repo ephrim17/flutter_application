@@ -22,13 +22,17 @@ class ResultSummary extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  QuestionNumber(((item['question_index'] as int)), item),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 5),
+                    child: QuestionNumber(((item['question_index'] as int)), item),
+                  ),
                   const SizedBox(height: 20,),
                   Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(item['question'] as String ,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16), textAlign: TextAlign.left,
                         ),
                         Text(
                           'Your Answer is: ${item['user_answer']}',

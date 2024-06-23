@@ -45,7 +45,7 @@ class ResultScreen extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.all(25),
           child: Column(
-             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
@@ -53,8 +53,8 @@ class ResultScreen extends StatelessWidget {
                 style: const TextStyle(
                     color: Color.fromARGB(255, 255, 94, 255),
                     fontSize: 22,
-                    fontWeight: FontWeight.w900),
-                textAlign: TextAlign.center,
+                    fontWeight: FontWeight.w900
+                    ),
               ),
               const SizedBox(height: 20),
               ResultSummary(summaryData),
