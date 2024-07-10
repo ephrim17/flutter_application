@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/quiz_app/questions/questionModel.dart';
 import 'package:flutter_application/quiz_app/questions/questiondata.dart';
 import 'package:flutter_application/quiz_app/quiz_screen.dart';
 import 'package:flutter_application/quiz_app/result_screen.dart';
