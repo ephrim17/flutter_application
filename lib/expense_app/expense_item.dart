@@ -40,7 +40,7 @@ class ExpenseItem extends StatelessWidget {
                 Text(
                   expense.amount.toString(),
                   style: GoogleFonts.actor(
-                      color: Color.fromARGB(255, 168, 34, 74),
+                      color: const Color.fromARGB(255, 168, 34, 74),
                       fontSize: 16,
                       fontWeight: FontWeight.w700),
                 ),

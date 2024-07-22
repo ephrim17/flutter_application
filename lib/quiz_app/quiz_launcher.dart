@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/quiz_app/questions/questiondata.dart';
 import 'package:flutter_application/quiz_app/quiz_screen.dart';
+import 'package:flutter_application/quiz_app/quiz_welcome_screen.dart';
 import 'package:flutter_application/quiz_app/result_screen.dart';
-import 'package:flutter_application/quiz_app/start_screen.dart';
 
-class LaunchScreen extends StatefulWidget {
-  const LaunchScreen({super.key});
+class QuizLauncher extends StatefulWidget {
+  const QuizLauncher({super.key});
 
   @override
-  State<LaunchScreen> createState() => LaunchScreenState();
+  State<QuizLauncher> createState() => QuizLauncherState();
 }
 
-class LaunchScreenState extends State<LaunchScreen> {
+class QuizLauncherState extends State<QuizLauncher> {
   var activeScreen = "start-screen";
 
   List<String> selectedAnswers = [];
@@ -33,12 +33,12 @@ class LaunchScreenState extends State<LaunchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget screenWidget = StartScreen(setActiveScreen);
+    Widget screenWidget = QuizWelcomeScreen(setActiveScreen);
 
     if (activeScreen == 'quiz-screen') {
          screenWidget = QuizScreen(updateSelectedAnswers);
     } else if (activeScreen == 'start-screen') { 
-        screenWidget = StartScreen(setActiveScreen);
+        screenWidget = QuizWelcomeScreen(setActiveScreen);
     } else {
       screenWidget = ResultScreen(setActiveScreen, chosenAnswers: selectedAnswers);
       selectedAnswers = [];

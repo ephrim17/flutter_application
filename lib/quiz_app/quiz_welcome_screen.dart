@@ -1,16 +1,40 @@
 import 'package:flutter/material.dart';
 
-class StartScreen extends StatelessWidget {
-  const StartScreen(this.startQuiz, {super.key});
+class QuizWelcomeScreen extends StatelessWidget {
+  const QuizWelcomeScreen(this.startQuiz, {super.key});
 
   final void Function(String value) startQuiz;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
+    return
+    Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 60, right: 10),
+        child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          OutlinedButton.icon(
+                onPressed: () => startQuiz("quiz-screen"),
+                icon: const Icon(
+                  Icons.arrow_forward,
+                  color: Colors.white70,
+                ),
+                label: const Text(
+                  "Back to Menu",
+                  style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ]
+            ),
+      ),
+    Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 20),
           Image.asset(
             'assets/images/quiz-logo.png',
             width: 250,
@@ -31,9 +55,11 @@ class StartScreen extends StatelessWidget {
               label: const Text(
                 "Start Quiz",
                 style: TextStyle(color: Colors.white70),
-              ))
+            ),
+          ),
         ],
       ),
+    ],
     );
   }
 }
