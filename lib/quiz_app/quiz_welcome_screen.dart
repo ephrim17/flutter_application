@@ -9,29 +9,15 @@ class QuizWelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return
     Column(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       mainAxisSize: MainAxisSize.max,
       children: [
       Padding(
         padding: const EdgeInsets.only(top: 60, right: 10),
         child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          OutlinedButton.icon(
-                onPressed: () => startQuiz("quiz-screen"),
-                icon: const Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white70,
-                ),
-                label: const Text(
-                  "Back to Menu",
-                  style: TextStyle(color: Colors.white70),
-            ),
-          ),
-        ]
-            ),
-      ),
-    Column(
+          Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 20),
@@ -58,6 +44,9 @@ class QuizWelcomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+        ]
+        ),
       ),
     ],
     );

@@ -62,6 +62,7 @@ class ResultScreen extends StatelessWidget {
                 onPressed: restartQuizTapped,
                 style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 33, 1, 95),
+                    foregroundColor: Colors.white,
                     textStyle: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
                  child: const Text(
