@@ -6,12 +6,18 @@ class AppStarterScreen extends StatelessWidget {
 
   final menuItems = ['quiz', 'expense', 'dice'];
   final void Function(String value) selectedMenu;
-  
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: menuItems.length,
-      itemBuilder: (context, index) => AnswerButton(answerText: menuItems[index], onPressed: selectedMenu),
-      );
+    return MaterialApp(
+      home: Scaffold(
+          body: Container(
+              decoration: const BoxDecoration(color: Colors.deepPurple),
+              child: ListView.builder(
+                itemCount: menuItems.length,
+                itemBuilder: (context, index) => AnswerButton(
+                    answerText: menuItems[index], onPressed: selectedMenu),
+              ))),
+    );
   }
 }

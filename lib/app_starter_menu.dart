@@ -34,10 +34,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     }
 
     return MaterialApp(
-      home: Scaffold(
-          body: Container(
-              decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: screenWidget)),
+      home: screenWidget,
     );
   }
 }
