@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/expense_app/expense_list.dart';
+import 'package:flutter_application/expense_app/new_expense.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'expense_model.dart';
@@ -18,16 +19,27 @@ class _ExpenseStateState extends State<ExpenseState> {
    Expense(title: "Flutter 2", amount: 350.0, date: DateTime.now(), type: Category.leisure)
   ];
 
+  void addExpense(){
+      showModalBottomSheet(context: context, builder: (ctx) {
+       return NewExpense();
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(useMaterial3: true),
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: Text("Expense Tracker", style: GoogleFonts.aBeeZee(
+          actions: [
+            IconButton(onPressed: addExpense, icon: const Icon(Icons.add))
+          ],
+          title: Text("Expense Trackers", style: GoogleFonts.aBeeZee(
             color: Colors.black87,
             fontSize: 20
           )),
-          backgroundColor: Color.fromARGB(255, 249, 212, 0),
+          backgroundColor: const Color.fromARGB(255, 249, 212, 0),
         ),
         body: Column(
           children: [
