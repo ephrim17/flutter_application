@@ -3,7 +3,9 @@ import 'package:flutter_application/expense_app/expense_model.dart';
 import 'package:intl/intl.dart';
 
 class NewExpense extends StatefulWidget {
-  const NewExpense({super.key});
+  const NewExpense({required this.addExpense, super.key});
+
+  final void Function (Expense expense) addExpense;
 
   @override
   State<NewExpense> createState() => _NewExpenseState();
@@ -11,10 +13,11 @@ class NewExpense extends StatefulWidget {
 
 class _NewExpenseState extends State<NewExpense> {
 
-var expenseDate = 'Select date';
-var expenseName = '';
-var expenseAmount = '';
+DateTime? expenseDate;
+String expenseName = '';
+String expenseAmount = '';
 Category categorySelected = Category.leisure;
+final dateFormatter = DateFormat.yMd();
 
   void expenseNameFieldChanged(value){
     expenseName = value;
@@ -25,7 +28,21 @@ Category categorySelected = Category.leisure;
   }
 
   void addExpenseAction() {
-  
+    if (expenseAmount.isNotEmpty && expenseDate != null && int.parse(expenseAmount) >= 0  && expenseName.isNotEmpty) {
+      var newExpense = Expense(title: expenseName, amount: int.parse(expenseAmount), date: expenseDate!, type: categorySelected);
+      widget.addExpense(newExpense);
+    } else {
+      showDialog(context: context, builder: (ctx) => AlertDialog(
+        title: const Text("Invalid Expense"),
+        content: const Text("Please enter all fields"),
+        actions: [
+          TextButton(onPressed: () {
+            Navigator.pop(ctx);
+          }, child: const Text('Okay'))
+        ],
+        )
+      );
+    }
   }
 
 Future<void> presentDatePicker() async {
@@ -33,10 +50,8 @@ Future<void> presentDatePicker() async {
   final firstDate = DateTime(now.year -1, now.month, now.day);
   final lastDate = now;
   final pickedDate = await showDatePicker(context: context, firstDate: firstDate, lastDate: lastDate);
-  final dateFormatter = DateFormat.yMd();
-  final formattedDate = dateFormatter.format(pickedDate!);
   setState(() {
-    expenseDate = formattedDate;
+    expenseDate = pickedDate;
   });
 }
 
@@ -74,7 +89,7 @@ Future<void> presentDatePicker() async {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(expenseDate),
+                        Text(expenseDate == null ? 'Select Date': dateFormatter.format(expenseDate!)),
                         IconButton(
                             onPressed: presentDatePicker,
                             icon: const Icon(Icons.calendar_month)),

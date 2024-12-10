@@ -15,14 +15,20 @@ class ExpenseState extends StatefulWidget {
 class _ExpenseStateState extends State<ExpenseState> {
 
   final List<Expense> mockExpenses = [
-   Expense(title: "Flutter", amount: 250.0, date: DateTime.now(), type: Category.work),
-   Expense(title: "Flutter 2", amount: 350.0, date: DateTime.now(), type: Category.leisure)
+   Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
+   Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
   ];
 
-  void addExpense(){
+  void addExpenseOverlay(){
       showModalBottomSheet(context: context, builder: (ctx) {
-       return NewExpense();
+       return NewExpense(addExpense: addExpenses);
       });
+  }
+
+  void addExpenses(Expense expense){
+    setState(() {
+      mockExpenses.add(expense);
+    });
   }
 
   @override
@@ -33,7 +39,7 @@ class _ExpenseStateState extends State<ExpenseState> {
       home: Scaffold(
         appBar: AppBar(
           actions: [
-            IconButton(onPressed: addExpense, icon: const Icon(Icons.add))
+            IconButton(onPressed: addExpenseOverlay, icon: const Icon(Icons.add))
           ],
           title: Text("Expense Trackers", style: GoogleFonts.aBeeZee(
             color: Colors.black87,
