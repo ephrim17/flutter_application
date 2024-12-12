@@ -15,13 +15,16 @@ class ExpenseState extends StatefulWidget {
 class _ExpenseStateState extends State<ExpenseState> {
 
   final List<Expense> mockExpenses = [
-   Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
-   Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
+  //  Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
+  //  Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
   ];
 
   void addExpenseOverlay(){
-      showModalBottomSheet(context: context, builder: (ctx) {
-       return NewExpense(addExpense: addExpenses);
+      showModalBottomSheet(
+        isScrollControlled: true,
+        context: context, 
+        builder: (ctx) {
+          return NewExpense(addExpense: addExpenses);
       });
   }
 
@@ -31,8 +34,21 @@ class _ExpenseStateState extends State<ExpenseState> {
     });
   }
 
+  void removeExpense(Expense expense){
+    setState(() {
+      mockExpenses.remove(expense);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    Widget main = const Center(child: Text('No Expenses Found..Please add some'),);
+
+    if (mockExpenses.isNotEmpty) {
+        main = ExpenseList(expenses: mockExpenses, removeExpense: removeExpense);
+    }
+
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
       debugShowCheckedModeBanner: false,
@@ -49,7 +65,7 @@ class _ExpenseStateState extends State<ExpenseState> {
         ),
         body: Column(
           children: [
-            Expanded(child: ExpenseList(expenses: mockExpenses))
+            Expanded(child: main)
           ],
         ),
       ),

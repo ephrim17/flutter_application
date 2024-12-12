@@ -31,6 +31,7 @@ final dateFormatter = DateFormat.yMd();
     if (expenseAmount.isNotEmpty && expenseDate != null && int.parse(expenseAmount) >= 0  && expenseName.isNotEmpty) {
       var newExpense = Expense(title: expenseName, amount: int.parse(expenseAmount), date: expenseDate!, type: categorySelected);
       widget.addExpense(newExpense);
+      Navigator.pop(context);
     } else {
       showDialog(context: context, builder: (ctx) => AlertDialog(
         title: const Text("Invalid Expense"),
@@ -58,7 +59,7 @@ Future<void> presentDatePicker() async {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.fromLTRB(10, 48, 10, 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -131,7 +132,7 @@ Future<void> presentDatePicker() async {
             child: ElevatedButton(onPressed: addExpenseAction, child: const Text('Add Expense')),
           ),
           const SizedBox(height: 10,),
-          ElevatedButton(onPressed: (){}, child: const Text('Cancel'))
+          ElevatedButton(onPressed: (){ Navigator.pop(context);}, child: const Text('Cancel'))
         ],
       ),
     );
