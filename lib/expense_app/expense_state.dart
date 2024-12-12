@@ -15,7 +15,7 @@ class ExpenseState extends StatefulWidget {
 class _ExpenseStateState extends State<ExpenseState> {
 
   final List<Expense> mockExpenses = [
-  //  Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
+   Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
   //  Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
   ];
 
@@ -35,9 +35,21 @@ class _ExpenseStateState extends State<ExpenseState> {
   }
 
   void removeExpense(Expense expense){
+    final expenseIndex = mockExpenses.indexOf(expense);
     setState(() {
       mockExpenses.remove(expense);
     });
+    //Undo option
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+      duration: const Duration(seconds: 5),
+      content: const Text('Expense deleted'),
+      action: SnackBarAction(label: 'undo', onPressed: () {
+        setState(() { 
+          mockExpenses.insert(expenseIndex, expense);
+        });
+      }),
+    ));
   }
 
   @override
@@ -49,10 +61,7 @@ class _ExpenseStateState extends State<ExpenseState> {
         main = ExpenseList(expenses: mockExpenses, removeExpense: removeExpense);
     }
 
-    return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           actions: [
             IconButton(onPressed: addExpenseOverlay, icon: const Icon(Icons.add))
@@ -65,10 +74,9 @@ class _ExpenseStateState extends State<ExpenseState> {
         ),
         body: Column(
           children: [
-            Expanded(child: main)
+            Expanded(child: ExpenseList(expenses: mockExpenses, removeExpense: removeExpense))
           ],
         ),
-      ),
-    );
+      );
   }
 }

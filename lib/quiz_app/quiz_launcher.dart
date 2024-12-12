@@ -44,11 +44,9 @@ class QuizLauncherState extends State<QuizLauncher> {
       selectedAnswers = [];
     }
 
-    return MaterialApp(
-      home: Scaffold(
+    return  Scaffold(
           body: Container(
               decoration: const BoxDecoration(color: Colors.deepPurple),
-              child: screenWidget)),
-    );
+              child: screenWidget));
   }
 }
