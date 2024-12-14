@@ -14,8 +14,7 @@ class GradientContainer extends StatelessWidget {
 
   @override
   Widget build(context) {
-    return MaterialApp(
-      home: Scaffold(
+    return Scaffold(
         body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -24,7 +23,6 @@ class GradientContainer extends StatelessWidget {
                   end: Alignment.topLeft),
             ),
             child: const Center(child: DiceRoller())),
-      ),
-    );
+      );
   }
 }
