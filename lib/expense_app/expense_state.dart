@@ -62,21 +62,24 @@ class _ExpenseStateState extends State<ExpenseState> {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(onPressed: addExpenseOverlay, icon: const Icon(Icons.add))
-          ],
-          title: Text("Expense Trackers", style: GoogleFonts.aBeeZee(
-            color: Colors.black87,
-            fontSize: 20
-          )),
-          backgroundColor: const Color.fromARGB(255, 249, 212, 0),
+      appBar: AppBar(
+        actions: [
+          IconButton(onPressed: addExpenseOverlay, icon: const Icon(Icons.add))
+        ],
+        title: Text(
+          "Expense Trackers",
+          style: GoogleFonts.aBeeZee(color: Colors.black87, fontSize: 20),
         ),
-        body: Column(
-          children: [
-            Expanded(child: ExpenseList(expenses: mockExpenses, removeExpense: removeExpense))
-          ],
-        ),
-      );
+        backgroundColor: const Color.fromARGB(255, 249, 212, 0),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ExpenseList(
+                expenses: mockExpenses, removeExpense: removeExpense),
+          )
+        ],
+      ),
+    );
   }
 }
