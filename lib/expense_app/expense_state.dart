@@ -75,9 +75,7 @@ class _ExpenseStateState extends State<ExpenseState> {
       body: Column(
         children: [
           Expanded(
-            child: ExpenseList(
-                expenses: mockExpenses, removeExpense: removeExpense),
-          )
+            child: main )
         ],
       ),
     );
