@@ -21,24 +21,53 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     });
   }
 
+  (Color?, Widget?, ColorScheme?) getAppColors(){
+
+    var appDefaultColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 97, 21, 212));
+    var expenseColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 213, 104, 9));
+    var quizColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
+
+    if (activeScreen == 'Quiz App') { 
+      return (quizColorScheme.primary , const QuizLauncher(), quizColorScheme);
+    } else if (activeScreen == 'Dice App') { 
+      return (null, const GradientContainer.standardColor(), null);
+    } else if (activeScreen == 'Expense App'){
+      return (expenseColorScheme.onInverseSurface, const ExpenseState(), expenseColorScheme);
+    } else {
+      return (appDefaultColorScheme.onInverseSurface, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme);
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    Widget screenWidget = AppStarterScreen(selectedMenu: selectedMenu);
-    Color scaffoldBgColor = const Color.fromARGB(255, 225, 214, 253);
 
-    if (activeScreen == 'Quiz App') {
-      screenWidget = const QuizLauncher();
-      scaffoldBgColor = Colors.deepPurple;
-    } else if (activeScreen == 'Dice App') {
-      screenWidget = const GradientContainer.standardColor();
-    } else if ( activeScreen == 'Expense App') {
-      screenWidget = const ExpenseState();
-      scaffoldBgColor = const Color.fromARGB(255, 250, 246, 232);
-    }
+    var (scaffoldBgColor, screenWidget, appColorScheme) = getAppColors();
 
     return MaterialApp(
       theme: ThemeData().copyWith(
-      scaffoldBackgroundColor: scaffoldBgColor),
+        scaffoldBackgroundColor: scaffoldBgColor,
+        colorScheme: appColorScheme,
+        appBarTheme: const AppBarTheme().copyWith(
+            foregroundColor: appColorScheme?.onPrimaryContainer,
+            backgroundColor: appColorScheme?.onInverseSurface
+        ),
+        cardTheme: const CardTheme().copyWith(
+          color: appColorScheme?.inversePrimary
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: appColorScheme?.inversePrimary,
+            foregroundColor: appColorScheme?.onPrimaryFixedVariant
+          )
+        ),
+        textTheme: ThemeData().textTheme.copyWith(
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.normal,
+            color: appColorScheme?.onErrorContainer
+          )
+        )
+      ),
       home: screenWidget,
     );
   }

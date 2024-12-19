@@ -13,12 +13,7 @@ class AppStarterScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Apps',
-          style: TextStyle(
-              color: Color.fromARGB(255, 37, 6, 86),
-              fontSize: 20,
-              fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color.fromARGB(255, 225, 214, 253),
       ),
       body: ListView.builder(
         itemCount: menuItems.length,

@@ -70,7 +70,6 @@ class _ExpenseStateState extends State<ExpenseState> {
           "Expense Trackers",
           style: GoogleFonts.aBeeZee(color: Colors.black87, fontSize: 20),
         ),
-        backgroundColor: const Color.fromARGB(255, 249, 212, 0),
       ),
       body: Column(
         children: [

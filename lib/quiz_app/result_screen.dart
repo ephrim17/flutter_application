@@ -51,7 +51,7 @@ class ResultScreen extends StatelessWidget {
               Text(
                 'You have answered $numberOfCorrectQuestions out of $totalNumberOfQuestions correctly!',
                 style: const TextStyle(
-                    color: Color.fromARGB(255, 255, 94, 255),
+                    color: Color.fromARGB(255, 228, 213, 228),
                     fontSize: 22,
                     fontWeight: FontWeight.w900
                     ),
@@ -61,8 +61,8 @@ class ResultScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: restartQuizTapped,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 33, 1, 95),
-                    foregroundColor: Colors.white,
+                    // backgroundColor: const Color.fromARGB(255, 33, 1, 95),
+                    // foregroundColor: Colors.white,
                     textStyle: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.bold)),
                  child: const Text(
