@@ -21,20 +21,25 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     });
   }
 
-  (Color?, Widget?, ColorScheme?) getAppColors(){
+  (Color?, Color?, Widget?, ColorScheme?, ColorScheme?) getAppColors(){
 
     var appDefaultColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 97, 21, 212));
+    var appDefaultDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 18, 1, 44));
+    
     var expenseColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 213, 104, 9));
     var quizColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
 
+    var expenseDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 21, 0));
+    var quizDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
+
     if (activeScreen == 'Quiz App') { 
-      return (quizColorScheme.primary , const QuizLauncher(), quizColorScheme);
+      return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer,  const QuizLauncher(), quizColorScheme, quizDarkColorScheme);
     } else if (activeScreen == 'Dice App') { 
-      return (null, const GradientContainer.standardColor(), null);
+      return (null, null, const GradientContainer.standardColor(), null, null);
     } else if (activeScreen == 'Expense App'){
-      return (expenseColorScheme.onInverseSurface, const ExpenseState(), expenseColorScheme);
+      return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
     } else {
-      return (appDefaultColorScheme.onInverseSurface, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme);
+      return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
   }
 
@@ -42,9 +47,44 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
   @override
   Widget build(BuildContext context) {
 
-    var (scaffoldBgColor, screenWidget, appColorScheme) = getAppColors();
+    var (scaffoldBgColor, scaffoldBgDarkColor, screenWidget, appColorScheme, appColorSchemeDark) = getAppColors();
 
     return MaterialApp(
+      darkTheme: ThemeData().copyWith(
+        scaffoldBackgroundColor: scaffoldBgDarkColor,
+        colorScheme: appColorSchemeDark,
+        appBarTheme: const AppBarTheme().copyWith(
+            foregroundColor: appColorSchemeDark?.secondaryFixed,
+            backgroundColor: appColorSchemeDark?.onPrimaryFixed
+        ),
+        cardTheme: const CardTheme().copyWith(
+          color: appColorSchemeDark?.secondaryFixedDim,
+          margin: const EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: 15
+          ),
+        ),
+        textTheme: ThemeData().textTheme.copyWith(
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.normal,
+            color: appColorSchemeDark?.secondaryFixed
+          ),
+          bodyMedium:  TextStyle(
+            fontWeight: FontWeight.normal,
+            color: appColorSchemeDark?.secondaryFixed
+          ),
+          bodySmall:  TextStyle(
+            fontWeight: FontWeight.normal,
+            color: appColorSchemeDark?.secondaryFixed
+          )
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: appColorSchemeDark?.secondaryFixed,
+            foregroundColor: appColorSchemeDark?.onPrimaryFixed
+          )
+        ),
+      ),
       theme: ThemeData().copyWith(
         scaffoldBackgroundColor: scaffoldBgColor,
         colorScheme: appColorScheme,

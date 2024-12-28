@@ -23,6 +23,7 @@ class _ExpenseStateState extends State<ExpenseState> {
       showModalBottomSheet(
         isScrollControlled: true,
         context: context, 
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         builder: (ctx) {
           return NewExpense(addExpense: addExpenses);
       });
@@ -68,7 +69,7 @@ class _ExpenseStateState extends State<ExpenseState> {
         ],
         title: Text(
           "Expense Trackers",
-          style: GoogleFonts.aBeeZee(color: Colors.black87, fontSize: 20),
+          style: GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color),
         ),
       ),
       body: Column(

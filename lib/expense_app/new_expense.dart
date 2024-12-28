@@ -67,8 +67,8 @@ Future<void> presentDatePicker() async {
             onChanged: expenseNameFieldChanged,
             maxLength: 50,
             keyboardType: TextInputType.text,
-            decoration: const InputDecoration(
-              label: Text('Expense name')
+            decoration: InputDecoration(
+              label:  Text('Expense name', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),)
             ),
           ),
           Row(
@@ -77,9 +77,9 @@ Future<void> presentDatePicker() async {
                 child: TextField(
                   onChanged: expenseAmountFieldChanged,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     prefixText: '\$',
-                    label: Text('Amount')
+                    label: Text('Amount', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color))
                   ),
                 ),
               ),
@@ -93,15 +93,10 @@ Future<void> presentDatePicker() async {
                         Text(expenseDate == null ? 'Select Date': dateFormatter.format(expenseDate!)),
                         IconButton(
                             onPressed: presentDatePicker,
-                            icon: const Icon(Icons.calendar_month)),
+                            icon: Icon(Icons.calendar_month, color:Theme.of(context).textTheme.bodySmall?.color,)),
                       ],
                     ),
-                    const SizedBox(height: 8,),
-                    const Divider(
-                      height: 0,
-                      color: Color.fromARGB(255, 104, 107, 104),
-                      thickness: 1,
-                    ),
+                    
                   ],
                 ),
               )
