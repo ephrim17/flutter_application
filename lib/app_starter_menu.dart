@@ -53,7 +53,11 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
             backgroundColor: appColorScheme?.onInverseSurface
         ),
         cardTheme: const CardTheme().copyWith(
-          color: appColorScheme?.inversePrimary
+          color: appColorScheme?.inversePrimary,
+          margin: const EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: 15
+          ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
