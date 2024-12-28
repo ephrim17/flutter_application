@@ -1,3 +1,4 @@
+import "package:flutter/material.dart";
 import "package:uuid/uuid.dart";
 
 const uuid = Uuid();
@@ -8,6 +9,13 @@ enum Category {
   leisure,
   work
 }
+
+const categoryIcons = {
+  Category.food: Icons.lunch_dining,
+  Category.travel: Icons.travel_explore,
+  Category.leisure: Icons.leaderboard,
+  Category.work: Icons.work,
+};
 
 class Expense {
     final String id;
@@ -22,4 +30,27 @@ class Expense {
       required this.date,
       required this.type,
     }): id = uuid.v4();
+}
+
+class ExpenseBucket {
+
+   const ExpenseBucket( {
+    required this.category,
+    required this.expenses
+  });
+
+ ExpenseBucket.forCategory(List<Expense> allExpenses,  this.category)
+  : expenses = allExpenses.where((item) => item.type == category).toList();
+
+  final Category category;
+  final List<Expense> expenses;
+
+  double get totalExpenses {
+    double sum = 0;
+    for (final expense in expenses) {
+      sum += expense.amount;
+    }
+    return sum;
+  }
+
 }

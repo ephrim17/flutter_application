@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/expense_app/expense_chart.dart';
 import 'package:flutter_application/expense_app/expense_list.dart';
 import 'package:flutter_application/expense_app/new_expense.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +19,8 @@ class _ExpenseStateState extends State<ExpenseState> {
    Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
   //  Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
   ];
+
+  
 
   void addExpenseOverlay(){
       showModalBottomSheet(
@@ -55,6 +58,8 @@ class _ExpenseStateState extends State<ExpenseState> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //use this isDarkMode and optimise conditions accordingly. 
 
     Widget main = const Center(child: Text('No Expenses Found..Please add some'),);
 
@@ -74,8 +79,9 @@ class _ExpenseStateState extends State<ExpenseState> {
       ),
       body: Column(
         children: [
+          Chart(expenses: mockExpenses),
           Expanded(
-            child: main )
+            child: main ),
         ],
       ),
     );
