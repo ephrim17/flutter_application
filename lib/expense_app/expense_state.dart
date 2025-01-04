@@ -58,7 +58,7 @@ class _ExpenseStateState extends State<ExpenseState> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
     //use this isDarkMode and optimise conditions accordingly. 
 
     Widget main = const Center(child: Text('No Expenses Found..Please add some'),);
