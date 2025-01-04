@@ -56,11 +56,32 @@ class _ExpenseStateState extends State<ExpenseState> {
     ));
   }
 
+  Widget compactMode(Widget main, List<Expense> mockExpenses) {
+    return Column(
+      children: [
+        Chart(expenses: mockExpenses),
+        Expanded(child: main),
+      ],
+    );
+  }
+
+  Widget regularMode(Widget main, List<Expense> mockExpenses) {
+    return Row(
+      children: [
+        Expanded(child: Chart(expenses: mockExpenses)),
+        Expanded(child: main),
+      ],
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     //final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
     //use this isDarkMode and optimise conditions accordingly. 
 
+    final width = MediaQuery.of(context).size.width;
+    
     Widget main = const Center(child: Text('No Expenses Found..Please add some'),);
 
     if (mockExpenses.isNotEmpty) {
@@ -77,13 +98,7 @@ class _ExpenseStateState extends State<ExpenseState> {
           style: GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color),
         ),
       ),
-      body: Column(
-        children: [
-          Chart(expenses: mockExpenses),
-          Expanded(
-            child: main ),
-        ],
-      ),
+      body: width < 600 ? compactMode(main, mockExpenses) : regularMode(main, mockExpenses),
     );
   }
 }
