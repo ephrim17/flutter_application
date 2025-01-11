@@ -59,9 +59,13 @@ Future<void> presentDatePicker() async {
   @override
   Widget build(BuildContext context) {
     final keyBoardSpace = MediaQuery.of(context).viewInsets.bottom;
-    return SizedBox(
+    
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final finalWidth = constraints.maxWidth;
+      return SizedBox(
       height: double.infinity,
-      child: SingleChildScrollView(
+      child: 
+        SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, 16, 16, keyBoardSpace + 16),
           child: Column(
@@ -126,16 +130,38 @@ Future<void> presentDatePicker() async {
                           categorySelected = value;
                         });
               })],),
-              Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: ElevatedButton(onPressed: addExpenseAction, child: const Text('Add Expense')),
-              ),
-              const SizedBox(height: 10,),
-              ElevatedButton(onPressed: (){ Navigator.pop(context);}, child: const Text('Cancel'))
+             
+             const SizedBox(height: 20,),
+              if(finalWidth < 600 )
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ElevatedButton(onPressed: addExpenseAction, child: const Text('Add Expense')),
+                  ),
+                  ElevatedButton(onPressed: (){ Navigator.pop(context);}, child: const Text('Cancel'))
+                ],
+                
+              )
+            else 
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: ElevatedButton(onPressed: addExpenseAction, child: const Text('Add Expense')),
+                  ),
+                  ElevatedButton(onPressed: (){ Navigator.pop(context);}, child: const Text('Cancel'))
+                ],
+              )
             ],
           ),
         ),
       ),
     );
+    });
+
+    
   }
 }
