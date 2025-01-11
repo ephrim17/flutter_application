@@ -26,6 +26,7 @@ class _ExpenseStateState extends State<ExpenseState> {
       showModalBottomSheet(
         isScrollControlled: true,
         context: context, 
+        useSafeArea: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         builder: (ctx) {
           return NewExpense(addExpense: addExpenses);
