@@ -91,6 +91,7 @@ class _ExpenseStateState extends State<ExpenseState> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: false,
         actions: [
           IconButton(onPressed: addExpenseOverlay, icon: const Icon(Icons.add))
         ],
