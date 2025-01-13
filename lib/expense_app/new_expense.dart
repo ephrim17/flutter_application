@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/expense_app/expense_model.dart';
 import 'package:intl/intl.dart';
@@ -28,21 +31,47 @@ final dateFormatter = DateFormat.yMd();
   }
 
   void addExpenseAction() {
-    if (expenseAmount.isNotEmpty && expenseDate != null && int.parse(expenseAmount) >= 0  && expenseName.isNotEmpty) {
-      var newExpense = Expense(title: expenseName, amount: int.parse(expenseAmount), date: expenseDate!, type: categorySelected);
+    if (expenseAmount.isNotEmpty &&
+        expenseDate != null &&
+        int.parse(expenseAmount) >= 0 &&
+        expenseName.isNotEmpty) {
+      var newExpense = Expense(
+          title: expenseName,
+          amount: int.parse(expenseAmount),
+          date: expenseDate!,
+          type: categorySelected);
       widget.addExpense(newExpense);
       Navigator.pop(context);
     } else {
-      showDialog(context: context, builder: (ctx) => AlertDialog(
-        title: const Text("Invalid Expense"),
-        content: const Text("Please enter all fields"),
-        actions: [
-          TextButton(onPressed: () {
-            Navigator.pop(ctx);
-          }, child: const Text('Okay'))
-        ],
-        )
-      );
+      if (Platform.isIOS) {
+        showCupertinoDialog(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+                  title: const Text("Invalid Expense"),
+                  content: const Text("Please enter all fields"),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('Okay'))
+                  ],
+                ));
+      } else {
+        showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+                  title: const Text("Invalid Expense"),
+                  content: const Text("Please enter all fields"),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('Okay'))
+                  ],
+                ));
+      }
     }
   }
 
