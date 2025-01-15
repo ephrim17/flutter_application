@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_screen.dart';
 import 'package:flutter_application/dice_app/gradient_container.dart';
 import 'package:flutter_application/expense_app/expense_state.dart';
+import 'package:flutter_application/meals_app/mealCategories.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppStarterMenu extends StatefulWidget {
   const AppStarterMenu({super.key});
@@ -27,10 +29,13 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     var appDefaultDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 18, 1, 44));
     
     var expenseColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 213, 104, 9));
-    var quizColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
-
     var expenseDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 21, 0));
+
+    var quizColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
     var quizDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
+
+    var mealsColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
+    var mealsDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
 
     if (activeScreen == 'Quiz App') { 
       return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer,  const QuizLauncher(), quizColorScheme, quizDarkColorScheme);
@@ -38,7 +43,10 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
       return (null, null, const GradientContainer.standardColor(), null, null);
     } else if (activeScreen == 'Expense App'){
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
-    } else {
+    } else if (activeScreen == "Meals App") {
+      return (mealsColorScheme.primary , mealsColorScheme.onPrimaryContainer,  const Mealcategories(), mealsColorScheme, mealsDarkColorScheme);
+    }
+      else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
   }
@@ -69,14 +77,9 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
             fontWeight: FontWeight.normal,
             color: appColorSchemeDark?.secondaryFixed
           ),
-          bodyMedium:  TextStyle(
-            fontWeight: FontWeight.normal,
-            color: appColorSchemeDark?.secondaryFixed
-          ),
-          bodySmall:  TextStyle(
-            fontWeight: FontWeight.normal,
-            color: appColorSchemeDark?.secondaryFixed
-          )
+          bodyMedium:  GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color),
+          bodySmall:  GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color)
+          //can also set for each font type --> GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color)
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -109,7 +112,8 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
           titleLarge: TextStyle(
             fontWeight: FontWeight.normal,
             color: appColorScheme?.onErrorContainer
-          )
+          ),
+          bodyMedium:  GoogleFonts.aBeeZee(color: Theme.of(context).secondaryHeaderColor),
         )
       ),
       home: screenWidget,
