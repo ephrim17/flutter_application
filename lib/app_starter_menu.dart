@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_screen.dart';
 import 'package:flutter_application/dice_app/gradient_container.dart';
 import 'package:flutter_application/expense_app/expense_state.dart';
-import 'package:flutter_application/meals_app/mealCategories.dart';
+import 'package:flutter_application/meals_app/screens/categories_screen.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -44,7 +44,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     } else if (activeScreen == 'Expense App'){
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.primary , mealsColorScheme.onPrimaryContainer,  const Mealcategories(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.primary , mealsColorScheme.onPrimaryContainer,  const CategoryScreen(), mealsColorScheme, mealsDarkColorScheme);
     }
       else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
