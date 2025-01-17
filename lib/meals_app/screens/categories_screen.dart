@@ -21,8 +21,8 @@ class CategoryScreen extends StatelessWidget {
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 1.5,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10),
+              mainAxisSpacing: 1,
+              crossAxisSpacing: 1),
           children: availableCategories.map((category) => CategoryGridItem(category: category)).toList()),
     );
   }

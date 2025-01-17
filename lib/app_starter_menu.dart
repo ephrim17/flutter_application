@@ -44,7 +44,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     } else if (activeScreen == 'Expense App'){
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.primary , mealsColorScheme.onPrimaryContainer,  const CategoryScreen(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const CategoryScreen(), mealsColorScheme, mealsDarkColorScheme);
     }
       else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
@@ -77,7 +77,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
             fontWeight: FontWeight.normal,
             color: appColorSchemeDark?.secondaryFixed
           ),
-          bodyMedium:  GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color),
+          bodyMedium:  GoogleFonts.aBeeZee(color: appColorSchemeDark?.onPrimaryFixedVariant, fontSize: 16),
           bodySmall:  GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color)
           //can also set for each font type --> GoogleFonts.aBeeZee(color: Theme.of(context).textTheme.titleLarge?.color)
         ),
