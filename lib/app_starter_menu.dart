@@ -65,7 +65,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
             foregroundColor: appColorSchemeDark?.secondaryFixed,
             backgroundColor: appColorSchemeDark?.onPrimaryFixed
         ),
-        cardTheme: const CardTheme().copyWith(
+        cardTheme: const CardThemeData().copyWith(
           color: appColorSchemeDark?.secondaryFixedDim,
           margin: const EdgeInsets.symmetric(
             vertical: 10,
@@ -95,7 +95,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
             foregroundColor: appColorScheme?.onPrimaryContainer,
             backgroundColor: appColorScheme?.onInverseSurface
         ),
-        cardTheme: const CardTheme().copyWith(
+        cardTheme:  CardThemeData().copyWith(
           color: appColorScheme?.inversePrimary,
           margin: const EdgeInsets.symmetric(
             vertical: 10,

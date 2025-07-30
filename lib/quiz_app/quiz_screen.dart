@@ -42,7 +42,7 @@ class _QuizScreenState extends State<QuizScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(model.text, style: GoogleFonts.lato(
-                color: Color.fromARGB(255, 226, 220, 234),
+                color: const Color.fromARGB(255, 226, 220, 234),
                 fontSize: 24,
                 fontWeight: FontWeight.w700
                 
