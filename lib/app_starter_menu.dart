@@ -45,8 +45,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
       return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const CategoryScreen(), mealsColorScheme, mealsDarkColorScheme);
-    }
-      else {
+    } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
   }
