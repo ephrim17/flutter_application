@@ -39,6 +39,7 @@ dependencies:
   uuid: ^4.4.0
   date_formatter: ^0.0.4
   intl: ^0.18.1
+  transparent_image: ^2.0.1
 
 dev_dependencies:
   flutter_test:

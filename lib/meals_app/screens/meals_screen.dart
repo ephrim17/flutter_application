@@ -23,7 +23,7 @@ class MealsScreen extends StatelessWidget {
         itemCount: meals.length,
         itemBuilder: (context, index) {
           final meal = meals[index];
-          return MealItemWidget(meal: meal);
+          return MealItemStackWidget(meal: meal);
         },
       );
     }
@@ -31,7 +31,7 @@ class MealsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
         ),
       body: content,
     );

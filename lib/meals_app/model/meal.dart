@@ -40,4 +40,6 @@ class Meal {
   final bool isLactoseFree;
   final bool isVegan;
   final bool isVegetarian;
+
+  get categoryId => null;
 }
