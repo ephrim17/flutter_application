@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
+import 'package:flutter_application/meals_app/widgets/meal_widget_metadata.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 class MealItemWidget extends StatelessWidget {
@@ -43,16 +44,23 @@ class MealItemStackWidget extends StatelessWidget {
             right: 0,
             child: Container(
               color: Colors.black54,
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     meal.title,
                     style: const TextStyle(color: Colors.white, fontSize: 20),
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    softWrap: true,
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 8,
+                    children: [
+                      MealWidgetMetaData(icon: Icons.schedule, metadata: '${meal.duration} min'),
+                      MealWidgetMetaData(icon: Icons.subtitles_outlined, metadata: meal.affordability.name),
+                      MealWidgetMetaData(icon: Icons.attach_money_rounded, metadata: meal.complexity.name)
+                    ],
                   ),
                 ],
               ),
