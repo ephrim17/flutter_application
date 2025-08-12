@@ -35,7 +35,7 @@ class CategoryScreen extends StatelessWidget {
         title: Text(
           "Meal App",
           style: GoogleFonts.aBeeZee(
-              color: Theme.of(context).textTheme.titleLarge?.color),
+          color: Theme.of(context).textTheme.titleLarge?.color),
         ),
       ),
       body: GridView(
