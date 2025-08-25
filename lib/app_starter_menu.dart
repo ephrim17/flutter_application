@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_screen.dart';
+import 'package:flutter_application/dice_app/dice_launcher.dart';
 import 'package:flutter_application/dice_app/gradient_container.dart';
-import 'package:flutter_application/expense_app/expense_state.dart';
-import 'package:flutter_application/meals_app/screens/categories_screen.dart';
+import 'package:flutter_application/expense_app/expense_launcher.dart';
+import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -40,11 +41,11 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     if (activeScreen == 'Quiz App') { 
       return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer,  const QuizLauncher(), quizColorScheme, quizDarkColorScheme);
     } else if (activeScreen == 'Dice App') { 
-      return (null, null, const GradientContainer.standardColor(), null, null);
+      return (null, null, const DiceLauncher(), null, null);
     } else if (activeScreen == 'Expense App'){
-      return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseState(), expenseColorScheme, expenseDarkColorScheme);
+      return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseLauncher(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const CategoryScreen(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const MealsLauncher(), mealsColorScheme, mealsDarkColorScheme);
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }

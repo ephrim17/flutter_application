@@ -6,8 +6,8 @@ import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/category_grid_item.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class CategoryScreen extends StatelessWidget {
-  const CategoryScreen({super.key});
+class MealsLauncher extends StatelessWidget {
+  const MealsLauncher({super.key});
 
 
   void selectedCategory(BuildContext context, MealCategory selectedCategory) {

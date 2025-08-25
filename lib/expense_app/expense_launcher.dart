@@ -6,14 +6,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'expense_model.dart';
 
-class ExpenseState extends StatefulWidget {
-  const ExpenseState({super.key});
+class ExpenseLauncher extends StatefulWidget {
+  const ExpenseLauncher({super.key});
 
   @override
-  State<ExpenseState> createState() => _ExpenseStateState();
+  State<ExpenseLauncher> createState() => _ExpenseLauncherState();
 }
 
-class _ExpenseStateState extends State<ExpenseState> {
+class _ExpenseLauncherState extends State<ExpenseLauncher> {
 
   final List<Expense> mockExpenses = [
    Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
