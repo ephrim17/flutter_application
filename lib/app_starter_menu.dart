@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_screen.dart';
 import 'package:flutter_application/dice_app/dice_launcher.dart';
-import 'package:flutter_application/dice_app/gradient_container.dart';
 import 'package:flutter_application/expense_app/expense_launcher.dart';
-import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
+import 'package:flutter_application/meals_app/screens/tabs_screen.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -45,7 +44,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     } else if (activeScreen == 'Expense App'){
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseLauncher(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const MealsLauncher(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const MealsTabScreen(), mealsColorScheme, mealsDarkColorScheme);
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }

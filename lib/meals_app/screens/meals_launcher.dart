@@ -30,14 +30,6 @@ class MealsLauncher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: Text(
-          "Meal App",
-          style: GoogleFonts.aBeeZee(
-          color: Theme.of(context).textTheme.titleLarge?.color),
-        ),
-      ),
       body: GridView(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
