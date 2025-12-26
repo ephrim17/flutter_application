@@ -13,7 +13,6 @@ class MealsTabScreen extends StatefulWidget {
 class _MealsTabScreenState extends State<MealsTabScreen> {
 
   Widget? _activeScreen;
-  String _activeTitle = 'Meals App';
   int selectedIndex = 0;
 
   final List<Meal> _favoriteMeals = [];
@@ -27,13 +26,31 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
   void updateFavorites(Meal meal) {
     if (_favoriteMeals.contains(meal)) {
       setState(() {
+        updateSnackBarMessage("Meal is no longer a favorite", meal);
         _favoriteMeals.remove(meal);
       });
     } else {
       setState(() {
+        updateSnackBarMessage("Meal is added to a favorite", meal);
         _favoriteMeals.add(meal);
       });
     }
+  }
+
+  void updateSnackBarMessage(String message, Meal meal){
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+      content: Text(message),
+      action: SnackBarAction(label: 'undo', onPressed: () {
+        setState(() { 
+          if (_favoriteMeals.contains(meal)) {
+            _favoriteMeals.remove(meal);
+          } else {
+            _favoriteMeals.add(meal);
+          }
+        });
+      }),
+    ));
   }
 
   @override
@@ -45,13 +62,9 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
   @override
   Widget build(BuildContext context) {
 
-    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites) : MealsScreen(meals: _favoriteMeals, title: "", updateFavMeals: updateFavorites);
-    _activeTitle = selectedIndex == 0 ? 'Meals App' : 'Favorites';
+    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites) : MealsScreen(meals: _favoriteMeals, title: "Favorites", updateFavMeals: updateFavorites);
 
     return Scaffold(
-      appBar: AppBar(
-        title:  Text(_activeTitle),
-      ),
       body: _activeScreen,
       bottomNavigationBar: BottomNavigationBar(
         onTap: (value) => setActiveScreen(value),
