@@ -4,11 +4,11 @@ import 'package:flutter_application/meals_app/model/meal.dart';
 import 'package:flutter_application/meals_app/model/meal_category.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/category_grid_item.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MealsLauncher extends StatelessWidget {
-  const MealsLauncher({super.key});
+  const MealsLauncher({super.key, required this.updateFavMeals});
 
+  final void Function(Meal meal) updateFavMeals;
 
   void selectedCategory(BuildContext context, MealCategory selectedCategory) {
     Navigator.of(context).push(
@@ -17,6 +17,7 @@ class MealsLauncher extends StatelessWidget {
           return MealsScreen(
             title: selectedCategory.title,
             meals: mealByCategory(selectedCategory),
+            updateFavMeals: updateFavMeals,
           );
         },
       ),

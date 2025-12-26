@@ -4,28 +4,12 @@ import 'package:flutter_application/meals_app/screens/meal_detail_screen.dart';
 import 'package:flutter_application/meals_app/widgets/meal_widget_metadata.dart';
 import 'package:transparent_image/transparent_image.dart';
 
+
 class MealItemWidget extends StatelessWidget {
-  const MealItemWidget({super.key, required this.meal});
+  const MealItemWidget({super.key, required this.meal, required this.updateFavMeals});
 
   final Meal meal;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(meal.title),
-      leading: CircleAvatar(
-        backgroundImage: NetworkImage(meal.imageUrl),
-      ),
-      subtitle: Text(
-          '${meal.duration} min - ${meal.complexity.name} - ${meal.affordability.name}'),
-    );
-  }
-}
-
-class MealItemStackWidget extends StatelessWidget {
-  const MealItemStackWidget({super.key, required this.meal});
-
-  final Meal meal;
+  final void Function(Meal meal) updateFavMeals;
 
   void onSelectMeal(BuildContext context, Meal selectedMeal) {
      Navigator.of(context).push(
@@ -34,6 +18,7 @@ class MealItemStackWidget extends StatelessWidget {
           return MealDetailScreen(
             title: selectedMeal.title,
             meal: selectedMeal,
+            updateFavMeals: updateFavMeals,
           );
         },
       ),
@@ -43,6 +28,7 @@ class MealItemStackWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
           ClipRRect(

@@ -4,16 +4,26 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 class MealDetailScreen extends StatelessWidget {
-  const MealDetailScreen({super.key, required this.title, required this.meal});
+  const MealDetailScreen({super.key, required this.title, required this.meal, required this.updateFavMeals});
 
   final String title;
   final Meal meal;
+
+  final void Function(Meal meal) updateFavMeals;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              updateFavMeals(meal);
+            },
+            icon: const Icon(Icons.favorite),
+          ),
+        ],
         title: Text(
           title,
           style: GoogleFonts.aBeeZee(
