@@ -17,7 +17,7 @@ class _QuizScreenState extends State<QuizScreen> {
   var currentQuestionIndex = 0;
   final List<String> selectedAnswers = [];
 
-  void answerButtonTapped(answer) {
+  void answerButtonTapped(String answer) {
     widget.updateSelectedAnswers(answer); 
     showNextQuestion();
   }

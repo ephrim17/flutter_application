@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
 import 'package:flutter_application/meals_app/widgets/meal_widget.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MealsScreen extends StatelessWidget {
   const MealsScreen({super.key, required this.meals, required this.title});

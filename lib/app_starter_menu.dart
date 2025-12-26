@@ -17,7 +17,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
 
   var activeScreen = "app-start-screen";
 
-  void selectedMenu(screen) {
+  void selectedMenu(String screen) {
     setState(() {
       activeScreen = screen;
     });
@@ -38,13 +38,13 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     var mealsDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
 
     if (activeScreen == 'Quiz App') { 
-      return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer,  const QuizLauncher(), quizColorScheme, quizDarkColorScheme);
+      return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer, QuizLauncher(restartQuiz: selectedMenu), quizColorScheme, quizDarkColorScheme);
     } else if (activeScreen == 'Dice App') { 
       return (null, null, const DiceLauncher(), null, null);
     } else if (activeScreen == 'Expense App'){
-      return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, const ExpenseLauncher(), expenseColorScheme, expenseDarkColorScheme);
+      return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, ExpenseLauncher(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer,  const MealsTabScreen(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer, MealsTabScreen(), mealsColorScheme, mealsDarkColorScheme);
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
