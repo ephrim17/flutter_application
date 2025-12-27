@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
+import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';
 import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
+import 'package:flutter_application/meals_app/widgets/side_drawer.dart';
 
 class MealsTabScreen extends StatefulWidget {
   const MealsTabScreen({super.key});
@@ -14,6 +16,7 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
 
   Widget? _activeScreen;
   int selectedIndex = 0;
+  String title = "Meals App";
 
   final List<Meal> _favoriteMeals = [];
 
@@ -21,6 +24,17 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
     setState(() {
       selectedIndex = index;
     });
+  }
+
+  void _onSelectedMenu(String menu) {
+    Navigator.of(context).pop();
+    if (menu == 'meal') {
+      setActiveScreen(0);
+    } else if (menu == 'filter') {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => FilterMealsScreen(),
+      ));
+    }
   }
 
   void updateFavorites(Meal meal) {
@@ -62,10 +76,15 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
   @override
   Widget build(BuildContext context) {
 
-    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites) : MealsScreen(meals: _favoriteMeals, title: "Favorites", updateFavMeals: updateFavorites);
+    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites) : MealsScreen(meals: _favoriteMeals, title: "", updateFavMeals: updateFavorites, showAppBar: false);
+    title = selectedIndex == 0 ? "Meals" : "Your Favorites";
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
       body: _activeScreen,
+      drawer: SideDrawer(onSelectedMenu: _onSelectedMenu),
       bottomNavigationBar: BottomNavigationBar(
         onTap: (value) => setActiveScreen(value),
         currentIndex: selectedIndex,
