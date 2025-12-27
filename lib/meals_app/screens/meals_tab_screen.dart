@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/meals_app/mock_data/dummy_data.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
 import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';
 import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/side_drawer.dart';
+
+
+const kInitialFilters = {
+  Filter.glutenFree: false,
+};
 
 class MealsTabScreen extends StatefulWidget {
   const MealsTabScreen({super.key});
@@ -19,6 +25,8 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
   String title = "Meals App";
 
   final List<Meal> _favoriteMeals = [];
+  List<Meal> availableMeals = [];
+  Map<Filter, bool> selectedFilters = kInitialFilters;
 
   void setActiveScreen(int index){
     setState(() {
@@ -26,14 +34,19 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
     });
   }
 
-  void _onSelectedMenu(String menu) {
+  void _onSelectedMenu(String menu) async {
     Navigator.of(context).pop();
     if (menu == 'meal') {
       setActiveScreen(0);
     } else if (menu == 'filter') {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (context) => FilterMealsScreen(),
+      print("<<< before push Filters: $selectedFilters");
+      final result = await Navigator.of(context).push<Map<Filter, bool>>(MaterialPageRoute(
+        builder: (context) => FilterMealsScreen(currentFilters: selectedFilters),
       ));
+      setState(() {
+        selectedFilters = result ?? kInitialFilters;
+      });
+      print("<<< Updated Filters: $selectedFilters");
     }
   }
 
@@ -67,16 +80,22 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
     ));
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _activeScreen = MealsLauncher(updateFavMeals: updateFavorites);
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _activeScreen = MealsLauncher(updateFavMeals: updateFavorites, availableMeals: ,);
+  // }
 
   @override
   Widget build(BuildContext context) {
+    availableMeals = dummyMeals.where((meal) {
+      if (!meal.isGlutenFree && selectedFilters[Filter.glutenFree]!) {
+        return false;
+      }
+      return true;
+    }).toList();
 
-    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites) : MealsScreen(meals: _favoriteMeals, title: "", updateFavMeals: updateFavorites, showAppBar: false);
+    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites, availableMeals: availableMeals) : MealsScreen(meals: _favoriteMeals, title: "", updateFavMeals: updateFavorites, showAppBar: false);
     title = selectedIndex == 0 ? "Meals" : "Your Favorites";
 
     return Scaffold(

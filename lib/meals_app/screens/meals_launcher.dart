@@ -6,9 +6,10 @@ import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/category_grid_item.dart';
 
 class MealsLauncher extends StatelessWidget {
-  const MealsLauncher({super.key, required this.updateFavMeals});
+  const MealsLauncher({super.key, required this.updateFavMeals, required this.availableMeals});
 
   final void Function(Meal meal) updateFavMeals;
+  final List<Meal> availableMeals;
 
   void selectedCategory(BuildContext context, MealCategory selectedCategory) {
     Navigator.of(context).push(
@@ -26,7 +27,7 @@ class MealsLauncher extends StatelessWidget {
   }
 
   List<Meal> mealByCategory(MealCategory category) {
-    return dummyMeals.where((meal) => meal.categories.contains(category.id)).toList();
+    return availableMeals.where((meal) => meal.categories.contains(category.id)).toList();
   }
 
   @override
