@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/mock_data/dummy_data.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
+import 'package:flutter_application/meals_app/providers/meals_provider.dart';
 import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';
 import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/side_drawer.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 
 const kInitialFilters = {
   Filter.glutenFree: false,
 };
 
-class MealsTabScreen extends StatefulWidget {
+class MealsTabScreen extends ConsumerStatefulWidget {
   const MealsTabScreen({super.key});
 
   @override
-  State<MealsTabScreen> createState() => _MealsTabScreenState();
+  ConsumerState<MealsTabScreen> createState() => _MealsTabScreenState();
 }
 
-class _MealsTabScreenState extends State<MealsTabScreen> {
+class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
 
   Widget? _activeScreen;
   int selectedIndex = 0;
@@ -39,14 +41,12 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
     if (menu == 'meal') {
       setActiveScreen(0);
     } else if (menu == 'filter') {
-      print("<<< before push Filters: $selectedFilters");
       final result = await Navigator.of(context).push<Map<Filter, bool>>(MaterialPageRoute(
         builder: (context) => FilterMealsScreen(currentFilters: selectedFilters),
       ));
       setState(() {
         selectedFilters = result ?? kInitialFilters;
       });
-      print("<<< Updated Filters: $selectedFilters");
     }
   }
 
@@ -88,7 +88,9 @@ class _MealsTabScreenState extends State<MealsTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    availableMeals = dummyMeals.where((meal) {
+    //using provider to get meals
+    final meals = ref.watch(mealsProvider);
+    availableMeals = meals.where((meal) {
       if (!meal.isGlutenFree && selectedFilters[Filter.glutenFree]!) {
         return false;
       }
