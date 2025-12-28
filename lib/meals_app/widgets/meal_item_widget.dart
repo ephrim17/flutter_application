@@ -6,10 +6,9 @@ import 'package:transparent_image/transparent_image.dart';
 
 
 class MealItemWidget extends StatelessWidget {
-  const MealItemWidget({super.key, required this.meal, required this.updateFavMeals});
+  const MealItemWidget({super.key, required this.meal});
 
   final Meal meal;
-  final void Function(Meal meal) updateFavMeals;
 
   void onSelectMeal(BuildContext context, Meal selectedMeal) {
      Navigator.of(context).push(
@@ -18,7 +17,6 @@ class MealItemWidget extends StatelessWidget {
           return MealDetailScreen(
             title: selectedMeal.title,
             meal: selectedMeal,
-            updateFavMeals: updateFavMeals,
           );
         },
       ),

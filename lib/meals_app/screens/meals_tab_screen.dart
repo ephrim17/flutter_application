@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
+import 'package:flutter_application/meals_app/providers/favorites_provider.dart';
 import 'package:flutter_application/meals_app/providers/meals_provider.dart';
 import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';
 import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
@@ -25,7 +26,6 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
   int selectedIndex = 0;
   String title = "Meals App";
 
-  final List<Meal> _favoriteMeals = [];
   List<Meal> availableMeals = [];
   Map<Filter, bool> selectedFilters = kInitialFilters;
 
@@ -49,42 +49,6 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
     }
   }
 
-  void updateFavorites(Meal meal) {
-    if (_favoriteMeals.contains(meal)) {
-      setState(() {
-        updateSnackBarMessage("Meal is no longer a favorite", meal);
-        _favoriteMeals.remove(meal);
-      });
-    } else {
-      setState(() {
-        updateSnackBarMessage("Meal is added to a favorite", meal);
-        _favoriteMeals.add(meal);
-      });
-    }
-  }
-
-  void updateSnackBarMessage(String message, Meal meal){
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-      content: Text(message),
-      action: SnackBarAction(label: 'undo', onPressed: () {
-        setState(() { 
-          if (_favoriteMeals.contains(meal)) {
-            _favoriteMeals.remove(meal);
-          } else {
-            _favoriteMeals.add(meal);
-          }
-        });
-      }),
-    ));
-  }
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _activeScreen = MealsLauncher(updateFavMeals: updateFavorites, availableMeals: ,);
-  // }
-
   @override
   Widget build(BuildContext context) {
     //using provider to get meals
@@ -96,7 +60,16 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
       return true;
     }).toList();
 
-    _activeScreen = selectedIndex == 0 ?  MealsLauncher(updateFavMeals: updateFavorites, availableMeals: availableMeals) : MealsScreen(meals: _favoriteMeals, title: "", updateFavMeals: updateFavorites, showAppBar: false);
+    if (selectedIndex == 0) {
+      //final favoriteMeals = ref.watch(favoriteMealProvider).toList();
+      _activeScreen = MealsLauncher(availableMeals: availableMeals);
+    } else {
+      _activeScreen = MealsScreen(
+        title: "Your Favorites",
+        meals: ref.watch(favoriteMealProvider)
+      );
+    }
+
     title = selectedIndex == 0 ? "Meals" : "Your Favorites";
 
     return Scaffold(

@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
+import 'package:flutter_application/meals_app/providers/favorites_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:transparent_image/transparent_image.dart';
 
-class MealDetailScreen extends StatelessWidget {
-  const MealDetailScreen({super.key, required this.title, required this.meal, required this.updateFavMeals});
+class MealDetailScreen extends ConsumerWidget {
+  const MealDetailScreen({super.key, required this.title, required this.meal});
 
   final String title;
   final Meal meal;
 
-  final void Function(Meal meal) updateFavMeals;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+
+  void updateSnackBarMessage(String message, Meal meal){
+    ScaffoldMessenger.of(context).clearMaterialBanners();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+      content: Text(message),
+    ));
+  }
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         actions: [
           IconButton(
             onPressed: () {
-              updateFavMeals(meal);
+              // Handle favorite toggle
+              ref
+                .read(favoriteMealProvider.notifier)
+                .toggleFavoriteStatus(meal);
+              final isFavorite = ref.read(favoriteMealProvider).contains(meal);
+              final message = isFavorite ? 'Meal added to favorites.' : 'Meal removed from favorites.';
+              updateSnackBarMessage(message, meal);
             },
             icon: const Icon(Icons.favorite),
           ),
