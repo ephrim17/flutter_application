@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/meals_app/mock_data/dummy_data.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
 import 'package:flutter_application/meals_app/providers/meals_provider.dart';
 import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:riverpod/riverpod.dart';
 class FilterMealsScreen extends StatefulWidget {
   const FilterMealsScreen({super.key, required this.currentFilters});
 
