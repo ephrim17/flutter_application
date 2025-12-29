@@ -11,41 +11,46 @@ class MealDetailScreen extends ConsumerWidget {
   final String title;
   final Meal meal;
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
   void updateSnackBarMessage(String message, Meal meal){
     ScaffoldMessenger.of(context).clearMaterialBanners();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
       content: Text(message),
+      duration: const Duration(seconds: 1),
     ));
   }
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Handle favorite toggle
-              ref
-                .read(favoriteMealProvider.notifier)
-                .toggleFavoriteStatus(meal);
-              final isFavorite = ref.read(favoriteMealProvider).contains(meal);
-              final message = isFavorite ? 'Meal added to favorites.' : 'Meal removed from favorites.';
-              updateSnackBarMessage(message, meal);
-            },
-            icon: const Icon(Icons.favorite),
-          ),
-        ],
-        title: Text(
-          title,
-          style: GoogleFonts.aBeeZee(
-          color: Theme.of(context).textTheme.titleLarge?.color),
+  void toggleFavoriteStatus() {
+      ref.read(favoriteMealProvider.notifier).toggleFavoriteStatus(meal);
+      final isFavorite = ref.read(favoriteMealProvider).contains(meal);
+      final message = isFavorite
+          ? 'Meal added to favorites.'
+          : 'Meal removed from favorites.';
+      updateSnackBarMessage(message, meal);
+    }
+
+  final isFavorite = ref.watch(favoriteMealProvider).contains(meal);
+  final iconName = isFavorite ? Icons.favorite : Icons.favorite_border;
+
+  return Scaffold(
+    appBar: AppBar(
+      centerTitle: true,
+      actions: [
+        IconButton(
+          onPressed: () {
+            toggleFavoriteStatus();
+          },
+          icon: Icon(iconName),
         ),
+      ],
+      title: Text(
+        title,
+        style: GoogleFonts.aBeeZee(
+        color: Theme.of(context).textTheme.titleLarge?.color),
       ),
+    ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(18.0),
