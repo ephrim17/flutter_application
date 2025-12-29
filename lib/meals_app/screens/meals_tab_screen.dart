@@ -7,7 +7,7 @@ import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
 import 'package:flutter_application/meals_app/widgets/side_drawer.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
+import 'package:flutter_application/meals_app/providers/filters_provider.dart';
 
 const kInitialFilters = {
   Filter.glutenFree: false,
@@ -40,12 +40,9 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
     if (menu == 'meal') {
       setActiveScreen(0);
     } else if (menu == 'filter') {
-      final result = await Navigator.of(context).push<Map<Filter, bool>>(MaterialPageRoute(
-        builder: (context) => FilterMealsScreen(currentFilters: selectedFilters),
+      final result = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => FilterMealsScreen(),
       ));
-      setState(() {
-        selectedFilters = result ?? kInitialFilters;
-      });
     }
   }
 
@@ -53,6 +50,8 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
   Widget build(BuildContext context) {
     //using provider to get meals
     final meals = ref.watch(mealsProvider);
+    final selectionMeals = ref.watch(filterProvider);
+    selectedFilters = selectionMeals;
     availableMeals = meals.where((meal) {
       if (!meal.isGlutenFree && selectedFilters[Filter.glutenFree]!) {
         return false;

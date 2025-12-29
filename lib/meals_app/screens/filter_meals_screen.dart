@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-class FilterMealsScreen extends StatefulWidget {
-  const FilterMealsScreen({super.key, required this.currentFilters});
+import 'package:flutter_application/meals_app/providers/filters_provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-  final Map<Filter, bool> currentFilters;
+class FilterMealsScreen extends ConsumerStatefulWidget {
+  const FilterMealsScreen({super.key});
 
   @override
-  State<FilterMealsScreen> createState() => _FilterMealsScreenState();
+  ConsumerState<FilterMealsScreen> createState() => _FilterMealsScreenState();
 }
 
-class _FilterMealsScreenState extends State<FilterMealsScreen> {
+class _FilterMealsScreenState extends ConsumerState<FilterMealsScreen> {
 
   bool _glutenFreeFilterSet = false;
 
@@ -30,7 +31,8 @@ class _FilterMealsScreenState extends State<FilterMealsScreen> {
   @override
   void initState() {
     super.initState();
-    _glutenFreeFilterSet = widget.currentFilters[Filter.glutenFree] ?? false;
+    final activeFilter = ref.read(filterProvider);
+    _glutenFreeFilterSet = activeFilter[Filter.glutenFree]!;
   }
 
   @override
@@ -44,9 +46,10 @@ class _FilterMealsScreenState extends State<FilterMealsScreen> {
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic result) {
           if (didPop) return;
-          Navigator.of(context).pop({
+          ref.read(filterProvider.notifier).setFilter({
             Filter.glutenFree: _glutenFreeFilterSet,
           });
+          Navigator.of(context).pop(result);
         },
         child: Column(
           children: [
@@ -62,8 +65,4 @@ class _FilterMealsScreenState extends State<FilterMealsScreen> {
       ),
     );
   }
-}
-
-enum Filter {
-  glutenFree,
 }
