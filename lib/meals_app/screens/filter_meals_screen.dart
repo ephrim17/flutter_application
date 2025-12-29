@@ -2,67 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/providers/filters_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class FilterMealsScreen extends ConsumerStatefulWidget {
+class FilterMealsScreen extends ConsumerWidget {
   const FilterMealsScreen({super.key});
 
   @override
-  ConsumerState<FilterMealsScreen> createState() => _FilterMealsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
 
-class _FilterMealsScreenState extends ConsumerState<FilterMealsScreen> {
+    final activeFilters = ref.watch(filterProvider);
 
-  bool _glutenFreeFilterSet = false;
-
-  void onChanged(bool newValue) {
-    setState(() {
-      _glutenFreeFilterSet = newValue;
-    });
-  }
-
-  // void _onSelectedMenu(String menu) {
-  //   Navigator.of(context).pop();
-  //   if (menu == 'meal') {
-  //     Navigator.pushReplacement(context, MaterialPageRoute(
-  //       builder: (context) => MealsTabScreen(),
-  //     ));
-  //   }
-  // }
-
-  @override
-  void initState() {
-    super.initState();
-    final activeFilter = ref.read(filterProvider);
-    _glutenFreeFilterSet = activeFilter[Filter.glutenFree]!;
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Filter Meals"),
       ),
       //drawer: SideDrawer(onSelectedMenu: _onSelectedMenu),
-      body: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (bool didPop, dynamic result) {
-          if (didPop) return;
-          ref.read(filterProvider.notifier).setFilter({
-            Filter.glutenFree: _glutenFreeFilterSet,
-          });
-          Navigator.of(context).pop(result);
-        },
-        child: Column(
+      body: Column(
           children: [
             SwitchListTile(
               title: const Text("Gluten-free"),
               subtitle: const Text("Only include gluten-free meals"),
-              value: _glutenFreeFilterSet,
-              onChanged: onChanged,
+              value: activeFilters[Filter.glutenFree]!,
+              onChanged: (newValue) {
+                ref.read(filterProvider.notifier).setFilter({
+                  Filter.glutenFree: newValue,
+                });
+              },
               activeColor: Theme.of(context).colorScheme.primary,
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

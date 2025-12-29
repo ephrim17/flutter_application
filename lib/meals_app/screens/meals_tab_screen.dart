@@ -40,7 +40,7 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
     if (menu == 'meal') {
       setActiveScreen(0);
     } else if (menu == 'filter') {
-      final result = await Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => FilterMealsScreen(),
       ));
     }
