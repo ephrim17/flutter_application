@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/meals_app/model/meal.dart';
 import 'package:flutter_application/meals_app/providers/favorites_provider.dart';
-import 'package:flutter_application/meals_app/providers/meals_provider.dart';
+import 'package:flutter_application/meals_app/providers/filtered_meals_provider.dart';
 import 'package:flutter_application/meals_app/screens/filter_meals_screen.dart';
 import 'package:flutter_application/meals_app/screens/meals_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_screen.dart';
@@ -49,16 +49,7 @@ class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
   @override
   Widget build(BuildContext context) {
     //using provider to get meals
-    final meals = ref.watch(mealsProvider);
-    final selectionMeals = ref.watch(filterProvider);
-    selectedFilters = selectionMeals;
-    availableMeals = meals.where((meal) {
-      if (!meal.isGlutenFree && selectedFilters[Filter.glutenFree]!) {
-        return false;
-      }
-      return true;
-    }).toList();
-
+    availableMeals = ref.watch(filteredMealsProvider);
     if (selectedIndex == 0) {
       //final favoriteMeals = ref.watch(favoriteMealProvider).toList();
       _activeScreen = MealsLauncher(availableMeals: availableMeals);
