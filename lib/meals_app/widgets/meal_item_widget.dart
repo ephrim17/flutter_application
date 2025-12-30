@@ -29,11 +29,14 @@ class MealItemWidget extends StatelessWidget {
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: FadeInImage.memoryNetwork(
-              placeholder: kTransparentImage,
-              image: meal.imageUrl,
+          Hero(
+            tag: meal.id,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: FadeInImage.memoryNetwork(
+                placeholder: kTransparentImage,
+                image: meal.imageUrl,
+              ),
             ),
           ),
           Positioned(
