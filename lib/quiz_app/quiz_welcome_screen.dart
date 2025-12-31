@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class QuizWelcomeScreen extends StatelessWidget {
-  const QuizWelcomeScreen({super.key, required this.startQuiz, required this.restartQuiz});
+  const QuizWelcomeScreen({super.key, required this.startQuiz, required this.restartApp});
 
   final void Function(String value) startQuiz;
-  final void Function(String value) restartQuiz;
+  final void Function(String value) restartApp;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class QuizWelcomeScreen extends StatelessWidget {
             alignment: Alignment.topRight,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: HomeButton(startQuiz: startQuiz, restartQuiz: restartQuiz,),
+              child: HomeButton(startQuiz: startQuiz, restartApp: restartApp,),
             ),
           ),
         ),
@@ -66,16 +66,16 @@ class HomeButton extends StatelessWidget {
   const HomeButton({
     super.key,
     required this.startQuiz,
-    required this.restartQuiz,
+    required this.restartApp,
   });
 
   final void Function(String value) startQuiz;
-  final void Function(String value) restartQuiz;
+  final void Function(String value) restartApp;
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: () => restartQuiz("quiz-screen"),
+      onPressed: () => restartApp("app-start-screen"),
       icon: const Icon(
         Icons.home,
         color: Colors.white70,

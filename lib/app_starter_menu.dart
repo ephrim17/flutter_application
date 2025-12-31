@@ -4,6 +4,7 @@ import 'package:flutter_application/dice_app/dice_launcher.dart';
 import 'package:flutter_application/expense_app/expense_launcher.dart';
 import 'package:flutter_application/meals_app/screens/meals_tab_screen.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
+import 'package:flutter_application/shopping_list_app/shopping_list_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppStarterMenu extends StatefulWidget {
@@ -37,14 +38,19 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     var mealsColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
     var mealsDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
 
-    if (activeScreen == 'Quiz App') { 
-      return (quizColorScheme.primary , quizDarkColorScheme.onPrimaryContainer, QuizLauncher(restartQuiz: selectedMenu), quizColorScheme, quizDarkColorScheme);
-    } else if (activeScreen == 'Dice App') { 
+    var shoppingListColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 50, 58, 60),);
+    var shoppingListDarkColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 85, 87, 87),);
+
+    if (activeScreen == 'Quiz App') {
+      return (quizColorScheme.primary, quizDarkColorScheme.onPrimaryContainer, QuizLauncher(restartApp: selectedMenu), quizColorScheme, quizDarkColorScheme);
+    } else if (activeScreen == 'Dice App') {
       return (null, null, const DiceLauncher(), null, null);
     } else if (activeScreen == 'Expense App'){
       return (expenseColorScheme.onInverseSurface, expenseDarkColorScheme.onPrimaryContainer, ExpenseLauncher(), expenseColorScheme, expenseDarkColorScheme);
     } else if (activeScreen == "Meals App") {
-      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer, MealsTabScreen(), mealsColorScheme, mealsDarkColorScheme);
+      return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer, MealsTabLauncher(), mealsColorScheme, mealsDarkColorScheme);
+    } else if (activeScreen == "Shopping List App") {
+      return (shoppingListColorScheme.onInverseSurface, shoppingListDarkColorScheme.onPrimaryContainer, ShoppingListLauncher(restartApp: selectedMenu), shoppingListColorScheme, shoppingListDarkColorScheme);
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }

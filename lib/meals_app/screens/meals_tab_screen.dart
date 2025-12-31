@@ -13,14 +13,14 @@ const kInitialFilters = {
   Filter.glutenFree: false,
 };
 
-class MealsTabScreen extends ConsumerStatefulWidget {
-  const MealsTabScreen({super.key});
+class MealsTabLauncher extends ConsumerStatefulWidget {
+  const MealsTabLauncher({super.key});
 
   @override
-  ConsumerState<MealsTabScreen> createState() => _MealsTabScreenState();
+  ConsumerState<MealsTabLauncher> createState() => _MealsTabLauncherState();
 }
 
-class _MealsTabScreenState extends ConsumerState<MealsTabScreen> {
+class _MealsTabLauncherState extends ConsumerState<MealsTabLauncher> {
 
   Widget? _activeScreen;
   int selectedIndex = 0;

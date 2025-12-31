@@ -4,7 +4,7 @@ import 'package:flutter_application/quiz_app/answerbutton.dart';
 class AppStarterScreen extends StatelessWidget {
   AppStarterScreen({super.key, required this.selectedMenu});
 
-  final menuItems = ['Quiz App', 'Expense App', 'Dice App', 'Meals App'];
+  final menuItems = ['Quiz App', 'Expense App', 'Dice App', 'Meals App', 'Shopping List App'];
   final void Function(String value) selectedMenu;
 
   @override

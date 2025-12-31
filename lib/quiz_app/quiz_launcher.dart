@@ -5,8 +5,8 @@ import 'package:flutter_application/quiz_app/quiz_welcome_screen.dart';
 import 'package:flutter_application/quiz_app/result_screen.dart';
 
 class QuizLauncher extends StatefulWidget {
-  const QuizLauncher({super.key, required this.restartQuiz});
-  final void Function(String value) restartQuiz;
+  const QuizLauncher({super.key, required this.restartApp});
+  final void Function(String value) restartApp;
 
   @override
   State<QuizLauncher> createState() => QuizLauncherState();
@@ -34,12 +34,12 @@ class QuizLauncherState extends State<QuizLauncher> {
 
   @override
   Widget build(BuildContext context) {
-    Widget screenWidget = QuizWelcomeScreen(startQuiz: setActiveScreen, restartQuiz: widget.restartQuiz);
+    Widget screenWidget = QuizWelcomeScreen(startQuiz: setActiveScreen, restartApp: widget.restartApp);
 
     if (activeScreen == 'quiz-screen') {
          screenWidget = QuizScreen(updateSelectedAnswers);
     } else if (activeScreen == 'start-screen') { 
-        screenWidget = QuizWelcomeScreen(startQuiz: setActiveScreen, restartQuiz: widget.restartQuiz);
+        screenWidget = QuizWelcomeScreen(startQuiz: setActiveScreen, restartApp: widget.restartApp);
     } else {
       screenWidget = ResultScreen(setActiveScreen, chosenAnswers: selectedAnswers);
       selectedAnswers = [];
