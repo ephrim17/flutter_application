@@ -38,8 +38,8 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     var mealsColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
     var mealsDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 26, 63));
 
-    var shoppingListColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 50, 58, 60),);
-    var shoppingListDarkColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 85, 87, 87),);
+    var shoppingListColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 53, 53, 53),);
+    var shoppingListDarkColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 211, 249, 249),);
 
     if (activeScreen == 'Quiz App') {
       return (quizColorScheme.primary, quizDarkColorScheme.onPrimaryContainer, QuizLauncher(restartApp: selectedMenu), quizColorScheme, quizDarkColorScheme);
@@ -50,7 +50,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     } else if (activeScreen == "Meals App") {
       return (mealsColorScheme.onInverseSurface , mealsColorScheme.onPrimaryContainer, MealsTabLauncher(), mealsColorScheme, mealsDarkColorScheme);
     } else if (activeScreen == "Shopping List App") {
-      return (shoppingListColorScheme.onInverseSurface, shoppingListDarkColorScheme.onPrimaryContainer, ShoppingListLauncher(restartApp: selectedMenu), shoppingListColorScheme, shoppingListDarkColorScheme);
+      return (shoppingListColorScheme.onPrimary, shoppingListDarkColorScheme.onSecondary, ShoppingListLauncher(restartApp: selectedMenu), shoppingListColorScheme, shoppingListDarkColorScheme);
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
