@@ -19,7 +19,7 @@ class _NewExpenseState extends State<NewExpense> {
 DateTime? expenseDate;
 String expenseName = '';
 String expenseAmount = '';
-Category categorySelected = Category.leisure;
+ExpenseCategory categorySelected = ExpenseCategory.leisure;
 final dateFormatter = DateFormat.yMd();
 
   void expenseNameFieldChanged(value){
@@ -147,7 +147,7 @@ Future<void> presentDatePicker() async {
                 const SizedBox(width: 20.0,),
                 DropdownButton(
                       value: categorySelected,
-                      items: Category.values
+                      items: ExpenseCategory.values
                           .map(
                             (item) => DropdownMenuItem(
                               value: item,

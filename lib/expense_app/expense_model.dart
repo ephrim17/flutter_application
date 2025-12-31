@@ -3,7 +3,7 @@ import "package:uuid/uuid.dart";
 
 const uuid = Uuid();
 
-enum Category {
+enum ExpenseCategory {
   food,
   travel,
   leisure,
@@ -11,10 +11,10 @@ enum Category {
 }
 
 const categoryIcons = {
-  Category.food: Icons.lunch_dining,
-  Category.travel: Icons.travel_explore,
-  Category.leisure: Icons.leaderboard,
-  Category.work: Icons.work,
+  ExpenseCategory.food: Icons.lunch_dining,
+  ExpenseCategory.travel: Icons.travel_explore,
+  ExpenseCategory.leisure: Icons.leaderboard,
+  ExpenseCategory.work: Icons.work,
 };
 
 class Expense {
@@ -22,7 +22,7 @@ class Expense {
     final String title;
     final num amount;
     final DateTime date;
-    final Category type;
+    final ExpenseCategory type;
 
     Expense({
       required this.title,
@@ -42,7 +42,7 @@ class ExpenseBucket {
  ExpenseBucket.forCategory(List<Expense> allExpenses,  this.category)
   : expenses = allExpenses.where((item) => item.type == category).toList();
 
-  final Category category;
+  final ExpenseCategory category;
   final List<Expense> expenses;
 
   double get totalExpenses {

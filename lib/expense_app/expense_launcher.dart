@@ -16,8 +16,8 @@ class ExpenseLauncher extends StatefulWidget {
 class _ExpenseLauncherState extends State<ExpenseLauncher> {
 
   final List<Expense> mockExpenses = [
-   Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: Category.work),
-  //  Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: Category.leisure)
+   Expense(title: "Flutter", amount: 250, date: DateTime.now(), type: ExpenseCategory.work),
+  //  Expense(title: "Flutter 2", amount: 350, date: DateTime.now(), type: ExpenseCategory.leisure)
   ];
 
   
