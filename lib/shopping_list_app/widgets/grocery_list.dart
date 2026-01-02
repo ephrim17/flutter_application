@@ -17,11 +17,14 @@ class _GroceryListState extends State<GroceryList> {
   Widget build(BuildContext context) {
   
     void addNewItem() {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (ctx) => NewItem(),
-        ),
-      );
+      showModalBottomSheet(
+        isScrollControlled: true,
+        context: context, 
+        useSafeArea: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        builder: (ctx) {
+          return NewItem();
+      });
     } 
 
    return Scaffold(
