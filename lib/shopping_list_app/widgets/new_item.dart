@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/quiz_app/answerbutton.dart';
 import 'package:flutter_application/shopping_list_app/model/categories_data.dart';
+import 'package:flutter_application/shopping_list_app/model/grocery_model.dart';
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -21,6 +22,16 @@ class _NewItemState extends State<NewItem> {
     if (currentState != null) {
       currentState.save();
       currentState.validate();
+      if (itemName.isNotEmpty && itemQuantity > 0) {
+        Navigator.of(context).pop(
+          GroceryItem(
+            id: DateTime.now().toString(),
+            name: itemName,
+            quantity: itemQuantity,
+            category: itemCategory,
+          ),
+        );
+      }
     }
   }
 
