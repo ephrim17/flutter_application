@@ -1,16 +1,55 @@
 {
-  "hosting": {
-    "public": "build/web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  }
+    "hosting": {
+        "public": "build/web",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+                "source": "**",
+                "destination": "/index.html"
+            }
+        ]
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "flutterlearning-c9f6c",
+                    "appId": "1:527118580197:android:e2a54aa637be8f1f86d70c",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "flutterlearning-c9f6c",
+                    "appId": "1:527118580197:ios:1e7030eb2c2444a486d70c",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "macos": {
+                "default": {
+                    "projectId": "flutterlearning-c9f6c",
+                    "appId": "1:527118580197:ios:1e7030eb2c2444a486d70c",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "macos/Runner/GoogleService-Info.plist"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "flutterlearning-c9f6c",
+                    "configurations": {
+                        "android": "1:527118580197:android:e2a54aa637be8f1f86d70c",
+                        "ios": "1:527118580197:ios:1e7030eb2c2444a486d70c",
+                        "macos": "1:527118580197:ios:1e7030eb2c2444a486d70c",
+                        "web": "1:527118580197:web:813d4a31d13b20f586d70c",
+                        "windows": "1:527118580197:web:db2b3008c7bc6d3086d70c"
+                    }
+                }
+            }
+        }
+    }
 }

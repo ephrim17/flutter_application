@@ -30,7 +30,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     var appDefaultColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 97, 21, 212));
     var appDefaultDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 18, 1, 44));
     
-    var expenseColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 213, 104, 9));
+    var expenseColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 158, 203, 33));
     var expenseDarkColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 45, 21, 0));
 
     var quizColorScheme = ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 40, 108, 203));
@@ -62,7 +62,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     // TODO: implement initState
     super.initState();
     var httpService = HttpsService();
-    //httpService.fetchData();
+    httpService.fetchData();
   }
 
 

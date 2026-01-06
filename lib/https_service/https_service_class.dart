@@ -10,7 +10,7 @@ class HttpsService {
     docRef.get().then(
       (DocumentSnapshot doc) {
         final data = doc.data() as Map<String, dynamic>;
-        print("<<object>> Data: ${data['name']}");
+        print("<<object>> Data: ${data['body']}");
       },
       onError: (e) => print("Error getting document: $e"),
     );
