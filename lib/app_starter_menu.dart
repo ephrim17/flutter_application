@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_screen.dart';
 import 'package:flutter_application/dice_app/dice_launcher.dart';
 import 'package:flutter_application/expense_app/expense_launcher.dart';
+import 'package:flutter_application/https_service/https_service_class.dart';
 import 'package:flutter_application/meals_app/screens/meals_tab_screen.dart';
 import 'package:flutter_application/quiz_app/quiz_launcher.dart';
 import 'package:flutter_application/shopping_list_app/shopping_list_launcher.dart';
@@ -54,6 +55,14 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
     } else {
       return (appDefaultColorScheme.onInverseSurface, appDefaultDarkColorScheme.onPrimaryContainer, AppStarterScreen(selectedMenu: selectedMenu), appDefaultColorScheme, appDefaultDarkColorScheme);
     }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    var httpService = HttpsService();
+    //httpService.fetchData();
   }
 
 
