@@ -59,10 +59,16 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     var httpService = HttpsService();
     httpService.fetchData();
+    _fetchAnnouncements(httpService);
+    httpService.postSample();
+  }
+
+  Future<void> _fetchAnnouncements(HttpsService httpService) async {
+    final announcements = await httpService.getSample();
+    //print(announcements);
   }
 
 

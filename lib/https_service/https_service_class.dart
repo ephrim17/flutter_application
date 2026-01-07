@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HttpsService {
   // Define your HTTPS service methods and properties here
@@ -14,5 +16,88 @@ class HttpsService {
       },
       onError: (e) => print("Error getting document: $e"),
     );
+  }
+
+  Future<void> postSample() async {
+  print("<<< post sample called");
+
+  const url =
+      'https://firestore.googleapis.com/v1/projects/flutterlearning-c9f6c/databases/(default)/documents/announcements';
+
+  final response = await http.post(
+    Uri.parse(url),
+    headers: {
+      'Content-Type': 'application/json',
+      // Uncomment if auth is required
+      // 'Authorization': 'Bearer YOUR_FIREBASE_ID_TOKEN',
+    },
+    body: jsonEncode({
+      "fields": {
+        "title": {"stringValue": "Sunday Service"},
+        "body": {"stringValue": "Service starts at 9 AM"},
+        "priority": {"integerValue": "5"}, // must be string
+        "isPinned": {"booleanValue": true},
+        "isActive": {"booleanValue": true},
+        "startAt": {"timestampValue": "2025-01-01T04:00:00Z"},
+        "endAt": {"timestampValue": "2100-01-01T00:00:00Z"},
+        "createdAt": {"timestampValue": "2025-01-01T04:00:00Z"},
+        "updatedAt": {"timestampValue": "2025-01-01T04:00:00Z"}
+      }
+    }),
+  );
+
+  print('Status: ${response.statusCode}');
+  print('Response: ${response.body}');
+
+  if (response.statusCode == 200) {
+    print("Posted Successfully");
+  } else {
+    throw Exception('Post failed');
+  }
+}
+
+  Future<List<Map<String, dynamic>>> getSample() async {
+    const url =
+        'https://firestore.googleapis.com/v1/projects/flutterlearning-c9f6c/databases/(default)/documents/announcements';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        // Uncomment if auth is required
+        // 'Authorization': 'Bearer YOUR_FIREBASE_ID_TOKEN',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch announcements: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final documents = decoded['documents'] as List<dynamic>? ?? [];
+
+    // Convert Firestore typed fields → simple map
+    return documents.map<Map<String, dynamic>>((doc) {
+      final fields = doc['fields'] as Map<String, dynamic>;
+
+      dynamic parseValue(Map<String, dynamic> value) {
+        if (value.containsKey('stringValue')) return value['stringValue'];
+        if (value.containsKey('booleanValue')) return value['booleanValue'];
+        if (value.containsKey('integerValue')) {
+          return int.parse(value['integerValue']);
+        }
+        if (value.containsKey('timestampValue')) {
+          return DateTime.parse(value['timestampValue']);
+        }
+        return null;
+      }
+
+      return {
+        'id': (doc['name'] as String).split('/').last,
+        for (final entry in fields.entries) entry.key: parseValue(entry.value),
+      };
+    }).toList();
   }
 }
