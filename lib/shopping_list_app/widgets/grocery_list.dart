@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/https_service/https_service_class.dart';
 import 'package:flutter_application/shopping_list_app/model/groceries_data.dart';
 import 'package:flutter_application/shopping_list_app/model/grocery_model.dart';
 import 'package:flutter_application/shopping_list_app/widgets/new_item.dart';
@@ -32,13 +33,11 @@ class _GroceryListState extends State<GroceryList> {
       itemBuilder: itemBuilder,
     );
   }
-
-  
   
   @override
   Widget build(BuildContext context) {
   
-    void addNewItem() async{
+    void addNewItem() async {
       final newItem = await showModalBottomSheet<GroceryItem>(
         isScrollControlled: true,
         context: context, 
@@ -49,9 +48,19 @@ class _GroceryListState extends State<GroceryList> {
         },
       );
       if (newItem != null) {
+        final http = HttpsService();
+        await http.addShoppingList(newItem);
         setState(() {
           groceryItems.add(newItem);
         });
+      }
+    }
+
+    void refreshItemLists() async {
+      final http = HttpsService();
+      final loadedEntries = await http.getGroceryItems();
+      for (final item in loadedEntries) {
+        print(item.name);
       }
     }
 
@@ -65,6 +74,9 @@ class _GroceryListState extends State<GroceryList> {
           IconButton(onPressed: (){
             addNewItem();
           }, icon: const Icon(Icons.add_shopping_cart)),
+          IconButton(onPressed: (){
+            refreshItemLists();
+          }, icon: const Icon(Icons.refresh)),
         ],
         title: Text(
           "Shopping List",
