@@ -67,7 +67,7 @@ class _AppStarterMenuState extends State<AppStarterMenu> {
   }
 
   Future<void> _fetchAnnouncements(HttpsService httpService) async {
-    final announcements = await httpService.getSample();
+    //final announcements = await httpService.getSample();
     //print(announcements);
   }
 
