@@ -1,5 +1,5 @@
-import 'package:flutter_application/church_app/models/announcements/announcement_model.dart';
-import 'package:flutter_application/church_app/services/announcements/announcement_fetcher.dart';
+import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
+import 'package:flutter_application/church_app/services/home_section_fetchers/announcement_fetcher.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

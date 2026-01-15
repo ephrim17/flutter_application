@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/announcements/announcement_model.dart';
+import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_crud.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 

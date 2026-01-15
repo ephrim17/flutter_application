@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
-import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
+import 'package:flutter_application/church_app/models/home_section_models/service_model.dart';
+import 'package:flutter_application/church_app/providers/home_sections/service_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AnnouncementWidget implements HomeSection {
-  const AnnouncementWidget();
+class ServicesWidget implements HomeSection {
+  const ServicesWidget();
 
   @override
-  String get id => 'announcements';
+  String get id => 'services';
 
   @override
-  int get order => 10;
+  int get order => 20;
 
   @override
   List<Widget> buildSlivers(BuildContext context) {
@@ -19,7 +19,7 @@ class AnnouncementWidget implements HomeSection {
       SliverToBoxAdapter(
         child: Consumer(
           builder: (context, ref, _) {
-            final asyncBanner = ref.watch(announcementsProvider);
+            final asyncBanner = ref.watch(servicesProvider);
 
             return asyncBanner.when(
               loading: () => const Padding(
@@ -30,7 +30,7 @@ class AnnouncementWidget implements HomeSection {
                 padding: const EdgeInsets.all(16),
                 child: Text('Error: $e'),
               ),
-              data: (items) => _AnnouncementList(items)
+              data: (items) => _ServicesList(items)
             );
           },
         ),
@@ -40,16 +40,16 @@ class AnnouncementWidget implements HomeSection {
 }
 
 
-class _AnnouncementList extends StatelessWidget {
-  const _AnnouncementList(this.items);
-  final List<Announcement> items;
+class _ServicesList extends StatelessWidget {
+  const _ServicesList(this.items);
+  final List<ServiceModel> items;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No announcements'),
+        child: Text('No Services'),
       );
     }
 
@@ -58,7 +58,7 @@ class _AnnouncementList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Announcements"),
+          Text("Our Services"),
           const SizedBox(height: 10,),
           SizedBox(
             height: 120,
@@ -66,7 +66,7 @@ class _AnnouncementList extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+              itemBuilder: (_, i) => _ServicesCard(items[i]),
             ),
           ),
         ],
@@ -75,9 +75,9 @@ class _AnnouncementList extends StatelessWidget {
   }
 }
 
-class _AnnouncementCard extends StatelessWidget {
-  const _AnnouncementCard(this.a);
-  final Announcement a;
+class _ServicesCard extends StatelessWidget {
+  const _ServicesCard(this.a);
+  final ServiceModel a;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +96,7 @@ class _AnnouncementCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          Text(a.body,
+          Text(a.description,
               maxLines: 3, overflow: TextOverflow.ellipsis),
         ],
       ),

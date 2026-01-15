@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/widgets/announcement_widget.dart';
+import 'package:flutter_application/church_app/widgets/services_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -27,13 +28,30 @@ class HomeScreen extends ConsumerWidget {
         }).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
 
+        final slivers = <Widget>[];
+
+          for (final ordered in activeSections) {
+          final spacing = spacingForOrder(ordered.order);
+
+          // 🔹 Add spacing BEFORE section if needed
+          if (spacing > 0) {
+            slivers.add(
+              SliverToBoxAdapter(
+                child: SizedBox(height: spacing),
+              ),
+            );
+          }
+          // 🔹 Add section slivers
+          slivers.addAll(
+            ordered.section.buildSlivers(context),
+          );
+        }
+
         return MaterialApp(
           home: Scaffold(
               appBar: AppBar(title: const Text('Home')),
               body: CustomScrollView(
-                slivers: activeSections
-                    .expand((s) => s.section.buildSlivers(context))
-                    .toList(),
+                slivers: slivers
               )),
         );
       },
@@ -55,6 +73,7 @@ abstract class HomeSection {
 class HomeSectionRegistry {
   static List<HomeSection> all() => const [
         AnnouncementWidget(),
+        ServicesWidget()
       ];
 }
 
@@ -63,4 +82,11 @@ class _OrderedSection {
 
   final HomeSection section;
   final int order;
+}
+
+double spacingForOrder(int order) {
+  if (order == 10) return 20; // Announcements
+  if (order == 20) return 20; // Events
+  // if (order == 30) return 12; // Sermons
+  return 0;
 }
