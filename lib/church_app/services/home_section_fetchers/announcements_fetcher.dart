@@ -3,8 +3,8 @@ import 'package:flutter_application/church_app/models/home_section_models/announ
 import 'package:flutter_application/church_app/services/firestore/firestore_crud.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
-class AnnouncementFetcher extends FirestoreRepository<Announcement> {
-  AnnouncementFetcher(super.db);
+class AnnouncementsFetcher extends FirestoreRepository<Announcement> {
+  AnnouncementsFetcher(super.db);
 
   @override
   CollectionReference<Announcement> collectionRef() {

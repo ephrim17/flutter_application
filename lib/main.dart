@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_menu.dart';
-import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/firebase_options.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,5 +19,5 @@ import 'package:firebase_core/firebase_core.dart';
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform
     );
-    runApp(ProviderScope(child: HomeScreen()));
+    runApp(ProviderScope(child: ChurchTabScreen()));
   }

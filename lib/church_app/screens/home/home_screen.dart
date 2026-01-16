@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/widgets/announcement_widget.dart';
 import 'package:flutter_application/church_app/widgets/events_widget.dart';
+import 'package:flutter_application/church_app/widgets/pastor_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -47,12 +49,8 @@ class HomeScreen extends ConsumerWidget {
           );
         }
 
-        return MaterialApp(
-          home: Scaffold(
-              appBar: AppBar(title: const Text('Home')),
-              body: CustomScrollView(
-                slivers: slivers
-              )),
+        return CustomScrollView(
+            slivers: slivers
         );
       },
     );
@@ -73,7 +71,8 @@ abstract class HomeSection {
 class HomeSectionRegistry {
   static List<HomeSection> all() => const [
         AnnouncementWidget(),
-        EventsWidget()
+        EventsWidget(),
+        PastorWidget()
       ];
 }
 
@@ -82,11 +81,4 @@ class _OrderedSection {
 
   final HomeSection section;
   final int order;
-}
-
-double spacingForOrder(int order) {
-  if (order == 10) return 20; // Announcements
-  if (order == 20) return 20; // Events
-  // if (order == 30) return 12; // Sermons
-  return 0;
 }
