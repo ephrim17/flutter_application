@@ -1,22 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/home_section_models/service_model.dart';
+import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_crud.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
-class ServicesFetcher extends FirestoreRepository<ServiceModel> {
-  ServicesFetcher(super.db);
+class EventsFetcher extends FirestoreRepository<Event> {
+  EventsFetcher(super.db);
 
   @override
-  CollectionReference<ServiceModel> collectionRef() {
+  CollectionReference<Event> collectionRef() {
     return db
-        .collection(FirestorePaths.services)
-        .withConverter<ServiceModel>(
-          fromFirestore: (snap, _) => ServiceModel.fromDoc(snap),
+        .collection(FirestorePaths.events)
+        .withConverter<Event>(
+          fromFirestore: (snap, _) => Event.fromDoc(snap),
           toFirestore: (a, _) => a.toMap(),
         );
   }
 
-  Stream<List<ServiceModel>> watchActiveForBanner({
+  Stream<List<Event>> watchActiveForBanner({
     required DateTime now,
     int limit = 3,
   }) {
@@ -27,7 +27,7 @@ class ServicesFetcher extends FirestoreRepository<ServiceModel> {
         .map((s) => s.docs.map((d) => d.data()).toList());
   }
 
-  Stream<List<ServiceModel>> watchAllActive({
+  Stream<List<Event>> watchAllActive({
     required DateTime now,
     int limit = 50,
   }) {

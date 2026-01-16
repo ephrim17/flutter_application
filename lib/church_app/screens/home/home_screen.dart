@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/widgets/announcement_widget.dart';
-import 'package:flutter_application/church_app/widgets/services_widget.dart';
+import 'package:flutter_application/church_app/widgets/events_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -73,7 +73,7 @@ abstract class HomeSection {
 class HomeSectionRegistry {
   static List<HomeSection> all() => const [
         AnnouncementWidget(),
-        ServicesWidget()
+        EventsWidget()
       ];
 }
 

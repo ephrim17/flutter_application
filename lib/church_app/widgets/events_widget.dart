@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/home_section_models/service_model.dart';
-import 'package:flutter_application/church_app/providers/home_sections/service_providers.dart';
+import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
+import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ServicesWidget implements HomeSection {
-  const ServicesWidget();
+class EventsWidget implements HomeSection {
+  const EventsWidget();
 
   @override
-  String get id => 'services';
+  String get id => 'events';
 
   @override
   int get order => 20;
@@ -19,7 +19,7 @@ class ServicesWidget implements HomeSection {
       SliverToBoxAdapter(
         child: Consumer(
           builder: (context, ref, _) {
-            final asyncBanner = ref.watch(servicesProvider);
+            final asyncBanner = ref.watch(eventsProvider);
 
             return asyncBanner.when(
               loading: () => const Padding(
@@ -30,7 +30,7 @@ class ServicesWidget implements HomeSection {
                 padding: const EdgeInsets.all(16),
                 child: Text('Error: $e'),
               ),
-              data: (items) => _ServicesList(items)
+              data: (items) => _EventsList(items)
             );
           },
         ),
@@ -40,16 +40,16 @@ class ServicesWidget implements HomeSection {
 }
 
 
-class _ServicesList extends StatelessWidget {
-  const _ServicesList(this.items);
-  final List<ServiceModel> items;
+class _EventsList extends StatelessWidget {
+  const _EventsList(this.items);
+  final List<Event> items;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No Services'),
+        child: Text('No Events'),
       );
     }
 
@@ -58,7 +58,7 @@ class _ServicesList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Our Services"),
+          Text("Events"),
           const SizedBox(height: 10,),
           SizedBox(
             height: 120,
@@ -66,7 +66,7 @@ class _ServicesList extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => _ServicesCard(items[i]),
+              itemBuilder: (_, i) => _EventsCard(items[i]),
             ),
           ),
         ],
@@ -75,9 +75,9 @@ class _ServicesList extends StatelessWidget {
   }
 }
 
-class _ServicesCard extends StatelessWidget {
-  const _ServicesCard(this.a);
-  final ServiceModel a;
+class _EventsCard extends StatelessWidget {
+  const _EventsCard(this.a);
+  final Event a;
 
   @override
   Widget build(BuildContext context) {

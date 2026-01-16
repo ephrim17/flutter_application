@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ServiceModel {
+class Event {
   final String id; // docId
   final String title;
   final String description;
@@ -8,20 +8,20 @@ class ServiceModel {
   // Optional scalable fields (add later easily)
   final bool isActive;
 
-  const ServiceModel({
+  const Event({
     required this.id,
     required this.title,
     required this.description,
     required this.isActive,
   });
 
-  ServiceModel copyWith({
+  Event copyWith({
     String? id,
     String? title,
     String? description,
     bool? isActive,
   }) {
-    return ServiceModel(
+    return Event(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -37,10 +37,10 @@ class ServiceModel {
       };
 
   /// For reading from Firestore
-  static ServiceModel fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  static Event fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
 
-    return ServiceModel(
+    return Event(
       id: doc.id,
       title: (data['title'] ?? '') as String,
       description: (data['description'] ?? '') as String,
