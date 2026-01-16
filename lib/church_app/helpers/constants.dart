@@ -2,7 +2,7 @@
 
 //spacing between each widgets in home section
 double spacingForOrder(int order) {
-  return 20;
+  return 30;
 }
 
 //height for announcement card
