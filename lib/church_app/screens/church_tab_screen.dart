@@ -47,7 +47,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           title: Text("Church"),
         ),
         body: _activeScreen,
-        drawer: ChurchSideDrawer(onSelectedMenu: _onSelectedMenu),
+        drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
         bottomNavigationBar: BottomNavigationBar(
           onTap: (value) => setActiveScreen(value),
           currentIndex: selectedIndex,
