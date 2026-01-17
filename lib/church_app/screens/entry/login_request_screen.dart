@@ -1,7 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
+import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginRequestScreen extends ConsumerWidget {
@@ -13,54 +12,86 @@ class LoginRequestScreen extends ConsumerWidget {
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
 
+    final isLoading = ref.watch(requestAccessLoadingProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Request Access')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Enter Name'),
+              decoration: const InputDecoration(labelText: 'Name'),
             ),
             TextField(
               controller: emailCtrl,
-              decoration: const InputDecoration(labelText: 'Enter Email'),
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
             TextField(
               controller: passCtrl,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Enter Password'),
+              decoration: const InputDecoration(labelText: 'Password'),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                await ref
-                    .read(authRepositoryProvider)
-                    .requestAccess(
-                      name: nameCtrl.text,
-                      email: emailCtrl.text,
-                      password: passCtrl.text,
-                    );
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Request sent. Wait for admin approval.',
-                    ),
-                  ),
-                );
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (nameCtrl.text.isEmpty ||
+                            emailCtrl.text.isEmpty ||
+                            passCtrl.text.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Please fill all fields (password min 6 chars)'),
+                            ),
+                          );
+                          return;
+                        }
 
-                 if (!context.mounted) return;
+                        ref.read(requestAccessLoadingProvider.notifier).state =
+                            true;
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PendingApprovalWidget(),
+                        try {
+                          await ref
+                              .read(authRepositoryProvider)
+                              .requestAccess(
+                                name: nameCtrl.text.trim(),
+                                email: emailCtrl.text.trim(),
+                                password: passCtrl.text,
+                              );
+
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+
+                          // AppEntry will switch to PendingApproval automatically
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
+                        } finally {
+                          ref
+                              .read(
+                                  requestAccessLoadingProvider.notifier)
+                              .state = false;
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                      );
-              },
-              child: const Text('Request Access'),
+                      )
+                    : const Text('Request Access'),
+              ),
             ),
           ],
         ),
@@ -68,3 +99,4 @@ class LoginRequestScreen extends ConsumerWidget {
     );
   }
 }
+

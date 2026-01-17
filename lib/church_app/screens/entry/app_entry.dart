@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 

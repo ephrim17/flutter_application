@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -9,6 +10,8 @@ class LoginScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
+
+    final isLoading = ref.watch(requestAccessLoadingProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
@@ -39,7 +42,7 @@ class LoginScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () async {
+                onPressed:isLoading ? null : () async {
                   try {
                     await ref
                         .read(authRepositoryProvider)
@@ -58,7 +61,14 @@ class LoginScreen extends ConsumerWidget {
                     );
                   }
                 },
-                child: const Text('Login'),
+                child:  isLoading ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ) : const Text('Login'),
               ),
             ),
           ],
