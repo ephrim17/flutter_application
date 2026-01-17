@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/about_screen.dart';
 
-
-//spacing between each widgets in home section
 double spacingForOrder(int order) {
   return 20;
 }
@@ -11,4 +11,59 @@ double cardHeight(String id) {
   if (id == "events") return 180; // Announcements
   if (id == "pastor") return 220; // Announcements
   return 120;
+}
+
+String appName = "My Church";
+String appTagline = "Connecting Faith and Community";
+
+
+enum DrawerMenuItem {
+  events,
+  prayerRequest,
+  about,
+  settings,
+}
+
+
+extension DrawerMenuItemX on DrawerMenuItem {
+  String get label {
+    switch (this) {
+      case DrawerMenuItem.events:
+        return 'Events';
+      case DrawerMenuItem.prayerRequest:
+        return 'Prayer Request';
+      case DrawerMenuItem.about:
+        return 'About';
+      case DrawerMenuItem.settings:
+        return 'Settings';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case DrawerMenuItem.events:
+        return Icons.event;
+      case DrawerMenuItem.prayerRequest:
+        return Icons.volunteer_activism;
+      case DrawerMenuItem.about:
+        return Icons.info;
+      case DrawerMenuItem.settings:
+        return Icons.settings;
+    }
+  }
+
+  Widget? get route {
+    switch (this) {
+      case DrawerMenuItem.events:
+        return const Placeholder();
+      case DrawerMenuItem.prayerRequest:
+        return const Placeholder();
+      case DrawerMenuItem.about:
+        return const AboutScreen();
+      case DrawerMenuItem.settings:
+        return const Placeholder();
+    }
+  }
+
+  //bool get isDestructive => this == DrawerMenuItem.logout;
 }
