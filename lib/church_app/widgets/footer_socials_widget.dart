@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/footer_support/social_icon_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
+import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
@@ -12,11 +13,12 @@ class FooterSocialIconsWidget extends ConsumerWidget {
     final iconsAsync = ref.watch(footerSocialIconsProvider);
 
     return Column(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text(
-            "Follow us on",
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          // Text(
+          //   "Follow us on",
+          //   style: Theme.of(context).textTheme.titleMedium,
+          // ),
           const SizedBox(height: 16),
 
           iconsAsync.when(
@@ -30,6 +32,8 @@ class FooterSocialIconsWidget extends ConsumerWidget {
             ),
             data: (social) => _buildSocialIconsRow(social, context),
           ),
+          const SizedBox(height: 16),
+          const CopyrightWidget(),
         ],
       );
   }

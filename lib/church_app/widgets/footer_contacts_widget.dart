@@ -26,8 +26,8 @@ class FooterContactsWidget extends ConsumerWidget {
     return Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Text("Reach us via",
-          style: Theme.of(context).textTheme.titleMedium,),
+          // Text("Reach us and contact us",
+          // style: Theme.of(context).textTheme.titleMedium,),
           const SizedBox(
             height: 10,
           ),

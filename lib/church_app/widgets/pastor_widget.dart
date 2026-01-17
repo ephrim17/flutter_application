@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/pastor_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/pastor_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PastorWidget implements HomeSection {
@@ -59,7 +60,7 @@ class _PastorList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Pastor"),
+          SectionHeader(text: "Our Pastors"),
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(PastorWidget().id),
