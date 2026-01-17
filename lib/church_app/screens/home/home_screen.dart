@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/providers/home_sections/home_sect
 import 'package:flutter_application/church_app/widgets/announcement_widget.dart';
 import 'package:flutter_application/church_app/widgets/events_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_section.dart';
+import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
 import 'package:flutter_application/church_app/widgets/pastor_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
@@ -74,7 +75,7 @@ class HomeSectionRegistry {
         AnnouncementWidget(),
         EventsWidget(),
         PastorWidget(),
-        FooterSectionWidget(),
+        FooterSection(),
       ];
 }
 
