@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -20,6 +21,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     });
   }
 
+  void _onSelectedMenu(String menu) async {
+    Navigator.of(context).pop();
+    if (menu == 'meal') {
+      setActiveScreen(0);
+    } else if (menu == 'filter') {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => Placeholder(),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -35,6 +47,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           title: Text("Church"),
         ),
         body: _activeScreen,
+        drawer: ChurchSideDrawer(onSelectedMenu: _onSelectedMenu),
         bottomNavigationBar: BottomNavigationBar(
           onTap: (value) => setActiveScreen(value),
           currentIndex: selectedIndex,

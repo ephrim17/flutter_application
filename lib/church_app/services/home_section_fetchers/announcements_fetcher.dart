@@ -23,6 +23,7 @@ class AnnouncementsFetcher extends FirestoreRepository<Announcement> {
     return collectionRef()
         .where('isActive', isEqualTo: true)
         .limit(limit)
+        .orderBy('priority')
         .snapshots()
         .map((s) => s.docs.map((d) => d.data()).toList());
   }
@@ -34,6 +35,7 @@ class AnnouncementsFetcher extends FirestoreRepository<Announcement> {
     return collectionRef()
         .where('isActive', isEqualTo: true)
         .limit(limit)
+        .orderBy('priority')
         .snapshots()
         .map((s) => s.docs.map((d) => d.data()).toList());
   }
