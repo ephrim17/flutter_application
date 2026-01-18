@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 
-class HomeSectionFetcher {
-  HomeSectionFetcher(this.db);
+class HomeSectionConfigRepository {
+  HomeSectionConfigRepository(this.db);
   final FirebaseFirestore db;
 
   Stream<List<HomeSectionConfigModel>> watchSections() {
