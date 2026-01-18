@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginRequestScreen extends ConsumerWidget {
@@ -35,7 +36,6 @@ class LoginRequestScreen extends ConsumerWidget {
               decoration: const InputDecoration(labelText: 'Password'),
             ),
             const SizedBox(height: 24),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -58,26 +58,36 @@ class LoginRequestScreen extends ConsumerWidget {
                             true;
 
                         try {
-                          await ref
-                              .read(authRepositoryProvider)
-                              .requestAccess(
+                          await ref.read(authRepositoryProvider).requestAccess(
                                 name: nameCtrl.text.trim(),
                                 email: emailCtrl.text.trim(),
                                 password: passCtrl.text,
                               );
+
+                          ref
+                              .read(requestAccessLoadingProvider.notifier)
+                              .state = false;
 
                           if (!context.mounted) return;
                           Navigator.pop(context);
 
                           // AppEntry will switch to PendingApproval automatically
                         } catch (e) {
+                          ref
+                              .read(requestAccessLoadingProvider.notifier)
+                              .state = false;
+
+                          final message = mapFirebaseAuthError(e);
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(e.toString())),
+                            SnackBar(
+                              content: Text(message),
+                              behavior: SnackBarBehavior.floating,
+                            ),
                           );
                         } finally {
                           ref
-                              .read(
-                                  requestAccessLoadingProvider.notifier)
+                              .read(requestAccessLoadingProvider.notifier)
                               .state = false;
                         }
                       },
@@ -99,4 +109,3 @@ class LoginRequestScreen extends ConsumerWidget {
     );
   }
 }
-

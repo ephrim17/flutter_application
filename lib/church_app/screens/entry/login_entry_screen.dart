@@ -11,7 +11,7 @@ class LoginScreen extends ConsumerWidget {
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
 
-    final isLoading = ref.watch(requestAccessLoadingProvider);
+    final isLoading = ref.watch(logginAccessLoadingProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
@@ -43,6 +43,18 @@ class LoginScreen extends ConsumerWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed:isLoading ? null : () async {
+                  if (emailCtrl.text.isEmpty ||
+                      passCtrl.text.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Please fill all fields (password min 6 chars)'),
+                      ),
+                    );
+                    return;
+                  }
+                  ref.read(logginAccessLoadingProvider.notifier).state =
+                            true;
                   try {
                     await ref
                         .read(authRepositoryProvider)
@@ -51,11 +63,15 @@ class LoginScreen extends ConsumerWidget {
                           password: passCtrl.text,
                         );
 
+                    ref.read(logginAccessLoadingProvider.notifier).state =
+                            false;
                     if (!context.mounted) return;
 
                     /// AppEntry will auto-redirect
                     Navigator.pop(context);
                   } catch (e) {
+                    ref.read(logginAccessLoadingProvider.notifier).state =
+                            false;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(e.toString())),
                     );

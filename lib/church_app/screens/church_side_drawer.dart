@@ -80,11 +80,20 @@ class AppDrawer extends ConsumerWidget {
             ),
             data: (user) {
               return UserAccountsDrawerHeader(
-                accountName: const Text(''),
-                accountEmail: Text(user?.email ?? ''),
-                currentAccountPicture: const CircleAvatar(
-                  child: Icon(Icons.person),
+                accountName: Text(
+                  user?.name ?? '',
+                  style: Theme.of(context)
+                      .textTheme
+                      .displayMedium
+                      ?.copyWith(color: Theme.of(context).secondaryHeaderColor),
                 ),
+                accountEmail: Text(user?.email ?? '', style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: Theme.of(context).secondaryHeaderColor),)
+                // currentAccountPicture: const CircleAvatar(
+                //   //child: Icon(Icons.person),
+                // ),
               );
             },
           ),
