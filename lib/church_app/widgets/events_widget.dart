@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -83,24 +84,38 @@ class _EventsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 260,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color.fromARGB(31, 190, 0, 0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(a.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(a.description,
-              maxLines: 3, overflow: TextOverflow.ellipsis),
-        ],
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) {
+              return DetailWidget(
+                title: a.title,
+                description: a.description,
+              );
+            },
+          ),
+        );
+      },
+      child: Container(
+        width: 260,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color.fromARGB(31, 190, 0, 0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(a.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text(a.description,
+                maxLines: 3, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
