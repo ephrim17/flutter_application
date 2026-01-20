@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -38,7 +39,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     if (selectedIndex == 0) {
       _activeScreen = HomeScreen();
     } else {
-      _activeScreen = Placeholder();
+      _activeScreen = ForYouScreen();
     }
 
     return MaterialApp(

@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
-import 'package:flutter_application/church_app/widgets/announcement_widget.dart';
-import 'package:flutter_application/church_app/widgets/events_widget.dart';
-import 'package:flutter_application/church_app/widgets/footer_section.dart';
-import 'package:flutter_application/church_app/widgets/pastor_widget.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
+import 'package:flutter_application/church_app/widgets/daily_verse_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+class ForYouScreen extends ConsumerWidget {
+  const ForYouScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
+    final sectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
 
     return sectionConfigsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (configs) {
-        final registry = HomeSectionRegistry.all();
+        final registry = ForYouSectionRegistry.all();
 
         // 🔹 Enable / disable + order
         final activeSections = registry.where((section) {
@@ -27,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
           return config?.enabled ?? false;
         }).map((section) {
           final config = configs.firstWhere((c) => c.id == section.id);
-          return OrderedSectionHome(section, config.order);
+          return OrderedSectionForYou(section, config.order);
         }).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
 
@@ -59,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
 }
 
 /// A reusable section that can render itself into the home scroll.
-abstract class HomeSection {
+abstract class ForYouSection {
   String get id;
 
   /// Lower number shows earlier in the page.
@@ -69,18 +66,17 @@ abstract class HomeSection {
   List<Widget> buildSlivers(BuildContext context);
 }
 
-class HomeSectionRegistry {
-  static List<HomeSection> all() => [
-        AnnouncementWidget(),
-        EventsWidget(),
-        PastorWidget(),
-        FooterSection(),
+class ForYouSectionRegistry {
+  static List<ForYouSection> all() => [
+        DailyVerseWidget(),
       ];
 }
 
-class OrderedSectionHome {
-  const OrderedSectionHome(this.section, this.order);
 
-  final HomeSection section;
+
+class OrderedSectionForYou {
+  const OrderedSectionForYou(this.section, this.order);
+
+  final ForYouSection section;
   final int order;
 }
