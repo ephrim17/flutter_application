@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
-import 'package:flutter_application/church_app/widgets/daily_verse_widget.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -68,7 +69,8 @@ abstract class ForYouSection {
 
 class ForYouSectionRegistry {
   static List<ForYouSection> all() => [
-        DailyVerseWidget(),
+        DailyVerseSection(),
+        FeaturedSection(),
       ];
 }
 

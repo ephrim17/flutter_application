@@ -7,8 +7,8 @@ import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class EventsWidget implements HomeSection {
-  const EventsWidget();
+class EventsSection implements HomeSection {
+  const EventsSection();
 
   @override
   String get id => 'events';
@@ -64,7 +64,7 @@ class _EventsList extends StatelessWidget {
           SectionHeader(text: "Events"),
           const SizedBox(height: 10,),
           SizedBox(
-            height: cardHeight(EventsWidget().id),
+            height: cardHeight(EventsSection().id),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,

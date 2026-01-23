@@ -6,8 +6,8 @@ import 'package:flutter_application/church_app/screens/for_you/for_you_screen.da
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DailyVerseWidget implements ForYouSection {
-  const DailyVerseWidget();
+class DailyVerseSection implements ForYouSection {
+  const DailyVerseSection();
 
   @override
   String get id => 'dailyVerse';
@@ -63,7 +63,7 @@ class _DailyVerseList extends StatelessWidget {
           SectionHeader(text: "Daily Verse"),
           const SizedBox(height: 10,),
           SizedBox(
-            height: cardHeight(DailyVerseWidget().id),
+            height: cardHeight(DailyVerseSection().id),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,

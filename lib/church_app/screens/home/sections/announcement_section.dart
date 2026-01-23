@@ -7,8 +7,8 @@ import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AnnouncementWidget implements HomeSection {
-  const AnnouncementWidget();
+class AnnouncementSection implements HomeSection {
+  const AnnouncementSection();
 
   @override
   String get id => 'announcements';
@@ -64,7 +64,7 @@ class _AnnouncementList extends StatelessWidget {
           SectionHeader(text: "Announcements"),
           const SizedBox(height: 10,),
           SizedBox(
-            height: cardHeight(AnnouncementWidget().id),
+            height: cardHeight(AnnouncementSection().id),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,

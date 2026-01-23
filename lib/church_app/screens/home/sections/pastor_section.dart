@@ -6,8 +6,8 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PastorWidget implements HomeSection {
-  const PastorWidget();
+class PastorSection implements HomeSection {
+  const PastorSection();
 
   @override
   String get id => 'pastor';
@@ -63,7 +63,7 @@ class _PastorList extends StatelessWidget {
           SectionHeader(text: "Our Pastors"),
           const SizedBox(height: 10,),
           SizedBox(
-            height: cardHeight(PastorWidget().id),
+            height: cardHeight(PastorSection().id),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
