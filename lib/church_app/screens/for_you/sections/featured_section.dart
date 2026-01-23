@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/shorts_model.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/shorts_provider.dart';
+import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class FeaturedSection implements MasterSection {
   const FeaturedSection();
@@ -67,7 +65,7 @@ class FeaturedItemWidget extends StatelessWidget {
               if (title == "Shorts") {
                 return const ShortsFeedScreen();
               } else {
-                return const Placeholder();
+                return const SermonsScreen();
               }
             },
           ),
@@ -91,99 +89,6 @@ class FeaturedItemWidget extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.bodyMedium,
           ))),
-    );
-  }
-}
-
-class ShortsFeedScreen extends ConsumerStatefulWidget {
-  const ShortsFeedScreen({super.key});
-
-  @override
-  ConsumerState<ShortsFeedScreen> createState() => _ShortsFeedScreenState();
-}
-
-class _ShortsFeedScreenState extends ConsumerState<ShortsFeedScreen> {
-  final PageController _pageController = PageController(initialPage: 0);
-
-  @override
-  Widget build(BuildContext context) {
-    final shorts = ref.watch(shortsProvider);
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: shorts.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (shortsList) => PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: shortsList.length,
-          itemBuilder: (context, index) {
-            final short = shortsList[index];
-            return ShortsPlayerItem(short);
-          },
-        ),
-      ),
-    );
-  }
-}
-
-
-class ShortsPlayerItem extends StatefulWidget {
-  final ShortModel short;
-  const ShortsPlayerItem(this.short, {super.key});
-
-  @override
-  State<ShortsPlayerItem> createState() => _ShortsPlayerItemState();
-}
-
-class _ShortsPlayerItemState extends State<ShortsPlayerItem> {
-  late YoutubePlayerController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = YoutubePlayerController(
-      initialVideoId: widget.short.videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        mute: false,
-        loop: true,
-        controlsVisibleAtStart: false,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      //backgroundColor: Colors.black,
-      //appBar: AppBar(
-      //   title: Text(widget.short.title),
-      //),
-      body: Stack(
-        children: [
-          Center(
-            child: FittedBox(
-              fit: BoxFit.fill,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                child: YoutubePlayer(
-                  controller: controller,
-                  showVideoProgressIndicator: false,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
