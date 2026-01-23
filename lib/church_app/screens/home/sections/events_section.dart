@@ -7,7 +7,7 @@ import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class EventsSection implements HomeSection {
+class EventsSection implements MasterSection {
   const EventsSection();
 
   @override

@@ -7,7 +7,7 @@ import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AnnouncementSection implements HomeSection {
+class AnnouncementSection implements MasterSection {
   const AnnouncementSection();
 
   @override

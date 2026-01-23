@@ -6,7 +6,7 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PastorSection implements HomeSection {
+class PastorSection implements MasterSection {
   const PastorSection();
 
   @override

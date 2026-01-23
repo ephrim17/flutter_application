@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/for_you_section_model/shorts_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/shorts_provider.dart';
-import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
+import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class FeaturedSection implements ForYouSection {
+class FeaturedSection implements MasterSection {
   const FeaturedSection();
 
   @override
@@ -182,30 +182,6 @@ class _ShortsPlayerItemState extends State<ShortsPlayerItem> {
               ),
             ),
           ),
-          // Column(
-          //   mainAxisAlignment: MainAxisAlignment.end,
-          //   children: [
-          //     Container(
-          //       color: const Color.fromARGB(137, 255, 0, 0),
-          //       width: double.infinity,
-          //       padding: const EdgeInsets.all(16),
-          //       child: Row(
-          //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //       children: [
-          //         Text(
-          //         "Watch more on Youtube",
-          //         style: const TextStyle(color: Color.fromARGB(255, 4, 1, 1), fontSize: 16),
-          //       ),
-          //       Text(
-          //         "Swipe up to see more",
-          //         style: const TextStyle(color: Color.fromARGB(255, 4, 1, 1), fontSize: 16),
-          //       )
-          //       ],
-          //     ),
-          //     ),
-          //   ],
-          // ),
-          // Optional overlay
         ],
       ),
     );

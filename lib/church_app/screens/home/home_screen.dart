@@ -59,7 +59,7 @@ class HomeScreen extends ConsumerWidget {
 }
 
 /// A reusable section that can render itself into the home scroll.
-abstract class HomeSection {
+abstract class MasterSection {
   String get id;
 
   /// Lower number shows earlier in the page.
@@ -70,7 +70,7 @@ abstract class HomeSection {
 }
 
 class HomeSectionRegistry {
-  static List<HomeSection> all() => [
+  static List<MasterSection> all() => [
         AnnouncementSection(),
         EventsSection(),
         PastorSection(),
@@ -81,6 +81,6 @@ class HomeSectionRegistry {
 class OrderedSectionHome {
   const OrderedSectionHome(this.section, this.order);
 
-  final HomeSection section;
+  final MasterSection section;
   final int order;
 }

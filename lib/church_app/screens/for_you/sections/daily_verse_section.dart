@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/for_you_section_model/daily_verse_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
-import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
+import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DailyVerseSection implements ForYouSection {
+class DailyVerseSection implements MasterSection {
   const DailyVerseSection();
 
   @override

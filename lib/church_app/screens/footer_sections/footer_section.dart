@@ -3,7 +3,7 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
 
-class FooterSection extends HomeSection {
+class FooterSection extends MasterSection {
   @override
   String get id => 'footer';
 

@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
+import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -68,7 +69,7 @@ abstract class ForYouSection {
 }
 
 class ForYouSectionRegistry {
-  static List<ForYouSection> all() => [
+  static List<MasterSection> all() => [
         DailyVerseSection(),
         FeaturedSection(),
       ];
@@ -79,6 +80,6 @@ class ForYouSectionRegistry {
 class OrderedSectionForYou {
   const OrderedSectionForYou(this.section, this.order);
 
-  final ForYouSection section;
+  final MasterSection section;
   final int order;
 }
