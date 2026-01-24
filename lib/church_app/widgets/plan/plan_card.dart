@@ -21,8 +21,8 @@ class PlanCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
         ),
         child: Container(
-          width: 120,
-          height: 150,
+          width: 220,
+          height: 3,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             gradient: gradient,

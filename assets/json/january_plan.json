@@ -1,13 +1,254 @@
-
-[
+{
+  "month": "January",
+  "monthIndex": 1,
+  "days": [
     {
-        "title": "New Year's Day Celebration",
-        "description": "Community gathering to celebrate the new year.",
-        "time": "10:00 AM"
+      "day": 1,
+      "readings": [
+        { "book": "Genesis", "chapters": "1-2" },
+        { "book": "Psalms", "chapters": "1-2" },
+        { "book": "Matthew", "chapters": "1-2" }
+      ]
     },
     {
-        "title": "Winter Bible Study Begins",
-        "description": "First session of our winter bible study series.",
-        "time": "7:00 PM"
+      "day": 2,
+      "readings": [
+        { "book": "Genesis", "chapters": "3-4" },
+        { "book": "Psalms", "chapters": "3-5" },
+        { "book": "Matthew", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Genesis", "chapters": "5-6" },
+        { "book": "Psalms", "chapters": "6-8" },
+        { "book": "Matthew", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Genesis", "chapters": "7-8" },
+        { "book": "Psalms", "chapters": "9-10" },
+        { "book": "Matthew", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Genesis", "chapters": "9-10" },
+        { "book": "Psalms", "chapters": "11-13" },
+        { "book": "Matthew", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Genesis", "chapters": "11-12" },
+        { "book": "Psalms", "chapters": "14-16" },
+        { "book": "Matthew", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Genesis", "chapters": "13-14" },
+        { "book": "Psalms", "chapters": "17" },
+        { "book": "Matthew", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Genesis", "chapters": "15-16" },
+        { "book": "Psalms", "chapters": "18" },
+        { "book": "Matthew", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Genesis", "chapters": "17-18" },
+        { "book": "Psalms", "chapters": "19-21" },
+        { "book": "Matthew", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Genesis", "chapters": "19" },
+        { "book": "Psalms", "chapters": "22" },
+        { "book": "Matthew", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Genesis", "chapters": "20-21" },
+        { "book": "Psalms", "chapters": "23-25" },
+        { "book": "Matthew", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Genesis", "chapters": "22-23" },
+        { "book": "Psalms", "chapters": "26-28" },
+        { "book": "Matthew", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Genesis", "chapters": "24" },
+        { "book": "Psalms", "chapters": "29-30" },
+        { "book": "Matthew", "chapters": "15" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Genesis", "chapters": "25-26" },
+        { "book": "Psalms", "chapters": "31" },
+        { "book": "Matthew", "chapters": "16" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Genesis", "chapters": "27" },
+        { "book": "Psalms", "chapters": "32" },
+        { "book": "Matthew", "chapters": "17" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Genesis", "chapters": "28-29" },
+        { "book": "Psalms", "chapters": "33" },
+        { "book": "Matthew", "chapters": "18" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Genesis", "chapters": "30" },
+        { "book": "Psalms", "chapters": "34" },
+        { "book": "Matthew", "chapters": "19" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Genesis", "chapters": "31" },
+        { "book": "Psalms", "chapters": "35" },
+        { "book": "Matthew", "chapters": "20" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Genesis", "chapters": "32-33" },
+        { "book": "Psalms", "chapters": "36" },
+        { "book": "Matthew", "chapters": "21" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Genesis", "chapters": "34-35" },
+        { "book": "Psalms", "chapters": "37" },
+        { "book": "Matthew", "chapters": "22" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Genesis", "chapters": "36" },
+        { "book": "Psalms", "chapters": "38" },
+        { "book": "Matthew", "chapters": "23" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Genesis", "chapters": "37" },
+        { "book": "Psalms", "chapters": "39-40" },
+        { "book": "Matthew", "chapters": "24" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Genesis", "chapters": "38" },
+        { "book": "Psalms", "chapters": "41-43" },
+        { "book": "Matthew", "chapters": "25" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Genesis", "chapters": "39-40" },
+        { "book": "Psalms", "chapters": "44" },
+        { "book": "Matthew", "chapters": "26" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Genesis", "chapters": "41" },
+        { "book": "Psalms", "chapters": "45" },
+        { "book": "Matthew", "chapters": "27" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Genesis", "chapters": "42-43" },
+        { "book": "Psalms", "chapters": "46-48" },
+        { "book": "Matthew", "chapters": "28" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Genesis", "chapters": "44-45" },
+        { "book": "Psalms", "chapters": "49" },
+        { "book": "Romans", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Genesis", "chapters": "46-47" },
+        { "book": "Psalms", "chapters": "50" },
+        { "book": "Romans", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Genesis", "chapters": "48-50" },
+        { "book": "Psalms", "chapters": "51-52" },
+        { "book": "Romans", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Exodus", "chapters": "1-2" },
+        { "book": "Psalms", "chapters": "53-55" },
+        { "book": "Romans", "chapters": "7-8" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "Exodus", "chapters": "3-4" },
+        { "book": "Psalms", "chapters": "56-57" },
+        { "book": "Romans", "chapters": "9" }
+      ]
     }
-]
+  ]
+}

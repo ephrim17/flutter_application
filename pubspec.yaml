@@ -83,6 +83,7 @@ flutter:
      - assets/images/dice-5.png
      - assets/images/dice-6.png
      - assets/images/quiz-logo.png
+     - assets/json/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

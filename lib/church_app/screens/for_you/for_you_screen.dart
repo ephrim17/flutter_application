@@ -4,9 +4,9 @@ import 'package:flutter_application/church_app/providers/for_you_sections/for_yo
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/reading_plan_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'home_sections_provider.dart';
 
 class ForYouScreen extends ConsumerWidget {
   const ForYouScreen({super.key});
@@ -62,7 +62,8 @@ class ForYouSectionRegistry {
   static List<MasterSection> all() => [
         DailyVerseSection(),
         FeaturedSection(),
-        FooterSection()
+        FooterSection(),
+        ReadingPlanSection()
       ];
 }
 

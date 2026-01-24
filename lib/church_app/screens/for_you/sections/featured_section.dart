@@ -15,6 +15,7 @@ class FeaturedSection implements MasterSection {
 
   @override
   List<Widget> buildSlivers(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return [
       SliverToBoxAdapter(
         child: Padding(
@@ -25,26 +26,28 @@ class FeaturedSection implements MasterSection {
             children: [
               const SizedBox(height: 10),
               SizedBox(
-                height: 50,
-                child: ElevatedButton(
-      onPressed: () {
-        // Replace with your YouTube channel ID
-        YoutubeUtils.openYoutubeChannel('UCfMUXhM4ujEI8aDTAh34K3A');
-      },
-      child: const Text('watch us on YouTube'),
-    )
-                // child: GridView(
-                //     gridDelegate:
-                //         const SliverGridDelegateWithFixedCrossAxisCount(
-                //             crossAxisCount: 2,
-                //             childAspectRatio: 1.5,
-                //             mainAxisSpacing: 10,
-                //             crossAxisSpacing: 10),
-                //     children: [
-                //       FeaturedItemWidget(title: "Shorts",),
-                //       FeaturedItemWidget(title: "Sermons",),
-                //     ]),
-              )
+                  height: 50,
+                  width: width * 0.9,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Replace with your YouTube channel ID
+                      YoutubeUtils.openYoutubeChannel(
+                          'UCfMUXhM4ujEI8aDTAh34K3A');
+                    },
+                    child: const Text('watch us on YouTube'),
+                  )
+                  // child: GridView(
+                  //     gridDelegate:
+                  //         const SliverGridDelegateWithFixedCrossAxisCount(
+                  //             crossAxisCount: 2,
+                  //             childAspectRatio: 1.5,
+                  //             mainAxisSpacing: 10,
+                  //             crossAxisSpacing: 10),
+                  //     children: [
+                  //       FeaturedItemWidget(title: "Shorts",),
+                  //       FeaturedItemWidget(title: "Sermons",),
+                  //     ]),
+                  )
             ],
           ),
         ),
@@ -54,9 +57,7 @@ class FeaturedSection implements MasterSection {
 }
 
 class FeaturedItemWidget extends StatelessWidget {
-  const FeaturedItemWidget({
-    super.key, required this.title
-  });
+  const FeaturedItemWidget({super.key, required this.title});
 
   final String title;
 
@@ -83,10 +84,7 @@ class FeaturedItemWidget extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.0),
             gradient: LinearGradient(
-                colors: [
-                  Colors.red,
-                  Colors.red.withBlue(100)
-                ],
+                colors: [Colors.red, Colors.red.withBlue(100)],
                 begin: Alignment.bottomRight,
                 end: Alignment.topLeft),
           ),
