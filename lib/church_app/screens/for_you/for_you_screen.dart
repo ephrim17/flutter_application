@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
+import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -57,25 +58,13 @@ class ForYouScreen extends ConsumerWidget {
   }
 }
 
-/// A reusable section that can render itself into the home scroll.
-abstract class ForYouSection {
-  String get id;
-
-  /// Lower number shows earlier in the page.
-  int get order;
-
-  /// Return one or more slivers (so everything is one scroll).
-  List<Widget> buildSlivers(BuildContext context);
-}
-
 class ForYouSectionRegistry {
   static List<MasterSection> all() => [
         DailyVerseSection(),
         FeaturedSection(),
+        FooterSection()
       ];
 }
-
-
 
 class OrderedSectionForYou {
   const OrderedSectionForYou(this.section, this.order);

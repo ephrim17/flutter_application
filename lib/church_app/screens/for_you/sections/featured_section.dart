@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
-import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
+import 'package:flutter_application/church_app/helpers/youtube_utils.dart';
 
 class FeaturedSection implements MasterSection {
   const FeaturedSection();
@@ -20,24 +20,30 @@ class FeaturedSection implements MasterSection {
         child: Padding(
           padding: const EdgeInsets.only(left: 16, right: 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SectionHeader(text: "Featured"),
               const SizedBox(height: 10),
               SizedBox(
-                height: 200,
-                child: GridView(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 1.5,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10),
-                    children: [
-                      FeaturedItemWidget(title: "Shorts",),
-                      FeaturedItemWidget(title: "Sermons",),
-                    ]),
+                height: 50,
+                child: ElevatedButton(
+      onPressed: () {
+        // Replace with your YouTube channel ID
+        YoutubeUtils.openYoutubeChannel('UCfMUXhM4ujEI8aDTAh34K3A');
+      },
+      child: const Text('watch us on YouTube'),
+    )
+                // child: GridView(
+                //     gridDelegate:
+                //         const SliverGridDelegateWithFixedCrossAxisCount(
+                //             crossAxisCount: 2,
+                //             childAspectRatio: 1.5,
+                //             mainAxisSpacing: 10,
+                //             crossAxisSpacing: 10),
+                //     children: [
+                //       FeaturedItemWidget(title: "Shorts",),
+                //       FeaturedItemWidget(title: "Sermons",),
+                //     ]),
               )
             ],
           ),

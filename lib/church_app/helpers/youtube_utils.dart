@@ -2,8 +2,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 class YoutubeUtils {
   static Future<void> openYoutubeChannel(String channelId) async {
-    final youtubeUrl = 'https://www.youtube.com/channel/\$channelId';
-    final youtubeAppUrl = 'youtube://www.youtube.com/channel/\$channelId';
+    final youtubeUrl = 'https://youtube.com/@tnbmindia?si=OajCCsgbBNwUKczO';
+    final youtubeAppUrl = 'youtube://www.youtube.com/@tnbmindia?si=OajCCsgbBNwUKczO';
 
     if (await canLaunchUrl(Uri.parse(youtubeAppUrl))) {
       await launchUrl(Uri.parse(youtubeAppUrl));

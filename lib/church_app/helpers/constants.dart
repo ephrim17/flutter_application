@@ -8,9 +8,10 @@ double spacingForOrder(int order) {
 
 //height for announcement card
 double cardHeight(String id) {
-  if (id == "announcements") return 120; // Announcements
-  if (id == "events") return 180; // Announcements
-  if (id == "pastor") return 220; // Announcements
+  if (id == "announcements") return 120; 
+  if (id == "events") return 180; 
+  if (id == "pastor") return 220; 
+  if (id == "dailyVerse") return 220;
   return 120;
 }
 
