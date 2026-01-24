@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/event_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
 
 double spacingForOrder(int order) {
@@ -57,7 +58,7 @@ extension DrawerMenuItemX on DrawerMenuItem {
   Widget? get route {
     switch (this) {
       case DrawerMenuItem.events:
-        return const Placeholder();
+        return const EventsScreen();
       case DrawerMenuItem.prayerRequest:
         return const PrayerRequestScreen();
       case DrawerMenuItem.about:

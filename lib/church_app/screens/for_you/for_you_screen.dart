@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/reading_plan_section.dart';
@@ -63,7 +64,8 @@ class ForYouSectionRegistry {
         DailyVerseSection(),
         FeaturedSection(),
         FooterSection(),
-        ReadingPlanSection()
+        ReadingPlanSection(),
+        ArticleSection()
       ];
 }
 

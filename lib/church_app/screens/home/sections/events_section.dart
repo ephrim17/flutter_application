@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
@@ -33,7 +34,7 @@ class EventsSection implements MasterSection {
                 padding: const EdgeInsets.all(16),
                 child: Text('Error: $e'),
               ),
-              data: (items) => _EventsList(items)
+              data: (items) => EventsList(items)
             );
           },
         ),
@@ -43,9 +44,11 @@ class EventsSection implements MasterSection {
 }
 
 
-class _EventsList extends StatelessWidget {
-  const _EventsList(this.items);
+class EventsList extends StatelessWidget {
+  const EventsList(this.items, {super.key, this.scrollDirection = Axis.horizontal});
   final List<Event> items;
+
+  final Axis scrollDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +69,10 @@ class _EventsList extends StatelessWidget {
           SizedBox(
             height: cardHeight(EventsSection().id),
             child: ListView.separated(
-              scrollDirection: Axis.horizontal,
+              scrollDirection: scrollDirection,
               itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => _EventsCard(items[i]),
+              separatorBuilder: (_, __) => SizedBox(width: 12, height: scrollDirection == Axis.vertical ? 30 : 0),
+              itemBuilder: (_, i) => EventsCard(items[i]),
             ),
           ),
         ],
@@ -78,8 +81,8 @@ class _EventsList extends StatelessWidget {
   }
 }
 
-class _EventsCard extends StatelessWidget {
-  const _EventsCard(this.a);
+class EventsCard extends StatelessWidget {
+  const EventsCard(this.a, {super.key});
   final Event a;
 
   @override
