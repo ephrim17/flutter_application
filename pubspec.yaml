@@ -82,6 +82,9 @@ flutter:
      - assets/images/dice-4.png
      - assets/images/dice-5.png
      - assets/images/dice-6.png
+     - assets/images/family.jpg
+     - assets/images/kids.jpg
+     - assets/images/youth.jpg
      - assets/images/quiz-logo.png
      - assets/json/
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 
 class FooterSection extends MasterSection {
   @override
@@ -20,8 +21,8 @@ class FooterSection extends MasterSection {
             width: double.infinity,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(8),
+              borderRadius: BorderRadius.all(
+                Radius.circular(cornerRadius),
               ),
             ),
             child: Padding(

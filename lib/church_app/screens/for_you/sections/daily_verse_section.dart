@@ -92,7 +92,7 @@ class _DailyVerseCard extends StatelessWidget {
       width: width - 32,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(cornerRadius),
         border: Border.all(color: const Color.fromARGB(31, 190, 0, 0)),
       ),
       child: Column(

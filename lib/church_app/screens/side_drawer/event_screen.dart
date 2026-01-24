@@ -1,9 +1,9 @@
-
-
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
-import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
+import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class EventsScreen extends ConsumerWidget {
@@ -21,7 +21,6 @@ class EventsScreen extends ConsumerWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-
           // 👇 THIS is the key fix
           Expanded(
             child: asyncEvents.when(
@@ -40,10 +39,10 @@ class EventsScreen extends ConsumerWidget {
   }
 }
 
-
 class EventsFullList extends StatelessWidget {
   const EventsFullList(this.items, {super.key});
   final List<Event> items;
+  final String id = "eventsFullListCard";
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +54,17 @@ class EventsFullList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (_, i) => EventsCard(items[i]),
+      itemBuilder: (_, i) => SizedBox(
+        height: cardHeight(id),
+        child: BlurImageTextContainer(
+          items[i].type.imageAsset,
+          items[i].title,
+          items[i].description,
+          items[i].type.badgeColor,
+          items[i].type.label,
+        ),
+      ),
     );
   }
 }
+

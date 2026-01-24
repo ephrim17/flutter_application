@@ -7,18 +7,20 @@ double spacingForOrder(int order) {
   return 20;
 }
 
-//height for announcement card
+//cardHeights
 double cardHeight(String id) {
   if (id == "announcements") return 120; 
-  if (id == "events") return 180; 
+  if (id == "events") return 120; 
   if (id == "pastor") return 220; 
   if (id == "dailyVerse") return 220;
+  if (id == "eventsFullListCard") return 250;
   return 120;
 }
 
+double cornerRadius = 20.0;
+
 String appName = "My Church";
 String appTagline = "Connecting Faith and Community";
-
 
 enum DrawerMenuItem {
   events,
@@ -26,7 +28,6 @@ enum DrawerMenuItem {
   about,
   settings,
 }
-
 
 extension DrawerMenuItemX on DrawerMenuItem {
   String get label {

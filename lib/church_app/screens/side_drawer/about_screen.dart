@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/about_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/about_providers.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
@@ -91,7 +92,7 @@ class AboutScreen extends ConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(cornerRadius),
       ),
       padding: const EdgeInsets.all(18),
       child: Column(

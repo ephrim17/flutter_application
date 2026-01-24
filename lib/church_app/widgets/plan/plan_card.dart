@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 
 class PlanCard extends StatelessWidget {
   final String month;
@@ -18,13 +19,13 @@ class PlanCard extends StatelessWidget {
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(cornerRadius),
         ),
         child: Container(
           width: 220,
           height: 3,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(cornerRadius),
             gradient: gradient,
           ),
           child: Center(

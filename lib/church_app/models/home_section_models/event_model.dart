@@ -1,17 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application/church_app/helpers/event_builders.dart';
 
 class Event {
   final String id; // docId
   final String title;
   final String description;
-
-  // Optional scalable fields (add later easily)
+  final EventType type;
   final bool isActive;
 
   const Event({
     required this.id,
     required this.title,
     required this.description,
+    required this.type,
     required this.isActive,
   });
 
@@ -19,12 +20,14 @@ class Event {
     String? id,
     String? title,
     String? description,
+    EventType? type,
     bool? isActive,
   }) {
     return Event(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      type: type ?? this.type,
       isActive: isActive ?? this.isActive
     );
   }
@@ -33,6 +36,7 @@ class Event {
   Map<String, dynamic> toMap() => {
         'title': title,
         'description': description,
+        'type': type, 
         'isActive': isActive,
       };
 
@@ -44,6 +48,7 @@ class Event {
       id: doc.id,
       title: (data['title'] ?? '') as String,
       description: (data['description'] ?? '') as String,
+      type: EventTypeX.fromString(data['type'] as String?), 
       isActive: (data['isActive'] ?? true) as bool,
     );
   }
