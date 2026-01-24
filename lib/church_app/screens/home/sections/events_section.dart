@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/event_screen.dart';
+import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,10 +44,13 @@ class EventsSection implements MasterSection {
 }
 
 class EventsList extends StatelessWidget {
-  const EventsList(this.items,
-      {super.key, this.scrollDirection = Axis.horizontal});
-  final List<Event> items;
+  const EventsList(
+    this.items, {
+    super.key,
+    this.scrollDirection = Axis.horizontal,
+  });
 
+  final List<Event> items;
   final Axis scrollDirection;
 
   @override
@@ -66,17 +68,15 @@ class EventsList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(text: "Events"),
-          const SizedBox(
-            height: 10,
-          ),
+          const SizedBox(height: 10),
           SizedBox(
             height: cardHeight(EventsSection().id),
-            child: ListView.separated(
-              scrollDirection: scrollDirection,
+            child: AutoScrollCarousel(
               itemCount: items.length,
-              separatorBuilder: (_, __) => SizedBox(
-                  width: 12, height: scrollDirection == Axis.vertical ? 30 : 0),
-              itemBuilder: (_, i) => EventsCard(items[i]),
+              viewportFraction: 0.92,
+              spacing: 12,
+              itemBuilder: (_, i) => 
+                EventsCard(items[i]),
             ),
           ),
         ],
@@ -85,12 +85,15 @@ class EventsList extends StatelessWidget {
   }
 }
 
+
 class EventsCard extends StatelessWidget {
   const EventsCard(this.a, {super.key});
   final Event a;
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -105,7 +108,7 @@ class EventsCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: 280,
+        width: width * 0.9,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(cornerRadius),

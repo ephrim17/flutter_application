@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,12 +66,13 @@ class _AnnouncementList extends StatelessWidget {
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(AnnouncementSection().id),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => _AnnouncementCard(items[i]),
-            ),
+            child: AutoScrollCarousel(
+                itemCount: items.length,
+                viewportFraction: 0.92,
+                spacing: 12,
+                itemBuilder: (_, i) =>
+                 _AnnouncementCard(items[i]),
+              ),
           ),
         ],
       ),
@@ -84,6 +86,9 @@ class _AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final width = MediaQuery.of(context).size.width;
+
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -98,7 +103,7 @@ class _AnnouncementCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: 260,
+        width: width * 0.9,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(cornerRadius),
