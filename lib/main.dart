@@ -17,6 +17,9 @@ import 'package:firebase_core/firebase_core.dart';
 
 /* church App */
   void main() async {
+    var lightColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 191, 139, 255),);
+    var darkColoScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 0, 0, 0),);
+
     WidgetsFlutterBinding.ensureInitialized();
       // await FirebaseAuth.instance.setSettings(
       //   //remove in production
@@ -33,6 +36,13 @@ import 'package:firebase_core/firebase_core.dart';
   }
     runApp(ProviderScope(child: 
     MaterialApp(
+        darkTheme: ThemeData().copyWith(
+        scaffoldBackgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        colorScheme: darkColoScheme,),
+      theme: ThemeData().copyWith(
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 250, 250),
+        colorScheme: lightColorScheme,
+      ),
       home: AppEntry()
     )));
   }

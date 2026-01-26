@@ -22,7 +22,7 @@ class ReadingPlanSection implements MasterSection {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SectionHeader(text: "Reading Plans"),
+              SectionHeader(text: "Reading Plans", padding: 0.0,),
               const SizedBox(height: 8),
               PlanListScreen()
             ],

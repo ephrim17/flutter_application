@@ -17,6 +17,14 @@ double cardHeight(String id) {
   return 120;
 }
 
+BoxDecoration carouselBoxDecoration(BuildContext context,) {
+    return BoxDecoration(
+        borderRadius: BorderRadius.circular(cornerRadius),
+        border: Border.all(color: const Color.fromARGB(31, 169, 158, 158).withAlpha(05)),
+        color: Theme.of(context).colorScheme.onInverseSurface
+      );
+}
+
 double cornerRadius = 20.0;
 
 String appName = "My Church";

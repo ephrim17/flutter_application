@@ -21,18 +21,15 @@ class ArticleSection implements MasterSection {
     final width = MediaQuery.of(context).size.width;
     return [
       SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16),
-          child: Column(
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              SectionHeader(text: "Daily Article"),
+              SectionHeader(text: "Daily Article", padding: 16.0,),
               ArticleSectionWidget(),
             ],
           ),
-        ),
       ),
     ];
   }

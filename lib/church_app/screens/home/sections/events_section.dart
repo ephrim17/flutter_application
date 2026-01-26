@@ -62,12 +62,10 @@ class EventsList extends StatelessWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
+    return  Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(text: "Events"),
+          SectionHeader(text: "Events", padding: 16.0),
           const SizedBox(height: 10),
           SizedBox(
             height: cardHeight(EventsSection().id),
@@ -80,8 +78,7 @@ class EventsList extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -110,10 +107,7 @@ class EventsCard extends StatelessWidget {
       child: Container(
         width: width * 0.9,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(cornerRadius),
-          border: Border.all(color: const Color.fromARGB(31, 190, 0, 0)),
-        ),
+        decoration: carouselBoxDecoration(context),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

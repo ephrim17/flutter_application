@@ -60,7 +60,7 @@ class _DailyVerseList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(text: "Daily Verse"),
+          SectionHeader(text: "Daily Verse", padding: 0.0,),
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(DailyVerseSection().id),

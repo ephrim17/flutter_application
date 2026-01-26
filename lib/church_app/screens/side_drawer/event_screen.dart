@@ -21,7 +21,6 @@ class EventsScreen extends ConsumerWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // 👇 THIS is the key fix
           Expanded(
             child: asyncEvents.when(
               loading: () => const Center(

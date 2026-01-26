@@ -60,7 +60,7 @@ class _PastorList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(text: "Our Pastors"),
+          SectionHeader(text: "Our Pastors", padding: 0.0,),
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(PastorSection().id),
@@ -91,10 +91,7 @@ class _PastorCard extends StatelessWidget {
     return Container(
       width: width - 32,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        border: Border.all(color: const Color.fromARGB(31, 190, 0, 0)),
-      ),
+      decoration: carouselBoxDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

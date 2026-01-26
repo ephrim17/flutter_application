@@ -42,8 +42,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       _activeScreen = ForYouScreen();
     }
 
-    return MaterialApp(
-      home: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text("Church"),
         ),
@@ -57,7 +56,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
             BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
           ],
         ),
-      ),
-    );
+      );
   }
 }
