@@ -5,14 +5,28 @@ import 'package:flutter_application/church_app/screens/home/sections/announcemen
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/pastor_section.dart';
+import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    FcmNotificationService notificationService = FcmNotificationService();
+    notificationService.requestNotificationsPermission();
+    notificationService.getFirebaseMessagingToken();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
 
     return sectionConfigsAsync.when(
@@ -33,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
 
         final slivers = <Widget>[];
 
-          for (final ordered in activeSections) {
+        for (final ordered in activeSections) {
           final spacing = spacingForOrder(ordered.order);
 
           // 🔹 Add spacing BEFORE section if needed
@@ -50,9 +64,7 @@ class HomeScreen extends ConsumerWidget {
           );
         }
 
-        return CustomScrollView(
-            slivers: slivers
-        );
+        return CustomScrollView(slivers: slivers);
       },
     );
   }

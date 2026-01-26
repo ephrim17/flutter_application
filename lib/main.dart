@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/app_starter_menu.dart';
@@ -15,6 +16,12 @@ import 'package:firebase_core/firebase_core.dart';
   //   runApp(ProviderScope(child: const AppStarterMenu()));
   // }
 
+
+Future<void> _backgroundMessageHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('Handling a background message ${message.messageId}');
+}
+
 /* church App */
   void main() async {
     var lightColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 191, 139, 255),);
@@ -28,6 +35,7 @@ import 'package:firebase_core/firebase_core.dart';
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform
     );
+    FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
 
      if (kDebugMode) {
     await FirebaseAuth.instance.setSettings(
