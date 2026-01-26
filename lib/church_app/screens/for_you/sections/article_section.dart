@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/for_you_section_model/article_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
-import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
-import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -18,7 +16,7 @@ class ArticleSection implements MasterSection {
 
   @override
   List<Widget> buildSlivers(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    //final width = MediaQuery.of(context).size.width;
     return [
       SliverToBoxAdapter(
         child: Column(
