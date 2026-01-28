@@ -27,6 +27,7 @@ class AuthRepository {
     required String name,
     required String email,
     required String password,
+    required String phone,
   }) async {
     final cred = await _auth.createUserWithEmailAndPassword(
       email: email,
@@ -40,6 +41,7 @@ class AuthRepository {
       'email': email,
       'approved': false,
       'createdAt': FieldValue.serverTimestamp(),
+      'phone': phone
     });
   }
 

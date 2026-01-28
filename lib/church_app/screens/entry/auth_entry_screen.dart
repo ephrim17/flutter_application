@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_entry_screen.dart';
 import 'login_request_screen.dart';
 
@@ -48,12 +49,27 @@ class AuthEntryScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const LoginRequestScreen(),
+                        builder: (_) => LoginRequestScreen(),
                       ),
                     );
                   },
                   child: const Text('Request Access'),
                 ),
+              ),
+
+              const SizedBox(height: 24),
+
+              /// Forgot Password
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Forgot Password?'),
               ),
             ],
           ),
