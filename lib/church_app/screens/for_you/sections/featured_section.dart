@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/bibleVerse/bible_swipe_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -47,7 +48,22 @@ class FeaturedSection implements MasterSection {
                   //       FeaturedItemWidget(title: "Shorts",),
                   //       FeaturedItemWidget(title: "Sermons",),
                   //     ]),
-                  )
+                  ),
+              const SizedBox(height: 10),
+              SizedBox(
+                  height: 50,
+                  width: width * 0.9,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BibleSwipeScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Bible Swipes'),
+                  ))
             ],
           ),
         ),
