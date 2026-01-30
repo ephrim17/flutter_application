@@ -52,6 +52,7 @@ dependencies:
   youtube_player_flutter: ^9.0.1
   url_launcher: ^6.2.6
   firebase_messaging: ^16.1.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

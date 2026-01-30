@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/event_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
 
 double spacingForOrder(int order) {
@@ -35,6 +36,7 @@ enum DrawerMenuItem {
   prayerRequest,
   about,
   settings,
+  favorites
 }
 
 extension DrawerMenuItemX on DrawerMenuItem {
@@ -48,6 +50,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return 'About';
       case DrawerMenuItem.settings:
         return 'Settings';
+      case DrawerMenuItem.favorites:
+        return 'Favorites';
     }
   }
 
@@ -61,6 +65,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return Icons.info;
       case DrawerMenuItem.settings:
         return Icons.settings;
+      case DrawerMenuItem.favorites:
+        return Icons.favorite_rounded;
     }
   }
 
@@ -72,6 +78,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return const PrayerRequestScreen();
       case DrawerMenuItem.about:
         return const AboutScreen();
+      case DrawerMenuItem.favorites:
+        return FavoritesScreen();
       case DrawerMenuItem.settings:
         return const Placeholder();
     }
