@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter_application/church_app/models/for_you_section_model/bible_verse_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/bible_verse_model.dart';
 import 'package:flutter_application/church_app/services/for_you_section/bible_verse_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';

@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/sermon_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/sermon_model.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class SermonPlayer extends StatefulWidget {

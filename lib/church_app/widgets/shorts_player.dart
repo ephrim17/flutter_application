@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/shorts_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/shorts_model.dart';
 import 'package:flutter_application/church_app/widgets/swipe_up_widget.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 

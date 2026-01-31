@@ -1,4 +1,4 @@
-import 'package:flutter_application/church_app/models/user/app_user_model.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_authentication.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

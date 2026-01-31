@@ -44,9 +44,9 @@ Future<void> _backgroundMessageHandler(RemoteMessage message) async {
   }
     runApp(ProviderScope(child: 
     MaterialApp(
-        darkTheme: ThemeData().copyWith(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 0, 0, 0),
-        colorScheme: darkColoScheme,),
+        // darkTheme: ThemeData().copyWith(
+        // scaffoldBackgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        // colorScheme: darkColoScheme,),
       theme: ThemeData().copyWith(
         scaffoldBackgroundColor: const Color.fromARGB(255, 255, 250, 250),
         colorScheme: lightColorScheme,

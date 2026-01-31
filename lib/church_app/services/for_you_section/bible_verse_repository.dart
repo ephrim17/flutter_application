@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/models/bible_verses.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/bible_verse_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/bible_verse_model.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class BibleVerseRepository {

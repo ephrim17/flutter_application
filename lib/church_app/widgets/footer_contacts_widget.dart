@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/footer_support/contact_item_model.dart';
+import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

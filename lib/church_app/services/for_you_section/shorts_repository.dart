@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/shorts_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/shorts_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final shortsRepositoryProvider = Provider((ref) {

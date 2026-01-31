@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application/church_app/models/prayer_request/prayer_request_model.dart';
+import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 
 class PrayerRepository {
   final _firestore = FirebaseFirestore.instance;

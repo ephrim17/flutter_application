@@ -1,4 +1,4 @@
-import 'package:flutter_application/church_app/models/for_you_section_model/daily_verse_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/daily_verse_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/for_you_section/daily_verse_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

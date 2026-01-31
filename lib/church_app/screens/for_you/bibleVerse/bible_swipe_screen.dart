@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/bible_verse_model.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/favorites_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/bible_verse_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/favorites_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

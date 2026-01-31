@@ -1,4 +1,4 @@
-import 'package:flutter_application/church_app/models/for_you_section_model/article_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/services/for_you_section/article_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

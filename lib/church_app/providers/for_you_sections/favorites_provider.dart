@@ -1,5 +1,5 @@
 
-import 'package:flutter_application/church_app/models/for_you_section_model/favorites_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/favorites_model.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

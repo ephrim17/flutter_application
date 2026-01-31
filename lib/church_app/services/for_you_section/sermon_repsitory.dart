@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/sermon_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/sermon_model.dart';
 
 class SermonRepository {
   final _firestore = FirebaseFirestore.instance;

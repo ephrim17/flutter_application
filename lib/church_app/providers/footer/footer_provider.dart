@@ -1,5 +1,5 @@
-import 'package:flutter_application/church_app/models/footer_support/contact_item_model.dart';
-import 'package:flutter_application/church_app/models/footer_support/social_icon_model.dart';
+import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
+import 'package:flutter_application/church_app/models/footer_support_models/social_icon_model.dart';
 import 'package:flutter_application/church_app/services/footer/footer_fetcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

@@ -1,7 +1,7 @@
 
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/for_you_section_model/article_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 
 class ArticleRepository {
   final FirebaseFirestore firestore;
