@@ -17,10 +17,12 @@ final authRepositoryProvider = Provider(
   ),
 );
 
-// final appUserProvider = FutureProvider<AppUser?>((ref) async {
-//   final repo = ref.read(authRepositoryProvider);
-//   return repo.getCurrentUser();
-// });
+final getCurrentUserProvider = FutureProvider<AppUser?>((ref) async {
+  ref.keepAlive();
+
+  final repo = ref.read(authRepositoryProvider);
+  return repo.getCurrentUser();
+});
 
 final appUserProvider = StreamProvider<AppUser?>((ref) {
   final auth = ref.watch(firebaseAuthProvider);

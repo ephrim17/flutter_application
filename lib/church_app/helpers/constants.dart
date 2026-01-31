@@ -35,10 +35,10 @@ String appTagline = "Connecting Faith and Community";
 enum DrawerMenuItem {
   events,
   prayerRequest,
+  members,
+  favorites,
   about,
   settings,
-  members,
-  favorites
 }
 
 extension DrawerMenuItemX on DrawerMenuItem {

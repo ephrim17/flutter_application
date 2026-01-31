@@ -34,6 +34,17 @@ class PrayerRepository {
         );
   }
 
+/// Stream all prayers for: ADMIN
+  Stream<List<PrayerRequest>> getAllPrayers() {
+    return _firestore
+        .collection('prayer_requests')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
+        );
+  }
+
   /// Delete prayer
   Future<void> deletePrayer(String prayerId) async {
     await _firestore.collection('prayer_requests').doc(prayerId).delete();

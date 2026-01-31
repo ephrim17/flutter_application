@@ -1,15 +1,16 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class MembersScreen extends StatelessWidget {
+class MembersScreen extends ConsumerWidget {
   const MembersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final repo = MembersRepository();
+   final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,12 +49,14 @@ class MembersScreen extends StatelessWidget {
                     Text(m.phone),
                   ],
                 ),
-                trailing: Switch(
-                  value: m.approved,
-                  onChanged: (val) {
-                    repo.approveMember(m.uid, val);
-                  },
-                ),
+                trailing: isAdmin
+                    ? Switch(
+                        value: m.approved,
+                        onChanged: (val) {
+                          repo.approveMember(m.uid, val);
+                        },
+                      )
+                    : null,
               );
             },
           );

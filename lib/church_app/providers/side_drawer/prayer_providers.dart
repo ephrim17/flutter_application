@@ -10,3 +10,8 @@ final myPrayerRequestsProvider =
     StreamProvider<List<PrayerRequest>>(
   (ref) => ref.watch(prayerRepositoryProvider).watchMyPrayers(),
 );
+
+final allPrayerRequestsProvider =
+    StreamProvider<List<PrayerRequest>>((ref) {
+  return ref.read(prayerRepositoryProvider).getAllPrayers();
+});
