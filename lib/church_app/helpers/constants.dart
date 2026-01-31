@@ -95,3 +95,10 @@ extension DrawerMenuItemX on DrawerMenuItem {
 
   //bool get isDestructive => this == DrawerMenuItem.logout;
 }
+
+extension HexColor on String {
+  Color toColor() {
+    final hex = replaceFirst('#', '');
+    return Color(int.parse('FF$hex', radix: 16));
+  }
+}

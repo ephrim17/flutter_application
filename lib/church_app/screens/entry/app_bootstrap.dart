@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,22 +10,27 @@ class AppBootstrap extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(appConfigProvider);
-    var lightColorScheme = ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 191, 139, 255),);
+    final configAsync = ref.watch(appConfigProvider);
 
-    return config.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => const Scaffold(
-        body: Center(child: Text("BootStrap Launch failed")),
-      ),
-      data: (_) => MaterialApp(
-        theme: ThemeData().copyWith(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 250, 250),
-        colorScheme: lightColorScheme,
-      ),
-      home: AppEntry()
+    return MaterialApp(
+      home: configAsync.when(
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (_, __) => const Scaffold(
+          body: Center(child: Text("Bootstrap Launch failed")),
+        ),
+        data: (config) {
+          final bgColor = config.primaryColorHex.toColor();
+
+          return Theme(
+            data: ThemeData(
+              scaffoldBackgroundColor: bgColor,
+              colorScheme: ColorScheme.fromSeed(seedColor: bgColor),
+            ),
+            child: AppEntry(),
+          );
+        },
       ),
     );
   }
