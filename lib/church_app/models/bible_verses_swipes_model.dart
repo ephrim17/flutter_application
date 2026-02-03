@@ -1,5 +1,5 @@
 
-const Map<String, dynamic> bibleVerseJson = {
+const Map<String, dynamic> bibleVerseSwipesJson = {
   "toggleLabel": "Toggle English ↔ Tamil",
   "verses": [
     {

@@ -3,7 +3,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_application/church_app/models/bible_verses.dart';
+import 'package:flutter_application/church_app/models/bible_verses_swipes_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/bible_verse_model.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -19,7 +19,7 @@ class BibleVerseRepository {
   // }
 
   List<BibleVerse> getAllVerses() {
-    final List<dynamic> raw = bibleVerseJson['verses'];
+    final List<dynamic> raw = bibleVerseSwipesJson['verses'];
 
     return raw
         .map((e) => BibleVerse.fromJson(e as Map<String, dynamic>))
