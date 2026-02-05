@@ -32,7 +32,7 @@ class DailyVerseSection implements MasterSection {
                 padding: const EdgeInsets.all(16),
                 child: Text('Error: $e'),
               ),
-              data: (items) => _DailyVerseList(items)
+              data: (items) => DailyVerseCard()
             );
           },
         ),
@@ -40,6 +40,37 @@ class DailyVerseSection implements MasterSection {
     ];
   }
 }
+
+class DailyVerseCard extends ConsumerWidget {
+  const DailyVerseCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dailyVerseAsync = ref.watch(dailyVerseProviderLocal);
+
+    return dailyVerseAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (e, _) => Text(e.toString()),
+      data: (verse) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            verse['text']!,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            verse['reference']!,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
 class _DailyVerseList extends StatelessWidget {

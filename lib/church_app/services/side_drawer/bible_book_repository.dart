@@ -13,6 +13,31 @@ class BibleRepository {
     final Map<String, dynamic> jsonMap = json.decode(raw);
     return jsonMap;
   }
+
+   Future<Map<String, String>> getVerse({
+    required String book,
+    required int chapter,
+    required int verse,
+  }) async {
+    final data = await loadBook(book);
+
+    final chapters = data['chapters'] as List<dynamic>;
+    final chapterData = chapters[chapter - 1];
+    final verses = chapterData['verses'] as List<dynamic>;
+    final verseData = verses[verse - 1];
+
+    // return {
+    //   'tamil': verseData['text'],
+    //   'english': verseData['english'] ?? '',
+    //   'reference': '$book $chapter:$verse',
+    // };
+
+    return {
+      'text': verseData['text'],
+      'reference': '$book $chapter:$verse',
+    };
+  }
+
 }
 
 final bibleBooks = [
