@@ -211,7 +211,7 @@ class _VerseScreenState extends State<VerseScreen> {
               final chapter = chapters[chapterIndex];
               final verses =
                   chapter['verses'] as List<dynamic>;
-              final chapterNo = chapter['chapter'];
+              //final chapterNo = chapter['chapter'];
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),

@@ -1,56 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-// Data models
-class ReadingPlan {
-  final String month;
-  final int monthIndex;
-  final List<DayPlan> days;
-
-  ReadingPlan({required this.month, required this.monthIndex, required this.days});
-
-  factory ReadingPlan.fromJson(Map<String, dynamic> json) {
-    var daysFromJson = json['days'] as List;
-    List<DayPlan> daysList = daysFromJson.map((i) => DayPlan.fromJson(i)).toList();
-    return ReadingPlan(
-      month: json['month'],
-      monthIndex: json['monthIndex'],
-      days: daysList,
-    );
-  }
-}
-
-class DayPlan {
-  final int day;
-  final List<Reading> readings;
-
-  DayPlan({required this.day, required this.readings});
-
-  factory DayPlan.fromJson(Map<String, dynamic> json) {
-    var readingsFromJson = json['readings'] as List;
-    List<Reading> readingsList = readingsFromJson.map((i) => Reading.fromJson(i)).toList();
-    return DayPlan(
-      day: json['day'],
-      readings: readingsList,
-    );
-  }
-}
-
-class Reading {
-  final String book;
-  final String chapters;
-
-  Reading({required this.book, required this.chapters});
-
-  factory Reading.fromJson(Map<String, dynamic> json) {
-    return Reading(
-      book: json['book'],
-      chapters: json['chapters'],
-    );
-  }
-}
-
+import 'package:flutter_application/church_app/models/for_you_section_models/reading_plan_model.dart';
+import 'package:flutter_application/church_app/screens/for_you/plan/bible_chapter_reader_screen.dart';
 
 class PlanDetailsScreen extends StatefulWidget {
   final String month;
@@ -98,6 +50,20 @@ class _PlanDetailsScreenState extends State<PlanDetailsScreen> {
                       return ListTile(
                         title: Text(reading.book),
                         trailing: Text("Chapters: ${reading.chapters}"),
+                        onTap: () {
+                          final range = parseChapterRange(reading.chapters);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BibleChapterReaderScreen(
+                                bookKey: reading.book, // Genesis, Psalms, etc
+                                startChapter: range[0],
+                                endChapter: range[1],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     }).toList(),
                   ),
