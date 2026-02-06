@@ -55,27 +55,21 @@ class _PastorList extends StatelessWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 16),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(text: "Our Pastors", padding: 0.0,),
+          SectionHeader(text: "Our Pastors", padding: 16.0,),
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(PastorSection().id),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _PastorCard(items[i]),
-              ),
+              separatorBuilder: (_, __) => const SizedBox(width: 0),
+              itemBuilder: (_, i) => _PastorCard(items[i]),
             ),
           ),
         ],
-      ),
     );
   }
 }
@@ -88,21 +82,24 @@ class _PastorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
-    return Container(
-      width: width - 32,
-      padding: const EdgeInsets.all(12),
-      decoration: carouselBoxDecoration(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(a.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(a.contact,
-              maxLines: 3, overflow: TextOverflow.ellipsis),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: width - 32,
+        padding: const EdgeInsets.all(12),
+        decoration: carouselBoxDecoration(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(a.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text(a.contact,
+                maxLines: 3, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
