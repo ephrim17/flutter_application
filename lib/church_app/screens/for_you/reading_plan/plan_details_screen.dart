@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/reading_plan_model.dart';
-import 'package:flutter_application/church_app/screens/for_you/plan/bible_chapter_reader_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/reading_plan/bible_chapter_reader_screen.dart';
 
 class PlanDetailsScreen extends StatefulWidget {
   final String month;

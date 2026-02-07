@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/screens/for_you/bibleVerse/bible_swipe_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible_verse_swipe_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -58,7 +58,7 @@ class FeaturedSection implements MasterSection {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => BibleSwipeScreen(),
+                          builder: (_) => BibleSwipeVerseScreen(),
                         ),
                       );
                     },

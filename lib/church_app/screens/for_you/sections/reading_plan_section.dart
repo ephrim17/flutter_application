@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/screens/for_you/plan/plan_list_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 

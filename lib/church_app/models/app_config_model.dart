@@ -2,6 +2,7 @@ class AppConfig {
   final List<String> admins;
   final bool membersEnabled;
   final bool eventsEnabled;
+  final bool bibleSwipeFetchEnabled;
   final String onboardingTitle;
   final String onboardingSubtitle;
   final String primaryColorHex;
@@ -16,6 +17,7 @@ class AppConfig {
     required this.onboardingSubtitle,
     required this.primaryColorHex,
     required this.dailyVerseRef,
+    required this.bibleSwipeFetchEnabled
     //required this.logoUrl,
   });
 
@@ -24,6 +26,7 @@ class AppConfig {
       admins: List<String>.from(data['admins'] ?? []),
       dailyVerseRef:DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
+      bibleSwipeFetchEnabled: data['features']?['bibleSwipeFetchEnabled'] ?? false,
       eventsEnabled: data['features']?['eventsEnabled'] ?? false,
       onboardingTitle: data['onboarding']?['title'] ?? '',
       onboardingSubtitle: data['onboarding']?['subtitle'] ?? '',

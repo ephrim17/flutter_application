@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/screens/for_you/plan/plan_details_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_details_screen.dart';
 import 'package:flutter_application/church_app/widgets/plan/plan_card.dart';
 
 class PlanListScreen extends StatelessWidget {
