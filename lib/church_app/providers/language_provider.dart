@@ -4,5 +4,5 @@ import 'package:hooks_riverpod/legacy.dart';
 final dailyVerseLanguageProvider =
     StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);
 
-final chapterReaderLanguageProvider =
-    StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);
+//final chapterReaderLanguageProvider =
+    //StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);

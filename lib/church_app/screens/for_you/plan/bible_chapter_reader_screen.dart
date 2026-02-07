@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
-import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
+import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 List<int> parseChapterRange(String chapters) {
@@ -48,8 +47,6 @@ class _BibleChapterReaderScreenState
 
   @override
   Widget build(BuildContext context) {
-    final language = ref.watch(chapterReaderLanguageProvider);
-
     return FutureBuilder<Map<String, dynamic>>(
       future: repo.loadBook(widget.bookKey),
       builder: (context, snapshot) {
@@ -71,14 +68,6 @@ class _BibleChapterReaderScreenState
         return Scaffold(
           appBar: AppBar(
             title: Text('${widget.bookKey} $currentChapter'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: BibleLanguageToggle(
-                  provider: chapterReaderLanguageProvider,
-                ),
-              ),
-            ],
           ),
           body: PageView.builder(
             controller: _controller,
@@ -91,35 +80,14 @@ class _BibleChapterReaderScreenState
             itemBuilder: (context, index) {
               final chapter = visibleChapters[index];
               final verses = chapter['verses'] as List<dynamic>;
-
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: verses.length,
                 itemBuilder: (_, verseIndex) {
                   final verse = verses[verseIndex];
-
-                  final verseText = language == BibleLanguage.tamil
-                      ? verse['text']['tamil']
-                      : verse['text']['english'];
-
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: RichText(
-                      text: TextSpan(
-                        style: DefaultTextStyle.of(context)
-                            .style
-                            .copyWith(height: 1.4),
-                        children: [
-                          TextSpan(
-                            text: '${verse['verse']} ',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextSpan(text: verseText),
-                        ],
-                      ),
-                    ),
+                    child: BibleVerseItemWidget(verseNumber: verse['verse'].toString(), versePrimary: verse['text']['tamil'], verseSecondary: verse['text']['english'],),
                   );
                 },
               );

@@ -36,3 +36,13 @@ class RandomBibleVerseNotifier extends StateNotifier<BibleVerse?> {
     state = _randomVerse(_verses);
   }
 }
+
+enum BibleFontSize {
+  small,
+  medium,
+  large,
+}
+
+final bibleFontSizeProvider =
+    StateProvider<BibleFontSize>((ref) => BibleFontSize.medium);
+

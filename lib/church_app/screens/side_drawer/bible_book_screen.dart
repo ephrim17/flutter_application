@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
+import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -172,10 +174,11 @@ class _VerseScreenState extends State<VerseScreen> {
         final chapters = snapshot.data!['chapters'] as List<dynamic>;
 
         return Scaffold(
-          appBar: AppBar(
+          appBar: BibleReaderAppBar(
             title: Row(
               children: [
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(widget.book.key, style: const TextStyle(fontSize: 18)),
                     Text(widget.book.name,
@@ -232,41 +235,10 @@ class _VerseScreenState extends State<VerseScreen> {
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Verse number
-                          Text(
-                            verse['verse'].toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          // Tamil
-                          Text(
-                            verse['text']['tamil'],
-                            style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          // English
-                          Text(
-                            verse['text']['english'],
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: BibleVerseItemWidget(
+                          verseNumber: verse['verse'].toString(),
+                          versePrimary: verse['text']['tamil'],
+                          verseSecondary: verse['text']['english']),
                     ),
                   );
                 },
