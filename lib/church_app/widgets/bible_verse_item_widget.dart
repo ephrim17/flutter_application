@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/bible_font_size_constant.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/bible_verse_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BibleVerseItemWidget extends ConsumerWidget {

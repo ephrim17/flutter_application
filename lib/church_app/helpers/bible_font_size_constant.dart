@@ -1,4 +1,4 @@
-import 'package:flutter_application/church_app/providers/for_you_sections/bible_verse_provider.dart';
+import 'package:hooks_riverpod/legacy.dart';
 
 class BibleFontConfig {
   static double verseNumber(BibleFontSize size) {
@@ -34,3 +34,12 @@ class BibleFontConfig {
     }
   }
 }
+
+enum BibleFontSize {
+  small,
+  medium,
+  large,
+}
+
+final bibleFontSizeProvider =
+    StateProvider<BibleFontSize>((ref) => BibleFontSize.medium);

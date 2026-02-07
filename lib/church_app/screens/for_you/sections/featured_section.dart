@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible_verse_swipe_screen.dart';
-import 'package:flutter_application/church_app/screens/for_you/sermon_screen.dart';
-import 'package:flutter_application/church_app/screens/for_you/shorts_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/helpers/youtube_utils.dart';
 
@@ -69,46 +67,5 @@ class FeaturedSection implements MasterSection {
         ),
       ),
     ];
-  }
-}
-
-class FeaturedItemWidget extends StatelessWidget {
-  const FeaturedItemWidget({super.key, required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) {
-              if (title == "Shorts") {
-                return const ShortsFeedScreen();
-              } else {
-                return const SermonsScreen();
-              }
-            },
-          ),
-        ),
-      },
-      splashColor: Colors.red,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16.0),
-            gradient: LinearGradient(
-                colors: [Colors.red, Colors.red.withBlue(100)],
-                begin: Alignment.bottomRight,
-                end: Alignment.topLeft),
-          ),
-          child: Center(
-              child: Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ))),
-    );
   }
 }
