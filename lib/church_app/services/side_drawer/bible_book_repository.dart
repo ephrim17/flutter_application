@@ -5,16 +5,11 @@ import 'package:flutter_application/church_app/models/bible_book_model.dart';
 class BibleRepository {
   Future<Map<String, dynamic>> loadBook(String bookKey) async {
     final path = 'assets/bible/$bookKey.json';
-    //debugPrint('📖 Loading: $path');
-
     final raw = await rootBundle.loadString(path);
-    //debugPrint('✅ Loaded ${raw.length} chars');
-
-    final Map<String, dynamic> jsonMap = json.decode(raw);
-    return jsonMap;
+    return json.decode(raw);
   }
 
-   Future<Map<String, String>> getVerse({
+  Future<Map<String, String>> getVerse({
     required String book,
     required int chapter,
     required int verse,
@@ -26,19 +21,14 @@ class BibleRepository {
     final verses = chapterData['verses'] as List<dynamic>;
     final verseData = verses[verse - 1];
 
-    // return {
-    //   'tamil': verseData['text'],
-    //   'english': verseData['english'] ?? '',
-    //   'reference': '$book $chapter:$verse',
-    // };
-
     return {
-      'text': verseData['text'],
+      'tamil': verseData['text']['tamil'],
+      'english': verseData['text']['english'],
       'reference': '$book $chapter:$verse',
     };
   }
-
 }
+
 
 final bibleBooks = [
   BibleBook(key: 'Genesis', name: 'ஆதியாகமம்'),

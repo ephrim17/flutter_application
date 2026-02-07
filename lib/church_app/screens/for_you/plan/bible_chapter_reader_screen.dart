@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 List<int> parseChapterRange(String chapters) {
   if (!chapters.contains('-')) {
@@ -14,7 +17,7 @@ List<int> parseChapterRange(String chapters) {
   ];
 }
 
-class BibleChapterReaderScreen extends StatefulWidget {
+class BibleChapterReaderScreen extends ConsumerStatefulWidget {
   final String bookKey;
   final int startChapter;
   final int endChapter;
@@ -27,11 +30,12 @@ class BibleChapterReaderScreen extends StatefulWidget {
   });
 
   @override
-  State<BibleChapterReaderScreen> createState() =>
+  ConsumerState<BibleChapterReaderScreen> createState() =>
       _BibleChapterReaderScreenState();
 }
 
-class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
+class _BibleChapterReaderScreenState
+    extends ConsumerState<BibleChapterReaderScreen> {
   final repo = BibleRepository();
   late final PageController _controller;
   int _currentPage = 0;
@@ -39,12 +43,13 @@ class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
   @override
   void initState() {
     super.initState();
-    _currentPage = 0;
     _controller = PageController(initialPage: 0);
   }
 
   @override
   Widget build(BuildContext context) {
+    final language = ref.watch(chapterReaderLanguageProvider);
+
     return FutureBuilder<Map<String, dynamic>>(
       future: repo.loadBook(widget.bookKey),
       builder: (context, snapshot) {
@@ -66,6 +71,14 @@ class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
         return Scaffold(
           appBar: AppBar(
             title: Text('${widget.bookKey} $currentChapter'),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: BibleLanguageToggle(
+                  provider: chapterReaderLanguageProvider,
+                ),
+              ),
+            ],
           ),
           body: PageView.builder(
             controller: _controller,
@@ -78,7 +91,6 @@ class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
             itemBuilder: (context, index) {
               final chapter = visibleChapters[index];
               final verses = chapter['verses'] as List<dynamic>;
-              //final chapterNo = chapter['chapter'];
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -86,11 +98,17 @@ class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
                 itemBuilder: (_, verseIndex) {
                   final verse = verses[verseIndex];
 
+                  final verseText = language == BibleLanguage.tamil
+                      ? verse['text']['tamil']
+                      : verse['text']['english'];
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: RichText(
                       text: TextSpan(
-                        style: DefaultTextStyle.of(context).style,
+                        style: DefaultTextStyle.of(context)
+                            .style
+                            .copyWith(height: 1.4),
                         children: [
                           TextSpan(
                             text: '${verse['verse']} ',
@@ -98,7 +116,7 @@ class _BibleChapterReaderScreenState extends State<BibleChapterReaderScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          TextSpan(text: verse['text']),
+                          TextSpan(text: verseText),
                         ],
                       ),
                     ),

@@ -45,7 +45,6 @@ class ChapterScreen extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: repo.loadBook(book.key),
       builder: (context, snapshot) {
-
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -61,10 +60,17 @@ class ChapterScreen extends StatelessWidget {
         final chapters = snapshot.data!['chapters'] as List<dynamic>;
 
         return Scaffold(
-          appBar: AppBar(title: Column(
+          appBar: AppBar(
+              title: Column(
             children: [
-              Text(book.key, style: TextStyle(fontSize: 18),),
-              Text(book.name, style: TextStyle(fontSize: 10),),
+              Text(
+                book.key,
+                style: TextStyle(fontSize: 18),
+              ),
+              Text(
+                book.name,
+                style: TextStyle(fontSize: 10),
+              ),
             ],
           )),
           body: GridView.builder(
@@ -75,7 +81,7 @@ class ChapterScreen extends StatelessWidget {
             ),
             itemCount: chapters.length,
             itemBuilder: (_, index) {
-              final chapterNo = chapters[index]['chapter'];
+              final chapterNo = chapters[index]['chapter'].toString();
               return InkWell(
                 onTap: () {
                   Navigator.push(
@@ -117,25 +123,20 @@ class VerseScreen extends StatefulWidget {
 class _VerseScreenState extends State<VerseScreen> {
   final repo = BibleRepository();
   final Set<int> highlightedVerses = {};
-  var chapterIndex = "";
   late PageController _pageController;
+  String chapterIndexText = '';
 
   @override
   void initState() {
     super.initState();
-    _pageController =
-        PageController(initialPage: widget.chapterIndex);
+    _pageController = PageController(initialPage: widget.chapterIndex);
     _loadHighlights(widget.chapterIndex);
-    setState(() {
-        chapterIndex = (widget.chapterIndex+1).toString();
-      });
+    chapterIndexText = (widget.chapterIndex + 1).toString();
   }
 
-  // 🔹 Storage key
   String _storageKey(int chapterIndex) =>
       'highlight_${widget.book.key}_$chapterIndex';
 
-  // 🔹 Load highlights
   Future<void> _loadHighlights(int chapterIndex) async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_storageKey(chapterIndex));
@@ -149,19 +150,12 @@ class _VerseScreenState extends State<VerseScreen> {
     }
   }
 
-  // 🔹 Save highlights
   Future<void> _saveHighlights(int chapterIndex) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
       _storageKey(chapterIndex),
       highlightedVerses.map((e) => e.toString()).toList(),
     );
-  }
-
-  void setChapterIndex(String index) {
-    setState(() {
-      chapterIndex = index;
-    });
   }
 
   @override
@@ -175,23 +169,23 @@ class _VerseScreenState extends State<VerseScreen> {
           );
         }
 
-        final chapters =
-            snapshot.data!['chapters'] as List<dynamic>;
+        final chapters = snapshot.data!['chapters'] as List<dynamic>;
 
         return Scaffold(
           appBar: AppBar(
             title: Row(
-            children: [
-              Column(
-                children: [
-                  Text(widget.book.key, style: TextStyle(fontSize: 18),),
-                  Text(widget.book.name, style: TextStyle(fontSize: 10),),
-                ],
-              ),
-              const SizedBox(width: 10,),
-              Text(chapterIndex)
-            ],
-          ),
+              children: [
+                Column(
+                  children: [
+                    Text(widget.book.key, style: const TextStyle(fontSize: 18)),
+                    Text(widget.book.name,
+                        style: const TextStyle(fontSize: 10)),
+                  ],
+                ),
+                const SizedBox(width: 10),
+                Text(chapterIndexText),
+              ],
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -205,21 +199,20 @@ class _VerseScreenState extends State<VerseScreen> {
             onPageChanged: (index) {
               highlightedVerses.clear();
               _loadHighlights(index);
-              setChapterIndex((index + 1).toString());
+              setState(() {
+                chapterIndexText = (index + 1).toString();
+              });
             },
             itemBuilder: (context, chapterIndex) {
               final chapter = chapters[chapterIndex];
-              final verses =
-                  chapter['verses'] as List<dynamic>;
-              //final chapterNo = chapter['chapter'];
+              final verses = chapter['verses'] as List<dynamic>;
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: verses.length,
                 itemBuilder: (_, index) {
                   final verse = verses[index];
-                  final isHighlighted =
-                      highlightedVerses.contains(index);
+                  final isHighlighted = highlightedVerses.contains(index);
 
                   return GestureDetector(
                     onTap: () async {
@@ -231,31 +224,48 @@ class _VerseScreenState extends State<VerseScreen> {
                       await _saveHighlights(chapterIndex);
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: isHighlighted
-                            ? Colors.yellow
-                                .withValues(alpha: 0.3)
+                            ? Colors.yellow.withValues(alpha: 0.25)
                             : Colors.transparent,
-                        borderRadius:
-                            BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: RichText(
-                        text: TextSpan(
-                          style: DefaultTextStyle.of(context)
-                              .style,
-                          children: [
-                            TextSpan(
-                              text:
-                                  '${verse['verse']} ',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Verse number
+                          Text(
+                            verse['verse'].toString(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                             ),
-                            TextSpan(text: verse['text']),
-                          ],
-                        ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          // Tamil
+                          Text(
+                            verse['text']['tamil'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          // English
+                          Text(
+                            verse['text']['english'],
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -272,14 +282,17 @@ class _VerseScreenState extends State<VerseScreen> {
     if (highlightedVerses.isEmpty) return;
 
     final currentPage = _pageController.page?.round() ?? 0;
-    final verses =
-        chapters[currentPage]['verses'] as List<dynamic>;
+    final verses = chapters[currentPage]['verses'] as List<dynamic>;
 
-    final text = highlightedVerses
-        .map((i) =>
-            '${verses[i]['verse']} ${verses[i]['text']}')
-        .join('\n\n');
+    final text = highlightedVerses.map((i) {
+      final v = verses[i];
+      return '''
+${v['verse']}
+${v['text']['tamil']}
+${v['text']['english']}
+''';
+    }).join('\n');
 
-    Share.share(text);
+    Share.share(text.trim());
   }
 }

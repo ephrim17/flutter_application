@@ -16,10 +16,11 @@ final dailyVerseProviderLocal =
   final config = await ref.watch(appConfigProvider.future);
   final refData = config.dailyVerseRef;
 
-  return BibleRepository().getVerse(
+  final repo = BibleRepository();
+
+  return repo.getVerse(
     book: refData.book,
     chapter: refData.chapter,
     verse: refData.verse,
   );
 });
-
