@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 
 double spacingForOrder(int order) {
   return 20;
@@ -14,13 +15,24 @@ double cardHeight(String id) {
   return 120;
 }
 
-BoxDecoration carouselBoxDecoration(BuildContext context,) {
-    return BoxDecoration(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        border: Border.all(color: const Color.fromARGB(31, 169, 158, 158).withAlpha(05)),
-        color: const Color.fromARGB(255, 255, 255, 255)
-      );
+BoxDecoration carouselBoxDecoration(BuildContext context) {
+  return BoxDecoration(
+    borderRadius: BorderRadius.circular(cornerRadius),
+    border: Border.all(
+      color: const Color.fromARGB(31, 169, 158, 158).withAlpha(5),
+    ),
+    color: Theme.of(context).cardTheme.color,
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x0D000000), // ~5% opacity
+        blurRadius: 18,           // higher blur = softer edge
+        spreadRadius: 0,          // IMPORTANT: no spread
+        offset: Offset.zero,      // all sides
+      ),
+    ],
+  );
 }
+
 
 double cornerRadius = 15.0;
 

@@ -23,18 +23,28 @@ class AppBootstrap extends ConsumerWidget {
         ),
       ),
       data: (config) {
-        final bgColor = config.primaryColorHex.toColor().withAlpha(240);
+        final bgColor = config.backgroundColorHex.toColor();
+        final cardColor = config.cardColorHex.toColor();
+        final primaryColor = config.primaryColorHex.toColor();
 
         return MaterialApp(
           theme: ThemeData(
-            scaffoldBackgroundColor: bgColor,
-            colorScheme: ColorScheme.fromSeed(seedColor: bgColor),
-            appBarTheme: AppBarTheme(
-              backgroundColor: bgColor,
-              elevation: 0,
-              foregroundColor: Colors.black,
-            ),
-          ),
+              scaffoldBackgroundColor: bgColor,
+              colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+              appBarTheme: AppBarTheme(
+                backgroundColor: bgColor,
+                elevation: 0,
+                foregroundColor: Colors.black,
+              ),
+              cardTheme: CardThemeData().copyWith(
+                color: cardColor,
+                margin:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white))),
           home: const AppEntry(),
         );
       },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
@@ -27,8 +28,8 @@ class BibleLanguageToggle extends ConsumerWidget {
         height: 30,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(20),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(cornerRadius),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
@@ -39,7 +40,7 @@ class BibleLanguageToggle extends ConsumerWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(cornerRadius),
             ),
             child: Text(
               isEnglish ? 'EN' : 'TN',
