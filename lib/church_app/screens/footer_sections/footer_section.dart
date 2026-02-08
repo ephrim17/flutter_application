@@ -19,12 +19,7 @@ class FooterSection extends MasterSection {
           padding: const EdgeInsets.all(16.0),
           child: Container(
             width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.all(
-                Radius.circular(cornerRadius),
-              ),
-            ),
+            decoration: carouselBoxDecoration(context),
             child: Padding(
               padding: const EdgeInsets.all(18.0),
               child: Column(

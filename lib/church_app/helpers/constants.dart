@@ -18,11 +18,11 @@ BoxDecoration carouselBoxDecoration(BuildContext context,) {
     return BoxDecoration(
         borderRadius: BorderRadius.circular(cornerRadius),
         border: Border.all(color: const Color.fromARGB(31, 169, 158, 158).withAlpha(05)),
-        color: Theme.of(context).colorScheme.onInverseSurface
+        color: const Color.fromARGB(255, 255, 255, 255)
       );
 }
 
-double cornerRadius = 20.0;
+double cornerRadius = 15.0;
 
 String appName = "My Church";
 String appTagline = "Connecting Faith and Community";
