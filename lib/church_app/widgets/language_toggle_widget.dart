@@ -39,7 +39,7 @@ class BibleLanguageToggle extends ConsumerWidget {
             width: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
+              color: isEnglish ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
               borderRadius: BorderRadius.circular(cornerRadius),
             ),
             child: Text(
