@@ -58,6 +58,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         body: _activeScreen,
         drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
         bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           onTap: (value) => setActiveScreen(value),
           currentIndex: selectedIndex,
           items: const [

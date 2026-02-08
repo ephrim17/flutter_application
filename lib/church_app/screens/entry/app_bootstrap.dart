@@ -31,6 +31,7 @@ class AppBootstrap extends ConsumerWidget {
         return MaterialApp(
           theme: ThemeData(
               useMaterial3: true,
+              scaffoldBackgroundColor: bgColor,
               colorScheme: ColorScheme.fromSeed(
                 seedColor: primaryColor,
                 primary: primaryColor,
