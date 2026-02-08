@@ -52,7 +52,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           onTap: (value) => setActiveScreen(value),
           currentIndex: selectedIndex,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
           ],
         ),
