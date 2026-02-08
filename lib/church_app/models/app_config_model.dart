@@ -3,11 +3,11 @@ class AppConfig {
   final bool membersEnabled;
   final bool eventsEnabled;
   final bool bibleSwipeFetchEnabled;
+  final int bibleSwipeFetchVersion;
   final String onboardingTitle;
   final String onboardingSubtitle;
   final String primaryColorHex;
   final DailyVerseRef dailyVerseRef;
-  //final String logoUrl;
 
   const AppConfig({
     required this.admins,
@@ -17,16 +17,18 @@ class AppConfig {
     required this.onboardingSubtitle,
     required this.primaryColorHex,
     required this.dailyVerseRef,
-    required this.bibleSwipeFetchEnabled
-    //required this.logoUrl,
+    required this.bibleSwipeFetchEnabled,
+    required this.bibleSwipeFetchVersion
   });
 
   factory AppConfig.fromMap(Map<String, dynamic> data) {
+    final features = data['features'] as Map<String, dynamic>? ?? {};
     return AppConfig(
       admins: List<String>.from(data['admins'] ?? []),
       dailyVerseRef:DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       bibleSwipeFetchEnabled: data['features']?['bibleSwipeFetchEnabled'] ?? false,
+      bibleSwipeFetchVersion: (features['bibleSwipeVersion'] as num?)?.toInt() ?? 0,
       eventsEnabled: data['features']?['eventsEnabled'] ?? false,
       onboardingTitle: data['onboarding']?['title'] ?? '',
       onboardingSubtitle: data['onboarding']?['subtitle'] ?? '',
