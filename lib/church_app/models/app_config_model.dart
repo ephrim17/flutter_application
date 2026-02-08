@@ -7,6 +7,7 @@ class AppConfig {
   final String onboardingTitle;
   final String onboardingSubtitle;
   final String primaryColorHex;
+  final String secondaryColorHex;
   final String backgroundColorHex;
   final String cardColorHex;
   final DailyVerseRef dailyVerseRef;
@@ -18,6 +19,7 @@ class AppConfig {
     required this.onboardingTitle,
     required this.onboardingSubtitle,
     required this.primaryColorHex,
+    required this.secondaryColorHex,
     required this.backgroundColorHex,
     required this.cardColorHex,
     required this.dailyVerseRef,
@@ -37,6 +39,7 @@ class AppConfig {
       onboardingTitle: data['onboarding']?['title'] ?? '',
       onboardingSubtitle: data['onboarding']?['subtitle'] ?? '',
       primaryColorHex: data['theme']?['primaryColor'] ?? '#000000',
+      secondaryColorHex: data['theme']?['secondaryColor'] ?? '#000000',
       backgroundColorHex: data['theme']?['backgroundColor'] ?? '#000000',
       cardColorHex: data['theme']?['cardBackgroundColor'] ?? '#000000',
       //logoUrl: data['theme']?['logoUrl'] ?? '',

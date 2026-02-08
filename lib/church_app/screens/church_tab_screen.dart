@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChurchTabScreen extends ConsumerStatefulWidget {
@@ -43,9 +44,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Church"),
+      appBar: AppBar(
+        centerTitle: true, // 👈 REQUIRED
+        toolbarHeight: 72,
+        title: LightningGradientText(
+          text: 'TNBM',
+          style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0,
+              ),
         ),
+      ),
         body: _activeScreen,
         drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
         bottomNavigationBar: BottomNavigationBar(

@@ -26,11 +26,16 @@ class AppBootstrap extends ConsumerWidget {
         final bgColor = config.backgroundColorHex.toColor();
         final cardColor = config.cardColorHex.toColor();
         final primaryColor = config.primaryColorHex.toColor();
+        final secondaryColor = config.secondaryColorHex.toColor();
 
         return MaterialApp(
           theme: ThemeData(
-              scaffoldBackgroundColor: bgColor,
-              colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: primaryColor,
+                primary: primaryColor,
+                secondary: secondaryColor // 👈 force exact
+              ),
               appBarTheme: AppBarTheme(
                 backgroundColor: bgColor,
                 elevation: 0,
