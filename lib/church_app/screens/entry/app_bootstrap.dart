@@ -23,14 +23,14 @@ class AppBootstrap extends ConsumerWidget {
         ),
       ),
       data: (config) {
-        final bgColor = config.primaryColorHex.toColor();
+        final bgColor = config.primaryColorHex.toColor().withAlpha(240);
 
         return MaterialApp(
           theme: ThemeData(
-            scaffoldBackgroundColor: bgColor.withAlpha(240),
+            scaffoldBackgroundColor: bgColor,
             colorScheme: ColorScheme.fromSeed(seedColor: bgColor),
             appBarTheme: AppBarTheme(
-              backgroundColor: bgColor.withAlpha(90),
+              backgroundColor: bgColor,
               elevation: 0,
               foregroundColor: Colors.black,
             ),

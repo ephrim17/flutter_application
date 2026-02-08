@@ -10,6 +10,7 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
     final versesAsync = ref.watch(swipeVersesProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Bible Verse Swipes'),
       ),
