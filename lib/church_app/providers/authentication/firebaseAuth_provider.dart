@@ -39,3 +39,4 @@ final appUserProvider = StreamProvider<AppUser?>((ref) {
     return AppUser.fromJson(doc.data()!);
   });
 });
+

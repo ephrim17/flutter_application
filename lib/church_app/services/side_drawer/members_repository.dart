@@ -13,10 +13,7 @@ class MembersRepository {
         .map(
           (snapshot) => snapshot.docs
               .map(
-                (doc) => AppUser.fromFirestore(
-                  doc.id,
-                  doc.data(),
-                ),
+                (doc) => AppUser.fromJson(doc.data()),
               )
               .toList(),
         );

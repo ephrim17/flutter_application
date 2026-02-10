@@ -1,9 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class AppUser {
   final String uid;
   final String name;
   final String email;
   final String phone;
   final String role;
+  final String authToken;
+  final DateTime? dob;
   final bool approved;
 
   AppUser({
@@ -13,39 +17,24 @@ class AppUser {
     required this.role,
     required this.approved,
     required this.phone,
+    required this.authToken,
+    required this.dob,
   });
 
-  factory AppUser.fromMap(String uid, Map<String, dynamic> data) {
-    return AppUser(
-      uid: uid,
-      name: data['name'] ?? '',
-      phone: data['phone'] ?? '',
-      email: data['email'] ?? '',
-      role: data['role'] ?? 'user',
-      approved: data['approved'] ?? false,
-    );
-  }
-
-  factory AppUser.fromFirestore(
-    String uid,
-    Map<String, dynamic> data,
-  ) {
-    return AppUser(
-      uid: uid,
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      phone: data['phone'] ?? '',
-      role: data['role'] ?? 'user',
-      approved: data['approved'] ?? false,
-    );
-  }
-
   factory AppUser.fromJson(Map<String, dynamic> json) {
+    final dobRaw = json['dob'];
+    
     return AppUser(
       uid: json['uid'] ?? '',
       phone: json['phone'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
+      authToken: json['authToken'] ?? '',
+      dob: dobRaw is Timestamp
+          ? dobRaw.toDate()
+          : dobRaw is DateTime
+              ? dobRaw
+              : null,
       role: json['role'] ?? 'user',
       approved: json['approved'] ?? false,
     );

@@ -2,33 +2,76 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
+import 'package:flutter_application/church_app/services/FCM/FCM_token_manager.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-
-class AppEntry extends ConsumerWidget {
+class AppEntry extends ConsumerStatefulWidget {
   const AppEntry({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+  ConsumerState<AppEntry> createState() => _AppEntryState();
+}
 
-    return userAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => const AuthEntryScreen(),
-      data: (user) {
-        if (user == null) {
-          return const AuthEntryScreen();
-        }
+class _AppEntryState extends ConsumerState<AppEntry> {
+  bool _tokenChecked = false;
 
-        if (!user.approved) {
-          return const PendingApprovalWidget();
-        }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-        return const ChurchTabScreen(); // MAIN APP
-      },
-    );
+    // if (_tokenChecked) return;
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //   final userAsync = ref.read(appUserProvider);
+
+    //   final user = userAsync.maybeWhen(
+    //     data: (u) => u,
+    //     orElse: () => null,
+    //   );
+
+    //   if (user != null && user.approved) {
+    //     _tokenChecked = true;
+    //     await updateTokenIfNeeded(ref);
+    //   }
+    // });
   }
+
+  @override
+Widget build(BuildContext context) {
+  debugPrint('🔥 AppEntry build()');
+
+  final userAsync = ref.watch(appUserProvider);
+
+  debugPrint('🔥 appUserProvider state: $userAsync');
+
+  return userAsync.when(
+    loading: () {
+      debugPrint('⏳ user loading');
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    },
+    error: (e, _) {
+      debugPrint('❌ user error: $e');
+      return const AuthEntryScreen();
+    },
+    data: (user) {
+      debugPrint('✅ user data: $user');
+
+      if (user == null) {
+        debugPrint('➡️ user null → AuthEntry');
+        return const AuthEntryScreen();
+      }
+
+      if (!user.approved) {
+        debugPrint('⛔ not approved');
+        return const PendingApprovalWidget();
+      }
+
+      debugPrint('🚀 approved → main app');
+      return const ChurchTabScreen();
+    },
+  );
+}
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/services/FCM/FCM_token_manager.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -32,6 +33,15 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         builder: (context) => Placeholder(),
       ));
     }
+  }
+
+   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      updateTokenIfNeeded(ref);
+    });
   }
 
   @override
