@@ -12,7 +12,7 @@ Future<void> updateTokenIfNeeded(WidgetRef ref) async {
   ref.read(tokenUpdatedProvider.notifier).state = true;
 
   final fcm = FcmNotificationService();
-  final token = await fcm.getFirebaseMessagingToken();
+  final token = "";
   if (token == null) return;
 
   final user = FirebaseAuth.instance.currentUser;

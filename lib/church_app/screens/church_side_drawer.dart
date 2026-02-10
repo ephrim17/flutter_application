@@ -69,6 +69,7 @@ class AppDrawer extends ConsumerWidget {
     final items = DrawerMenuItem.values;
 
     return Drawer(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           userAsync.when(
@@ -80,20 +81,20 @@ class AppDrawer extends ConsumerWidget {
             ),
             data: (user) {
               return UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor
+                ),
                 accountName: Text(
                   user?.name ?? '',
                   style: Theme.of(context)
                       .textTheme
                       .displayMedium
-                      ?.copyWith(color: Theme.of(context).secondaryHeaderColor),
+                      ?.copyWith(color: Theme.of(context).colorScheme.onSecondaryFixedVariant),
                 ),
                 accountEmail: Text(user?.email ?? '', style: Theme.of(context)
                       .textTheme
                       .titleMedium
-                      ?.copyWith(color: Theme.of(context).secondaryHeaderColor),)
-                // currentAccountPicture: const CircleAvatar(
-                //   //child: Icon(Icons.person),
-                // ),
+                      ?.copyWith(color: Theme.of(context).primaryColor),)
               );
             },
           ),
