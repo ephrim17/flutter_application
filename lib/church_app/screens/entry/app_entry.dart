@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
-import 'package:flutter_application/church_app/services/FCM/FCM_token_manager.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -14,28 +13,6 @@ class AppEntry extends ConsumerStatefulWidget {
 }
 
 class _AppEntryState extends ConsumerState<AppEntry> {
-  bool _tokenChecked = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    // if (_tokenChecked) return;
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    //   final userAsync = ref.read(appUserProvider);
-
-    //   final user = userAsync.maybeWhen(
-    //     data: (u) => u,
-    //     orElse: () => null,
-    //   );
-
-    //   if (user != null && user.approved) {
-    //     _tokenChecked = true;
-    //     await updateTokenIfNeeded(ref);
-    //   }
-    // });
-  }
 
   @override
 Widget build(BuildContext context) {
