@@ -7,6 +7,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_inappwebview_windows
+  gal
+  permission_handler_windows
   share_plus
   url_launcher_windows
 )

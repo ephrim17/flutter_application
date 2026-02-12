@@ -58,10 +58,11 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         centerTitle: true, // 👈 REQUIRED
         toolbarHeight: 72,
         title: LightningGradientText(
-          text: 'TNBM',
-          style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+          text: 'TNBM', //GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600)
+          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0,
+                fontSize: 32,
+                letterSpacing: 1,
               ),
         ),
       ),

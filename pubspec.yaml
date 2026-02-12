@@ -54,6 +54,8 @@ dependencies:
   firebase_messaging: ^16.1.1
   shared_preferences: ^2.2.2
   share_plus: ^7.2.1
+  gal: ^2.0.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:

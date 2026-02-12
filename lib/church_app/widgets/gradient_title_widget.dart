@@ -23,7 +23,7 @@ class LightningGradientText extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.visible,
-        style: GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600),
+        style: style,
       ),
     );
   }

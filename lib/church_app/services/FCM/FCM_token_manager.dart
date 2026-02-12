@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_authentication.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,7 +10,6 @@ Future<void> updateTokenIfNeeded(WidgetRef ref) async {
 
   ref.read(tokenUpdatedProvider.notifier).state = true;
 
-  final fcm = FcmNotificationService();
   final token = "";
   if (token == null) return;
 

@@ -5,7 +5,6 @@ import 'package:flutter_application/church_app/providers/language_provider.dart'
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hooks_riverpod/legacy.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
 
 class DailyVerseSection implements MasterSection {

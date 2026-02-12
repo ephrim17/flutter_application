@@ -5,7 +5,7 @@ import 'package:flutter_application/church_app/screens/home/sections/announcemen
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/pastor_section.dart';
-import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
+import 'package:flutter_application/church_app/widgets/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -17,13 +17,31 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    FcmNotificationService notificationService = FcmNotificationService();
-    notificationService.requestNotificationsPermission();
-    notificationService.getFirebaseMessagingToken();
-  }
+  
+late final ProviderSubscription<bool> _birthdayListener;
+
+@override
+void initState() {
+  super.initState();
+
+  _birthdayListener = ref.listenManual<bool>(
+    isBirthdayProvider,
+    (previous, next) {
+      if (next == true) {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => const PromptSheet(),
+        );
+      }
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
