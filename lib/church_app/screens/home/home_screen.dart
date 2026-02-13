@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/screens/home/sections/announcemen
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/pastor_section.dart';
+import 'package:flutter_application/church_app/screens/home/sections/promise_section.dart';
 import 'package:flutter_application/church_app/widgets/prompts/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
@@ -116,6 +117,7 @@ class HomeSectionRegistry {
         EventsSection(),
         PastorSection(),
         FooterSection(),
+        PromiseSection()
       ];
 }
 

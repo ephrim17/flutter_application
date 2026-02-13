@@ -11,6 +11,7 @@ class AppConfig {
   final String backgroundColorHex;
   final String cardColorHex;
   final DailyVerseRef dailyVerseRef;
+  final PromiseVerseRef promiseVerseRef;
   final PromptSheetModel promptSheet;
 
   const AppConfig({
@@ -26,7 +27,8 @@ class AppConfig {
     required this.dailyVerseRef,
     required this.promptSheet,
     required this.bibleSwipeFetchEnabled,
-    required this.bibleSwipeFetchVersion
+    required this.bibleSwipeFetchVersion,
+    required this.promiseVerseRef
   });
 
   factory AppConfig.fromMap(Map<String, dynamic> data) {
@@ -34,6 +36,7 @@ class AppConfig {
     return AppConfig(
       admins: List<String>.from(data['admins'] ?? []),
       dailyVerseRef:DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
+      promiseVerseRef:PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
       promptSheet:PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       bibleSwipeFetchEnabled: data['features']?['bibleSwipeFetchEnabled'] ?? false,
@@ -66,6 +69,26 @@ class DailyVerseRef {
 
    factory DailyVerseRef.fromMap(Map<String, dynamic> map) {
     return DailyVerseRef(
+      book: map['book'] as String,
+      chapter: map['chapter'] as int,
+      verse: map['verse'] as int,
+    );
+  }
+}
+
+class PromiseVerseRef {
+  final String book;
+  final int chapter;
+  final int verse;
+
+  PromiseVerseRef({
+    required this.book,
+    required this.chapter,
+    required this.verse,
+  });
+
+   factory PromiseVerseRef.fromMap(Map<String, dynamic> map) {
+    return PromiseVerseRef(
       book: map['book'] as String,
       chapter: map['chapter'] as int,
       verse: map['verse'] as int,

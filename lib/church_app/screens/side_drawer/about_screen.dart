@@ -90,10 +90,7 @@ class AboutScreen extends ConsumerWidget {
   Widget _buildFooter(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(cornerRadius),
-      ),
+      decoration: carouselBoxDecoration(context),
       padding: const EdgeInsets.all(18),
       child: Column(
         children: const [
