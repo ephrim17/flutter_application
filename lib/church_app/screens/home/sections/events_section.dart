@@ -62,26 +62,27 @@ class EventsList extends StatelessWidget {
       );
     }
 
-    return  Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(text: "Events", padding: 16.0),
-          const SizedBox(height: 10),
-          SizedBox(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(text: "Events", padding: 16.0),
+        const SizedBox(height: 10),
+        SizedBox(
             height: cardHeight(EventsSection().id),
-            child: AutoScrollCarousel(
-              itemCount: items.length,
-              viewportFraction: 0.92,
-              spacing: 12,
-              itemBuilder: (_, i) => 
-                EventsCard(items[i]),
-            ),
-          ),
-        ],
-      );
+            child: ListView.separated(
+                scrollDirection: scrollDirection,
+                itemCount: items.length,
+                separatorBuilder: (_, __) => SizedBox(
+                    width: 12,
+                    height: scrollDirection == Axis.vertical ? 30 : 0),
+                itemBuilder: (_, i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: EventsCard(items[i]),
+                ))),
+      ],
+    );
   }
 }
-
 
 class EventsCard extends StatelessWidget {
   const EventsCard(this.a, {super.key});

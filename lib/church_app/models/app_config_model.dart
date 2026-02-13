@@ -11,6 +11,7 @@ class AppConfig {
   final String backgroundColorHex;
   final String cardColorHex;
   final DailyVerseRef dailyVerseRef;
+  final PromptSheetModel promptSheet;
 
   const AppConfig({
     required this.admins,
@@ -23,6 +24,7 @@ class AppConfig {
     required this.backgroundColorHex,
     required this.cardColorHex,
     required this.dailyVerseRef,
+    required this.promptSheet,
     required this.bibleSwipeFetchEnabled,
     required this.bibleSwipeFetchVersion
   });
@@ -32,6 +34,7 @@ class AppConfig {
     return AppConfig(
       admins: List<String>.from(data['admins'] ?? []),
       dailyVerseRef:DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
+      promptSheet:PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       bibleSwipeFetchEnabled: data['features']?['bibleSwipeFetchEnabled'] ?? false,
       bibleSwipeFetchVersion: (features['bibleSwipeVersion'] as num?)?.toInt() ?? 0,
@@ -66,6 +69,26 @@ class DailyVerseRef {
       book: map['book'] as String,
       chapter: map['chapter'] as int,
       verse: map['verse'] as int,
+    );
+  }
+}
+
+class PromptSheetModel {
+  final String title;
+  final String desc;
+  final bool enabled;
+
+  PromptSheetModel({
+    required this.title,
+    required this.desc,
+    required this.enabled,
+  });
+
+   factory PromptSheetModel.fromMap(Map<String, dynamic> map) {
+    return PromptSheetModel(
+      title: map['title'] as String,
+      desc: map['desc'] as String,
+      enabled: map['enabled'] as bool,
     );
   }
 }

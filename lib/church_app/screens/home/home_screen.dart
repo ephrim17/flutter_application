@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/pastor_section.dart';
-import 'package:flutter_application/church_app/widgets/prompt_sheet.dart';
+import 'package:flutter_application/church_app/widgets/prompts/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
 
@@ -17,31 +18,41 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  
-late final ProviderSubscription<bool> _birthdayListener;
+  late final ProviderSubscription<bool> _birthdayListener;
 
-@override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  _birthdayListener = ref.listenManual<bool>(
-    isBirthdayProvider,
-    (previous, next) {
-      if (next == true) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          shape: const RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (_) => const PromptSheet(),
-        );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final announcement = ref.read(isAnnouncementEnabledProvider);
+      if (announcement?.enabled ?? false) {
+        // ⏳ Wait until announcement sheet closes
+        await showPromptSheet(PromptType.announcement, announcement);
       }
-    },
-  );
-}
 
+      // 🎂 Now check birthday AFTER announcement
+      _birthdayListener = ref.listenManual<bool>(
+        isBirthdayProvider,
+        (previous, next) {
+          if (next == true) {
+            showPromptSheet(PromptType.birthday, null);
+          }
+        },
+      );
+    });
+  }
+
+  Future<dynamic> showPromptSheet(PromptType sheetType, PromptSheetModel? promptSheetModel) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => PromptSheet(type: sheetType, promptSheetModel: promptSheetModel,),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
