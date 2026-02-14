@@ -8,12 +8,15 @@ class MembersRepository {
 
   Stream<List<AppUser>> getMembers() {
     return _ref
-        .orderBy('createdAt', descending: true)
+        //.orderBy('createdAt', descending: true)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
               .map(
-                (doc) => AppUser.fromJson(doc.data()),
+                (doc) => AppUser.fromFirestore(
+                  doc.id,
+                  doc.data(),
+                ),
               )
               .toList(),
         );

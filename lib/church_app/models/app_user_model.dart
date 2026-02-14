@@ -21,6 +21,28 @@ class AppUser {
     required this.dob,
   });
 
+   factory AppUser.fromFirestore(
+    String uid,
+    Map<String, dynamic> data,
+  ) {
+    final dobRaw = data['dob'];
+
+    return AppUser(
+      uid: uid,
+      name: data['name'] ?? '',
+      email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
+      authToken: data['authToken'] ?? '',
+       dob: dobRaw is Timestamp
+          ? dobRaw.toDate()
+          : dobRaw is DateTime
+              ? dobRaw
+              : null,
+      role: data['role'] ?? 'user',
+      approved: data['approved'] ?? false,
+    );
+  }
+
   factory AppUser.fromJson(Map<String, dynamic> json) {
     final dobRaw = json['dob'];
     
