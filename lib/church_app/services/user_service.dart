@@ -30,3 +30,19 @@ Future<void> updateUserTokenIfNeeded(WidgetRef ref) async {
         .update({'authToken': token});
   }
 }
+
+  final userNameProvider =
+    FutureProvider.family<String?, String>((ref, uid) async {
+  final firestore = FirebaseFirestore.instance;
+
+  try {
+    final doc =
+        await firestore.collection('users').doc(uid).get();
+
+    if (!doc.exists) return null;
+
+    return doc.data()?['name'] as String?;
+  } catch (_) {
+    return null;
+  }
+});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/services/user_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
@@ -19,9 +20,10 @@ class PrayerRequestScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: segment == PrayerSegment.my
-              ? 'My Prayer Requests'
-              : 'All Prayer Requests'),
+        title: AppBarTitle(
+            text: segment == PrayerSegment.my
+                ? 'My Prayer Requests'
+                : 'All Prayer Requests'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: _SegmentControl(isAdmin: isAdmin),
@@ -47,8 +49,19 @@ class PrayerRequestScreen extends ConsumerWidget {
               return Card(
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
-                  title: Text(prayer.title),
-                  subtitle: Text(prayer.description),
+                  title: Text('Title: ${prayer.title}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Description: ${prayer.description}'),
+                      const SizedBox(height: 10),
+                      ref.watch(userNameProvider(prayer.userId)).when(
+                            loading: () => const Text("By: Loading..."),
+                            error: (_, __) => const Text("By: Unknown"),
+                            data: (name) => Text("By: ${name?.toUpperCase() ?? "Unknown"}"),
+                          ),
+                    ],
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {

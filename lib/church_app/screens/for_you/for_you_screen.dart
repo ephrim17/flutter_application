@@ -64,7 +64,6 @@ class ForYouSectionRegistry {
         DailyVerseSection(),
         FeaturedSection(),
         FooterSection(),
-        ReadingPlanSection(),
         ArticleSection()
       ];
 }
