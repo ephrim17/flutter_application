@@ -2,103 +2,121 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FavoritesScreen extends ConsumerWidget {
-  const FavoritesScreen({super.key});
+  const FavoritesScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final favorites = ref.watch(favoritesProvider);
-    final notifier = ref.read(favoritesProvider.notifier);
+    final favoritesAsync = ref.watch(favoritesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: "Favorite Verses"),
+        title: const AppBarTitle(text: "Favorites"),
       ),
-      body: favorites.isEmpty
-          ? const Center(child: Text('No favorites yet ❤️'))
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: favorites.length,
-              separatorBuilder: (_, __) => const Divider(
-                height: 32,
-                thickness: 1,
+      body: favoritesAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stack) => Center(
+          child: Text("Error: $error"),
+        ),
+        data: (verses) {
+          if (verses.isEmpty) {
+            return const Center(
+              child: Text(
+                "No Favorites yet",
+                style: TextStyle(fontSize: 16),
               ),
-              itemBuilder: (context, index) {
-                final verse = favorites[index];
+            );
+          }
 
-                return Dismissible(
-                  key: ValueKey(verse.reference),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    color: Colors.red,
-                    child: const Icon(
-                      Icons.delete,
-                      color: Colors.white,
-                    ),
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            itemCount: verses.length,
+            itemBuilder: (context, index) {
+              final verse = verses[index];
+
+              return Dismissible(
+                key: ValueKey(verse['reference']),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: Colors.red,
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
                   ),
-                  onDismissed: (_) {
-                    notifier.toggle(verse);
+                ),
+                onDismissed: (_) async {
+                  await ref
+                      .read(favoritesProvider.notifier)
+                      .removeHighlight(verse);
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Removed from favorites'),
-                        duration: Duration(seconds: 2),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Removed from favorites"),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// English
+                      Text(
+                        verse['english'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          height: 1.4,
+                        ),
                       ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        /// English
-                        Text(
-                          verse.english,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            height: 1.4,
-                          ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        verse['reference'] ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
                         ),
+                      ),
 
-                        const SizedBox(height: 6),
+                      const SizedBox(height: 12),
 
-                        Text(
-                          verse.reference,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
+                      /// Tamil
+                      Text(
+                        verse['tamil'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          height: 1.4,
                         ),
+                      ),
 
-                        const SizedBox(height: 12),
+                      const SizedBox(height: 6),
 
-                        /// Tamil
-                        Text(
-                          verse.tamil,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            height: 1.4,
-                          ),
+                      Text(
+                        verse['reference'] ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
                         ),
+                      ),
 
-                        const SizedBox(height: 6),
-
-                        Text(
-                          verse.reference,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
+                      const Divider(height: 24),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

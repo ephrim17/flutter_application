@@ -1,44 +1,76 @@
-
-import 'package:flutter_application/church_app/models/for_you_section_models/favorites_model.dart';
-import 'package:hooks_riverpod/legacy.dart';
+import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final favoritesProvider =
-    StateNotifierProvider<FavoritesNotifier, List<FavoriteVerse>>(
-  (ref) => FavoritesNotifier(),
-);
+    AsyncNotifierProvider<FavoritesNotifier, List<Map<String, String>>>(
+        FavoritesNotifier.new);
 
-class FavoritesNotifier extends StateNotifier<List<FavoriteVerse>> {
-  FavoritesNotifier() : super([]) {
-    _load();
+class FavoritesNotifier
+    extends AsyncNotifier<List<Map<String, String>>> {
+
+  @override
+  Future<List<Map<String, String>>> build() async {
+    return _loadFavorites();
   }
 
-  Future<void> _load() async {
+  Future<List<Map<String, String>>> _loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('favorites') ?? [];
-    state = list.map((e) => FavoriteVerse.fromJson(e)).toList();
-  }
+    final stored = prefs.getStringList('all_highlights') ?? [];
 
-  Future<void> toggle(FavoriteVerse verse) async {
-    final prefs = await SharedPreferences.getInstance();
+    final repo = BibleRepository();
+    List<Map<String, String>> verses = [];
 
-    final exists = state.any(
-      (v) => v.reference == verse.reference,
-    );
+    for (var key in stored) {
+      final parts = key.split('_');
 
-    if (exists) {
-      state = state.where((v) => v.reference != verse.reference).toList();
-    } else {
-      state = [...state, verse];
+      final book = parts[0];
+      final chapter = int.parse(parts[1]);
+      final verse = int.parse(parts[2]);
+
+      final verseData = await repo.getVerse(
+        book: book,
+        chapter: chapter,
+        verse: verse,
+      );
+
+      verses.add(verseData);
     }
 
-    await prefs.setStringList(
-      'favorites',
-      state.map((e) => e.toJson()).toList(),
-    );
+    return verses;
   }
 
-  bool isFavorite(String reference) {
-    return state.any((v) => v.reference == reference);
+  /// 🔥 REMOVE highlight here
+  Future<void> removeHighlight(Map<String, String> verse) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final reference = verse['reference'] ?? '';
+    final parts = reference.split(' ');
+
+    final book = parts.first;
+    final chapterVerse = parts.last.split(':');
+
+    final chapter = int.parse(chapterVerse[0]);
+    final verseNumber = int.parse(chapterVerse[1]);
+
+    final key = "${book}_${chapter}_${verseNumber}";
+
+    // 1️⃣ Remove from global highlights
+    final global = prefs.getStringList('all_highlights') ?? [];
+    global.remove(key);
+    await prefs.setStringList('all_highlights', global);
+
+    // 2️⃣ Remove from chapter highlights
+    final chapterKey = 'highlight_${book}_${chapter - 1}';
+    final chapterHighlights = prefs.getStringList(chapterKey) ?? [];
+
+    chapterHighlights.removeWhere(
+        (v) => int.parse(v) == verseNumber - 1);
+
+    await prefs.setStringList(chapterKey, chapterHighlights);
+
+    // 3️⃣ Refresh state
+    state = const AsyncLoading();
+    state = AsyncData(await _loadFavorites());
   }
 }
