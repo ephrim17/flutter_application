@@ -8,10 +8,12 @@ class PrayerRepository {
 
   String? get _uid => _auth.currentUser?.uid;
 
-  /// Add prayer
+  /// ADD PRAYER
   Future<void> addPrayer({
     required String title,
     required String description,
+    required bool isAnonymous,
+    required DateTime expiryDate,
   }) async {
     final user = _auth.currentUser;
 
@@ -19,45 +21,103 @@ class PrayerRepository {
       throw Exception("User not logged in");
     }
 
+    final now = DateTime.now();
+
+    // Normalize to date-only (remove time component)
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(
+      expiryDate.year,
+      expiryDate.month,
+      expiryDate.day,
+    );
+
+    final maxDate = today.add(const Duration(days: 30));
+
+    if (selectedDate.isBefore(today) || selectedDate.isAfter(maxDate)) {
+      throw Exception("Expiry date must be within 30 days");
+    }
+
     await _firestore.collection('prayer_requests').add({
-      'userId': user.uid, // 🔥 store UID
+      'userId': user.uid,
       'email': user.email,
-      'title': title,
-      'description': description,
-      'createdAt': FieldValue.serverTimestamp(),
+      'title': title.trim(),
+      'description': description.trim(),
+      'isAnonymous': isAnonymous,
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+      'expiryDate': Timestamp.fromDate(selectedDate),
     });
   }
 
-  /// Stream user's prayers
+  /// UPDATE PRAYER
+  Future<void> updatePrayer({
+    required String prayerId,
+    required String title,
+    required String description,
+    required bool isAnonymous,
+    required DateTime expiryDate,
+  }) async {
+    final now = DateTime.now();
+
+    // Normalize to date-only (remove time component)
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(
+      expiryDate.year,
+      expiryDate.month,
+      expiryDate.day,
+    );
+
+    final maxDate = today.add(const Duration(days: 30));
+
+    if (selectedDate.isBefore(today) || selectedDate.isAfter(maxDate)) {
+      throw Exception("Expiry date must be within 30 days");
+    }
+
+    await _firestore.collection('prayer_requests').doc(prayerId).update({
+      'title': title.trim(),
+      'description': description.trim(),
+      'isAnonymous': isAnonymous,
+      'expiryDate': Timestamp.fromDate(selectedDate),
+      'updatedAt': Timestamp.fromDate(now),
+    });
+  }
+
   Stream<List<PrayerRequest>> watchMyPrayers() {
     final uid = _uid;
+    if (uid == null) return const Stream.empty();
 
-    if (uid == null) {
-      return const Stream.empty();
-    }
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
 
     return _firestore
         .collection('prayer_requests')
         .where('userId', isEqualTo: uid)
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate') // required when using range filter
+        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
-        );
+        .map((snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList());
   }
 
-  /// Stream all prayers (ADMIN)
   Stream<List<PrayerRequest>> getAllPrayers() {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
     return _firestore
         .collection('prayer_requests')
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate')
+        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
-        );
+        .map((snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList());
   }
 
-  /// Delete prayer
   Future<void> deletePrayer(String prayerId) async {
     await _firestore.collection('prayer_requests').doc(prayerId).delete();
   }

@@ -2,17 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PrayerRequest {
   final String id;
-  final String userId;
   final String title;
   final String description;
-  final DateTime createdAt;
+  final String userId;
+  final bool isAnonymous;
+  final DateTime expiryDate;
 
   PrayerRequest({
     required this.id,
-    required this.userId,
     required this.title,
     required this.description,
-    required this.createdAt,
+    required this.userId,
+    required this.isAnonymous,
+    required this.expiryDate,
   });
 
   factory PrayerRequest.fromDoc(DocumentSnapshot doc) {
@@ -20,10 +22,11 @@ class PrayerRequest {
 
     return PrayerRequest(
       id: doc.id,
-      userId: data['userId'],
       title: data['title'],
       description: data['description'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      userId: data['userId'] ?? '',
+      isAnonymous: data['isAnonymous'] ?? false,
+      expiryDate: (data['expiryDate'] as Timestamp).toDate(),
     );
   }
 }

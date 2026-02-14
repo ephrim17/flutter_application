@@ -7,9 +7,16 @@ final isAdminProvider = Provider<bool>((ref) {
   final configAsync = ref.watch(appConfigProvider);
 
   return userAsync.maybeWhen(
-    data: (user) =>
-        user != null &&
-        configAsync.value?.isAdmin(user.email) == true,
+    data: (user) {
+      if (user == null) return false;
+
+      final config = configAsync.value;
+      if (config == null) return false;
+
+      final result = config.isAdmin(user.email);
+
+      return result ?? false; // 🔥 Never allow null
+    },
     orElse: () => false,
   );
 });
