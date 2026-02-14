@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class MembersScreen extends ConsumerWidget {
@@ -14,7 +15,7 @@ class MembersScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Members'),
+        title: const AppBarTitle(text: "Members"),
       ),
       body: StreamBuilder<List<AppUser>>(
         stream: repo.getMembers(),

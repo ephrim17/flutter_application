@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class PendingApprovalWidget extends ConsumerWidget {
@@ -9,7 +10,7 @@ class PendingApprovalWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Approval Pending'),
+        title: const AppBarTitle(text: "Approval Pending",),
       ),
       body: Center(
         child: Padding(

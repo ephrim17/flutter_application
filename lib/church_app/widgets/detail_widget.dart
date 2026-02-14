@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 
 class DetailWidget extends StatefulWidget {
   const DetailWidget({super.key, required this.title, required this.description});
@@ -16,7 +17,7 @@ class _DetailWidgetState extends State<DetailWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: AppBarTitle(text: widget.title),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -120,7 +121,7 @@ class ArticleDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Article')),
+      appBar: AppBar(title: AppBarTitle(text: "Article")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(

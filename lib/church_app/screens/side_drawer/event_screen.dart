@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -16,7 +17,7 @@ class EventsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Events'),
+        title: AppBarTitle(text: "Events"),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,

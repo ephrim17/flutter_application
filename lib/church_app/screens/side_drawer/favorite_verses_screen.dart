@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -12,7 +13,7 @@ class FavoritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorite Verses'),
+        title: AppBarTitle(text: "Favorite Verses"),
       ),
       body: favorites.isEmpty
           ? const Center(child: Text('No favorites yet ❤️'))

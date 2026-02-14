@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -32,7 +33,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     final isConfirmPasswordVisible = ref.watch(confirmPasswordVisibleProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Request Access')),
+      appBar: AppBar(title: AppBarTitle(text: "Request Access")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

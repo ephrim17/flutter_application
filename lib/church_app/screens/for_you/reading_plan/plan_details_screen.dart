@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/reading_plan_progress_provider.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/progress_bar_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/reading_plan_model.dart';
@@ -41,7 +42,7 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_readingPlan?.month ?? "${widget.month} Plan"),
+        title: AppBarTitle(text: _readingPlan?.month ?? "${widget.month} Plan"),
       ),
       body: _readingPlan == null
           ? const Center(child: CircularProgressIndicator())
@@ -91,7 +92,7 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                                       isCompleted
                                           ? Icons.check_circle
                                           : Icons.radio_button_unchecked,
-                                      color: isCompleted ? Colors.green : null,
+                                      color: isCompleted ? Theme.of(context).colorScheme.secondary : null,
                                     ),
                                     onPressed: () {
                                       ref

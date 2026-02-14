@@ -47,7 +47,7 @@ class PromiseVerseCard extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(text: "Promise Word for 2026", padding: 0.0,),
+            SectionHeader(text: "Promise Word 2026", padding: 0.0,),
             const SizedBox(height: 10,),
             Container(
               width: width - 32,

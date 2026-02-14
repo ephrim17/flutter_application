@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class BibleSwipeVerseScreen extends ConsumerWidget {
@@ -12,7 +13,7 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Bible Verse Swipes'),
+        title: const AppBarTitle(text: "Bible Swipes"),
       ),
       body: versesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

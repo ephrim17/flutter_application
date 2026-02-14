@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 
@@ -14,7 +15,7 @@ class LoginScreen extends ConsumerWidget {
     final isLoading = ref.watch(logginAccessLoadingProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: AppBarTitle(text: "Login")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

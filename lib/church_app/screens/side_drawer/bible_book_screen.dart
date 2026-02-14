@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
 import 'package:share_plus/share_plus.dart';
@@ -12,7 +13,7 @@ class BibleBookScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Holy Bible')),
+      appBar: AppBar(title: AppBarTitle(text: "Holy Bible")),
       body: ListView.builder(
         itemCount: bibleBooks.length,
         itemBuilder: (_, index) {

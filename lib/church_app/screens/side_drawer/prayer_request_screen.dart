@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
@@ -18,11 +19,9 @@ class PrayerRequestScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          segment == PrayerSegment.my
+        title: AppBarTitle(text: segment == PrayerSegment.my
               ? 'My Prayer Requests'
-              : 'All Prayer Requests',
-        ),
+              : 'All Prayer Requests'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: _SegmentControl(isAdmin: isAdmin),
