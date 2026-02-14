@@ -90,9 +90,9 @@ class ChapterScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => VerseScreen(
-                        book: book,
-                        chapterIndex: index,
-                      ),
+  book: book,
+  startChapterIndex: index,
+),
                     ),
                   );
                 },
@@ -110,12 +110,19 @@ class ChapterScreen extends StatelessWidget {
 
 class VerseScreen extends StatefulWidget {
   final BibleBook book;
-  final int chapterIndex;
+
+  /// Required start chapter index (0-based)
+  final int startChapterIndex;
+
+  /// Optional end chapter index (0-based)
+  /// If null → full book
+  final int? endChapterIndex;
 
   const VerseScreen({
     super.key,
     required this.book,
-    required this.chapterIndex,
+    required this.startChapterIndex,
+    this.endChapterIndex,
   });
 
   @override
@@ -125,37 +132,42 @@ class VerseScreen extends StatefulWidget {
 class _VerseScreenState extends State<VerseScreen> {
   final repo = BibleRepository();
   final Set<int> highlightedVerses = {};
+
   late PageController _pageController;
   String chapterIndexText = '';
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.chapterIndex);
-    _loadHighlights(widget.chapterIndex);
-    chapterIndexText = (widget.chapterIndex + 1).toString();
+
+    _pageController = PageController(
+      initialPage: widget.startChapterIndex,
+    );
+
+    chapterIndexText = (widget.startChapterIndex + 1).toString();
+
+    _loadHighlights(widget.startChapterIndex);
   }
 
-  String _storageKey(int chapterIndex) =>
-      'highlight_${widget.book.key}_$chapterIndex';
+  /// Storage key per book + actual chapter index
+  String _storageKey(int actualChapterIndex) =>
+      'highlight_${widget.book.key}_$actualChapterIndex';
 
-  Future<void> _loadHighlights(int chapterIndex) async {
+  Future<void> _loadHighlights(int actualChapterIndex) async {
     final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_storageKey(chapterIndex));
+    final stored = prefs.getStringList(_storageKey(actualChapterIndex));
 
-    if (stored != null) {
-      setState(() {
-        highlightedVerses
-          ..clear()
-          ..addAll(stored.map(int.parse));
-      });
-    }
+    setState(() {
+      highlightedVerses
+        ..clear()
+        ..addAll(stored?.map(int.parse) ?? []);
+    });
   }
 
-  Future<void> _saveHighlights(int chapterIndex) async {
+  Future<void> _saveHighlights(int actualChapterIndex) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-      _storageKey(chapterIndex),
+      _storageKey(actualChapterIndex),
       highlightedVerses.map((e) => e.toString()).toList(),
     );
   }
@@ -171,7 +183,15 @@ class _VerseScreenState extends State<VerseScreen> {
           );
         }
 
-        final chapters = snapshot.data!['chapters'] as List<dynamic>;
+        final allChapters = snapshot.data!['chapters'] as List<dynamic>;
+
+        /// Filter chapters if range is provided
+        final chapters = widget.endChapterIndex != null
+            ? allChapters.sublist(
+                widget.startChapterIndex,
+                widget.endChapterIndex! + 1,
+              )
+            : allChapters;
 
         return Scaffold(
           appBar: BibleReaderAppBar(
@@ -180,7 +200,8 @@ class _VerseScreenState extends State<VerseScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.book.key, style: const TextStyle(fontSize: 18)),
+                    Text(widget.book.key,
+                        style: const TextStyle(fontSize: 18)),
                     Text(widget.book.name,
                         style: const TextStyle(fontSize: 10)),
                   ],
@@ -200,22 +221,33 @@ class _VerseScreenState extends State<VerseScreen> {
             controller: _pageController,
             itemCount: chapters.length,
             onPageChanged: (index) {
+              /// Compute actual chapter index in full book
+              final actualChapterIndex =
+                  widget.startChapterIndex + index;
+
               highlightedVerses.clear();
-              _loadHighlights(index);
+              _loadHighlights(actualChapterIndex);
+
               setState(() {
-                chapterIndexText = (index + 1).toString();
+                chapterIndexText =
+                    (actualChapterIndex + 1).toString();
               });
             },
             itemBuilder: (context, chapterIndex) {
               final chapter = chapters[chapterIndex];
               final verses = chapter['verses'] as List<dynamic>;
 
+              /// Compute actual chapter index
+              final actualChapterIndex =
+                  widget.startChapterIndex + chapterIndex;
+
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: verses.length,
                 itemBuilder: (_, index) {
                   final verse = verses[index];
-                  final isHighlighted = highlightedVerses.contains(index);
+                  final isHighlighted =
+                      highlightedVerses.contains(index);
 
                   return GestureDetector(
                     onTap: () async {
@@ -224,7 +256,8 @@ class _VerseScreenState extends State<VerseScreen> {
                             ? highlightedVerses.remove(index)
                             : highlightedVerses.add(index);
                       });
-                      await _saveHighlights(chapterIndex);
+
+                      await _saveHighlights(actualChapterIndex);
                     },
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -236,9 +269,13 @@ class _VerseScreenState extends State<VerseScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: BibleVerseItemWidget(
-                          verseNumber: verse['verse'].toString(),
-                          versePrimary: verse['text']['tamil'],
-                          verseSecondary: verse['text']['english']),
+                        verseNumber:
+                            verse['verse'].toString(),
+                        versePrimary:
+                            verse['text']['tamil'],
+                        verseSecondary:
+                            verse['text']['english'],
+                      ),
                     ),
                   );
                 },
@@ -268,3 +305,4 @@ ${v['text']['english']}
     Share.share(text.trim());
   }
 }
+

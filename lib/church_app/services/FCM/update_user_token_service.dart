@@ -4,7 +4,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_auth
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
-Future<void> updateTokenIfNeeded(WidgetRef ref) async {
+Future<void> updateUserTokenIfNeeded(WidgetRef ref) async {
   final alreadyUpdated = ref.read(tokenUpdatedProvider);
   if (alreadyUpdated) return;
 

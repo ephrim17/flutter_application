@@ -14,7 +14,7 @@ class SectionHeader extends StatelessWidget {
       padding: EdgeInsets.only(left: padding),
       child: Text(text,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: 18,
+            fontSize: 22,
             fontWeight: FontWeight.w500,
           )
         ),

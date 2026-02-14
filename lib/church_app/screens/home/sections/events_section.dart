@@ -106,7 +106,7 @@ class EventsCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: width * 0.9,
+        width: width - 32,
         padding: const EdgeInsets.all(12),
         decoration: carouselBoxDecoration(context),
         child: Row(
