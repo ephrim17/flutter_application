@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/pastor_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/pastor_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,25 +20,28 @@ class PastorSection implements MasterSection {
   List<Widget> buildSlivers(BuildContext context) {
     return [
       SliverToBoxAdapter(
-        child: Consumer(
-          builder: (context, ref, _) {
-            final asyncBanner = ref.watch(pastorsProvider);
-
-            return asyncBanner.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: LinearProgressIndicator(),
-              ),
-              error: (e, _) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Error: $e'),
-              ),
-              data: (items) => _PastorList(items)
-            );
-          },
-        ),
+        child: PastorWidget()
       ),
     ];
+  }
+}
+
+class PastorWidget extends ConsumerWidget {
+  const PastorWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncBanner = ref.watch(pastorsProvider);
+    return asyncBanner.when(
+        loading: () => const Padding(
+              padding: EdgeInsets.all(16),
+              child: LinearProgressIndicator(),
+            ),
+        error: (e, _) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Error: $e'),
+            ),
+        data: (items) => _PastorList(items));
   }
 }
 
@@ -62,12 +66,15 @@ class _PastorList extends StatelessWidget {
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(PastorSection().id),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 0),
-              itemBuilder: (_, i) => _PastorCard(items[i]),
-            ),
+            child: 
+             AutoScrollCarousel(
+                height: cardHeight(PastorSection().id),
+                itemCount: items.length,
+                viewportFraction: 0.92,
+                spacing: 12,
+                itemBuilder: (_, i) =>
+                 _PastorCard(items[i]),
+              )
           ),
         ],
     );
@@ -83,7 +90,7 @@ class _PastorCard extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Container(
         width: width - 32,
         padding: const EdgeInsets.all(12),

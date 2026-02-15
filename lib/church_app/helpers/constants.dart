@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 
 double spacingForOrder(int order) {
-  return 20;
+  return 15;
 }
 
 //cardHeights
 double cardHeight(String id) {
-  if (id == "announcements") return 120; 
-  if (id == "events") return 120; 
+  if (id == "announcements") return 280; 
+  if (id == "events") return 200; 
   if (id == "pastor") return 220; 
+  if (id == "promise") return 400; 
   if (id == "dailyVerse") return 220;
   if (id == "eventsFullListCard") return 250;
   return 120;

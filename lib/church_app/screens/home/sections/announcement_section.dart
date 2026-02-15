@@ -63,8 +63,8 @@ class _AnnouncementList extends StatelessWidget {
           SectionHeader(text: "Announcements", padding: 16.0),
           const SizedBox(height: 10,),
           SizedBox(
-            height: cardHeight(AnnouncementSection().id),
             child: AutoScrollCarousel(
+                height: cardHeight(AnnouncementSection().id),
                 itemCount: items.length,
                 viewportFraction: 0.92,
                 spacing: 12,
@@ -102,6 +102,7 @@ class _AnnouncementCard extends StatelessWidget {
       child: Container(
         width: width - 32,
         padding: const EdgeInsets.all(12),
+        height: cardHeight(AnnouncementSection().id),
         decoration: carouselBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +111,7 @@ class _AnnouncementCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
+            //const SizedBox(height: 6),
             Text(a.body,
                 maxLines: 3, overflow: TextOverflow.ellipsis),
           ],

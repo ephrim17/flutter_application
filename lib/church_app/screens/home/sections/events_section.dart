@@ -69,16 +69,16 @@ class EventsList extends StatelessWidget {
         const SizedBox(height: 10),
         SizedBox(
             height: cardHeight(EventsSection().id),
-            child: ListView.separated(
-                scrollDirection: scrollDirection,
+            child: 
+            AutoScrollCarousel(
+                height: cardHeight(EventsSection().id),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => SizedBox(
-                    width: 12,
-                    height: scrollDirection == Axis.vertical ? 30 : 0),
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: EventsCard(items[i]),
-                ))),
+                viewportFraction: 0.92,
+                spacing: 12,
+                itemBuilder: (_, i) =>
+                 EventsCard(items[i]),
+              )
+            ),
       ],
     );
   }

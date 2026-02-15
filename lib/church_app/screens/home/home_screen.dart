@@ -5,7 +5,7 @@ import 'package:flutter_application/church_app/providers/home_sections/home_sect
 import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
-import 'package:flutter_application/church_app/screens/home/sections/pastor_section.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/pastor_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/promise_section.dart';
 import 'package:flutter_application/church_app/widgets/prompts/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -115,7 +115,6 @@ class HomeSectionRegistry {
   static List<MasterSection> all() => [
         AnnouncementSection(),
         EventsSection(),
-        PastorSection(),
         FooterSection(),
         PromiseSection()
       ];

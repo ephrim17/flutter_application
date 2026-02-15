@@ -22,7 +22,8 @@ class PromiseSection implements MasterSection {
           builder: (context, ref, _) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: PromiseVerseCard(),
+              child: SizedBox(
+                child: PromiseVerseCard()),
             );
           },
         ),
@@ -40,6 +41,8 @@ class PromiseVerseCard extends ConsumerWidget {
     final promiseWordAsync = ref.watch(promiseWordProviderLocal);
     final width = MediaQuery.of(context).size.width;
 
+    //final double height = cardHeight(PromiseSection().id) * 0.5;
+
     return promiseWordAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Text(e.toString()),
@@ -50,25 +53,34 @@ class PromiseVerseCard extends ConsumerWidget {
             SectionHeader(text: "Promise Word 2026", padding: 0.0,),
             const SizedBox(height: 10,),
             Container(
+              //height: height,
               width: width - 32,
               padding: const EdgeInsets.all(12),
               decoration: carouselBoxDecoration(context),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                 
                   const SizedBox(height: 12),
-            
                   /// 🔹 Verse text
                   Text(
                     verse['tamil']!,
+                    textAlign: TextAlign.center, 
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 6),
-            
+                  const SizedBox(height: 10),
+                   Text(
+                    verse['english']!,
+                    textAlign: TextAlign.center, 
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   /// 🔹 Reference
                   Text(
                     verse['reference']!,

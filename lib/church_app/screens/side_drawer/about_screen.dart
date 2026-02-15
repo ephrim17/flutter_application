@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/about_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/about_providers.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/pastor_section.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -20,38 +21,51 @@ class AboutScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (about) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(context, about),
-                const SizedBox(height: 24),
-                _buildDescription(context, about.description),
-                const SizedBox(height: 32),
-
-                _buildInfoTile(
-                  icon: Icons.church,
-                  title: 'Our Mission',
-                  description: about.mission,
+                /// ✅ All padded content
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context, about),
+                      const SizedBox(height: 24),
+                      _buildDescription(context, about.description),
+                      const SizedBox(height: 32),
+                      _buildInfoTile(
+                        icon: Icons.church,
+                        title: 'Our Mission',
+                        description: about.mission,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoTile(
+                        icon: Icons.groups,
+                        title: 'Our Community',
+                        description: about.community,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoTile(
+                        icon: Icons.favorite,
+                        title: 'Our Values',
+                        description: about.values,
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
 
-                _buildInfoTile(
-                  icon: Icons.groups,
-                  title: 'Our Community',
-                  description: about.community,
-                ),
-                const SizedBox(height: 16),
-
-                _buildInfoTile(
-                  icon: Icons.favorite,
-                  title: 'Our Values',
-                  description: about.values,
-                ),
+                /// ❌ No Padding Section
+                PastorWidget(),
 
                 const SizedBox(height: 40),
 
-                _buildFooter(context),
+                /// ✅ Footer padded again
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildFooter(context),
+                ),
               ],
             ),
           );
