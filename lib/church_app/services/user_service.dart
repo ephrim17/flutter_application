@@ -11,7 +11,6 @@ Future<void> updateUserTokenIfNeeded(WidgetRef ref) async {
   ref.read(tokenUpdatedProvider.notifier).state = true;
 
   final token = "";
-  if (token == null) return;
 
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;

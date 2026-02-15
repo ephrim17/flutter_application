@@ -5,7 +5,6 @@ import 'package:flutter_application/church_app/screens/footer_sections/footer_se
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
-import 'package:flutter_application/church_app/screens/for_you/sections/reading_plan_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
