@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -70,43 +71,46 @@ class ArticleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            article.title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            article.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ArticleDetailPage(article: article),
-                ),
-              );
-            },
-            child: const Text(
-              'Read more',
-              style: TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.w600,
+      child: Container(
+        padding: EdgeInsets.all(10),
+        decoration: carouselBoxDecoration(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              article.title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          const Divider(height: 32),
-        ],
+            const Divider(height: 22),
+            Text(
+              article.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ArticleDetailPage(article: article),
+                  ),
+                );
+              },
+              child: const Text(
+                'Read more',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

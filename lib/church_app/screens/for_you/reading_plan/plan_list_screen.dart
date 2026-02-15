@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_details_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/plan/plan_card.dart';
 
 class PlanListScreen extends StatelessWidget {
@@ -27,26 +28,32 @@ class PlanListScreen extends StatelessWidget {
       const LinearGradient(colors: [Colors.grey, Colors.blueGrey]),
     ];
 
-    return SizedBox(
-        height: 100,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: months.length,
-          itemBuilder: (context, index) {
-            return  PlanCard(
-                month: months[index],
-                gradient: gradients[index],
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PlanDetailsScreen(month: months[index]),
-                    ),
-                  );
-                },
-              );
-          },
-        ),
-      );
+    return Scaffold(
+      appBar: AppBar(
+        title: AppBarTitle(text: "Bible in a year"),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: months.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: PlanCard(
+              month: months[index],
+              gradient: gradients[index],
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PlanDetailsScreen(month: months[index]),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 }

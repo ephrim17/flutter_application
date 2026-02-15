@@ -34,7 +34,7 @@ BoxDecoration carouselBoxDecoration(BuildContext context) {
 }
 
 
-double cornerRadius = 15.0;
+double cornerRadius = 28.0;
 
 String appName = "My Church";
 String appTagline = "Connecting Faith and Community";

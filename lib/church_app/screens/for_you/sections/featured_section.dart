@@ -3,6 +3,8 @@ import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/helpers/youtube_utils.dart';
+import 'package:flutter_application/church_app/widgets/card_Link_button_widget.dart';
+import 'package:flutter_application/church_app/widgets/featured_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 
 class FeaturedSection implements MasterSection {
@@ -16,51 +18,73 @@ class FeaturedSection implements MasterSection {
 
   @override
   List<Widget> buildSlivers(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    //final width = MediaQuery.of(context).size.width;
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.only(left: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SectionHeader(text: "✮ Featured for you ✮", padding: 0.0),
+              SectionHeader(text: "Plans for you ✮", padding: 0.0),
               const SizedBox(height: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeader(text: "Bible in a year", padding: 0.0),
-                  PlanListScreen(),
-                ],
-              ),
-              SizedBox(
-                  height: 50,
-                  width: width * 0.9,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Replace with your YouTube channel ID
-                      YoutubeUtils.openYoutubeChannel(
-                          'UCfMUXhM4ujEI8aDTAh34K3A');
-                    },
-                    child: const Text('watch us on YouTube'),
-                  )
-                  ),
-              const SizedBox(height: 10),
-              SizedBox(
-                  height: 50,
-                  width: width * 0.9,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
+              FeaturedCard(
+                badgeText: "Challenge Yourself to do",
+                title: "Bible in a year",
+                description:
+                    "Reading the Bible in a year won't just change what you know; it will change how you think. You are trading 15 minutes of scrolling for a lifetime of wisdom",
+                buttonText: "Explore Now",
+                imagePath: "assets/images/bible_read.png",
+                onPressed: () {
+                   Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => BibleSwipeVerseScreen(),
+                          builder: (_) => PlanListScreen(),
                         ),
                       );
-                    },
-                    child: const Text('Bible Swipes'),
-                  ))
+                },
+              ),
+              const SizedBox(height: 10),
+              
+              SectionHeader(text: "Featured for you ✮", padding: 0.0),
+
+              const SizedBox(height: 10),
+              
+
+              CardLinkButtonWidget(
+                title: "Deepen the Word, One Video at a Time. Follow us on YouTube.",
+                buttonText: "Start Watching",
+                iconStyle: Icon(
+                  Icons.video_collection,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                onPressed: () {
+                   YoutubeUtils.openYoutubeChannel(
+                    'UCfMUXhM4ujEI8aDTAh34K3A');
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              CardLinkButtonWidget(
+                title: "Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.",
+                buttonText: "Let’s Go",
+                iconStyle: Icon(
+                  Icons.swipe_up,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                        context,
+                    MaterialPageRoute(
+                      builder: (_) => BibleSwipeVerseScreen(),
+                    ),
+                  );
+                },
+              )
             ],
           ),
         ),
