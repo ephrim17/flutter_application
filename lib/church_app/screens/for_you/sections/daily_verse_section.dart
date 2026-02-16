@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
@@ -54,6 +55,23 @@ class DailyVerseSection implements MasterSection {
 class DailyVerseCard extends ConsumerWidget {
   const DailyVerseCard({super.key});
 
+Future<void> showVerseShareModal(
+  BuildContext context, {
+  required String text,
+  required String reference,
+}) {
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => VerseShareModal(
+      text: text,
+      reference: reference,
+    ),
+  );
+}
+
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dailyVerseAsync = ref.watch(dailyVerseProviderLocal);
@@ -77,10 +95,21 @@ class DailyVerseCard extends ConsumerWidget {
             children: [
               /// 🔹 Header row with toggle
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   SectionHeader(text: "Daily verse", padding: 0.0,),
+                  Spacer(),
                   BibleLanguageToggle(provider: dailyVerseLanguageProvider,),
+                  IconButton(
+          icon: const Icon(Icons.share_outlined),
+          onPressed: () async {
+            await showVerseShareModal(
+              context,
+              text: verseText!,
+              reference: verse['reference']!,
+            );
+          },
+        ),
                 ],
               ),
               const SizedBox(height: 12),
