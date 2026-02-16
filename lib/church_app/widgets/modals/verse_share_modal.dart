@@ -336,9 +336,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
               if (backgroundType == BackgroundType.image &&
                   selectedImage != null)
                 BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    color: Colors.black.withAlpha(80),
+                    color: Colors.black.withAlpha(10),
                   ),
                 ),
 
