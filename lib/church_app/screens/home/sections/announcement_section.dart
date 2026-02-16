@@ -67,6 +67,7 @@ class _AnnouncementList extends StatelessWidget {
                 height: cardHeight(AnnouncementSection().id),
                 itemCount: items.length,
                 viewportFraction: 0.92,
+                autoScroll: true,
                 spacing: 12,
                 itemBuilder: (_, i) =>
                  _AnnouncementCard(items[i]),
