@@ -53,21 +53,27 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   Color backgroundColor = const Color(0xFFD6E3E7);
   Color fontColor = Colors.black;
-  Color borderColor = Colors.transparent;
 
   double fontSize = 22;
 
   File? selectedImage;
 
-  final List<Color> palette = [
+  final List<Color> backgroundPalette = [
     const Color(0xFFF5E6E1),
     const Color(0xFFD6E3E7),
     const Color(0xFFDDE6DD),
     const Color(0xFFE8E0F2),
     const Color(0xFFF3E4DC),
     const Color(0xFF1C1C2E),
+  ];
+
+  final List<Color> fontPalette = [
     Colors.black,
     Colors.white,
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
   ];
 
   @override
@@ -93,7 +99,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 16),
 
-          /// 🔥 PREVIEW
+          /// PREVIEW
           RepaintBoundary(
             key: _previewKey,
             child: _buildPreview(height),
@@ -168,11 +174,14 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
                   const SizedBox(height: 12),
 
-                  /// COLOR PICKER
+                  /// BACKGROUND COLOR PICKER
                   if (backgroundType == BackgroundType.color)
                     Wrap(
-                      spacing: 10,
-                      children: palette.map((color) {
+                      spacing: 12,
+                      children: backgroundPalette.map((color) {
+                        final isSelected =
+                            backgroundColor == color;
+
                         return GestureDetector(
                           onTap: () {
                             setState(() {
@@ -180,8 +189,17 @@ class _VerseShareModalState extends State<VerseShareModal> {
                             });
                           },
                           child: CircleAvatar(
+                            radius: 22,
                             backgroundColor: color,
-                            radius: 20,
+                            child: isSelected
+                                ? Icon(
+                                    Icons.check,
+                                    color: color.computeLuminance() >
+                                            0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                  )
+                                : null,
                           ),
                         );
                       }).toList(),
@@ -193,20 +211,27 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   const Text("Font Size"),
                   Slider(
                     value: fontSize,
-                    min: 16,
-                    max: 40,
-                    onChanged: (v) {
-                      setState(() => fontSize = v);
+                    min: 14,
+                    max: 50,
+                    onChanged: (value) {
+                      setState(() {
+                        fontSize = value;
+                      });
                     },
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 20),
 
-                  /// FONT COLOR
-                  const Text("Font Color"),
+                  /// FONT COLOR PICKER
+                  const Text("Font Color",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   Wrap(
-                    spacing: 10,
-                    children: palette.map((color) {
+                    spacing: 12,
+                    children: fontPalette.map((color) {
+                      final isSelected =
+                          fontColor == color;
+
                       return GestureDetector(
                         onTap: () {
                           setState(() {
@@ -214,29 +239,17 @@ class _VerseShareModalState extends State<VerseShareModal> {
                           });
                         },
                         child: CircleAvatar(
+                          radius: 22,
                           backgroundColor: color,
-                          radius: 18,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// BORDER COLOR
-                  const Text("Text Border"),
-                  Wrap(
-                    spacing: 10,
-                    children: palette.map((color) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            borderColor = color;
-                          });
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: color,
-                          radius: 18,
+                          child: isSelected
+                              ? Icon(
+                                  Icons.check,
+                                  color: color.computeLuminance() >
+                                          0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                                )
+                              : null,
                         ),
                       );
                     }).toList(),
@@ -253,10 +266,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
             child: ElevatedButton(
               onPressed: shareImage,
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                minimumSize:
+                    const Size(double.infinity, 56),
               ),
               child: const Text("Share"),
             ),
@@ -272,7 +283,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ? pickImage
           : null,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
+        margin:
+            const EdgeInsets.symmetric(horizontal: 20),
         height: height,
         width: double.infinity,
         decoration: BoxDecoration(
@@ -287,27 +299,28 @@ class _VerseShareModalState extends State<VerseShareModal> {
             fit: StackFit.expand,
             children: [
 
-              /// IMAGE
-              if (backgroundType == BackgroundType.image &&
+              if (backgroundType ==
+                      BackgroundType.image &&
                   selectedImage != null)
                 Image.file(
                   selectedImage!,
                   fit: BoxFit.cover,
                 ),
 
-              /// 🔥 90% BLUR
-              if (backgroundType == BackgroundType.image &&
+              if (backgroundType ==
+                      BackgroundType.image &&
                   selectedImage != null)
                 BackdropFilter(
                   filter: ImageFilter.blur(
-                      sigmaX: 35, sigmaY: 35),
+                      sigmaX: 15, sigmaY: 15),
                   child: Container(
-                    color: Colors.black.withOpacity(0.6),
+                    color:
+                        Colors.black.withOpacity(0.6),
                   ),
                 ),
 
-              /// TAP HINT
-              if (backgroundType == BackgroundType.image &&
+              if (backgroundType ==
+                      BackgroundType.image &&
                   selectedImage == null)
                 const Center(
                   child: Column(
@@ -322,33 +335,23 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   ),
                 ),
 
-              _buildTextContent(),
+              Center(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.all(24),
+                  child: Text(
+                    "${widget.text}\n\n- ${widget.reference}",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight:
+                          FontWeight.bold,
+                      color: fontColor,
+                    ),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextContent() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Text(
-          "${widget.text}\n\n- ${widget.reference}",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: fontSize,
-            color: fontColor,
-            fontWeight: FontWeight.bold,
-            shadows: borderColor != Colors.transparent
-                ? [
-                    Shadow(
-                      blurRadius: 6,
-                      color: borderColor,
-                    )
-                  ]
-                : null,
           ),
         ),
       ),
@@ -358,28 +361,36 @@ class _VerseShareModalState extends State<VerseShareModal> {
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final XFile? file =
-        await picker.pickImage(source: ImageSource.gallery);
+        await picker.pickImage(
+            source: ImageSource.gallery);
 
     if (file != null) {
       setState(() {
         selectedImage = File(file.path);
-        backgroundType = BackgroundType.image;
+        backgroundType =
+            BackgroundType.image;
       });
     }
   }
 
   Future<void> shareImage() async {
     try {
+      await Future.delayed(
+          const Duration(milliseconds: 50));
+
       final boundary =
           _previewKey.currentContext!
                   .findRenderObject()
               as RenderRepaintBoundary;
 
       final image =
-          await boundary.toImage(pixelRatio: 3.0);
+          await boundary.toImage(
+              pixelRatio: 3);
 
-      final byteData = await image.toByteData(
-          format: ui.ImageByteFormat.png);
+      final byteData =
+          await image.toByteData(
+              format:
+                  ui.ImageByteFormat.png);
 
       final pngBytes =
           byteData!.buffer.asUint8List();
@@ -387,17 +398,18 @@ class _VerseShareModalState extends State<VerseShareModal> {
       final tempDir =
           await getTemporaryDirectory();
 
-      final file = await File(
-        '${tempDir.path}/verse.png',
-      ).create();
+      final file = File(
+          '${tempDir.path}/verse.png');
 
-      await file.writeAsBytes(pngBytes);
+      await file.writeAsBytes(
+          pngBytes);
 
       await Share.shareXFiles(
         [XFile(file.path)],
       );
     } catch (e) {
-      debugPrint("Share error: $e");
+      debugPrint(
+          "Share error: $e");
     }
   }
 }
