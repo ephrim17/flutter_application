@@ -1,18 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
-
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:gal/gal.dart';
 
 enum ShareFormat { square, story }
+
 enum BackgroundType { color, image }
 
 Future<void> showVerseShareModal(
@@ -55,6 +52,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   Color fontColor = Colors.black;
 
   double fontSize = 22;
+  bool isBold = true;
 
   File? selectedImage;
 
@@ -113,21 +111,20 @@ class _VerseShareModalState extends State<VerseShareModal> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   /// FORMAT
                   const Text("Format",
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ToggleButtons(
+                    borderRadius: BorderRadius.circular(cornerRadius),
                     isSelected: [
                       format == ShareFormat.square,
                       format == ShareFormat.story,
                     ],
                     onPressed: (i) {
                       setState(() {
-                        format = i == 0
-                            ? ShareFormat.square
-                            : ShareFormat.story;
+                        format =
+                            i == 0 ? ShareFormat.square : ShareFormat.story;
                       });
                     },
                     children: const [
@@ -149,6 +146,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ToggleButtons(
+                    borderRadius: BorderRadius.circular(cornerRadius),
                     isSelected: [
                       backgroundType == BackgroundType.color,
                       backgroundType == BackgroundType.image,
@@ -174,13 +172,12 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
                   const SizedBox(height: 12),
 
-                  /// BACKGROUND COLOR PICKER
+                  /// BACKGROUND COLORS
                   if (backgroundType == BackgroundType.color)
                     Wrap(
                       spacing: 12,
                       children: backgroundPalette.map((color) {
-                        final isSelected =
-                            backgroundColor == color;
+                        final isSelected = backgroundColor == color;
 
                         return GestureDetector(
                           onTap: () {
@@ -194,8 +191,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                             child: isSelected
                                 ? Icon(
                                     Icons.check,
-                                    color: color.computeLuminance() >
-                                            0.5
+                                    color: color.computeLuminance() > 0.5
                                         ? Colors.black
                                         : Colors.white,
                                   )
@@ -212,7 +208,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   Slider(
                     value: fontSize,
                     min: 14,
-                    max: 50,
+                    max: 30,
                     onChanged: (value) {
                       setState(() {
                         fontSize = value;
@@ -222,15 +218,39 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
                   const SizedBox(height: 20),
 
-                  /// FONT COLOR PICKER
+                  /// BOLD OPTION
+                  const Text("Font Weight"),
+                  const SizedBox(height: 8),
+                  ToggleButtons(
+                    borderRadius: BorderRadius.circular(cornerRadius),
+                    isSelected: [isBold, !isBold],
+                    onPressed: (index) {
+                      setState(() {
+                        isBold = index == 0;
+                      });
+                    },
+                    children: const [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Text("Bold"),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Text("Normal"),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// FONT COLOR
                   const Text("Font Color",
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
                     children: fontPalette.map((color) {
-                      final isSelected =
-                          fontColor == color;
+                      final isSelected = fontColor == color;
 
                       return GestureDetector(
                         onTap: () {
@@ -238,18 +258,30 @@ class _VerseShareModalState extends State<VerseShareModal> {
                             fontColor = color;
                           });
                         },
-                        child: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: color,
-                          child: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: color.computeLuminance() >
-                                          0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                                )
-                              : null,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.black
+                                  : Colors.grey.shade400,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: color,
+                            child: isSelected
+                                ? Icon(
+                                    Icons.check,
+                                    size: 18,
+                                    color: color.computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                  )
+                                : null,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -264,12 +296,11 @@ class _VerseShareModalState extends State<VerseShareModal> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: shareImage,
+              onPressed: downloadImage,
               style: ElevatedButton.styleFrom(
-                minimumSize:
-                    const Size(double.infinity, 56),
+                minimumSize: const Size(double.infinity, 56),
               ),
-              child: const Text("Share"),
+              child: const Text("Download"),
             ),
           )
         ],
@@ -279,74 +310,113 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   Widget _buildPreview(double height) {
     return GestureDetector(
-      onTap: backgroundType == BackgroundType.image
-          ? pickImage
-          : null,
+      onTap: backgroundType == BackgroundType.image ? pickImage : null,
       child: Container(
-        margin:
-            const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
         height: height,
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: backgroundType == BackgroundType.color
-              ? backgroundColor
-              : null,
+          color:
+              backgroundType == BackgroundType.color ? backgroundColor : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Stack(
             fit: StackFit.expand,
             children: [
-
-              if (backgroundType ==
-                      BackgroundType.image &&
+              if (backgroundType == BackgroundType.image &&
                   selectedImage != null)
                 Image.file(
                   selectedImage!,
                   fit: BoxFit.cover,
                 ),
 
-              if (backgroundType ==
-                      BackgroundType.image &&
+              /// 50% BLUR
+              if (backgroundType == BackgroundType.image &&
                   selectedImage != null)
                 BackdropFilter(
-                  filter: ImageFilter.blur(
-                      sigmaX: 15, sigmaY: 15),
+                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                   child: Container(
-                    color:
-                        Colors.black.withOpacity(0.6),
+                    color: Colors.black.withAlpha(80),
                   ),
                 ),
 
-              if (backgroundType ==
-                      BackgroundType.image &&
+              if (backgroundType == BackgroundType.image &&
                   selectedImage == null)
                 const Center(
                   child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_photo_alternate,
-                          size: 40),
+                      Icon(Icons.add_photo_alternate, size: 40),
                       SizedBox(height: 8),
                       Text("Tap to select image"),
                     ],
                   ),
                 ),
 
+              /// TEXT
               Center(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.all(24),
-                  child: Text(
-                    "${widget.text}\n\n- ${widget.reference}",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      fontWeight:
-                          FontWeight.bold,
-                      color: fontColor,
+                  padding: const EdgeInsets.all(12),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxWidth = constraints.maxWidth;
+                      final maxHeight = constraints.maxHeight;
+
+                      double adjustedSize = fontSize;
+
+                      TextPainter painter = TextPainter(
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.ltr,
+                        maxLines: null,
+                      );
+
+                      while (adjustedSize > 12) {
+                        painter.text = TextSpan(
+                          text: "${widget.text}\n\n- ${widget.reference}",
+                          style: TextStyle(
+                            fontSize: adjustedSize,
+                            fontWeight:
+                                isBold ? FontWeight.bold : FontWeight.normal,
+                            color: fontColor,
+                          ),
+                        );
+
+                        painter.layout(maxWidth: maxWidth);
+
+                        if (painter.height <= maxHeight - 30) {
+                          break;
+                        }
+
+                        adjustedSize -= 1;
+                      }
+
+                      return Text(
+                        "${widget.text}\n\n- ${widget.reference}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: adjustedSize,
+                          fontWeight:
+                              isBold ? FontWeight.bold : FontWeight.normal,
+                          color: fontColor,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              /// LOGO (BOTTOM RIGHT)
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: Opacity(
+                  opacity: 0.85,
+                  child: ClipOval(
+                    child: Image.asset(
+                      "assets/images/church_logo.png",
+                      height: 38,
                     ),
                   ),
                 ),
@@ -360,56 +430,52 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final XFile? file =
-        await picker.pickImage(
-            source: ImageSource.gallery);
+    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
 
     if (file != null) {
       setState(() {
         selectedImage = File(file.path);
-        backgroundType =
-            BackgroundType.image;
+        backgroundType = BackgroundType.image;
       });
     }
   }
 
-  Future<void> shareImage() async {
+  Future<void> downloadImage() async {
     try {
-      await Future.delayed(
-          const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
 
-      final boundary =
-          _previewKey.currentContext!
-                  .findRenderObject()
-              as RenderRepaintBoundary;
+      final boundary = _previewKey.currentContext!.findRenderObject()
+          as RenderRepaintBoundary;
 
-      final image =
-          await boundary.toImage(
-              pixelRatio: 3);
+      final image = await boundary.toImage(pixelRatio: 3);
 
-      final byteData =
-          await image.toByteData(
-              format:
-                  ui.ImageByteFormat.png);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-      final pngBytes =
-          byteData!.buffer.asUint8List();
+      final pngBytes = byteData!.buffer.asUint8List();
 
-      final tempDir =
-          await getTemporaryDirectory();
-
-      final file = File(
-          '${tempDir.path}/verse.png');
-
-      await file.writeAsBytes(
-          pngBytes);
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
+      await Gal.putImageBytes(
+        pngBytes,
+        name: "daily_verse_${DateTime.now().millisecondsSinceEpoch}",
       );
+
+      if (!mounted) return;
+
+      /// Show snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Saved to gallery"),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      /// Small delay so snackbar is visible before closing
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss modal
+      }
     } catch (e) {
-      debugPrint(
-          "Share error: $e");
+      debugPrint("Download error: $e");
     }
   }
 }
