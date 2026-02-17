@@ -14,11 +14,10 @@ class ChurchTabScreen extends ConsumerStatefulWidget {
 }
 
 class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
-
   Widget? _activeScreen;
   int selectedIndex = 0;
 
-  void setActiveScreen(int index){
+  void setActiveScreen(int index) {
     setState(() {
       selectedIndex = index;
     });
@@ -35,18 +34,20 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     }
   }
 
-   @override
+  @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      updateUserTokenIfNeeded(ref);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await handleNotificationSetup(
+        context: context,
+        ref: ref,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-
     if (selectedIndex == 0) {
       _activeScreen = HomeScreen();
     } else {
@@ -58,7 +59,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         centerTitle: true, // 👈 REQUIRED
         toolbarHeight: 72,
         title: LightningGradientText(
-          text: 'TNBM', //GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600)
+          text:
+              'TNBM', //GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600)
           style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                 fontWeight: FontWeight.bold,
                 fontSize: 32,
@@ -66,17 +68,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
               ),
         ),
       ),
-        body: _activeScreen,
-        drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          onTap: (value) => setActiveScreen(value),
-          currentIndex: selectedIndex,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
-          ],
-        ),
-      );
+      body: _activeScreen,
+      drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        onTap: (value) => setActiveScreen(value),
+        currentIndex: selectedIndex,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
+        ],
+      ),
+    );
   }
 }
