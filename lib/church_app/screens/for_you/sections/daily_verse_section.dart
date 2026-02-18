@@ -21,31 +21,14 @@ class DailyVerseSection implements MasterSection {
   List<Widget> buildSlivers(BuildContext context) {
     return [
       SliverToBoxAdapter(
-        child: Consumer(
-          builder: (context, ref, _) {
-            final asyncBanner = ref.watch(dailyVerseProvider);
-            return asyncBanner.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: LinearProgressIndicator(),
-              ),
-              error: (e, _) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Error: $e'),
-              ),
-              data: (items) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //SectionHeader(text: "Daily verse", padding: 0.0,),
-                    const SizedBox(height: 10,),
-                    DailyVerseCard(),
-                  ],
-                ),
-              )
-            );
-          },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DailyVerseCard(),
+            ],
+          ),
         ),
       ),
     ];
@@ -55,22 +38,21 @@ class DailyVerseSection implements MasterSection {
 class DailyVerseCard extends ConsumerWidget {
   const DailyVerseCard({super.key});
 
-Future<void> showVerseShareModal(
-  BuildContext context, {
-  required String text,
-  required String reference,
-}) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => VerseShareModal(
-      text: text,
-      reference: reference,
-    ),
-  );
-}
-
+  Future<void> showVerseShareModal(
+    BuildContext context, {
+    required String text,
+    required String reference,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => VerseShareModal(
+        text: text,
+        reference: reference,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,9 +64,8 @@ Future<void> showVerseShareModal(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verse) {
-        final verseText = language == BibleLanguage.tamil
-            ? verse['tamil']
-            : verse['english'];
+        final verseText =
+            language == BibleLanguage.tamil ? verse['tamil'] : verse['english'];
 
         return Container(
           width: width - 32,
@@ -97,19 +78,24 @@ Future<void> showVerseShareModal(
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SectionHeader(text: "Daily verse", padding: 0.0,),
+                  SectionHeader(
+                    text: "Daily verse",
+                    padding: 0.0,
+                  ),
                   Spacer(),
-                  BibleLanguageToggle(provider: dailyVerseLanguageProvider,),
+                  BibleLanguageToggle(
+                    provider: dailyVerseLanguageProvider,
+                  ),
                   IconButton(
-          icon: const Icon(Icons.share_outlined),
-          onPressed: () async {
-            await showVerseShareModal(
-              context,
-              text: verseText!,
-              reference: verse['reference']!,
-            );
-          },
-        ),
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: () async {
+                      await showVerseShareModal(
+                        context,
+                        text: verseText!,
+                        reference: verse['reference']!,
+                      );
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 12),

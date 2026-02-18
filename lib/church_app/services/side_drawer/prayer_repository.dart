@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class PrayerRepository {
   final _firestore = FirebaseFirestore.instance;
@@ -37,7 +38,7 @@ class PrayerRepository {
       throw Exception("Expiry date must be within 30 days");
     }
 
-    await _firestore.collection('prayer_requests').add({
+    await _firestore.collection(FirestorePaths.prayerRequests).add({
       'userId': user.uid,
       'email': user.email,
       'title': title.trim(),
@@ -73,7 +74,7 @@ class PrayerRepository {
       throw Exception("Expiry date must be within 30 days");
     }
 
-    await _firestore.collection('prayer_requests').doc(prayerId).update({
+    await _firestore.collection(FirestorePaths.prayerRequests).doc(prayerId).update({
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
@@ -90,7 +91,7 @@ class PrayerRepository {
     final startOfToday = DateTime(today.year, today.month, today.day);
 
     return _firestore
-        .collection('prayer_requests')
+        .collection(FirestorePaths.prayerRequests)
         .where('userId', isEqualTo: uid)
         .where(
           'expiryDate',
@@ -107,7 +108,7 @@ class PrayerRepository {
     final startOfToday = DateTime(today.year, today.month, today.day);
 
     return _firestore
-        .collection('prayer_requests')
+        .collection(FirestorePaths.prayerRequests)
         .where(
           'expiryDate',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
@@ -119,6 +120,6 @@ class PrayerRepository {
   }
 
   Future<void> deletePrayer(String prayerId) async {
-    await _firestore.collection('prayer_requests').doc(prayerId).delete();
+    await _firestore.collection(FirestorePaths.prayerRequests).doc(prayerId).delete();
   }
 }

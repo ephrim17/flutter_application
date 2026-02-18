@@ -1,5 +1,6 @@
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_authentication.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,7 +33,7 @@ final appUserProvider = StreamProvider<AppUser?>((ref) {
     if (user == null) return null;
 
     final doc =
-        await firestore.collection('users').doc(user.uid).get();
+        await firestore.collection(FirestorePaths.users).doc(user.uid).get();
 
     if (!doc.exists) return null;
 

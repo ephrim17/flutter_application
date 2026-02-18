@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class ReadingPlanProgressService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,16 +13,14 @@ class ReadingPlanProgressService {
     final uid = await _uid();
     if (uid == null) return [];
 
-    final doc = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('readingPlans')
+    final doc = await FirestorePaths
+    .userReadingPlans(_firestore, uid)
         .doc(month.toLowerCase())
         .get();
 
     if (!doc.exists) return [];
 
-    final data = doc.data();
+    final data = doc.data() as Map<String, dynamic>?;
     if (data == null || data['completedDays'] == null) return [];
 
     return List<int>.from(data['completedDays']);
@@ -32,10 +31,7 @@ class ReadingPlanProgressService {
     final uid = await _uid();
     if (uid == null) return;
 
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('readingPlans')
+    await FirestorePaths.userReadingPlans(_firestore, uid)
         .doc(month.toLowerCase())
         .set({
       'completedDays': days,

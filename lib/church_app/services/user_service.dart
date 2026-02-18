@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -52,7 +53,7 @@ Future<void> handleNotificationSetup({
     if (user == null) return;
 
     final userDoc =
-        FirebaseFirestore.instance.collection('users').doc(user.uid);
+        FirebaseFirestore.instance.doc(FirestorePaths.userPath(user.uid));
 
     /// 5️⃣ Get existing token
     final snapshot = await userDoc.get();
@@ -85,7 +86,7 @@ Future<void> handleNotificationSetup({
 
   try {
     final doc =
-        await firestore.collection('users').doc(uid).get();
+        await firestore.collection(FirestorePaths.users).doc(uid).get();
 
     if (!doc.exists) return null;
 

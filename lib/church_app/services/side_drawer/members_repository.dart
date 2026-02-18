@@ -2,9 +2,10 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class MembersRepository {
-  final _ref = FirebaseFirestore.instance.collection('users');
+  final _ref = FirebaseFirestore.instance.collection(FirestorePaths.users);
 
   Stream<List<AppUser>> getMembers() {
     return _ref

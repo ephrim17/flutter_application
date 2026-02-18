@@ -15,7 +15,7 @@ final isAdminProvider = Provider<bool>((ref) {
 
       final result = config.isAdmin(user.email);
 
-      return result ?? false; // 🔥 Never allow null
+      return result;
     },
     orElse: () => false,
   );

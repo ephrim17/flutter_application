@@ -66,6 +66,7 @@ class AboutScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildFooter(context),
                 ),
+                const SizedBox(height: 40),
               ],
             ),
           );
