@@ -326,8 +326,8 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     final text = highlightedVerses.map((i) {
       final v = verses[i];
       return '''
-${widget.book.key}: $chapterIndexText
-${v['verse']}
+${widget.book.key} ${widget.book.name}: $chapterIndexText:${v['verse'] }
+
 ${v['text']['tamil']}
 ${v['text']['english']}
 ''';
