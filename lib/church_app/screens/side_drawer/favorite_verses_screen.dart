@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -76,17 +77,6 @@ class FavoritesScreen extends ConsumerWidget {
                           height: 1.4,
                         ),
                       ),
-
-                      const SizedBox(height: 6),
-
-                      Text(
-                        verse['reference'] ?? '',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-
                       const SizedBox(height: 12),
 
                       /// Tamil
@@ -99,15 +89,28 @@ class FavoritesScreen extends ConsumerWidget {
                       ),
 
                       const SizedBox(height: 6),
-
-                      Text(
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
                         verse['reference'] ?? '',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade600,
                         ),
                       ),
-
+                          Spacer(),
+                          InkWell(
+                            onTap: () async {
+                              _showLanguageShareOptions(
+                                context,
+                                verse: verse,
+                              );
+                            },
+                            child: Icon(Icons.share, color: Theme.of(context).colorScheme.secondary),
+                          ),
+                        ],
+                      ),
                       const Divider(height: 24),
                     ],
                   ),
@@ -119,4 +122,57 @@ class FavoritesScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+
+void _showLanguageShareOptions(
+  BuildContext context, {
+  required Map<String, dynamic> verse,
+}) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              //leading: const Icon(Icons.language),
+              title: const Text("Share in English"),
+              onTap: () {
+                Navigator.pop(context);
+                _shareVerse(
+                  text: verse['english'],
+                  reference: verse['reference'],
+                  context: context,
+                );
+              },
+            ),
+            ListTile(
+              //leading: const Icon(Icons.translate),
+              title: const Text("Share in Tamil"),
+              onTap: () {
+                _shareVerse(
+                  text: verse['tamil'],
+                  reference: verse['reference'],
+                  context: context,
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+Future<void> _shareVerse({
+  required String text,
+  required String reference,
+  required BuildContext context,
+}) async {
+  showVerseShareModal(
+    context,
+    text: text,
+    reference: reference,
+  );
 }

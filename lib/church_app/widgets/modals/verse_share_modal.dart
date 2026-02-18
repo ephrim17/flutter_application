@@ -76,7 +76,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   @override
   Widget build(BuildContext context) {
-    final height = format == ShareFormat.square ? 280.0 : 420.0;
+    final height = format == ShareFormat.square ? 400.0 : 500.0;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
