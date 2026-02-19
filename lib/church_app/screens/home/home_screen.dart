@@ -37,6 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isBirthdayProvider,
         (previous, next) {
           if (next == true) {
+            print("<<< It's user's birthday! Show birthday sheet >>>");
             showPromptSheet(PromptType.birthday, null);
           }
         },

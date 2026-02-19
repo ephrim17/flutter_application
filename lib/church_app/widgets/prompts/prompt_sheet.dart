@@ -47,13 +47,23 @@ enum PromptType {
   announcement,
 }
 
-//Prompt Sheet Providers
 final isBirthdayProvider = Provider<bool>((ref) {
   final user = ref.watch(getCurrentUserProvider).value;
+  final now = ref.watch(todayProvider).value ?? DateTime.now();
+
   if (user == null || user.dob == null) return false;
-  final now = DateTime.now();
-  final dob = user.dob!;
-  return dob.day == now.day && dob.month == now.month;
+
+  final dob = user.dob!.toLocal();
+  final today = now.toLocal();
+  return dob.day == today.day && dob.month == today.month;
+});
+
+
+final todayProvider = StreamProvider<DateTime>((ref) async* {
+  while (true) {
+    yield DateTime.now();
+    await Future.delayed(const Duration(hours: 1));
+  }
 });
 
 

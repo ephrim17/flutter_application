@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +59,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
   @override
   Widget build(BuildContext context) {
     final dailyVerseAsync = ref.watch(dailyVerseProviderLocal);
+    final user = ref.watch(getCurrentUserProvider).value;
     final width = MediaQuery.of(context).size.width;
 
     return dailyVerseAsync.when(
@@ -97,7 +99,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                       color: Theme.of(context).colorScheme.primary)),
 
               LightningGradientText(
-                  text: "EPHRIM",
+                  text: user?.name.toUpperCase() ?? "DEAR FRIEND",
                   style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 32,
