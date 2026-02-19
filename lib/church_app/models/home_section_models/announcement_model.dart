@@ -6,6 +6,7 @@ class Announcement {
   final String body;
   final bool isActive;
   final int priority;
+  final String imageUrl;
 
   const Announcement({
     required this.id,
@@ -13,6 +14,7 @@ class Announcement {
     required this.body,
     required this.isActive,
     required this.priority,
+    required this.imageUrl,
   });
 
   Announcement copyWith({
@@ -21,6 +23,7 @@ class Announcement {
     String? body,
     bool? isActive,
     int? priority,
+    String? imageUrl,
   }) {
     return Announcement(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class Announcement {
       body: body ?? this.body,
       isActive: isActive ?? this.isActive,
       priority: priority ?? this.priority,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -37,6 +41,7 @@ class Announcement {
         'body': body,
         'isActive': isActive,
         'priority': priority,
+        'imageUrl': imageUrl,
       };
 
   /// For reading from Firestore
@@ -48,6 +53,7 @@ class Announcement {
       title: (data['title'] ?? '') as String,
       body: (data['body'] ?? '') as String,
       isActive: (data['isActive'] ?? true) as bool,
+      imageUrl: (data['imageUrl'] ?? '') as String,
       priority: (data['priority'] ?? 0) as int,
     );
   }

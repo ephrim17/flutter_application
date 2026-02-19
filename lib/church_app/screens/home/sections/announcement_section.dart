@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
+import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AnnouncementSection implements MasterSection {
@@ -26,23 +27,21 @@ class AnnouncementSection implements MasterSection {
             final asyncBanner = ref.watch(announcementsProvider);
 
             return asyncBanner.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: LinearProgressIndicator(),
-              ),
-              error: (e, _) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Error: $e'),
-              ),
-              data: (items) => _AnnouncementList(items)
-            );
+                loading: () => const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: LinearProgressIndicator(),
+                    ),
+                error: (e, _) => Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('Error: $e'),
+                    ),
+                data: (items) => _AnnouncementList(items));
           },
         ),
       ),
     ];
   }
 }
-
 
 class _AnnouncementList extends StatelessWidget {
   const _AnnouncementList(this.items);
@@ -58,23 +57,24 @@ class _AnnouncementList extends StatelessWidget {
     }
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(text: "Announcements", padding: 16.0),
-          const SizedBox(height: 10,),
-          SizedBox(
-            child: AutoScrollCarousel(
-                height: cardHeight(AnnouncementSection().id),
-                itemCount: items.length,
-                viewportFraction: 0.92,
-                autoScroll: true,
-                spacing: 12,
-                itemBuilder: (_, i) =>
-                 _AnnouncementCard(items[i]),
-              ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(text: "Announcements", padding: 16.0),
+        const SizedBox(
+          height: 10,
+        ),
+        SizedBox(
+          child: AutoScrollCarousel(
+            height: cardHeight(AnnouncementSection().id),
+            itemCount: items.length,
+            viewportFraction: 0.92,
+            autoScroll: true,
+            spacing: 12,
+            itemBuilder: (_, i) => _AnnouncementCard(items[i]),
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 }
 
@@ -84,7 +84,6 @@ class _AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final width = MediaQuery.of(context).size.width;
 
     return InkWell(
@@ -102,20 +101,17 @@ class _AnnouncementCard extends StatelessWidget {
       },
       child: Container(
         width: width - 32,
-        padding: const EdgeInsets.all(12),
         height: cardHeight(AnnouncementSection().id),
+        padding: const EdgeInsets.all(5),
         decoration: carouselBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(a.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            //const SizedBox(height: 6),
-            Text(a.body,
-                maxLines: 3, overflow: TextOverflow.ellipsis),
-          ],
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16), // SAME radius
+            child: ShimmerImage(
+              imageUrl: a.imageUrl,
+            ),
+          ),
         ),
       ),
     );
