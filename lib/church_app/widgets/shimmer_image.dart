@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -23,7 +24,7 @@ class ShimmerImage extends StatelessWidget {
     return AspectRatio(
       aspectRatio: aspectRatio,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(cornerRadius),
         child: CachedNetworkImage(
           imageUrl: imageUrl,
           fit: fit,

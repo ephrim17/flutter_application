@@ -54,7 +54,7 @@ class FooterContactsWidget extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             contact.label,
-            style: Theme.of(context).textTheme.labelMedium,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       );

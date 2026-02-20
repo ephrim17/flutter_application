@@ -83,7 +83,7 @@ class AboutScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             about.title,
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 4),
           Text(
@@ -98,7 +98,7 @@ class AboutScreen extends ConsumerWidget {
   Widget _buildDescription(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyLarge,
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 

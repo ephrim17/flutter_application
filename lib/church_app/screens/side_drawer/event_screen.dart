@@ -16,7 +16,6 @@ class EventsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
         title: AppBarTitle(text: "Events"),
       ),
       body: Column(

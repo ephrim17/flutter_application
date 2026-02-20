@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hooks_riverpod/legacy.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -8,7 +11,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Settings"),
+        title: AppBarTitle(text: "Settings"),
       ),
       body: Column(
         children: [
@@ -41,31 +44,36 @@ class SettingsScreen extends StatelessWidget {
 }
 
 
-class ThemeController {
-  static final ValueNotifier<ThemeMode> themeNotifier =
-      ValueNotifier(ThemeMode.system);
+final themeProvider =
+    StateNotifierProvider<ThemeController, ThemeMode>(
+  (ref) => ThemeController(),
+);
 
-  static void toggle(bool isDark) {
-    themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+class ThemeController extends StateNotifier<ThemeMode> {
+  ThemeController() : super(ThemeMode.system);
+
+  void toggle(bool isDark) {
+    state = isDark ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  void setSystem() {
+    state = ThemeMode.system;
   }
 }
 
-class _AppearanceSection extends StatelessWidget {
+class _AppearanceSection extends ConsumerWidget {
   const _AppearanceSection();
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeController.themeNotifier,
-      builder: (_, mode, __) {
-        return SwitchListTile(
-          secondary: const Icon(Icons.dark_mode_outlined),
-          title: const Text("Dark Mode"),
-          value: mode == ThemeMode.dark,
-          onChanged: (value) {
-            ThemeController.toggle(value);
-          },
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
+    return SwitchListTile(
+      secondary: const Icon(Icons.dark_mode_outlined),
+      title: const Text("Dark Mode"),
+      value: themeMode == ThemeMode.dark,
+      onChanged: (value) {
+        ref.read(themeProvider.notifier).toggle(value);
       },
     );
   }

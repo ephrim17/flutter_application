@@ -31,18 +31,22 @@ class BibleVerseItemWidget extends ConsumerWidget {
         const SizedBox(height: 6),
         Text(
           versePrimary,
-          style: TextStyle(
+           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: BibleFontConfig.tamil(size),
-            height: 1.5,
+            fontWeight: FontWeight.w100,
+            height: 1.5,  
+            letterSpacing: 0.5
           ),
         ),
         const SizedBox(height: 6),
         Text(
           verseSecondary,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: BibleFontConfig.english(size),
-            height: 1.4,
-            color: Colors.black54,
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            fontWeight: FontWeight.w100,
+            height: 1.5,  
+            letterSpacing: 0.5
           ),
         ),
       ],

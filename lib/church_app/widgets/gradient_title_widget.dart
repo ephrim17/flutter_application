@@ -29,7 +29,7 @@ class LightningGradientText extends StatelessWidget {
 
   Shader _lightningShader(Rect bounds, BuildContext context) {
     final colors = [
-      Theme.of(context).primaryColor,
+      Theme.of(context).colorScheme.primary,
       Theme.of(context).colorScheme.secondary // deep blue // orange strike
     ];
 

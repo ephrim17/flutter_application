@@ -15,22 +15,22 @@ class BibleFontConfig {
   static double tamil(BibleFontSize size) {
     switch (size) {
       case BibleFontSize.small:
-        return 14;
-      case BibleFontSize.medium:
         return 16;
-      case BibleFontSize.large:
+      case BibleFontSize.medium:
         return 18;
+      case BibleFontSize.large:
+        return 20;
     }
   }
 
   static double english(BibleFontSize size) {
     switch (size) {
       case BibleFontSize.small:
-        return 13;
-      case BibleFontSize.medium:
-        return 14;
-      case BibleFontSize.large:
         return 16;
+      case BibleFontSize.medium:
+        return 18;
+      case BibleFontSize.large:
+        return 20;
     }
   }
 }

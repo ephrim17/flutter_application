@@ -88,13 +88,12 @@ class AppDrawer extends ConsumerWidget {
                   user?.name ?? '',
                   style: Theme.of(context)
                       .textTheme
-                      .displayMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.onSecondaryFixedVariant),
+                      .titleLarge,
                 ),
                 accountEmail: Text(user?.email ?? '', style: Theme.of(context)
                       .textTheme
-                      .titleMedium
-                      ?.copyWith(color: Theme.of(context).primaryColor),)
+                      .bodyMedium
+                )
               );
             },
           ),

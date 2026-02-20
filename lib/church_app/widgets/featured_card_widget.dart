@@ -38,8 +38,8 @@ class FeaturedCard extends StatelessWidget {
                   children: [
                     Text(
                       badgeText,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).primaryColor,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.bold
                       ),
                     ),

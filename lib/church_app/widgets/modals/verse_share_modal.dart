@@ -80,10 +80,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      decoration: carouselBoxDecoration(context),
       child: Column(
         children: [
           const SizedBox(height: 12),
@@ -91,8 +88,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
             height: 4,
             width: 40,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              //color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(20),
+              color: backgroundType == BackgroundType.color
+                  ? backgroundColor
+                  : (selectedImage == null
+                      ? Colors.grey.shade300
+                      : null),
             ),
           ),
           const SizedBox(height: 16),
@@ -309,92 +311,63 @@ class _VerseShareModalState extends State<VerseShareModal> {
   }
 
   Widget _buildPreview(double height) {
-    return GestureDetector(
-      onTap: backgroundType == BackgroundType.image ? pickImage : null,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        height: height,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color:
-              backgroundType == BackgroundType.color ? backgroundColor : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (backgroundType == BackgroundType.image &&
-                  selectedImage != null)
-                Image.file(
-                  selectedImage!,
-                  fit: BoxFit.cover,
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque, // 👈 important
+    onTap: backgroundType == BackgroundType.image ? pickImage : null,
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: backgroundType == BackgroundType.color
+            ? backgroundColor
+            : Colors.grey.shade200, // 👈 fallback background
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+
+            /// IMAGE
+            if (backgroundType == BackgroundType.image &&
+                selectedImage != null)
+              Image.file(
+                selectedImage!,
+                fit: BoxFit.cover,
+              ),
+
+            /// BLUR (only if image selected)
+            if (backgroundType == BackgroundType.image &&
+                selectedImage != null)
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  color: Colors.black.withOpacity(0.2),
                 ),
+              ),
 
-              /// 50% BLUR
-              if (backgroundType == BackgroundType.image &&
-                  selectedImage != null)
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    color: Colors.black.withAlpha(10),
-                  ),
-                ),
+            /// TEXT
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth;
+                    final maxHeight = constraints.maxHeight;
 
-              if (backgroundType == BackgroundType.image &&
-                  selectedImage == null)
-                const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_photo_alternate, size: 40),
-                      SizedBox(height: 8),
-                      Text("Tap to select image"),
-                    ],
-                  ),
-                ),
+                    double adjustedSize = fontSize;
 
-              /// TEXT
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final maxWidth = constraints.maxWidth;
-                      final maxHeight = constraints.maxHeight;
+                    TextPainter painter = TextPainter(
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.ltr,
+                      maxLines: null,
+                    );
 
-                      double adjustedSize = fontSize;
-
-                      TextPainter painter = TextPainter(
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.ltr,
-                        maxLines: null,
-                      );
-
-                      while (adjustedSize > 12) {
-                        painter.text = TextSpan(
-                          text: "${widget.text}\n\n- ${widget.reference}",
-                          style: TextStyle(
-                            fontSize: adjustedSize,
-                            fontWeight:
-                                isBold ? FontWeight.bold : FontWeight.normal,
-                            color: fontColor,
-                          ),
-                        );
-
-                        painter.layout(maxWidth: maxWidth);
-
-                        if (painter.height <= maxHeight - 30) {
-                          break;
-                        }
-
-                        adjustedSize -= 1;
-                      }
-
-                      return Text(
-                        "${widget.text}\n\n- ${widget.reference}",
-                        textAlign: TextAlign.center,
+                    while (adjustedSize > 12) {
+                      painter.text = TextSpan(
+                        text: "${widget.text}\n\n- ${widget.reference}",
                         style: TextStyle(
                           fontSize: adjustedSize,
                           fontWeight:
@@ -402,32 +375,77 @@ class _VerseShareModalState extends State<VerseShareModal> {
                           color: fontColor,
                         ),
                       );
-                    },
+
+                      painter.layout(maxWidth: maxWidth);
+
+                      if (painter.height <= maxHeight - 30) break;
+
+                      adjustedSize -= 1;
+                    }
+
+                    return Text(
+                      "${widget.text}\n\n- ${widget.reference}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: adjustedSize,
+                        fontWeight:
+                            isBold ? FontWeight.bold : FontWeight.normal,
+                        color: fontColor,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            /// GREY OVERLAY + CTA (only if image selected mode but no image chosen)
+            if (backgroundType == BackgroundType.image &&
+                selectedImage == null)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.grey.withOpacity(0.65),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        "Tap to select image",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              /// LOGO (BOTTOM RIGHT)
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: Opacity(
-                  opacity: 0.85,
-                  child: ClipOval(
-                    child: Image.asset(
-                      "assets/images/church_logo.png",
-                      height: 38,
-                    ),
+            /// LOGO (BOTTOM RIGHT)
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Opacity(
+                opacity: 0.85,
+                child: ClipOval(
+                  child: Image.asset(
+                    "assets/images/church_logo.png",
+                    height: 38,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final XFile? file = await picker.pickImage(source: ImageSource.gallery);

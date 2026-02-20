@@ -76,7 +76,7 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                             color: isCompleted
                                 ? Theme.of(context)
                                     .colorScheme
-                                    .primaryFixed
+                                    .primaryContainer
                                     .withValues(alpha: 0.85)
                                 : null,
                             margin: const EdgeInsets.symmetric(

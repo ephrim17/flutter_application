@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/bible_font_size_constant.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class BibleSwipeVerseScreen extends ConsumerWidget {
@@ -9,10 +11,11 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final versesAsync = ref.watch(swipeVersesProvider);
+    final size = ref.watch(bibleFontSizeProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+      //backgroundColor: Colors.white,
+      appBar: BibleReaderAppBar(
         title: const AppBarTitle(text: "Bible Swipes"),
       ),
       body: versesAsync.when(
@@ -37,8 +40,8 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
                       textAlign: TextAlign.start,
                       style: Theme.of(context)
                           .textTheme
-                          .headlineSmall
-                          ?.copyWith(height: 1.5),
+                          .bodyLarge
+                          ?.copyWith(height: 1.5, fontSize: BibleFontConfig.verseNumber(size),),
                     ),
 
                     const SizedBox(height: 16),
@@ -50,11 +53,13 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyLarge
-                          ?.copyWith(
-                            height: 1.4,
-                            color: Colors.black54,
-                          ),
+                          ?.copyWith(height: 1.5, fontSize: BibleFontConfig.verseNumber(size),),
                     ),
+
+                    const SizedBox(height: 16),
+
+                    // English
+                    
 
                     const SizedBox(height: 20),
 

@@ -79,10 +79,7 @@ class ArticleCard extends StatelessWidget {
           children: [
             Text(
               article.title,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
+              //style: Theme.of(context).textTheme.bodyMedium,
             ),
             const Divider(height: 22),
             Text(

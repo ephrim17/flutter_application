@@ -103,10 +103,7 @@ class DailyVerseCard extends ConsumerWidget {
               /// 🔹 Verse text
               Text(
                 verseText!,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  height: 1.4,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 6),
 

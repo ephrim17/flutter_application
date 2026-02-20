@@ -103,12 +103,12 @@ class _AnnouncementCard extends StatelessWidget {
       child: Container(
         width: width - 32,
         height: cardHeight(AnnouncementSection().id),
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(2),
         decoration: carouselBoxDecoration(context),
         child: AspectRatio(
           aspectRatio: 16 / 9,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16), // SAME radius
+            borderRadius: BorderRadius.circular(cornerRadius), // SAME radius
             child: ShimmerImage(
               imageUrl: a.imageUrl,
             ),
