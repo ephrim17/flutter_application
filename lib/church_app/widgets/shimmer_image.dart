@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ShimmerImage extends StatelessWidget {
   final String imageUrl;
@@ -23,30 +24,27 @@ class ShimmerImage extends StatelessWidget {
       aspectRatio: aspectRatio,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
-        child: Image.network(
-          imageUrl,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
           fit: fit,
           width: double.infinity,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
 
-            return Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Container(
-                color: Colors.white,
+          // Shimmer while loading
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(color: Colors.white),
+          ),
+
+          // Error UI
+          errorWidget: (context, url, error) =>
+              errorWidget ??
+              Container(
+                color: Colors.grey.shade200,
+                child: const Center(
+                  child: Icon(Icons.broken_image, size: 40),
+                ),
               ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return errorWidget ??
-                Container(
-                  color: Colors.grey.shade200,
-                  child: const Center(
-                    child: Icon(Icons.broken_image, size: 40),
-                  ),
-                );
-          },
         ),
       ),
     );

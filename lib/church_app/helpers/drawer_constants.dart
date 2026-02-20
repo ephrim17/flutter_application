@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/event_screen.
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
 
 enum DrawerMenuItem {
   events,
@@ -70,7 +71,7 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.holyBible:
         return BibleBookScreen();
       case DrawerMenuItem.settings:
-        return const Placeholder();
+        return const SettingsScreen();
     }
   }
 }

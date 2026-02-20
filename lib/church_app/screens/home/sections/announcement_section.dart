@@ -94,6 +94,7 @@ class _AnnouncementCard extends StatelessWidget {
               return DetailWidget(
                 title: a.title,
                 description: a.body,
+                imageUrl: a.imageUrl, 
               );
             },
           ),
