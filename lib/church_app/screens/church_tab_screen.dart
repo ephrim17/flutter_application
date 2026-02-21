@@ -61,7 +61,10 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         title: LightningGradientText(
           text:
               'TNBM', //GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600)
-          style: Theme.of(context).textTheme.headlineMedium!
+          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+              ),
         ),
       ),
       body: _activeScreen,
