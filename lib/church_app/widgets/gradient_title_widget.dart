@@ -17,12 +17,16 @@ class LightningGradientText extends StatelessWidget {
       shaderCallback: (Rect bounds) {
         return _lightningShader(bounds, context);
       },
-      child: Text(
-        text,
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.visible,
-        style: style,
+      child: Column(
+        children: [
+          Text(
+            text,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: style,
+          ),
+        ],
       ),
     );
   }

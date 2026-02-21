@@ -40,6 +40,15 @@ class FavoritesNotifier
     return verses;
   }
 
+  /// 🔥 NEW METHOD
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove('all_highlights');
+
+    state = const AsyncData([]);
+  }
+
   /// 🔥 REMOVE highlight here
   Future<void> removeHighlight(Map<String, String> verse) async {
     final prefs = await SharedPreferences.getInstance();
