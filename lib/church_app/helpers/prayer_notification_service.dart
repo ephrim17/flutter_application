@@ -17,28 +17,28 @@ class PrayerNotificationService {
   static const String _timeKey = "prayer_reminder_time";
   static const String _enabledKey = "prayer_reminder_enabled";
 
-Future<void> init() async {
-  tz.initializeTimeZones();
+  Future<void> init() async {
+    tz.initializeTimeZones();
 
-  final String currentTimeZone = DateTime.now().timeZoneName;
+    final String currentTimeZone = DateTime.now().timeZoneName;
 
-  try {
-    tz.setLocalLocation(tz.getLocation(currentTimeZone));
-  } catch (e) {
-    // Fallback if timezone name doesn't match TZ database
-    tz.setLocalLocation(tz.local);
+    try {
+      tz.setLocalLocation(tz.getLocation(currentTimeZone));
+    } catch (e) {
+      // Fallback if timezone name doesn't match TZ database
+      tz.setLocalLocation(tz.local);
+    }
+
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings();
+
+    const settings = InitializationSettings(
+      android: android,
+      iOS: ios,
+    );
+
+    await _plugin.initialize(settings);
   }
-
-  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const ios = DarwinInitializationSettings();
-
-  const settings = InitializationSettings(
-    android: android,
-    iOS: ios,
-  );
-
-  await _plugin.initialize(settings);
-}
 
   // ================= PERMISSIONS =================
 
@@ -78,8 +78,8 @@ Future<void> init() async {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Permission Required"),
-        content: const Text(
-            "Prayer reminders require notification permission."),
+        content:
+            const Text("Prayer reminders require notification permission."),
         actions: [
           TextButton(
             onPressed: () => openAppSettings(),
@@ -110,12 +110,12 @@ Future<void> init() async {
     );
 
     //if (scheduled.isBefore(now)) {
-      scheduled =  tz.TZDateTime.now(tz.local).add(const Duration(seconds: 15));
+    scheduled = scheduled.add(const Duration(days: 1));
     //}
     print("Prayer notification scheduled at $scheduled");
 
     print("Local time: ${scheduled.toLocal()}");
-print("Time zone: ${scheduled.location}");
+    print("Time zone: ${scheduled.location}");
 
     await _plugin.zonedSchedule(
       _notificationId,
@@ -133,12 +133,12 @@ print("Time zone: ${scheduled.location}");
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
 
     await prefs.setBool(_enabledKey, true);
-    await prefs.setString(
-        _timeKey, "${time.hour}:${time.minute}");
+    await prefs.setString(_timeKey, "${time.hour}:${time.minute}");
   }
 
   Future<void> cancel() async {

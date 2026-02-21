@@ -2,12 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/login_entry_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChurchSideDrawer extends StatelessWidget {
   const ChurchSideDrawer({super.key, required this.onSelectedMenu});
 
-  final void Function (String menu) onSelectedMenu;
+  final void Function(String menu) onSelectedMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,7 @@ class ChurchSideDrawer extends StatelessWidget {
     );
   }
 
-   void _handleTap(BuildContext context, DrawerMenuItem item) {
+  void _handleTap(BuildContext context, DrawerMenuItem item) {
     Navigator.pop(context);
 
     if (item.route != null) {
@@ -57,11 +60,10 @@ class ChurchSideDrawer extends StatelessWidget {
   }
 }
 
-
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key, required this.onSelectedMenu});
 
-  final void Function (String menu) onSelectedMenu;
+  final void Function(String menu) onSelectedMenu;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -81,20 +83,14 @@ class AppDrawer extends ConsumerWidget {
             ),
             data: (user) {
               return UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor
-                ),
-                accountName: Text(
-                  user?.name ?? '',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge,
-                ),
-                accountEmail: Text(user?.email ?? '', style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                )
-              );
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor),
+                  accountName: Text(
+                    user?.name ?? '',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  accountEmail: Text(user?.email ?? '',
+                      style: Theme.of(context).textTheme.bodyMedium));
             },
           ),
 
@@ -126,7 +122,7 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-   void _handleTap(BuildContext context, DrawerMenuItem item) {
+  void _handleTap(BuildContext context, DrawerMenuItem item) {
     Navigator.pop(context);
 
     if (item.route != null) {
