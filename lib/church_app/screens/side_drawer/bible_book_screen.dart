@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
-import 'package:flutter_application/church_app/models/for_you_section_models/highlight_verse_model.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart' show favoritesProvider, toggleGlobalHighlight;
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BibleBookScreen extends StatelessWidget {
   const BibleBookScreen({super.key});
@@ -130,7 +128,6 @@ class VerseScreen extends ConsumerStatefulWidget {
 
 class _VerseScreenState extends ConsumerState<VerseScreen> {
   final repo = BibleRepository();
-  final Set<int> highlightedVerses = {};
 
   late PageController _pageController;
   String chapterIndexText = '';
@@ -138,51 +135,10 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
   @override
   void initState() {
     super.initState();
-
     _pageController = PageController(
       initialPage: 0,
     );
-
     chapterIndexText = (widget.startChapterIndex + 1).toString();
-
-    _loadHighlights(widget.startChapterIndex);
-  }
-
-  String _storageKey(int actualChapterIndex) =>
-      'highlight_${widget.book.key}_$actualChapterIndex';
-
-  Future<void> _loadHighlights(int actualChapterIndex) async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_storageKey(actualChapterIndex));
-
-    setState(() {
-      highlightedVerses
-        ..clear()
-        ..addAll(stored?.map(int.parse) ?? []);
-    });
-  }
-
-  Future<void> _saveHighlights(int actualChapterIndex) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _storageKey(actualChapterIndex),
-      highlightedVerses.map((e) => e.toString()).toList(),
-    );
-  }
-
-  Future<void> _toggleGlobalHighlight(HighlightRef refData) async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList('all_highlights') ?? [];
-
-    final key = "${refData.book}_${refData.chapter}_${refData.verse}";
-
-    if (stored.contains(key)) {
-      stored.remove(key);
-    } else {
-      stored.add(key);
-    }
-
-    await prefs.setStringList('all_highlights', stored);
   }
 
   @override
@@ -204,6 +160,11 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                 widget.endChapterIndex! + 1,
               )
             : allChapters.sublist(widget.startChapterIndex);
+
+        final highlights = ref.watch(favoritesProvider).maybeWhen(
+          data: (h) => h,
+          orElse: () => [],
+        );
 
         return Scaffold(
           appBar: BibleReaderAppBar(
@@ -227,7 +188,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
-                onPressed: () => _share(chapters),
+                onPressed: () => _share(chapters, highlights),
               ),
             ],
           ),
@@ -236,10 +197,6 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
             itemCount: chapters.length,
             onPageChanged: (index) {
               final actualChapterIndex = widget.startChapterIndex + index;
-
-              highlightedVerses.clear();
-              _loadHighlights(actualChapterIndex);
-
               setState(() {
                 chapterIndexText = (actualChapterIndex + 1).toString();
               });
@@ -248,54 +205,49 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
               final chapter = chapters[chapterIndex];
               final verses = chapter['verses'] as List<dynamic>;
 
-              final actualChapterIndex =
-                  widget.startChapterIndex + chapterIndex;
+              final actualChapterIndex = widget.startChapterIndex + chapterIndex;
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: verses.length,
                 itemBuilder: (_, index) {
                   final verse = verses[index];
-                  final isHighlighted = highlightedVerses.contains(index);
+                  final reference = "${widget.book.key} ${actualChapterIndex + 1}:${verse['verse']}";
+                  final isHighlighted = highlights.any((v) => (v['reference'] ?? '') == reference);
 
-                  return GestureDetector(
-                    onTap: () async {
-                      final verseData = verses[index];
-
-                      final highlightRef = HighlightRef(
-                        book: widget.book.key,
-                        chapter: actualChapterIndex + 1,
-                        verse: int.parse(verseData['verse'].toString()),
-                      );
-
-                      setState(() {
-                        if (highlightedVerses.contains(index)) {
-                          highlightedVerses.remove(index);
-                        } else {
-                          highlightedVerses.add(index);
-                        }
-                      });
-
-                      await _saveHighlights(actualChapterIndex);
-                      await _toggleGlobalHighlight(highlightRef);
-
-                      // 🔥 Force refresh Favorites screen
-                      ref.invalidate(favoritesProvider);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isHighlighted
-                            ? Colors.yellow.withValues(alpha: 0.25)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: BibleVerseItemWidget(
-                        verseNumber: verse['verse'].toString(),
-                        versePrimary: verse['text']['tamil'],
-                        verseSecondary: verse['text']['english'],
-                      ),
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isHighlighted
+                          ? Colors.yellow.withOpacity(0.25)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: BibleVerseItemWidget(
+                            verseNumber: verse['verse'].toString(),
+                            versePrimary: verse['text']['tamil'],
+                            verseSecondary: verse['text']['english'],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            isHighlighted ? Icons.favorite : Icons.favorite_border,
+                            color: isHighlighted ? Colors.red : Colors.grey,
+                          ),
+                          onPressed: () async {
+                            await toggleGlobalHighlight(
+                              widget.book.key,
+                              actualChapterIndex + 1,
+                              int.parse(verse['verse'].toString()),
+                            );
+                            ref.invalidate(favoritesProvider);
+                          },
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -307,22 +259,26 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     );
   }
 
-  void _share(List<dynamic> chapters) {
-    if (highlightedVerses.isEmpty) return;
-
+  void _share(List<dynamic> chapters, List<dynamic> highlights) {
+    if (highlights.isEmpty) return;
     final currentPage = _pageController.page?.round() ?? 0;
     final verses = chapters[currentPage]['verses'] as List<dynamic>;
-
-    final text = highlightedVerses.map((i) {
-      final v = verses[i];
+    final text = highlights.map((v) {
+      final reference = v['reference'] ?? '';
+      final verse = verses.firstWhere(
+        (vv) => "${widget.book.key} ${chapterIndexText}:${vv['verse']}" == reference,
+        orElse: () => null,
+      );
+      if (verse == null) return '';
       return '''
-${widget.book.key} ${widget.book.name}: $chapterIndexText:${v['verse']}
+${widget.book.key} ${widget.book.name}: $chapterIndexText:${verse['verse']}
 
-${v['text']['tamil']}
-${v['text']['english']}
+${verse['text']['tamil']}
+${verse['text']['english']}
 ''';
     }).join('\n');
-
-    Share.share(text.trim());
+    if (text.trim().isNotEmpty) {
+      Share.share(text.trim());
+    }
   }
 }

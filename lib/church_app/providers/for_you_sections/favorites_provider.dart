@@ -11,10 +11,10 @@ class FavoritesNotifier
 
   @override
   Future<List<Map<String, String>>> build() async {
-    return _loadFavorites();
+    return loadFavorites();
   }
 
-  Future<List<Map<String, String>>> _loadFavorites() async {
+  Future<List<Map<String, String>>> loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList('all_highlights') ?? [];
 
@@ -71,6 +71,33 @@ class FavoritesNotifier
 
     // 3️⃣ Refresh state
     state = const AsyncLoading();
-    state = AsyncData(await _loadFavorites());
+    state = AsyncData(await loadFavorites());
   }
+}
+
+/// Highlight helpers for use in VerseScreen and elsewhere
+Future<Set<int>> loadHighlights(String bookKey, int actualChapterIndex) async {
+  final prefs = await SharedPreferences.getInstance();
+  final stored = prefs.getStringList('highlight_${bookKey}_$actualChapterIndex');
+  return (stored?.map(int.parse).toSet() ?? <int>{});
+}
+
+Future<void> saveHighlights(String bookKey, int actualChapterIndex, Set<int> highlightedVerses) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setStringList(
+    'highlight_${bookKey}_$actualChapterIndex',
+    highlightedVerses.map((e) => e.toString()).toList(),
+  );
+}
+
+Future<void> toggleGlobalHighlight(String bookKey, int chapter, int verse) async {
+  final prefs = await SharedPreferences.getInstance();
+  final stored = prefs.getStringList('all_highlights') ?? [];
+  final key = "${bookKey}_${chapter}_${verse}";
+  if (stored.contains(key)) {
+    stored.remove(key);
+  } else {
+    stored.add(key);
+  }
+  await prefs.setStringList('all_highlights', stored);
 }

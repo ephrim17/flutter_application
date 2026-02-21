@@ -102,7 +102,7 @@ class FavoritesScreen extends ConsumerWidget {
                           Spacer(),
                           InkWell(
                             onTap: () async {
-                              _showLanguageShareOptions(
+                              showLanguageShareOptions(
                                 context,
                                 verse: verse,
                               );
@@ -125,7 +125,7 @@ class FavoritesScreen extends ConsumerWidget {
 }
 
 
-void _showLanguageShareOptions(
+void showLanguageShareOptions(
   BuildContext context, {
   required Map<String, dynamic> verse,
 }) {
