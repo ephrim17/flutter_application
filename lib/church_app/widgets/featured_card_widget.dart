@@ -40,14 +40,14 @@ class FeaturedCard extends StatelessWidget {
                       badgeText,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold
+                        
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold
+                        
                       ),
                     ),
                     const SizedBox(height: 12),

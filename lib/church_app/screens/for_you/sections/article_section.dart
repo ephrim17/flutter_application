@@ -98,11 +98,10 @@ class ArticleCard extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Read more',
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   color: Colors.blue,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

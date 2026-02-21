@@ -38,7 +38,7 @@ Widget build(BuildContext context) {
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      //fontWeight: FontWeight.bold,
                     ),
               ),
 

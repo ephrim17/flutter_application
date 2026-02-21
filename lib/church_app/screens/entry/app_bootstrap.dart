@@ -115,28 +115,28 @@ ThemeData _buildTheme({
     ),
 
     textTheme: ThemeData().textTheme.copyWith(
-      titleLarge: GoogleFonts.aDLaMDisplay(
+      titleLarge: GoogleFonts.anekTamil(
         fontSize: 30,
         fontWeight: FontWeight.w600,
         color: isDark ? Colors.white : Colors.black,
       ),
-      headlineMedium: GoogleFonts.aDLaMDisplay(
+      headlineMedium: GoogleFonts.anekTamil(
         color: isDark ? Colors.white : Colors.black,
       ),
-        headlineLarge: GoogleFonts.aDLaMDisplay(
+        headlineLarge: GoogleFonts.anekTamil(
           color: isDark ? Colors.white : Colors.black,
         ),
-      titleMedium: GoogleFonts.aDLaMDisplay(
+      titleMedium: GoogleFonts.anekTamil(
         color: isDark ? Colors.white : Colors.black,
       ),
-      bodyMedium: GoogleFonts.aDLaMDisplay(
+      bodyMedium: GoogleFonts.anekTamil(
         color: isDark ? Colors.white : Colors.black,
-        fontWeight: FontWeight.w600,
+        //fontWeight: FontWeight.w600,
       ),
-      bodyLarge: GoogleFonts.aDLaMDisplay(
+      bodyLarge: GoogleFonts.anekTamil(
         color: isDark ? Colors.white : Colors.black,
       ),
-      bodySmall: GoogleFonts.aDLaMDisplay(
+      bodySmall: GoogleFonts.anekTamil(
         color: isDark ? Colors.white70 : Colors.black87,
       ),
     ),
