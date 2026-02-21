@@ -2,9 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
-import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/login_entry_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChurchSideDrawer extends StatelessWidget {
