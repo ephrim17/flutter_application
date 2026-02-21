@@ -110,9 +110,8 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                                   trailing:
                                       Text("Chapters: ${reading.chapters}"),
                                   onTap: () {
-                                    final range =
-                                        parseChapterRange(reading.chapters);
-
+                                    final range = parseChapterRange(reading.chapters);
+                                    final isRange = range[0] != range[1];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
