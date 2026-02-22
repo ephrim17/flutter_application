@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -274,7 +275,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       authToken: authToken);
 
                               if (!mounted) return;
-                              Navigator.pop(context);
+                               Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const AppEntry()),
+                            (route) => false,
+                          );
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

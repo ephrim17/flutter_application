@@ -21,15 +21,10 @@ Future<void> _backgroundMessageHandler(RemoteMessage message) async {
   print('Handling a background message ${message.messageId}');
 }
 
-
 /* church App */
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PrayerNotificationService.instance.init();
-  // await FirebaseAuth.instance.setSettings(
-  //   //remove in production
-  //   appVerificationDisabledForTesting: true,
-  // );
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
 

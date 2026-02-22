@@ -109,9 +109,8 @@ class AppDrawer extends ConsumerWidget {
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () async {
+              Navigator.of(context).pop();
               await FirebaseAuth.instance.signOut();
-              // No navigation here 👇
-              // AppEntry will handle it
             },
           ),
         ],

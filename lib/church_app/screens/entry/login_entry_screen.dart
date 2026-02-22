@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
@@ -43,49 +44,52 @@ class LoginScreen extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed:isLoading ? null : () async {
-                  if (emailCtrl.text.isEmpty ||
-                      passCtrl.text.length < 6) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Please fill all fields (password min 6 chars)'),
-                      ),
-                    );
-                    return;
-                  }
-                  ref.read(logginAccessLoadingProvider.notifier).state =
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (emailCtrl.text.isEmpty ||
+                            passCtrl.text.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Please fill all fields (password min 6 chars)'),
+                            ),
+                          );
+                          return;
+                        }
+                        ref.read(logginAccessLoadingProvider.notifier).state =
                             true;
-                  try {
-                    await ref
-                        .read(authRepositoryProvider)
-                        .signIn(
-                          email: emailCtrl.text.trim(),
-                          password: passCtrl.text,
-                        );
+                        try {
+                          await ref.read(authRepositoryProvider).signIn(
+                                email: emailCtrl.text.trim(),
+                                password: passCtrl.text,
+                              );
 
-                    ref.read(logginAccessLoadingProvider.notifier).state =
-                            false;
-                    if (!context.mounted) return;
-
-                    /// AppEntry will auto-redirect
-                    Navigator.pop(context);
-                  } catch (e) {
-                    ref.read(logginAccessLoadingProvider.notifier).state =
-                            false;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
-                  }
-                },
-                child:  isLoading ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ) : const Text('Login'),
+                          ref.read(logginAccessLoadingProvider.notifier).state =
+                              false;
+                          if (!context.mounted) return;
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const AppEntry()),
+                            (route) => false,
+                          );
+                        } catch (e) {
+                          ref.read(logginAccessLoadingProvider.notifier).state =
+                              false;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Login'),
               ),
             ),
           ],

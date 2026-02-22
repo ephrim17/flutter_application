@@ -1,6 +1,5 @@
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_authentication.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,19 +24,23 @@ final getCurrentUserProvider = FutureProvider<AppUser?>((ref) async {
   return repo.getCurrentUser();
 });
 
-final appUserProvider = StreamProvider<AppUser?>((ref) {
-  final auth = ref.watch(firebaseAuthProvider);
-  final firestore = ref.watch(firestoreProvider);
-
-  return auth.authStateChanges().asyncMap((user) async {
-    if (user == null) return null;
-
-    final doc =
-        await firestore.collection(FirestorePaths.users).doc(user.uid).get();
-
-    if (!doc.exists) return null;
-
-    return AppUser.fromJson(doc.data()!);
-  });
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
 });
 
+final appUserProvider = StreamProvider<AppUser?>((ref) {
+  final firebaseUser = ref.watch(authStateProvider).value;
+
+  if (firebaseUser == null) {
+    return Stream.value(null);
+  }
+
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(firebaseUser.uid)
+      .snapshots()
+      .map((doc) {
+        if (!doc.exists) return null;
+        return AppUser.fromJson(doc.data()!);
+      });
+});
