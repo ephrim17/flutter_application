@@ -45,7 +45,7 @@ class Announcement {
       };
 
   /// For reading from Firestore
-  static Announcement fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  static Announcement fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
 
     return Announcement(

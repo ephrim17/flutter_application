@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/prompts/announcement_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

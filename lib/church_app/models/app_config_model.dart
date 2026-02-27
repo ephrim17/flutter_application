@@ -31,7 +31,7 @@ class AppConfig {
     required this.promiseVerseRef
   });
 
-  factory AppConfig.fromMap(Map<String, dynamic> data) {
+  factory AppConfig.fromFirestore(Map<String, dynamic> data) {
     final features = data['features'] as Map<String, dynamic>? ?? {};
     return AppConfig(
       admins: List<String>.from(data['admins'] ?? []),

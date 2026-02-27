@@ -1,24 +1,22 @@
+import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
-import 'package:flutter_application/church_app/services/home_section/events_repository.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final eventsProvider = StreamProvider<List<Event>>((ref) {
-
+final membersProvider = StreamProvider<List<AppUser>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
     data: (churchId) {
       if (churchId == null) return const Stream.empty();
-      final repo = EventsRepository(
+
+      final repo = MembersRepository(
         firestore: ref.read(firestoreProvider),
         churchId: churchId,
       );
 
-      return repo.watchAllActive(
-        now: DateTime.now(),
-      );
+      return repo.getMembers();
     },
     loading: () => const Stream.empty(),
     error: (_, __) => const Stream.empty(),

@@ -41,8 +41,9 @@ class Event {
       };
 
   /// For reading from Firestore
-  static Event fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  static Event fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
+    print('<<< Event data: $data');
 
     return Event(
       id: doc.id,

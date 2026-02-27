@@ -17,16 +17,30 @@ class PrayerRequest {
     required this.expiryDate,
   });
 
-  factory PrayerRequest.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /// 🔹 For .withConverter()
+  factory PrayerRequest.fromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data()!;
 
     return PrayerRequest(
       id: doc.id,
-      title: data['title'],
-      description: data['description'],
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
       userId: data['userId'] ?? '',
       isAnonymous: data['isAnonymous'] ?? false,
       expiryDate: (data['expiryDate'] as Timestamp).toDate(),
     );
+  }
+
+  /// 🔹 REQUIRED for .withConverter()
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'userId': userId,
+      'isAnonymous': isAnonymous,
+      'expiryDate': Timestamp.fromDate(expiryDate),
+    };
   }
 }

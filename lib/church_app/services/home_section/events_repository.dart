@@ -1,17 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_crud.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
-class EventsRepository extends FirestoreRepository<Event> {
-  EventsRepository(super.db);
+class EventsRepository extends ChurchScopedRepository{
+  EventsRepository({
+    required super.firestore,
+    required super.churchId,
+  });
 
-  @override
-  CollectionReference<Event> collectionRef() {
-    return db
-        .collection(FirestorePaths.events)
+ CollectionReference<Event> collectionRef() {
+    return 
+      firestore
+      .collection('churches')
+      .doc('tnbm')
+      .collection('events')
         .withConverter<Event>(
-          fromFirestore: (snap, _) => Event.fromDoc(snap),
+          fromFirestore: (snap, _) => Event.fromFirestore(snap),
           toFirestore: (a, _) => a.toMap(),
         );
   }

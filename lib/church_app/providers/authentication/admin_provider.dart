@@ -1,5 +1,5 @@
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final isAdminProvider = Provider<bool>((ref) {

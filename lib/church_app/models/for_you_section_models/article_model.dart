@@ -13,15 +13,24 @@ class Article {
     required this.content,
   });
 
+
   factory Article.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
-    final data = doc.data()!;
+    final data = doc.data() ?? <String, dynamic>{};
     return Article(
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       content: data['content'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'content': content,
+    };
   }
 }

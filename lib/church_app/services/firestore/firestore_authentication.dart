@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
@@ -30,7 +29,8 @@ class AuthRepository {
       required String password,
       required String phone,
       required DateTime dob,
-      required String authToken}) async {
+      required String authToken,
+      required String churchId}) async {
     final cred = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
@@ -38,37 +38,18 @@ class AuthRepository {
 
     final uid = cred.user!.uid;
 
-    await _firestore.collection(FirestorePaths.users).doc(uid).set({
-      'name': name,
-      'email': email,
-      'approved': false,
-      'createdAt': FieldValue.serverTimestamp(),
+    await FirestorePaths.churchUserDoc(
+      _firestore,
+      churchId,
+      uid,
+    ).set({
+      'name': name.trim(),
+      'email': email.trim(),
+      'phone': phone.trim(),
       'dob': Timestamp.fromDate(dob),
-      'phone': phone,
-      'authToken': authToken
+      'approved': false,
+      'authToken': authToken,
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
-
-  Future<AppUser?> getCurrentUser() async {
-    final user = _auth.currentUser;
-    if (user == null) return null;
-
-    final doc = await _firestore.collection(FirestorePaths.users).doc(user.uid).get();
-
-    if (!doc.exists) return null;
-
-    return AppUser.fromJson(doc.data()!);
-  }
-
-  Future<void> updateUserToken(String token) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    await FirebaseFirestore.instance
-        .collection(FirestorePaths.users)
-        .doc(user.uid)
-        .update({'authToken': token});
-  }
 }
-
-final tokenUpdatedProvider = StateProvider<bool>((_) => false);

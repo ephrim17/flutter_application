@@ -25,4 +25,14 @@ class AboutModel {
       values: data['values'] ?? '',
     );
   }
-}
+
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'tagline': tagline,
+        'description': description,
+        'mission': mission,
+        'community': community,
+        'values': values,
+      };
+  }
+

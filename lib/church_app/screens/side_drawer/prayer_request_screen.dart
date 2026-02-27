@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
-import 'package:flutter_application/church_app/services/user_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
@@ -68,7 +68,7 @@ class PrayerRequestScreen extends ConsumerWidget {
 
                       /// Show user only if NOT anonymous
                       if (!prayer.isAnonymous)
-                        ref.watch(userNameProvider(prayer.userId)).when(
+                        ref.watch(churchUserNameProvider(prayer.userId)).when(
                               loading: () =>
                                   const Text("By: Loading..."),
                               error: (_, __) =>

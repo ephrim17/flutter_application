@@ -4,10 +4,21 @@ import 'package:flutter_application/church_app/models/side_drawer_models/prayer_
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class PrayerRepository {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
+  final String churchId;
 
-  String? get _uid => _auth.currentUser?.uid;
+  PrayerRepository({
+    required this.firestore,
+    required this.auth,
+    required this.churchId,
+  });
+
+  String? get _uid => auth.currentUser?.uid;
+
+  CollectionReference<Map<String, dynamic>> collectionRef() {
+    return FirestorePaths.churchPrayerRequests(firestore, churchId);
+  }
 
   /// ADD PRAYER
   Future<void> addPrayer({
@@ -16,29 +27,22 @@ class PrayerRepository {
     required bool isAnonymous,
     required DateTime expiryDate,
   }) async {
-    final user = _auth.currentUser;
-
+    final user = auth.currentUser;
     if (user == null) {
       throw Exception("User not logged in");
     }
 
     final now = DateTime.now();
-
-    // Normalize to date-only (remove time component)
     final today = DateTime(now.year, now.month, now.day);
-    final selectedDate = DateTime(
-      expiryDate.year,
-      expiryDate.month,
-      expiryDate.day,
-    );
-
+    final selectedDate =
+        DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
     final maxDate = today.add(const Duration(days: 30));
 
     if (selectedDate.isBefore(today) || selectedDate.isAfter(maxDate)) {
       throw Exception("Expiry date must be within 30 days");
     }
 
-    await _firestore.collection(FirestorePaths.prayerRequests).add({
+    await collectionRef().add({
       'userId': user.uid,
       'email': user.email,
       'title': title.trim(),
@@ -59,22 +63,16 @@ class PrayerRepository {
     required DateTime expiryDate,
   }) async {
     final now = DateTime.now();
-
-    // Normalize to date-only (remove time component)
     final today = DateTime(now.year, now.month, now.day);
-    final selectedDate = DateTime(
-      expiryDate.year,
-      expiryDate.month,
-      expiryDate.day,
-    );
-
+    final selectedDate =
+        DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
     final maxDate = today.add(const Duration(days: 30));
 
     if (selectedDate.isBefore(today) || selectedDate.isAfter(maxDate)) {
       throw Exception("Expiry date must be within 30 days");
     }
 
-    await _firestore.collection(FirestorePaths.prayerRequests).doc(prayerId).update({
+    await collectionRef().doc(prayerId).update({
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
@@ -83,6 +81,7 @@ class PrayerRepository {
     });
   }
 
+  /// WATCH MY PRAYERS
   Stream<List<PrayerRequest>> watchMyPrayers() {
     final uid = _uid;
     if (uid == null) return const Stream.empty();
@@ -90,25 +89,8 @@ class PrayerRepository {
     final today = DateTime.now();
     final startOfToday = DateTime(today.year, today.month, today.day);
 
-    return _firestore
-        .collection(FirestorePaths.prayerRequests)
+    return collectionRef()
         .where('userId', isEqualTo: uid)
-        .where(
-          'expiryDate',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
-        )
-        .orderBy('expiryDate') // required when using range filter
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList());
-  }
-
-  Stream<List<PrayerRequest>> getAllPrayers() {
-    final today = DateTime.now();
-    final startOfToday = DateTime(today.year, today.month, today.day);
-
-    return _firestore
-        .collection(FirestorePaths.prayerRequests)
         .where(
           'expiryDate',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
@@ -116,10 +98,32 @@ class PrayerRepository {
         .orderBy('expiryDate')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
+        );
   }
 
-  Future<void> deletePrayer(String prayerId) async {
-    await _firestore.collection(FirestorePaths.prayerRequests).doc(prayerId).delete();
+  /// WATCH ALL ACTIVE PRAYERS
+  Stream<List<PrayerRequest>> getAllPrayers() {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
+    return collectionRef()
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
+        );
+  }
+
+  Future<void> deletePrayer(String prayerId) {
+    return collectionRef().doc(prayerId).delete();
   }
 }

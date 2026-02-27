@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/auth_entry_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
+import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,10 +57,10 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => const AuthEntryScreen(),
+      error: (e, _) => const SelectChurchScreen(),
       data: (user) {
         if (user == null) {
-          return const AuthEntryScreen();
+          return const SelectChurchScreen();
         }
         if (!user.approved) {
           return const PendingApprovalWidget();

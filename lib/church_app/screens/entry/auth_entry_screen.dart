@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/login_entry_screen.dart';
-import 'login_request_screen.dart';
+import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 
 class AuthEntryScreen extends StatelessWidget {
   const AuthEntryScreen({super.key});
@@ -22,55 +20,17 @@ class AuthEntryScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 32),
-
-              /// 🔐 Existing User
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Login'),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              /// 📝 New User
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => LoginRequestScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Request Access'),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              /// Forgot Password
-              TextButton(
+              ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ForgotPasswordScreen(),
+                      builder: (_) => const SelectChurchScreen(),
                     ),
                   );
                 },
-                child: const Text('Forgot Password?'),
-              ),
+                child: const Text('Continue'),
+              )
             ],
           ),
         ),

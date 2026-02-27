@@ -30,7 +30,7 @@ class AboutScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(context, about),
+                      _buildHeader(context, about!),
                       const SizedBox(height: 24),
                       _buildDescription(context, about.description),
                       const SizedBox(height: 32),

@@ -6,7 +6,17 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
-  const LoginScreen({super.key});
+  //const LoginScreen({super.key});
+
+  final String churchId;
+  final String churchName;
+
+  const LoginScreen({
+    super.key,
+    required this.churchId,
+    required this.churchName,
+  });
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -9,7 +9,16 @@ import 'package:flutter_application/church_app/widgets/notification_reprompt_she
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginRequestScreen extends ConsumerStatefulWidget {
-  const LoginRequestScreen({super.key});
+  //const LoginRequestScreen({super.key});
+
+  final String churchId;
+  final String churchName;
+
+  const LoginRequestScreen({
+    super.key,
+    required this.churchId,
+    required this.churchName,
+  });
 
   @override
   ConsumerState<LoginRequestScreen> createState() => _LoginRequestScreenState();
@@ -272,13 +281,16 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       password: password,
                                       phone: phone,
                                       dob: dob!,
-                                      authToken: authToken);
+                                      authToken: authToken,
+                                      churchId: widget.churchId
+                                      );
 
                               if (!mounted) return;
-                               Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const AppEntry()),
-                            (route) => false,
-                          );
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (_) => const AppEntry()),
+                                (route) => false,
+                              );
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

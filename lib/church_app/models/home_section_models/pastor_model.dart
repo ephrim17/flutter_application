@@ -30,7 +30,7 @@ class Pastor {
       };
 
   /// For reading from Firestore
-  static Pastor fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  static Pastor fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
 
     return Pastor(
