@@ -12,7 +12,6 @@ class AppBootstrap extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final configAsync = ref.watch(appConfigProvider);
-
      // 👇 watch theme mode here
     final themeMode = ref.watch(themeProvider);
 

@@ -5,7 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 Future<String?> getCurrentChurchId() async {
   final storage = ChurchLocalStorage();
   final savedChurch = await storage.getChurch();
-  return savedChurch?['id'];
+  return savedChurch?['id'] ?? 'tnbm';
 }
 
 final currentChurchIdProvider = FutureProvider<String?>((ref) async {
