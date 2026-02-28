@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 
-class AnimatedLiveItUpCard extends StatefulWidget {
-  const AnimatedLiveItUpCard({super.key});
+class PraiseTheLordCard extends StatefulWidget {
+  const PraiseTheLordCard({super.key});
 
   @override
-  State<AnimatedLiveItUpCard> createState() => _AnimatedLiveItUpCardState();
+  State<PraiseTheLordCard> createState() => _PraiseTheLordCardState();
 }
 
-class _AnimatedLiveItUpCardState extends State<AnimatedLiveItUpCard>
+class _PraiseTheLordCardState extends State<PraiseTheLordCard>
     with TickerProviderStateMixin {
   late AnimationController _entranceController;
   late AnimationController _heartController;
@@ -75,14 +75,14 @@ class _AnimatedLiveItUpCardState extends State<AnimatedLiveItUpCard>
             horizontal: 24,
             vertical: 40,
           ),
-          //decoration: carouselBoxDecoration(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               /// Main Title
               Text(
-                "Live\nit up!",
+                "Praise \nThe Lord",
+                textAlign: TextAlign.center, // ✅ ADD THIS
                 style: TextStyle(
                   fontSize: 64,
                   fontWeight: FontWeight.w700,
@@ -97,6 +97,7 @@ class _AnimatedLiveItUpCardState extends State<AnimatedLiveItUpCard>
               SizedBox(
                 width: double.infinity,
                 child: RichText(
+                  textAlign: TextAlign.center, // ✅ ADD THIS
                   text: TextSpan(
                     style: TextStyle(
                       fontSize: 18,

@@ -62,6 +62,7 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_local_notifications: ^17.0.0
   timezone: ^0.9.2
+  firebase_storage: ^13.0.6
 
 dev_dependencies:
   flutter_test:

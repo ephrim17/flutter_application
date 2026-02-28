@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
-import 'package:flutter_application/church_app/widgets/live_it_up_card_widget.dart';
+import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,7 +36,7 @@ class SettingsScreen extends StatelessWidget {
           Spacer(),
           Padding(
             padding: EdgeInsets.all(15.0),
-            child: AnimatedLiveItUpCard(),
+            child: PraiseTheLordCard(),
           ),
 
           /// 🔹 Fixed bottom copyright

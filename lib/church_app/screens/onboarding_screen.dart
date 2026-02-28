@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/onboarding_provider.dart';
-import 'package:flutter_application/church_app/widgets/live_it_up_card_widget.dart';
+import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
@@ -75,7 +72,7 @@ class _OnboardingScreenState
                         if (isLiveCardPage) {
                           return const Center(
                             child:
-                                AnimatedLiveItUpCard(),
+                                PraiseTheLordCard(),
                           );
                         }
 

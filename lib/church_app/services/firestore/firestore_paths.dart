@@ -190,4 +190,15 @@ class FirestorePaths {
   ) {
     return churchUsers(firestore, churchId).doc(uid);
   }
+
+  /// feeds under church
+  static CollectionReference feedCollection(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection('feeds');
+  } 
 }

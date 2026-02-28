@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
-import 'package:hooks_riverpod/legacy.dart';
 
 class AuthRepository {
   final FirebaseAuth _auth;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/event_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';

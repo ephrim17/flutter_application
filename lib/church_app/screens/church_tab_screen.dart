@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
+import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -50,8 +51,10 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   Widget build(BuildContext context) {
     if (selectedIndex == 0) {
       _activeScreen = HomeScreen();
-    } else {
+    } else if(selectedIndex == 1) {
       _activeScreen = ForYouScreen();
+    } else {
+      _activeScreen = FeedScreen();
     }
 
     return Scaffold(
@@ -76,6 +79,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
+          BottomNavigationBarItem(icon: Icon(Icons.newspaper_rounded), label: 'Feeds'),
         ],
       ),
     );
