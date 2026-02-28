@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
+import 'package:flutter_application/church_app/widgets/live_it_up_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,17 +22,22 @@ class SettingsScreen extends StatelessWidget {
         children: [
           /// 🔹 Scrollable content
           Expanded(
-            child: ListView(
-              children: const [
-                Divider(),
-                _AppearanceSection(),
-                Divider(),
-                _PrayerReminderSection(),
-                Divider(),
-                _StorageSection(),
-                Divider(),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView(
+                  children: const [
+                    _AppearanceSection(),
+                    _PrayerReminderSection(),
+                    _StorageSection(),
+                  ],
+                ),
             ),
+          ),
+
+          Spacer(),
+          Padding(
+            padding: EdgeInsets.all(15.0),
+            child: AnimatedLiveItUpCard(),
           ),
 
           /// 🔹 Fixed bottom copyright
@@ -44,9 +51,7 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-
-final themeProvider =
-    StateNotifierProvider<ThemeController, ThemeMode>(
+final themeProvider = StateNotifierProvider<ThemeController, ThemeMode>(
   (ref) => ThemeController(),
 );
 
@@ -84,13 +89,10 @@ class _PrayerReminderSection extends StatefulWidget {
   const _PrayerReminderSection();
 
   @override
-  State<_PrayerReminderSection> createState() =>
-      _PrayerReminderSectionState();
+  State<_PrayerReminderSection> createState() => _PrayerReminderSectionState();
 }
 
-class _PrayerReminderSectionState
-    extends State<_PrayerReminderSection> {
-
+class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
   bool enabled = false;
   TimeOfDay? selectedTime;
 
@@ -129,8 +131,7 @@ class _PrayerReminderSectionState
     return Column(
       children: [
         SwitchListTile(
-          secondary:
-              const Icon(Icons.notifications_active_outlined),
+          secondary: const Icon(Icons.notifications_active_outlined),
           title: const Text("Prayer Reminders"),
           subtitle: Text(
             enabled && selectedTime != null
@@ -139,12 +140,10 @@ class _PrayerReminderSectionState
           ),
           value: enabled,
           onChanged: (value) async {
-            final service =
-                PrayerNotificationService.instance;
+            final service = PrayerNotificationService.instance;
 
             if (value) {
-              final granted =
-                  await service.requestPermissions(context);
+              final granted = await service.requestPermissions(context);
 
               if (!granted) return;
 
@@ -158,7 +157,6 @@ class _PrayerReminderSectionState
             }
           },
         ),
-
         if (enabled)
           TextButton(
             onPressed: _pickTime,
@@ -168,9 +166,6 @@ class _PrayerReminderSectionState
     );
   }
 }
-
-
-
 
 class _StorageSection extends ConsumerWidget {
   const _StorageSection();

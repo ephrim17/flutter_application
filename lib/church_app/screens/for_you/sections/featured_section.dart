@@ -66,7 +66,7 @@ class FeaturedSection implements MasterSection {
                 },
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 30),
 
               CardLinkButtonWidget(
                 title: "Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.",

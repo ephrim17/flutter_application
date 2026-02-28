@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class HomeSectionConfigModel {
   const HomeSectionConfigModel({
     required this.id,
@@ -12,7 +11,7 @@ class HomeSectionConfigModel {
   final bool enabled;
   final int order;
 
-  factory HomeSectionConfigModel.fromDoc(DocumentSnapshot doc) {
+  factory HomeSectionConfigModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return HomeSectionConfigModel(
       id: doc.id,
@@ -20,4 +19,9 @@ class HomeSectionConfigModel {
       order: data['order'] ?? 100,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'enabled': enabled,
+        'order': order,
+      };
 }

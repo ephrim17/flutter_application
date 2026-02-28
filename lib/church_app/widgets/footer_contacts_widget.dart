@@ -49,8 +49,7 @@ class FooterContactsWidget extends ConsumerWidget {
     List<ContactItem> contacts,
     BuildContext context,
   ) {
-    print("<<<contacts>>>");
-    print(contacts);
+
     return contacts.map((contact) {
       return Column(
         mainAxisSize: MainAxisSize.min,

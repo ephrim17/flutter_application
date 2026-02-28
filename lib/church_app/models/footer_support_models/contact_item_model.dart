@@ -19,8 +19,6 @@ class ContactItem {
     String id,
     Map<String, dynamic> data,
   ) {
-    print("<<< ContactItem.fromFirestore >>>");
-    print(data);
     return ContactItem(
       id: id,
       label: data['label'] ?? '',

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/for_you_section/bible_swipe_repository.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,73 +10,84 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final swipeVersesProvider =
     FutureProvider<List<Map<String, String>>>((ref) async {
+  final churchIdAsync = ref.watch(currentChurchIdProvider);
 
-  final swipeRepo = SwipeVerseRepository();
-  final bibleRepo = BibleRepository();
+  return churchIdAsync.when(
+    data: (churchId) async {
+      if (churchId == null) return [];
 
-  // 🔹 Config
-  final config = await ref.watch(appConfigProvider.future);
-  final enabled = config.bibleSwipeFetchEnabled;
-  final remoteVersion = config.bibleSwipeFetchVersion;
+      final firestore = ref.read(firestoreProvider);
 
-  // 🔹 Try cache first
-  final cachedVersion = await getCachedVersion();
-  final cachedData = await loadSwipeCache();
+      final swipeRepo = SwipeVerseRepository(
+        firestore: firestore,
+        churchId: churchId,
+      );
 
-  final bool canUseCache =
-      cachedData != null && cachedVersion == remoteVersion;
+      final bibleRepo = BibleRepository();
 
-  // ✅ Use cache when:
-  // 1. Fetch disabled OR
-  // 2. Version unchanged
-  if (!enabled || canUseCache) {
-    if (cachedData != null) {
-      print("<<<FETCH FROM LOCAL >>>");
-      return cachedData;
-    }
-  }
+      // 🔹 Config
+      final config = await ref.watch(appConfigProvider.future);
+      final enabled = config.bibleSwipeFetchEnabled;
+      final remoteVersion = config.bibleSwipeFetchVersion;
 
-  print("<<<FETCH FROM FIRESTORE >>>");
+      // 🔹 Cache
+      final cachedVersion = await getCachedVersion(churchId);
+      final cachedData = await loadSwipeCache(churchId);
 
-  // 🔥 Fetch from Firestore
-  final refs = await swipeRepo.fetchVerseRefs();
-  final List<Map<String, String>> verses = [];
+      final bool canUseCache =
+          cachedData != null && cachedVersion == remoteVersion;
 
-  for (final r in refs) {
-    final verse = await bibleRepo.getVerse(
-      book: r.book,
-      chapter: r.chapter,
-      verse: r.verse,
-    );
+      if (!enabled || canUseCache) {
+        if (cachedData != null) {
+          print("<<<FETCH FROM LOCAL >>>");
+          return cachedData;
+        }
+      }
 
-    verses.add({
-      'book': r.book,
-      'chapter': r.chapter.toString(),
-      'verse': r.verse.toString(),
-      'tamil': verse['tamil'] ?? verse['text'] ?? '',
-      'english': verse['english'] ?? '',
-      'reference': '${r.book} ${r.chapter}:${r.verse}',
-    });
-  }
+      print("<<<FETCH FROM FIRESTORE >>>");
 
-  // 💾 Save cache only when fetch enabled
-  if (enabled) {
-    await saveSwipeCache(verses, remoteVersion);
-  }
+      final refs = await swipeRepo.fetchVerseRefs();
+      final List<Map<String, String>> verses = [];
 
-  return verses;
+      for (final r in refs) {
+        final verse = await bibleRepo.getVerse(
+          book: r.book,
+          chapter: r.chapter,
+          verse: r.verse,
+        );
+
+        verses.add({
+          'book': r.book,
+          'chapter': r.chapter.toString(),
+          'verse': r.verse.toString(),
+          'tamil': verse['tamil'] ?? verse['text'] ?? '',
+          'english': verse['english'] ?? '',
+          'reference': '${r.book} ${r.chapter}:${r.verse}',
+        });
+      }
+
+      if (enabled) {
+        await saveSwipeCache(
+          churchId: churchId,
+          verses: verses,
+          version: remoteVersion,
+        );
+      }
+
+      return verses;
+    },
+    loading: () async => [],
+    error: (_, __) async => [],
+  );
 });
 
-const _swipeCacheKey = 'bible_swipe_cached_verses';
-const _swipeVersionKey = 'bible_swipe_cache_version';
-
-
-Future<List<Map<String, String>>?> loadSwipeCache() async {
+Future<List<Map<String, String>>?> loadSwipeCache(
+    String churchId) async {
   final prefs = await SharedPreferences.getInstance();
-  final raw = prefs.getString(_swipeCacheKey);
+  final raw = prefs.getString(_swipeCacheKey(churchId));
   if (raw == null) return null;
 
-  final List<dynamic> decoded = jsonDecode(raw);
+  final decoded = jsonDecode(raw) as List<dynamic>;
 
   return decoded.map((e) {
     final map = Map<String, dynamic>.from(e);
@@ -90,17 +103,25 @@ Future<List<Map<String, String>>?> loadSwipeCache() async {
   }).toList();
 }
 
-
-Future<void> saveSwipeCache(
-  List<Map<String, String>> verses,
-  int version,
-) async {
+Future<void> saveSwipeCache({
+  required String churchId,
+  required List<Map<String, String>> verses,
+  required int version,
+}) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(_swipeCacheKey, jsonEncode(verses));
-  await prefs.setInt(_swipeVersionKey, version);
+  await prefs.setString(
+      _swipeCacheKey(churchId), jsonEncode(verses));
+  await prefs.setInt(
+      _swipeVersionKey(churchId), version);
 }
 
-Future<int?> getCachedVersion() async {
+Future<int?> getCachedVersion(String churchId) async {
   final prefs = await SharedPreferences.getInstance();
-  return prefs.getInt(_swipeVersionKey);
+  return prefs.getInt(_swipeVersionKey(churchId));
 }
+
+String _swipeCacheKey(String churchId) =>
+    'bible_swipe_cached_verses_$churchId';
+
+String _swipeVersionKey(String churchId) =>
+    'bible_swipe_cache_version_$churchId';

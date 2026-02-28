@@ -1,32 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestorePaths {
-  // For You Section paths
-  
-  static const bibleRandomSwipeVerses = 'bibleRandomSwipeVerses';
-  static const swipeVersesDoc = 'swipeVerses';
-  static DocumentReference bibleRandomSwipeDoc(FirebaseFirestore firestore) {
-    return firestore
-        .collection(FirestorePaths.bibleRandomSwipeVerses)
-        .doc(FirestorePaths.swipeVersesDoc);
-  }
-
-  // User readingPlans subcollection
-  static const readingPlans = 'readingPlans';
-  static CollectionReference userReadingPlans(
-      FirebaseFirestore firestore, String uid) {
-    return userDoc(firestore, uid).collection(readingPlans);
-  }
-
-  static CollectionReference usersCollection(FirebaseFirestore firestore) {
-    return firestore.collection(users);
-  }
-
-  /// Single user document
-  static DocumentReference userDoc(FirebaseFirestore firestore, String uid) {
-    return usersCollection(firestore).doc(uid);
-  }
-
   // Root collections
   static const config = 'config';
   static const main = 'main';
@@ -35,7 +9,26 @@ class FirestorePaths {
 
   //Section paths
   static const homeSections = 'home_sections';
+  static CollectionReference<Map<String, dynamic>> churchHomeSections(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection('home_sections');
+  }
+
   static const forYouSection = 'for_you_section';
+  static CollectionReference<Map<String, dynamic>> churchForYouSections(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection(forYouSection);
+  }
 
   // Footer support paths
   static const footerSupport = 'footerSupport';
@@ -120,45 +113,74 @@ class FirestorePaths {
           .doc(churchId)
           .collection(about)
           .doc(main);
-  
+
   // church based footer support
   static CollectionReference<Map<String, dynamic>> churchContactItems(
-  FirebaseFirestore firestore,
-  String churchId,
-) {
-  return firestore
-      .collection('churches')
-      .doc(churchId)
-      .collection(FirestorePaths.footerSupport)
-      .doc(FirestorePaths.contactsDoc)
-      .collection(FirestorePaths.contactItemsCollection);
-      
-}
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection(FirestorePaths.footerSupport)
+        .doc(FirestorePaths.contactsDoc)
+        .collection(FirestorePaths.contactItemsCollection);
+  }
 
-static CollectionReference<Map<String, dynamic>> churchSocialItems(
-  FirebaseFirestore firestore,
-  String churchId,
-) {
-  return firestore
-      .collection('churches')
-      .doc(churchId)
-      .collection(FirestorePaths.footerSupport)
-      .doc(FirestorePaths.socialDoc)
-      .collection(FirestorePaths.socialItemsCollection);
-}
+  static CollectionReference<Map<String, dynamic>> churchSocialItems(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection(FirestorePaths.footerSupport)
+        .doc(FirestorePaths.socialDoc)
+        .collection(FirestorePaths.socialItemsCollection);
+  }
 
-static CollectionReference<Map<String, dynamic>> churchUserReadingPlans(
-  FirebaseFirestore firestore,
-  String churchId,
-  String uid,
-) {
-  return firestore
-      .collection('churches')
-      .doc(churchId)
-      .collection(users)
-      .doc(uid)
-      .collection(readingPlans);
-}
+  static CollectionReference<Map<String, dynamic>> churchUserReadingPlans(
+    FirebaseFirestore firestore,
+    String churchId,
+    String uid,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection(users)
+        .doc(uid)
+        .collection(readingPlans);
+  }
+
+  // User readingPlans subcollection
+  static const readingPlans = 'readingPlans';
+  static CollectionReference userReadingPlans(
+      FirebaseFirestore firestore, String uid) {
+    return userDoc(firestore, uid).collection(readingPlans);
+  }
+
+  static CollectionReference usersCollection(FirebaseFirestore firestore) {
+    return firestore.collection(users);
+  }
+
+  /// Single user document
+  static DocumentReference userDoc(FirebaseFirestore firestore, String uid) {
+    return usersCollection(firestore).doc(uid);
+  }
+
+  /// Bible swipe
+  static const bibleRandomSwipeVerses = 'bibleRandomSwipeVerses';
+  static const swipeVersesDoc = 'swipeVerses';
+  static DocumentReference<Map<String, dynamic>> churchBibleRandomSwipeDoc(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection(bibleRandomSwipeVerses)
+        .doc(swipeVersesDoc);
+  }
 
   /// Single user document under church
   static DocumentReference churchUserDoc(

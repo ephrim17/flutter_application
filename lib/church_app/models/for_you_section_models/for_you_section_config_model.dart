@@ -12,7 +12,7 @@ class ForYouSectionConfigModel {
   final bool enabled;
   final int order;
 
-  factory ForYouSectionConfigModel.fromDoc(DocumentSnapshot doc) {
+  factory ForYouSectionConfigModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ForYouSectionConfigModel(
       id: doc.id,
@@ -20,4 +20,11 @@ class ForYouSectionConfigModel {
       order: data['order'] ?? 100,
     );
   }
+
+   Map<String, dynamic> toMap() => {
+        'enabled': enabled,
+        'order': order,
+      };
+
+
 }
