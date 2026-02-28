@@ -24,28 +24,33 @@ class FooterContactsWidget extends ConsumerWidget {
     final contactsAsync = ref.watch(footerContactsProvider);
 
     return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Text("Reach us and contact us",
-          // style: Theme.of(context).textTheme.titleMedium,),
-          const SizedBox(
-            height: 10,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        // Text("Reach us and contact us",
+        // style: Theme.of(context).textTheme.titleMedium,),
+        const SizedBox(
+          height: 10,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: contactsAsync.when(
+            loading: () => const [CircularProgressIndicator()],
+            error: (e, _) => [Text('Error: $e')],
+            data: (contacts) {
+              return buildContacts(contacts, context);
+            },
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: contactsAsync.when(
-              loading: () => const [CircularProgressIndicator()],
-              error: (e, _) => [Text('Error: $e')],
-              data: (contacts) {
-                return buildContacts(contacts, context);
-              },
-            ),
-          ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 
-  List<Column> buildContacts(List<ContactItem> contacts, BuildContext context) {
+  List<Widget> buildContacts(
+    List<ContactItem> contacts,
+    BuildContext context,
+  ) {
+    print("<<<contacts>>>");
+    print(contacts);
     return contacts.map((contact) {
       return Column(
         mainAxisSize: MainAxisSize.min,

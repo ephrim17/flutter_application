@@ -13,7 +13,7 @@ class SocialIconModel {
     required this.isActive,
   });
 
-   factory SocialIconModel.fromFirestore(
+  factory SocialIconModel.fromFirestore(
     String id,
     Map<String, dynamic> data,
   ) {
@@ -24,5 +24,14 @@ class SocialIconModel {
       order: data['order'] ?? 0,
       isActive: data['isActive'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'icon': icon,
+      'url': url,
+      'order': order,
+      'isActive': isActive,
+    };
   }
 }

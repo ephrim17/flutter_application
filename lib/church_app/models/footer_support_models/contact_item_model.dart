@@ -19,6 +19,8 @@ class ContactItem {
     String id,
     Map<String, dynamic> data,
   ) {
+    print("<<< ContactItem.fromFirestore >>>");
+    print(data);
     return ContactItem(
       id: id,
       label: data['label'] ?? '',
@@ -27,5 +29,15 @@ class ContactItem {
       order: data['order'] ?? 0,
       isActive: data['isActive'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'label': label,
+      'type': type,
+      'action': action,
+      'order': order,
+      'isActive': isActive,
+    };
   }
 }
