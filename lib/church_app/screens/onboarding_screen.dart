@@ -119,7 +119,7 @@ class _OnboardingScreenState
                                   TextAlign.center,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headlineSmall,
+                                  .headlineMedium,
                             ),
                           ],
                         );

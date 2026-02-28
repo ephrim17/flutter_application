@@ -36,6 +36,7 @@ class AppBootstrap extends ConsumerWidget {
           themeMode: themeMode,
 
           theme: _buildTheme(
+            context: context,
             brightness: Brightness.light,
             bgColor: bgColor,
             cardColor: cardColor,
@@ -44,6 +45,7 @@ class AppBootstrap extends ConsumerWidget {
           ),
 
           darkTheme: _buildTheme(
+            context: context,
             brightness: Brightness.dark,
             bgColor: Colors.black,
             cardColor: const Color(0xFF1E1E1E),
@@ -58,6 +60,7 @@ class AppBootstrap extends ConsumerWidget {
 }
 
 ThemeData _buildTheme({
+  required BuildContext context,
   required Brightness brightness,
   required Color bgColor,
   required Color cardColor,
@@ -137,6 +140,9 @@ ThemeData _buildTheme({
       ),
       bodySmall: GoogleFonts.anekTamil(
         color: isDark ? Colors.white70 : Colors.black87,
+      ),
+      labelLarge: GoogleFonts.anekTamil(
+        color: isDark ? Theme.of(context).colorScheme.primaryContainer :  primaryColor,
       ),
     ),
   );

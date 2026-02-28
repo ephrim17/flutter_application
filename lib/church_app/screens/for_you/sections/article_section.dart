@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/models/for_you_section_models/art
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -98,13 +99,8 @@ class ArticleCard extends StatelessWidget {
                   ),
                 );
               },
-              child: Text(
-                'Read more',
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Colors.blue,
-                ),
+              child: ColorText(badgeText: "Read More", fontSize: 13,)
               ),
-            ),
           ],
         ),
       ),

@@ -8,7 +8,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/prayer_reques
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
 
 enum DrawerMenuItem {
-  events,
+  //events,
   prayerRequest,
   members,
   favorites,
@@ -20,8 +20,8 @@ enum DrawerMenuItem {
 extension DrawerMenuItemX on DrawerMenuItem {
   String get label {
     switch (this) {
-      case DrawerMenuItem.events:
-        return 'Events';
+      // case DrawerMenuItem.events:
+      //   return 'Events';
       case DrawerMenuItem.prayerRequest:
         return 'Prayer Request';
       case DrawerMenuItem.about:
@@ -39,8 +39,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
 
   IconData get icon {
     switch (this) {
-      case DrawerMenuItem.events:
-        return Icons.event;
+      // case DrawerMenuItem.events:
+      //   return Icons.event;
       case DrawerMenuItem.prayerRequest:
         return Icons.volunteer_activism;
       case DrawerMenuItem.about:
@@ -58,8 +58,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
 
   Widget? get route {
     switch (this) {
-      case DrawerMenuItem.events:
-        return const EventsScreen();
+      // case DrawerMenuItem.events:
+      //   return const EventsScreen();
       case DrawerMenuItem.prayerRequest:
         return const PrayerRequestScreen();
       case DrawerMenuItem.about:

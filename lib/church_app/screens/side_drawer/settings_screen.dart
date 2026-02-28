@@ -179,7 +179,7 @@ class _StorageSection extends ConsumerWidget {
         final confirm = await showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text("Confirm"),
+            title: Text("Confirm", style: Theme.of(context).textTheme.bodyMedium,),
             content: const Text(
               "Are you sure you want to clear all local data?",
             ),

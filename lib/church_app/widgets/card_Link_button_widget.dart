@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 
 class CardLinkButtonWidget extends StatelessWidget {
   final String title;
@@ -47,12 +48,7 @@ Widget build(BuildContext context) {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: onPressed,
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: ColorText(badgeText: buttonText, fontSize: 15,),
                 ),
               ),
             ],

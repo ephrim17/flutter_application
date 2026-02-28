@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/models/home_section_models/event_
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
+import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -105,41 +106,13 @@ class EventsCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        width: width - 32,
-        padding: const EdgeInsets.all(12),
-        decoration: carouselBoxDecoration(context),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                a.type.imageAsset,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(a.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(a.description,
-                      maxLines: 3, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
+      child: BlurImageTextContainer(
+          a.type.imageAsset,
+         a.title,
+          a.description,
+          a.type.badgeColor,
+          a.type.label,
         ),
-      ),
     );
   }
 }

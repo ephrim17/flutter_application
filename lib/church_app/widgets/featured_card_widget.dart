@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 
 class FeaturedCard extends StatelessWidget {
   final String badgeText;
@@ -36,13 +37,7 @@ class FeaturedCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      badgeText,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        
-                      ),
-                    ),
+                    ColorText(badgeText: badgeText, fontSize: 15,),
                     const SizedBox(height: 8),
                     Text(
                       title,
