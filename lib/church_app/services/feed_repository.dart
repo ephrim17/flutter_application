@@ -32,9 +32,8 @@ class FeedRepository {
     required String description,
     File? imageFile,
   }) async {
-    final postsRef =   FirestorePaths
-        .feedCollection(_firestore, churchId);
-      
+    final postsRef = FirestorePaths.feedCollection(_firestore, churchId);
+
     // 1️⃣ Create post first (without image)
     final docRef = postsRef.doc();
 
@@ -60,13 +59,40 @@ class FeedRepository {
 
       final downloadUrl = await storageRef.getDownloadURL();
 
-      print("<<< downloadUrl>>>");
-      print(downloadUrl);
-
       // 3️⃣ Update document with image URL
       await docRef.update({
         'imageUrl': downloadUrl,
       });
     }
+  }
+
+  Future<void> updatePost({
+    required String churchId,
+    required String postId,
+    required String title,
+    required String description,
+    File? imageFile,
+    String? existingImageUrl,
+  }) async {
+    String? imageUrl = existingImageUrl;
+
+    /// If new image selected → upload & replace
+    if (imageFile != null) {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('churches/$churchId/posts/$postId.jpg');
+
+      await ref.putFile(imageFile);
+      imageUrl = await ref.getDownloadURL();
+    }
+
+    await FirestorePaths.feedCollection(_firestore, churchId)
+        .doc(postId)
+        .update({
+      'title': title,
+      'description': description,
+      'imageUrl': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

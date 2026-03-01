@@ -43,7 +43,10 @@ class FeedScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const CreatePostModal(),
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.95,
+        child: const CreatePostModal(),
+      ),
     );
   }
 }

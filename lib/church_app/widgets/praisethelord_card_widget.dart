@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 
 class PraiseTheLordCard extends StatefulWidget {
   const PraiseTheLordCard({super.key});
