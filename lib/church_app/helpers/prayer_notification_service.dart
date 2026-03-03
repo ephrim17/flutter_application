@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -109,33 +110,52 @@ class PrayerNotificationService {
       time.minute,
     );
 
-    //if (scheduled.isBefore(now)) {
-    scheduled = scheduled.add(const Duration(days: 1));
-    //}
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
     print("Prayer notification scheduled at $scheduled");
 
     print("Local time: ${scheduled.toLocal()}");
     print("Time zone: ${scheduled.location}");
 
-    await _plugin.zonedSchedule(
-      _notificationId,
-      "Prayer Time 🙏",
-      "Take a moment to pray and reflect.",
-      scheduled,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'prayer_channel',
-          'Prayer Reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'prayer_channel',
+        'Prayer Reminders',
+        importance: Importance.max,
+        priority: Priority.high,
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      iOS: DarwinNotificationDetails(),
     );
+
+    try {
+      await _plugin.zonedSchedule(
+        _notificationId,
+        "Prayer Time 🙏",
+        "Take a moment to pray and reflect.",
+        scheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } on PlatformException {
+      rethrow;
+    } catch (_) {
+      // Fallback when exact alarms are not allowed on the device.
+      await _plugin.zonedSchedule(
+        _notificationId,
+        "Prayer Time 🙏",
+        "Take a moment to pray and reflect.",
+        scheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
 
     await prefs.setBool(_enabledKey, true);
     await prefs.setString(_timeKey, "${time.hour}:${time.minute}");

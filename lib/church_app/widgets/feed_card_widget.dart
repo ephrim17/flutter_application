@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -63,12 +65,18 @@ class FeedCard extends ConsumerWidget {
                 /// 👇 Show only if current user owns the post
                 if (isOwner)
                   IconButton.filledTonal(
-                    onPressed: () {
-                      showModalBottomSheet(
+                    onPressed: () async {
+                      await showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
                         builder: (_) => CreatePostModal(post: post, edit: true),
                       );
+
+                      final churchId = ref.read(currentChurchIdProvider).value;
+                      if (churchId == null) return;
+                      await ref
+                          .read(feedPaginationControllerProvider(churchId).notifier)
+                          .refresh();
                     },
                     icon: const Icon(Icons.edit_note),
                   ),

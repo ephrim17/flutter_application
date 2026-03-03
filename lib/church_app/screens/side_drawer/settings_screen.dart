@@ -33,7 +33,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          Spacer(),
+          //Spacer(),
           Padding(
             padding: EdgeInsets.all(15.0),
             child: PraiseTheLordCard(),
@@ -119,9 +119,18 @@ class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
     );
 
     if (picked != null) {
-      selectedTime = picked;
-      await PrayerNotificationService.instance.scheduleDaily(picked);
-      setState(() => enabled = true);
+      try {
+        await PrayerNotificationService.instance.scheduleDaily(picked);
+        setState(() {
+          selectedTime = picked;
+          enabled = true;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to schedule reminder: $e')),
+        );
+      }
     }
   }
 

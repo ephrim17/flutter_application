@@ -77,6 +77,26 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
       );
     });
   }
+
+  Future<void> deletePost({
+    required String postId,
+    String? imageUrl,
+  }) async {
+    final churchAsync = _ref.read(currentChurchIdProvider);
+    final churchId = churchAsync.value;
+
+    if (churchId == null) return;
+
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      await _repository.deletePost(
+        churchId: churchId,
+        postId: postId,
+        imageUrl: imageUrl,
+      );
+    });
+  }
 }
 
 File? selectedImage;

@@ -23,11 +23,20 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   @override
   void initState() {
     super.initState();
+    selectedImage = null;
 
     if (widget.post != null) {
       _titleController.text = widget.post!.title;
       _descriptionController.text = widget.post!.description;
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    selectedImage = null;
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -46,10 +55,9 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(feedPostModalControllerProvider);
-    var cardtitle = "Create Post";
-    if (widget.edit != null && widget.edit == true) { 
-      cardtitle = "Edit Post";
-    }
+    final isEditMode = widget.post != null || widget.edit == true;
+    final isCreateMode = widget.post == null;
+    final cardtitle = isEditMode ? "Edit Post" : "Create Post";
 
     return Padding(
       padding: EdgeInsets.only(
@@ -133,26 +141,29 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
               
               Align(
                 alignment: Alignment.centerLeft,
-                child: widget.edit != null && widget.edit == false ? TextButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.image),
-                  label: const Text("Add Image (Optional)"),
-                ) : null,
+                child: isCreateMode
+                    ? TextButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.image),
+                        label: const Text("Add Image (Optional)"),
+                      )
+                    : null,
               ),
               const SizedBox(height: 10,),
-              if (selectedImage != null && widget.edit != null && widget.edit == false)
+              if (selectedImage != null && isCreateMode)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.file(
                       selectedImage!,
-                      height: 150,
+                      //height: 150,
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
+              const SizedBox(height: 10,),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -172,6 +183,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             return;
                           }
 
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
                           try {
                             if (widget.post == null) {
                               /// CREATE
@@ -194,13 +207,11 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                   );
                             }
 
-                            if (mounted) Navigator.pop(context);
+                            navigator.pop();
                           } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(e.toString())),
-                              );
-                            }
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
                           }
                         },
                   child: state.isLoading
@@ -212,6 +223,63 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                       : Text(widget.post == null ? "Post" : "Update"),
                 ),
               ),
+              if (widget.post != null) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: const Text(
+                      "Delete Post",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onPressed: state.isLoading
+                        ? null
+                        : () async {
+                            final navigator = Navigator.of(context);
+                            final messenger = ScaffoldMessenger.of(context);
+                            final shouldDelete = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text("Delete post?"),
+                                content: const Text(
+                                  "This will permanently delete the post and its image.",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                    child: const Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                    child: const Text(
+                                      "Delete",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (shouldDelete != true) return;
+
+                            try {
+                              await ref
+                                  .read(feedPostModalControllerProvider.notifier)
+                                  .deletePost(
+                                    postId: widget.post!.id,
+                                    imageUrl: widget.post!.imageUrl,
+                                  );
+                              navigator.pop();
+                            } catch (e) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          },
+                  ),
+                ),
+              ],
             ],
           ),
         ),
