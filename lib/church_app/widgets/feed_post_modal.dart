@@ -7,9 +7,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreatePostModal extends ConsumerStatefulWidget {
-  final FeedPost? post; // 👈 if not null → edit mode
+  final FeedPost? post;
+  final bool? edit; // 👈 if not null → edit mode
 
-  const CreatePostModal({super.key, this.post});
+  const CreatePostModal({super.key, this.post, this.edit});
 
   @override
   ConsumerState<CreatePostModal> createState() => _CreatePostModalState();
@@ -45,6 +46,10 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(feedPostModalControllerProvider);
+    var cardtitle = "Create Post";
+    if (widget.edit != null && widget.edit == true) { 
+      cardtitle = "Edit Post";
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -58,8 +63,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
             children: [
               Row(
                 children: [
-                  const Text(
-                    "Create Post",
+                  Text(
+                    cardtitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -125,16 +130,17 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(
+                child: widget.edit != null && widget.edit == false ? TextButton.icon(
                   onPressed: _pickImage,
                   icon: const Icon(Icons.image),
                   label: const Text("Add Image (Optional)"),
-                ),
+                ) : null,
               ),
-              if (selectedImage != null)
+              const SizedBox(height: 10,),
+              if (selectedImage != null && widget.edit != null && widget.edit == false)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: ClipRRect(

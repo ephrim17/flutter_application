@@ -67,7 +67,7 @@ class FeedCard extends ConsumerWidget {
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
-                        builder: (_) => CreatePostModal(post: post),
+                        builder: (_) => CreatePostModal(post: post, edit: true),
                       );
                     },
                     icon: const Icon(Icons.edit_note),

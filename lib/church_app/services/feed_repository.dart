@@ -8,6 +8,8 @@ class FeedRepository {
   final FirebaseFirestore _firestore;
 
   FeedRepository(this._firestore);
+    final FirebaseStorage _storage =
+      FirebaseStorage.instance;
 
   Stream<List<FeedPost>> watchFeed(String churchId) {
     return FirestorePaths.feedCollection(_firestore, churchId)
@@ -76,17 +78,17 @@ class FeedRepository {
   }) async {
     String? imageUrl = existingImageUrl;
 
-    /// If new image selected → upload & replace
     if (imageFile != null) {
-      final ref = FirebaseStorage.instance
+      final storageRef = _storage
           .ref()
           .child('churches/$churchId/posts/$postId.jpg');
 
-      await ref.putFile(imageFile);
-      imageUrl = await ref.getDownloadURL();
+      await storageRef.putFile(imageFile);
+      imageUrl = await storageRef.getDownloadURL();
     }
 
-    await FirestorePaths.feedCollection(_firestore, churchId)
+    await FirestorePaths
+        .feedCollection(_firestore, churchId)
         .doc(postId)
         .update({
       'title': title,
