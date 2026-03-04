@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -23,7 +24,7 @@ class ChurchSideDrawer extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Church",
+                context.t('drawer.title', fallback: 'Church'),
                 style: TextStyle(
                   color: Theme.of(context).primaryColorDark,
                   fontSize: 24,
@@ -75,8 +76,10 @@ class AppDrawer extends ConsumerWidget {
             loading: () => const DrawerHeader(
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (_, __) => const DrawerHeader(
-              child: Text('Error loading user'),
+            error: (_, __) => DrawerHeader(
+              child: Text(
+                context.t('drawer.error_loading_user', fallback: 'Error loading user'),
+              ),
             ),
             data: (user) {
               return UserAccountsDrawerHeader(
@@ -107,7 +110,9 @@ class AppDrawer extends ConsumerWidget {
           /// 🔓 Logout
           ListTile(
             leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
+            title: Text(
+              context.t('drawer.logout', fallback: 'Logout'),
+            ),
             onTap: () async {
               Navigator.of(context).pop();
               await FirebaseAuth.instance.signOut();

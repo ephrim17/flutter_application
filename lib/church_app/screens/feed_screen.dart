@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/widgets/feed_card_widget.dart';
@@ -49,13 +50,24 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, stack) => const Scaffold(
-        body: Center(child: Text('Unable to load feed')),
+      error: (error, stack) => Scaffold(
+        body: Center(
+          child: Text(
+            ref.t('feed.error_load', fallback: 'Unable to load feed'),
+          ),
+        ),
       ),
       data: (churchId) {
         if (churchId == null) {
-          return const Scaffold(
-            body: Center(child: Text('No church selected')),
+          return Scaffold(
+            body: Center(
+              child: Text(
+                ref.t(
+                  'feed.no_church_selected',
+                  fallback: 'No church selected',
+                ),
+              ),
+            ),
           );
         }
 
@@ -92,7 +104,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               onPressed: () => ref
                   .read(feedPaginationControllerProvider(churchId).notifier)
                   .refresh(),
-              child: const Text('Retry'),
+              child: Text(
+                ref.t('feed.retry', fallback: 'Retry'),
+              ),
             ),
           ],
         ),
@@ -105,9 +119,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ref.read(feedPaginationControllerProvider(churchId).notifier).refresh(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 280),
-            Center(child: Text("No posts yet")),
+          children: [
+            const SizedBox(height: 280),
+            Center(
+              child: Text(
+                ref.t('feed.no_posts', fallback: 'No posts yet'),
+              ),
+            ),
           ],
         ),
       );

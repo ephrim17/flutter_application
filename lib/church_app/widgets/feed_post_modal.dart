@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -57,7 +58,9 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
     final state = ref.watch(feedPostModalControllerProvider);
     final isEditMode = widget.post != null || widget.edit == true;
     final isCreateMode = widget.post == null;
-    final cardtitle = isEditMode ? "Edit Post" : "Create Post";
+    final cardtitle = isEditMode
+        ? ref.t('feed.edit_title', fallback: 'Edit Post')
+        : ref.t('feed.create_title', fallback: 'Create Post');
 
     return Padding(
       padding: EdgeInsets.only(
@@ -83,7 +86,9 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                       onPressed: () => {
                             if (mounted) {Navigator.of(context).pop()}
                           },
-                      child: ColorText(badgeText: "cancel"))
+                      child: ColorText(
+                        badgeText: ref.t('feed.cancel', fallback: 'Cancel'),
+                      ))
                 ],
               ),
               const SizedBox(height: 16),
@@ -145,7 +150,12 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                     ? TextButton.icon(
                         onPressed: _pickImage,
                         icon: const Icon(Icons.image),
-                        label: const Text("Add Image (Optional)"),
+                        label: Text(
+                          ref.t(
+                            'feed.add_image_optional',
+                            fallback: 'Add Image (Optional)',
+                          ),
+                        ),
                       )
                     : null,
               ),
@@ -176,8 +186,13 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
 
                           if (title.isEmpty || description.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("All fields are required"),
+                              SnackBar(
+                                content: Text(
+                                  ref.t(
+                                    'feed.validation_all_fields_required',
+                                    fallback: 'All fields are required',
+                                  ),
+                                ),
                               ),
                             );
                             return;
@@ -220,7 +235,11 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                           width: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(widget.post == null ? "Post" : "Update"),
+                      : Text(
+                          widget.post == null
+                              ? ref.t('feed.post_action', fallback: 'Post')
+                              : ref.t('feed.update_action', fallback: 'Update'),
+                        ),
                 ),
               ),
               if (widget.post != null) ...[
@@ -229,9 +248,9 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text(
-                      "Delete Post",
-                      style: TextStyle(color: Colors.red),
+                    label: Text(
+                      ref.t('feed.delete_action', fallback: 'Delete Post'),
+                      style: const TextStyle(color: Colors.red),
                     ),
                     onPressed: state.isLoading
                         ? null
@@ -241,19 +260,30 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             final shouldDelete = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: const Text("Delete post?"),
-                                content: const Text(
-                                  "This will permanently delete the post and its image.",
+                                title: Text(
+                                  ref.t(
+                                    'feed.delete_confirm_title',
+                                    fallback: 'Delete post?',
+                                  ),
+                                ),
+                                content: Text(
+                                  ref.t(
+                                    'feed.delete_confirm_message',
+                                    fallback:
+                                        'This will permanently delete the post and its image.',
+                                  ),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.of(ctx).pop(false),
-                                    child: const Text("Cancel"),
+                                    child: Text(
+                                      ref.t('settings.cancel', fallback: 'Cancel'),
+                                    ),
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.of(ctx).pop(true),
-                                    child: const Text(
-                                      "Delete",
+                                    child: Text(
+                                      ref.t('feed.delete_action', fallback: 'Delete Post'),
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),

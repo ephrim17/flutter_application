@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 
 class AuthEntryScreen extends StatelessWidget {
@@ -15,8 +16,8 @@ class AuthEntryScreen extends StatelessWidget {
             children: [
               const Icon(Icons.church, size: 72),
               const SizedBox(height: 16),
-              const Text(
-                'Welcome',
+              Text(
+                context.t('auth_entry.welcome', fallback: 'Welcome'),
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 32),
@@ -29,7 +30,9 @@ class AuthEntryScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text('Continue'),
+                child: Text(
+                  context.t('auth_entry.continue', fallback: 'Continue'),
+                ),
               )
             ],
           ),

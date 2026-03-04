@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/about_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/about_providers.dart';
@@ -18,7 +19,9 @@ class AboutScreen extends ConsumerWidget {
       appBar: AppBar(),
       body: aboutAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+        ),
         data: (about) {
           return SingleChildScrollView(
             child: Column(
@@ -36,19 +39,19 @@ class AboutScreen extends ConsumerWidget {
                       const SizedBox(height: 32),
                       _buildInfoTile(
                         icon: Icons.church,
-                        title: 'Our Mission',
+                        title: context.t('about.our_mission', fallback: 'Our Mission'),
                         description: about.mission,
                       ),
                       const SizedBox(height: 16),
                       _buildInfoTile(
                         icon: Icons.groups,
-                        title: 'Our Community',
+                        title: context.t('about.our_community', fallback: 'Our Community'),
                         description: about.community,
                       ),
                       const SizedBox(height: 16),
                       _buildInfoTile(
                         icon: Icons.favorite,
-                        title: 'Our Values',
+                        title: context.t('about.our_values', fallback: 'Our Values'),
                         description: about.values,
                       ),
                       const SizedBox(height: 40),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_entry_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
@@ -37,7 +38,9 @@ class AuthOptionsScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text("Login"),
+                child: Text(
+                  context.t('auth.login', fallback: 'Login'),
+                ),
               ),
             ),
 
@@ -55,7 +58,9 @@ class AuthOptionsScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text("Request Access"),
+                child: Text(
+                  context.t('auth.request_access', fallback: 'Request Access'),
+                ),
               ),
             ),
   
@@ -71,7 +76,9 @@ class AuthOptionsScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text("Forgot Password ?"),
+                child: Text(
+                  context.t('auth.forgot_password', fallback: 'Forgot Password ?'),
+                ),
               ),
             )
           ],

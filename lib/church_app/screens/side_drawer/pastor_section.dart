@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/pastor_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/pastor_providers.dart';
@@ -39,7 +40,7 @@ class PastorWidget extends ConsumerWidget {
             ),
         error: (e, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Error: $e'),
+              child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
             ),
         data: (items) => _PastorList(items));
   }
@@ -53,16 +54,21 @@ class _PastorList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(16),
-        child: Text('Something went wrong'),
+        child: Text(
+          context.t('pastor.empty_error', fallback: 'Something went wrong'),
+        ),
       );
     }
 
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(text: "Our Pastors", padding: 16.0,),
+          SectionHeader(
+            text: context.t('pastor.section_title', fallback: 'Our Pastors'),
+            padding: 16.0,
+          ),
           const SizedBox(height: 10,),
           SizedBox(
             height: cardHeight(PastorSection().id),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -26,7 +27,11 @@ class LoginScreen extends ConsumerWidget {
     final isLoading = ref.watch(logginAccessLoadingProvider);
 
     return Scaffold(
-      appBar: AppBar(title: AppBarTitle(text: "Login")),
+      appBar: AppBar(
+        title: AppBarTitle(
+          text: ref.t('auth.login', fallback: 'Login'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -60,9 +65,13 @@ class LoginScreen extends ConsumerWidget {
                         if (emailCtrl.text.isEmpty ||
                             passCtrl.text.length < 6) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
-                                  'Please fill all fields (password min 6 chars)'),
+                                  ref.t(
+                                    'auth.login_validation',
+                                    fallback:
+                                        'Please fill all fields (password min 6 chars)',
+                                  )),
                             ),
                           );
                           return;
@@ -99,7 +108,9 @@ class LoginScreen extends ConsumerWidget {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Login'),
+                    : Text(
+                        ref.t('auth.login', fallback: 'Login'),
+                      ),
               ),
             ),
           ],

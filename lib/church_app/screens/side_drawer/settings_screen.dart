@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
@@ -8,14 +9,16 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: "Settings"),
+        title: AppBarTitle(
+          text: ref.t('settings.title', fallback: 'Settings'),
+        ),
       ),
       body: Column(
         children: [
@@ -75,7 +78,9 @@ class _AppearanceSection extends ConsumerWidget {
 
     return SwitchListTile(
       secondary: const Icon(Icons.dark_mode_outlined),
-      title: const Text("Dark Mode"),
+      title: Text(
+        ref.t('settings.dark_mode', fallback: 'Dark Mode'),
+      ),
       value: themeMode == ThemeMode.dark,
       onChanged: (value) {
         ref.read(themeProvider.notifier).toggle(value);
@@ -84,14 +89,15 @@ class _AppearanceSection extends ConsumerWidget {
   }
 }
 
-class _PrayerReminderSection extends StatefulWidget {
+class _PrayerReminderSection extends ConsumerStatefulWidget {
   const _PrayerReminderSection();
 
   @override
-  State<_PrayerReminderSection> createState() => _PrayerReminderSectionState();
+  ConsumerState<_PrayerReminderSection> createState() =>
+      _PrayerReminderSectionState();
 }
 
-class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
+class _PrayerReminderSectionState extends ConsumerState<_PrayerReminderSection> {
   bool enabled = false;
   TimeOfDay? selectedTime;
 
@@ -128,7 +134,11 @@ class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to schedule reminder: $e')),
+          SnackBar(
+            content: Text(
+              "${ref.t('settings.prayer_schedule_failed', fallback: 'Failed to schedule reminder')}: $e",
+            ),
+          ),
         );
       }
     }
@@ -140,11 +150,16 @@ class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
       children: [
         SwitchListTile(
           secondary: const Icon(Icons.notifications_active_outlined),
-          title: const Text("Prayer Reminders"),
+          title: Text(
+            ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
+          ),
           subtitle: Text(
             enabled && selectedTime != null
-                ? "Daily at ${selectedTime!.format(context)}"
-                : "Enable daily prayer reminder",
+                ? "${ref.t('settings.prayer_daily_at_prefix', fallback: 'Daily at')} ${selectedTime!.format(context)}"
+                : ref.t(
+                    'settings.prayer_reminders_subtitle_off',
+                    fallback: 'Enable daily prayer reminder',
+                  ),
           ),
           value: enabled,
           onChanged: (value) async {
@@ -168,7 +183,12 @@ class _PrayerReminderSectionState extends State<_PrayerReminderSection> {
         if (enabled)
           TextButton(
             onPressed: _pickTime,
-            child: const Text("Edit Reminder Time"),
+            child: Text(
+              ref.t(
+                'settings.edit_reminder_time',
+                fallback: 'Edit Reminder Time',
+              ),
+            ),
           ),
       ],
     );
@@ -182,23 +202,35 @@ class _StorageSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: const Icon(Icons.delete_outline, color: Colors.red),
-      title: const Text("Clear All Local Data"),
+      title: Text(
+        ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
+      ),
       onTap: () async {
         final confirm = await showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("Confirm", style: Theme.of(context).textTheme.bodyMedium,),
-            content: const Text(
-              "Are you sure you want to clear all local data?",
+            title: Text(
+              ref.t('settings.confirm', fallback: 'Confirm'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            content: Text(
+              ref.t(
+                'settings.clear_confirm_message',
+                fallback: 'Are you sure you want to clear all local data?',
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text("Cancel"),
+                child: Text(
+                  ref.t('settings.cancel', fallback: 'Cancel'),
+                ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text("Clear"),
+                child: Text(
+                  ref.t('settings.clear', fallback: 'Clear'),
+                ),
               ),
             ],
           ),
@@ -212,8 +244,13 @@ class _StorageSection extends ConsumerWidget {
           await ref.read(favoritesProvider.notifier).clearAll();
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("All local data cleared"),
+            SnackBar(
+              content: Text(
+                ref.t(
+                  'settings.local_data_cleared',
+                  fallback: 'All local data cleared',
+                ),
+              ),
             ),
           );
         }

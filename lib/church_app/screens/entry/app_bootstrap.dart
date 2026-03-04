@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -21,9 +22,18 @@ class AppBootstrap extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, __) => const MaterialApp(
+      error: (_, __) => MaterialApp(
         home: Scaffold(
-          body: Center(child: Text("Bootstrap Launch failed")),
+          body: Builder(
+            builder: (context) => Center(
+              child: Text(
+                context.t(
+                  'app.bootstrap_failed',
+                  fallback: 'Bootstrap Launch failed',
+                ),
+              ),
+            ),
+          ),
         ),
       ),
       data: (config) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
@@ -34,7 +35,7 @@ class EventsSection implements MasterSection {
                     ),
                 error: (e, _) => Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text('Error: $e'),
+                      child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
                     ),
                 data: (items) => EventsList(items));
           },
@@ -57,16 +58,21 @@ class EventsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No Events'),
+        child: Text(
+          context.t('events.none', fallback: 'No Events'),
+        ),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(text: "Events", padding: 16.0),
+        SectionHeader(
+          text: context.t('events.section_title', fallback: 'Events'),
+          padding: 16.0,
+        ),
         const SizedBox(height: 10),
         SizedBox(
             height: cardHeight(EventsSection().id),

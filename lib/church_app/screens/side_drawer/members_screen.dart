@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -20,14 +21,24 @@ class MembersScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppBarTitle(text: "Members"),
+        title: AppBarTitle(
+          text: context.t('members.title', fallback: 'Members'),
+        ),
       ),
       body: membersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Error loading members')),
+        error: (_, __) => Center(
+          child: Text(
+            context.t('members.error_loading', fallback: 'Error loading members'),
+          ),
+        ),
         data: (members) {
           if (members.isEmpty) {
-            return const Center(child: Text('No members found'));
+            return Center(
+              child: Text(
+                context.t('members.none', fallback: 'No members found'),
+              ),
+            );
           }
 
           return ListView.separated(

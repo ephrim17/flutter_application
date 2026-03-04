@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
@@ -24,8 +25,14 @@ class PrayerRequestScreen extends ConsumerWidget {
       appBar: AppBar(
         title: AppBarTitle(
             text: segment == PrayerSegment.my
-                ? 'My Prayer Requests'
-                : 'All Prayer Requests'),
+                ? context.t(
+                    'prayer.my_requests_title',
+                    fallback: 'My Prayer Requests',
+                  )
+                : context.t(
+                    'prayer.all_requests_title',
+                    fallback: 'All Prayer Requests',
+                  )),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: _SegmentControl(isAdmin: isAdmin),
@@ -46,8 +53,10 @@ class PrayerRequestScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text(e.toString())),
         data: (prayers) {
           if (prayers.isEmpty) {
-            return const Center(
-              child: Text('No prayer requests yet'),
+            return Center(
+              child: Text(
+                context.t('prayer.none', fallback: 'No prayer requests yet'),
+              ),
             );
           }
 
@@ -70,9 +79,19 @@ class PrayerRequestScreen extends ConsumerWidget {
                       if (!prayer.isAnonymous)
                         ref.watch(churchUserNameProvider(prayer.userId)).when(
                               loading: () =>
-                                  const Text("By: Loading..."),
+                                  Text(
+                                    context.t(
+                                      'prayer.by_loading',
+                                      fallback: 'By: Loading...',
+                                    ),
+                                  ),
                               error: (_, __) =>
-                                  const Text("By: Unknowns"),
+                                  Text(
+                                    context.t(
+                                      'prayer.by_unknown',
+                                      fallback: 'By: Unknown',
+                                    ),
+                                  ),
                               data: (name) => Text(
                                   "By: ${name?.toUpperCase() ?? "Unknown"}"),
                             ),
@@ -80,7 +99,7 @@ class PrayerRequestScreen extends ConsumerWidget {
                       const SizedBox(height: 6),
 
                       Text(
-                        "Expires: ${DateFormat.yMMMd().format(prayer.expiryDate)}",
+                        "${context.t('prayer.expires_prefix', fallback: 'Expires')}: ${DateFormat.yMMMd().format(prayer.expiryDate)}",
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],
@@ -134,14 +153,18 @@ class _SegmentControl extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: SegmentedButton<PrayerSegment>(
         segments: [
-          const ButtonSegment(
+          ButtonSegment(
             value: PrayerSegment.my,
-            label: Text('My Requests'),
+            label: Text(
+              context.t('prayer.my_requests_tab', fallback: 'My Requests'),
+            ),
           ),
           if (isAdmin)
-            const ButtonSegment(
+            ButtonSegment(
               value: PrayerSegment.all,
-              label: Text('All Requests'),
+              label: Text(
+                context.t('prayer.all_requests_tab', fallback: 'All Requests'),
+              ),
             ),
         ],
         selected: {segment},
@@ -208,8 +231,8 @@ class _AddPrayerModalState
         child: ListView(
           shrinkWrap: true,
           children: [
-            const Text(
-              "Prayer Request",
+            Text(
+              context.t('prayer.modal_title', fallback: 'Prayer Request'),
               style:
                   TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -217,13 +240,13 @@ class _AddPrayerModalState
 
             TextFormField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: "Title",
+              decoration: InputDecoration(
+                labelText: context.t('prayer.title_label', fallback: 'Title'),
                 border: OutlineInputBorder(),
               ),
               validator: (value) =>
                   value == null || value.trim().isEmpty
-                      ? "Title required"
+                      ? context.t('prayer.title_required', fallback: 'Title required')
                       : null,
             ),
 
@@ -232,20 +255,31 @@ class _AddPrayerModalState
             TextFormField(
               controller: _descCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: "Description",
+              decoration: InputDecoration(
+                labelText: context.t(
+                  'prayer.description_label',
+                  fallback: 'Description',
+                ),
                 border: OutlineInputBorder(),
               ),
               validator: (value) =>
                   value == null || value.trim().isEmpty
-                      ? "Description required"
+                      ? context.t(
+                          'prayer.description_required',
+                          fallback: 'Description required',
+                        )
                       : null,
             ),
 
             const SizedBox(height: 16),
 
             SwitchListTile(
-              title: const Text("Submit anonymously"),
+              title: Text(
+                context.t(
+                  'prayer.submit_anonymous',
+                  fallback: 'Submit anonymously',
+                ),
+              ),
               value: _isAnonymous,
               onChanged: (v) {
                 setState(() => _isAnonymous = v);
@@ -257,8 +291,11 @@ class _AddPrayerModalState
             ListTile(
               title: Text(
                 _expiryDate == null
-                    ? "Select expiry date"
-                    : "Expiry: ${DateFormat.yMMMd().format(_expiryDate!)}",
+                    ? context.t(
+                        'prayer.select_expiry_date',
+                        fallback: 'Select expiry date',
+                      )
+                    : "${context.t('prayer.expiry_prefix', fallback: 'Expiry')}: ${DateFormat.yMMMd().format(_expiryDate!)}",
               ),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
@@ -282,7 +319,9 @@ class _AddPrayerModalState
               onPressed: _isLoading ? null : _submit,
               child: _isLoading
                   ? const CircularProgressIndicator()
-                  : const Text("Submit"),
+                  : Text(
+                      context.t('common.submit', fallback: 'Submit'),
+                    ),
             ),
 
             const SizedBox(height: 20),
@@ -297,8 +336,13 @@ class _AddPrayerModalState
 
     if (_expiryDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Please select expiry date")),
+        SnackBar(
+            content: Text(
+          context.t(
+            'prayer.select_expiry_required',
+            fallback: 'Please select expiry date',
+          ),
+        )),
       );
       return;
     }
@@ -327,8 +371,13 @@ class _AddPrayerModalState
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Prayer request saved successfully"),
+      SnackBar(
+        content: Text(
+          context.t(
+            'prayer.saved_success',
+            fallback: 'Prayer request saved successfully',
+          ),
+        ),
       ),
     );
   }

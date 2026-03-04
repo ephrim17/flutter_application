@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
@@ -33,7 +34,7 @@ class AnnouncementSection implements MasterSection {
                     ),
                 error: (e, _) => Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text('Error: $e'),
+                      child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
                     ),
                 data: (items) => _AnnouncementList(items));
           },
@@ -50,16 +51,21 @@ class _AnnouncementList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No announcements'),
+        child: Text(
+          context.t('announcements.none', fallback: 'No announcements'),
+        ),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(text: "Announcements", padding: 16.0),
+        SectionHeader(
+          text: context.t('announcements.section_title', fallback: 'Announcements'),
+          padding: 16.0,
+        ),
         const SizedBox(
           height: 10,
         ),

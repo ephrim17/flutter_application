@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart' show favoritesProvider, toggleGlobalHighlight;
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
@@ -14,7 +15,11 @@ class BibleBookScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: AppBarTitle(text: "Holy Bible")),
+      appBar: AppBar(
+        title: AppBarTitle(
+          text: context.t('bible.title', fallback: 'Holy Bible'),
+        ),
+      ),
       body: ListView.builder(
         itemCount: bibleBooks.length,
         itemBuilder: (_, index) {
@@ -57,7 +62,11 @@ class ChapterScreen extends StatelessWidget {
 
         if (snapshot.hasError) {
           return Scaffold(
-            body: Center(child: Text('Error: ${snapshot.error}')),
+            body: Center(
+              child: Text(
+                "${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}",
+              ),
+            ),
           );
         }
 
@@ -227,18 +236,8 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: BibleVerseItemWidget(
-                            verseNumber: verse['verse'].toString(),
-                            versePrimary: verse['text']['tamil'],
-                            verseSecondary: verse['text']['english'],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            isHighlighted ? Icons.favorite : Icons.favorite_border,
-                            color: isHighlighted ? Colors.red : Colors.grey,
-                          ),
-                          onPressed: () async {
+                          child: InkWell(
+                            onTap: () async {
                             await toggleGlobalHighlight(
                               widget.book.key,
                               actualChapterIndex + 1,
@@ -246,7 +245,14 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                             );
                             ref.invalidate(favoritesProvider);
                           },
+                            child: BibleVerseItemWidget(
+                              verseNumber: verse['verse'].toString(),
+                              versePrimary: verse['text']['tamil'],
+                              verseSecondary: verse['text']['english'],
+                            ),
+                          ),
                         ),
+                       
                       ],
                     ),
                   );

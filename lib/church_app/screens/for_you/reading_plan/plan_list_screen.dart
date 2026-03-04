@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_details_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/plan/plan_card.dart';
@@ -30,7 +31,9 @@ class PlanListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: "Bible in a year"),
+        title: AppBarTitle(
+          text: context.t('reading_plan.title', fallback: 'Bible in a year'),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

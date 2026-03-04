@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
@@ -62,8 +63,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         centerTitle: true, // 👈 REQUIRED
         toolbarHeight: 72,
         title: LightningGradientText(
-          text:
-              'TNBM', //GoogleFonts.lalezar(fontSize: 30, fontWeight: FontWeight.w600)
+          text: ref.t('church_tab.app_title', fallback: 'TNBM'),
           style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                 fontSize: 30,
                 fontWeight: FontWeight.w900,
@@ -76,10 +76,19 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         onTap: (value) => setActiveScreen(value),
         currentIndex: selectedIndex,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'For You'),
-          BottomNavigationBarItem(icon: Icon(Icons.newspaper_rounded), label: 'Feeds'),
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home_filled),
+            label: ref.t('church_tab.home', fallback: 'Home'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.star),
+            label: ref.t('church_tab.for_you', fallback: 'For You'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.newspaper_rounded),
+            label: ref.t('church_tab.feeds', fallback: 'Feeds'),
+          ),
         ],
       ),
     );

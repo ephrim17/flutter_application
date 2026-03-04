@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/onboarding_provider.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,7 +36,7 @@ class _OnboardingScreenState
         loading: () =>
             const Center(child: CircularProgressIndicator()),
         error: (e, _) =>
-            Center(child: Text('Error: $e')),
+            Center(child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e")),
         data: (pages) {
           if (pages.isEmpty) {
             WidgetsBinding.instance
@@ -177,8 +178,14 @@ class _OnboardingScreenState
                       },
                       child: Text(
                           isLast
-                              ? "Get Started"
-                              : "Next"),
+                              ? context.t(
+                                  'onboarding.get_started',
+                                  fallback: 'Get Started',
+                                )
+                              : context.t(
+                                  'onboarding.next',
+                                  fallback: 'Next',
+                                )),
                     ),
                   ),
 

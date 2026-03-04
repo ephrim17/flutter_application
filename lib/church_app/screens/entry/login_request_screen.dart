@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -43,7 +44,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     final isConfirmPasswordVisible = ref.watch(confirmPasswordVisibleProvider);
 
     return Scaffold(
-      appBar: AppBar(title: AppBarTitle(text: "Request Access")),
+      appBar: AppBar(
+        title: AppBarTitle(
+          text: context.t('auth.request_access', fallback: 'Request Access'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -55,17 +60,26 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 /// NAME
                 TextFormField(
                   maxLength: 50,
-                  decoration: const InputDecoration(
-                    labelText: 'Your Name',
-                    helperText: 'Name should have only characters, not numbers',
+                  decoration: InputDecoration(
+                    labelText: context.t('auth.name_label', fallback: 'Your Name'),
+                    helperText: context.t(
+                      'auth.name_helper',
+                      fallback: 'Name should have only characters, not numbers',
+                    ),
                   ),
                   onSaved: (value) => name = value?.trim() ?? '',
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your name';
+                      return context.t(
+                        'auth.name_required',
+                        fallback: 'Please enter your name',
+                      );
                     }
                     if (value.trim().length < 3) {
-                      return 'Name must be at least 3 characters';
+                      return context.t(
+                        'auth.name_min_length',
+                        fallback: 'Name must be at least 3 characters',
+                      );
                     }
                     return null;
                   },
@@ -76,13 +90,19 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 /// EMAIL
                 TextFormField(
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'auth.email_address_label',
+                      fallback: 'Email Address',
+                    ),
                   ),
                   onSaved: (value) => email = value?.trim() ?? '',
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
+                      return context.t(
+                        'auth.email_required',
+                        fallback: 'Please enter your email',
+                      );
                     }
 
                     final emailRegex = RegExp(
@@ -90,7 +110,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     );
 
                     if (!emailRegex.hasMatch(value.trim())) {
-                      return 'Please enter a valid email address';
+                      return context.t(
+                        'auth.email_address_invalid',
+                        fallback: 'Please enter a valid email address',
+                      );
                     }
 
                     return null;
@@ -103,20 +126,29 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 TextFormField(
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'auth.phone_label',
+                      fallback: 'Phone Number',
+                    ),
                     counterText: '',
                   ),
                   onSaved: (value) => phone = value?.trim() ?? '',
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your phone number';
+                      return context.t(
+                        'auth.phone_required',
+                        fallback: 'Please enter your phone number',
+                      );
                     }
 
                     final phoneRegex = RegExp(r'^[6-9]\d{9}$');
 
                     if (!phoneRegex.hasMatch(value.trim())) {
-                      return 'Enter a valid 10-digit phone number';
+                      return context.t(
+                        'auth.phone_invalid',
+                        fallback: 'Enter a valid 10-digit phone number',
+                      );
                     }
 
                     return null;
@@ -129,8 +161,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 TextFormField(
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: 'Date of Birth',
-                    hintText: 'Select your date of birth',
+                    labelText: context.t('auth.dob_label', fallback: 'Date of Birth'),
+                    hintText: context.t(
+                      'auth.dob_hint',
+                      fallback: 'Select your date of birth',
+                    ),
                     suffixIcon: const Icon(Icons.calendar_today),
                   ),
                   controller: TextEditingController(
@@ -159,7 +194,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                   },
                   validator: (_) {
                     if (dob == null) {
-                      return 'Please select your date of birth';
+                      return context.t(
+                        'auth.dob_required',
+                        fallback: 'Please select your date of birth',
+                      );
                     }
                     return null;
                   },
@@ -171,8 +209,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 TextFormField(
                   obscureText: !isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    helperText: 'Min 8 chars, 1 uppercase, 1 number',
+                    labelText: context.t('auth.password_label', fallback: 'Password'),
+                    helperText: context.t(
+                      'auth.password_helper',
+                      fallback: 'Min 8 chars, 1 uppercase, 1 number',
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         isPasswordVisible
@@ -191,16 +232,28 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                   onSaved: (value) => password = value ?? '',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
+                      return context.t(
+                        'auth.password_required',
+                        fallback: 'Please enter a password',
+                      );
                     }
                     if (value.length < 8) {
-                      return 'Password must be at least 8 characters';
+                      return context.t(
+                        'auth.password_min_length',
+                        fallback: 'Password must be at least 8 characters',
+                      );
                     }
                     if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                      return 'Include at least one uppercase letter';
+                      return context.t(
+                        'auth.password_uppercase_required',
+                        fallback: 'Include at least one uppercase letter',
+                      );
                     }
                     if (!RegExp(r'\d').hasMatch(value)) {
-                      return 'Include at least one number';
+                      return context.t(
+                        'auth.password_number_required',
+                        fallback: 'Include at least one number',
+                      );
                     }
                     return null;
                   },
@@ -212,8 +265,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 TextFormField(
                   obscureText: !isConfirmPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    helperText: 'Password and Confirm passwords must be same',
+                    labelText: context.t(
+                      'auth.confirm_password_label',
+                      fallback: 'Confirm Password',
+                    ),
+                    helperText: context.t(
+                      'auth.confirm_password_helper',
+                      fallback: 'Password and Confirm passwords must be same',
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         isConfirmPasswordVisible
@@ -233,11 +292,17 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                   onSaved: (value) => confirmPassword = value ?? '',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
+                      return context.t(
+                        'auth.confirm_password_required',
+                        fallback: 'Please confirm your password',
+                      );
                     }
 
                     if (value != password) {
-                      return 'Passwords do not match';
+                      return context.t(
+                        'auth.passwords_mismatch',
+                        fallback: 'Passwords do not match',
+                      );
                     }
 
                     return null;
@@ -312,7 +377,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Request Access'),
+                        : Text(
+                            context.t(
+                              'auth.request_access',
+                              fallback: 'Request Access',
+                            ),
+                          ),
                   ),
                 ),
               ],

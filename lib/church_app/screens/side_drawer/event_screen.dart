@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
@@ -16,7 +17,9 @@ class EventsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: "Events"),
+        title: AppBarTitle(
+          text: context.t('events.title', fallback: 'Events'),
+        ),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -27,7 +30,7 @@ class EventsScreen extends ConsumerWidget {
                 child: CircularProgressIndicator(),
               ),
               error: (e, _) => Center(
-                child: Text('Error: $e'),
+                child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
               ),
               data: (items) => EventsFullList(items),
             ),
@@ -46,7 +49,11 @@ class EventsFullList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Center(child: Text('No Events'));
+      return Center(
+        child: Text(
+          context.t('events.none', fallback: 'No Events'),
+        ),
+      );
     }
 
     return ListView.separated(
@@ -66,4 +73,3 @@ class EventsFullList extends StatelessWidget {
     );
   }
 }
-

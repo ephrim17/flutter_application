@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -33,8 +34,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset email sent. Check your inbox.'),
+          SnackBar(
+            content: Text(
+              context.t(
+                'auth.reset_email_sent',
+                fallback: 'Password reset email sent. Check your inbox.',
+              ),
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -43,7 +49,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message ?? 'An unknown error occurred.'),
+            content: Text(
+              e.message ??
+                  context.t(
+                    'common.unknown_error',
+                    fallback: 'An unknown error occurred.',
+                  ),
+            ),
           ),
         );
       }
@@ -57,7 +69,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const AppBarTitle(text: "Forgot Password"),
+        title: AppBarTitle(
+          text: context.t('auth.forgot_password_title', fallback: 'Forgot Password'),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -68,13 +82,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
+                decoration: InputDecoration(
+                  labelText: context.t('auth.email_label', fallback: 'Email'),
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || !value.contains('@')) {
-                    return 'Please enter a valid email.';
+                    return context.t(
+                      'auth.email_invalid',
+                      fallback: 'Please enter a valid email.',
+                    );
                   }
                   return null;
                 },
@@ -85,7 +102,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _sendResetEmail,
-                      child: const Text('Send Reset Email'),
+                      child: Text(
+                        context.t(
+                          'auth.send_reset_email',
+                          fallback: 'Send Reset Email',
+                        ),
+                      ),
                     ),
             ],
           ),

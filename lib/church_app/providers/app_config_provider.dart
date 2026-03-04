@@ -27,3 +27,17 @@ final appConfigProvider = StreamProvider<AppConfig>((ref) {
     error: (_, __) => const Stream.empty(),
   );
 });
+
+final textContentProvider = Provider<TextContent>((ref) {
+  final configAsync = ref.watch(appConfigProvider);
+  return configAsync.maybeWhen(
+    data: (config) => config.textContent,
+    orElse: () => TextContent.fromMap(null),
+  );
+});
+
+extension AppTextRef on WidgetRef {
+  String t(String key, {required String fallback}) {
+    return watch(textContentProvider).get(key, fallback: fallback);
+  }
+}

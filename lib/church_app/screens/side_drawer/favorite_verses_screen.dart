@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart';
@@ -14,20 +15,22 @@ class FavoritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppBarTitle(text: "Favorites"),
+        title: AppBarTitle(
+          text: context.t('favorites.title', fallback: 'Favorites'),
+        ),
       ),
       body: favoritesAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(),
         ),
         error: (error, stack) => Center(
-          child: Text("Error: $error"),
+          child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $error"),
         ),
         data: (verses) {
           if (verses.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                "No Favorites yet",
+                context.t('favorites.none', fallback: 'No Favorites yet'),
                 style: TextStyle(fontSize: 16),
               ),
             );
@@ -57,8 +60,13 @@ class FavoritesScreen extends ConsumerWidget {
                       .removeHighlight(verse);
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Removed from favorites"),
+                    SnackBar(
+                      content: Text(
+                        context.t(
+                          'favorites.removed',
+                          fallback: 'Removed from favorites',
+                        ),
+                      ),
                       duration: Duration(seconds: 2),
                     ),
                   );
@@ -138,7 +146,9 @@ void showLanguageShareOptions(
           children: [
             ListTile(
               //leading: const Icon(Icons.language),
-              title: const Text("Share in English"),
+              title: Text(
+                context.t('favorites.share_english', fallback: 'Share in English'),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _shareVerse(
@@ -150,7 +160,9 @@ void showLanguageShareOptions(
             ),
             ListTile(
               //leading: const Icon(Icons.translate),
-              title: const Text("Share in Tamil"),
+              title: Text(
+                context.t('favorites.share_tamil', fallback: 'Share in Tamil'),
+              ),
               onTap: () {
                 _shareVerse(
                   text: verse['tamil'],

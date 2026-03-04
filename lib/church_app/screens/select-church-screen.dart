@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/auth_options_screen.dart';
@@ -16,7 +17,11 @@ class SelectChurchScreen extends ConsumerWidget {
     final churchesAsync = ref.watch(churchesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: AppBarTitle(text: "Welcome")),
+      appBar: AppBar(
+        title: AppBarTitle(
+          text: context.t('auth_entry.welcome', fallback: 'Welcome'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -24,8 +29,11 @@ class SelectChurchScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             const Icon(Icons.church, size: 72),
             const SizedBox(height: 16),
-            const Text(
-              "Select your church to proceed further",
+            Text(
+              context.t(
+                'church.select_subtitle',
+                fallback: 'Select your church to proceed further',
+              ),
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
@@ -42,7 +50,9 @@ class SelectChurchScreen extends ConsumerWidget {
                       churchesAsync,
                     );
                   },
-                  child: const Text("Select Church"),
+                  child: Text(
+                    context.t('church.select_button', fallback: 'Select Church'),
+                  ),
                 ),
               ),
 
@@ -75,7 +85,9 @@ class SelectChurchScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  child: const Text("Proceed"),
+                  child: Text(
+                    context.t('common.proceed', fallback: 'Proceed'),
+                  ),
                 ),
               ),
             ],
@@ -95,13 +107,25 @@ class SelectChurchScreen extends ConsumerWidget {
       builder: (_) {
         return churchesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(child: Text("Error loading churches")),
+          error: (_, __) => Center(
+            child: Text(
+              context.t(
+                'church.error_loading',
+                fallback: 'Error loading churches',
+              ),
+            ),
+          ),
           data: (churches) {
             if (churches.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
-                  child: Text("No churches available"),
+                  child: Text(
+                    context.t(
+                      'church.none_available',
+                      fallback: 'No churches available',
+                    ),
+                  ),
                 ),
               );
             }

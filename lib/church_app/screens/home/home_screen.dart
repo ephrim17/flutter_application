@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
@@ -61,7 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return sectionConfigsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(
+        child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+      ),
       data: (configs) {
         final registry = HomeSectionRegistry.all();
 
