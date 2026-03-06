@@ -23,9 +23,9 @@ class FooterSection extends MasterSection {
             child: Padding(
               padding: const EdgeInsets.all(18.0),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
                   FooterContactsWidget(),
-                  SizedBox(height: 20),
                   FooterSocialIconsWidget(),
                 ],
               ),

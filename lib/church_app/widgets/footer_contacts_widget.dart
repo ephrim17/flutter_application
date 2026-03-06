@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Icon _iconForType(String type) {
   switch (type) {
@@ -24,15 +25,11 @@ class FooterContactsWidget extends ConsumerWidget {
     final contactsAsync = ref.watch(footerContactsProvider);
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Text("Reach us and contact us",
-        // style: Theme.of(context).textTheme.titleMedium,),
         const SizedBox(
           height: 10,
         ),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: contactsAsync.when(
             loading: () => const [CircularProgressIndicator()],
             error: (e, _) => [Text('Error: $e')],
@@ -49,19 +46,69 @@ class FooterContactsWidget extends ConsumerWidget {
     List<ContactItem> contacts,
     BuildContext context,
   ) {
-
     return contacts.map((contact) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _iconForType(contact.type),
-          const SizedBox(height: 8),
-          Text(
-            contact.label,
-            style: Theme.of(context).textTheme.bodyMedium,
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _onContactTap(context, contact),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _iconForType(contact.type),
+                  const SizedBox(height: 8),
+                  Text(
+                    contact.label,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
+        ),
       );
     }).toList();
+  }
+
+  Future<void> _onContactTap(BuildContext context, ContactItem contact) async {
+    final raw = (contact.action.isNotEmpty ? contact.action : contact.label).trim();
+    if (raw.isEmpty) return;
+
+    final uri = _buildContactUri(contact.type, raw);
+    if (uri == null) return;
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open contact action')),
+      );
+    }
+  }
+
+  Uri? _buildContactUri(String type, String value) {
+    switch (type.toLowerCase()) {
+      case 'email':
+        if (value.startsWith('mailto:')) return Uri.parse(value);
+        return Uri.parse('mailto:$value');
+      case 'phone':
+        if (value.startsWith('tel:')) return Uri.parse(value);
+        return Uri.parse('tel:$value');
+      case 'location':
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          return Uri.parse(value);
+        }
+        return Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(value)}',
+        );
+      default:
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          return Uri.parse(value);
+        }
+        return null;
+    }
   }
 }

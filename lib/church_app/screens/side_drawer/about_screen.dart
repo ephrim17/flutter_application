@@ -111,9 +111,9 @@ class AboutScreen extends ConsumerWidget {
       decoration: carouselBoxDecoration(context),
       padding: const EdgeInsets.all(18),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: const [
           FooterContactsWidget(),
-          SizedBox(height: 20),
           FooterSocialIconsWidget(),
         ],
       ),

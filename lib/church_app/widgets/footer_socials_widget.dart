@@ -13,14 +13,13 @@ class FooterSocialIconsWidget extends ConsumerWidget {
     final iconsAsync = ref.watch(footerSocialIconsProvider);
 
     return Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Text(
           //   "Follow us on",
           //   style: Theme.of(context).textTheme.titleMedium,
           // ),
-          const SizedBox(height: 16),
-
           iconsAsync.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(16),
@@ -32,33 +31,36 @@ class FooterSocialIconsWidget extends ConsumerWidget {
             ),
             data: (social) => _buildSocialIconsRow(social, context),
           ),
-          const SizedBox(height: 16),
-          const CopyrightWidget(),
         ],
       );
   }
 
   Widget _buildSocialIconsRow(List<SocialIconModel> social, BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: social
-          .map(
-            (item) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10), // 20 total gap
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _socialIconType(item.icon),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.icon,
-                    style: Theme.of(context).textTheme.bodyMedium,
+    return Column(
+      children: [
+        const SizedBox(height: 15,),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: social
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10), // 20 total gap
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _socialIconType(item.icon),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.icon,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
+                ),
+              )
+              .toList(),
+        ),
+      ],
     );
   }
 }
