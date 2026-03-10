@@ -66,6 +66,14 @@ class EventsList extends StatelessWidget {
       );
     }
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final viewportFraction = screenWidth >= 1400
+        ? 0.72
+        : screenWidth >= 1024
+            ? 0.82
+            : 0.92;
+    final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -74,18 +82,22 @@ class EventsList extends StatelessWidget {
           padding: 16.0,
         ),
         const SizedBox(height: 10),
-        SizedBox(
-            height: cardHeight(EventsSection().id),
-            child: 
-            AutoScrollCarousel(
+        Align(
+          alignment: Alignment.center,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+            child: SizedBox(
+              height: cardHeight(EventsSection().id),
+              child: AutoScrollCarousel(
                 height: cardHeight(EventsSection().id),
                 itemCount: items.length,
-                viewportFraction: 0.92,
+                viewportFraction: viewportFraction,
                 spacing: 12,
-                itemBuilder: (_, i) =>
-                 EventsCard(items[i]),
-              )
+                itemBuilder: (_, i) => EventsCard(items[i]),
+              ),
             ),
+          ),
+        ),
       ],
     );
   }

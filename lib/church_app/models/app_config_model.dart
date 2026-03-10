@@ -14,6 +14,7 @@ class AppConfig {
   final PromiseVerseRef promiseVerseRef;
   final PromptSheetModel promptSheet;
   final TextContent textContent;
+  final String churchLogo;
 
   const AppConfig({
     required this.admins,
@@ -31,6 +32,7 @@ class AppConfig {
     required this.bibleSwipeFetchVersion,
     required this.promiseVerseRef,
     required this.textContent,
+    required this.churchLogo
   });
 
   factory AppConfig.fromFirestore(Map<String, dynamic> data) {
@@ -51,6 +53,7 @@ class AppConfig {
       secondaryColorHex: data['theme']?['secondaryColor'] ?? '#000000',
       backgroundColorHex: data['theme']?['backgroundColor'] ?? '#000000',
       cardColorHex: data['theme']?['cardBackgroundColor'] ?? '#000000',
+      churchLogo: data['churchLogo'] ?? ""
       //logoUrl: data['theme']?['logoUrl'] ?? '',
     );
   }

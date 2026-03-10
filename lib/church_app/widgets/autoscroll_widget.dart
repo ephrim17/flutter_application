@@ -99,7 +99,7 @@ Widget build(BuildContext context) {
           },
           itemBuilder: (context, index) {
             return Padding(
-              padding: EdgeInsets.only(right: widget.spacing),
+              padding: EdgeInsets.symmetric(horizontal: widget.spacing / 2),
               child: widget.itemBuilder(context, index),
             );
           },

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -26,11 +27,12 @@ class SettingsScreen extends ConsumerWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ListView(
+                child: ListView(
                   children: const [
                     _AppearanceSection(),
                     _PrayerReminderSection(),
                     _StorageSection(),
+                    _LogoutSection(),
                   ],
                 ),
             ),
@@ -49,6 +51,24 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LogoutSection extends ConsumerWidget {
+  const _LogoutSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(Icons.logout),
+      title: Text(
+        ref.t('drawer.logout', fallback: 'Logout'),
+      ),
+      onTap: () async {
+        Navigator.of(context).pop();
+        await FirebaseAuth.instance.signOut();
+      },
     );
   }
 }

@@ -59,6 +59,14 @@ class _AnnouncementList extends StatelessWidget {
       );
     }
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final viewportFraction = screenWidth >= 1400
+        ? 0.72
+        : screenWidth >= 1024
+            ? 0.82
+            : 0.92;
+    final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -69,14 +77,18 @@ class _AnnouncementList extends StatelessWidget {
         const SizedBox(
           height: 10,
         ),
-        SizedBox(
-          child: AutoScrollCarousel(
-            height: cardHeight(AnnouncementSection().id),
-            itemCount: items.length,
-            viewportFraction: 0.92,
-            autoScroll: true,
-            spacing: 12,
-            itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+        Align(
+          alignment: Alignment.center,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+            child: AutoScrollCarousel(
+              height: cardHeight(AnnouncementSection().id),
+              itemCount: items.length,
+              viewportFraction: viewportFraction,
+              autoScroll: true,
+              spacing: 12,
+              itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+            ),
           ),
         ),
       ],
@@ -90,8 +102,6 @@ class _AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
@@ -107,7 +117,7 @@ class _AnnouncementCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: width - 32,
+        width: double.infinity,
         height: cardHeight(AnnouncementSection().id),
         padding: const EdgeInsets.all(2),
         decoration: carouselBoxDecoration(context),

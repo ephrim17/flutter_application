@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
@@ -103,20 +102,6 @@ class AppDrawer extends ConsumerWidget {
               title: Text(item.label),
               onTap: () => _handleTap(context, item),
             ),
-          ),
-
-          const Spacer(),
-
-          /// 🔓 Logout
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: Text(
-              context.t('drawer.logout', fallback: 'Logout'),
-            ),
-            onTap: () async {
-              Navigator.of(context).pop();
-              await FirebaseAuth.instance.signOut();
-            },
           ),
         ],
       ),
