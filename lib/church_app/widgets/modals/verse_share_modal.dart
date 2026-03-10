@@ -3,11 +3,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/providers/app_config_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application/church_app/widgets/church_logo_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
-import 'package:shimmer/shimmer.dart';
 
 enum ShareFormat { square, story }
 
@@ -77,11 +75,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   @override
   Widget build(BuildContext context) {
-    final appConfigAsync = ProviderScope.containerOf(context).read(appConfigProvider);
-    final churchLogo = appConfigAsync.maybeWhen(
-      data: (config) => config.churchLogo,
-      orElse: () => '',
-    );
     final height = format == ShareFormat.square ? 400.0 : 500.0;
 
     return Container(
@@ -108,7 +101,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           /// PREVIEW
           RepaintBoundary(
             key: _previewKey,
-            child: _buildPreview(height, churchLogo),
+            child: _buildPreview(height),
           ),
 
           const SizedBox(height: 20),
@@ -316,7 +309,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  Widget _buildPreview(double height, String churchLogo) {
+  Widget _buildPreview(double height) {
   return GestureDetector(
     behavior: HitTestBehavior.opaque, // 👈 important
     onTap: backgroundType == BackgroundType.image ? pickImage : null,
@@ -439,7 +432,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
               child: Opacity(
                 opacity: 0.85,
                 child: ClipOval(
-                  child: _buildChurchLogo(churchLogo),
+                  child: const ChurchLogoBuilder(size: 38),
                 ),
               ),
             ),
@@ -449,49 +442,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
     ),
   );
 }
-
-  Widget _buildChurchLogo(String churchLogo) {
-    const fallbackAsset = "assets/images/church_logo.png";
-    const logoSize = 38.0;
-    final logo = churchLogo.trim();
-
-    if (logo.isEmpty) {
-      return Image.asset(fallbackAsset, height: logoSize);
-    }
-
-    final isUrl = logo.startsWith('http://') || logo.startsWith('https://');
-    if (isUrl) {
-      return Image.network(
-        logo,
-        height: logoSize,
-        width: logoSize,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return _logoShimmer(logoSize);
-        },
-        errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, height: logoSize),
-      );
-    }
-
-    return Image.asset(
-      logo,
-      height: logoSize,
-      errorBuilder: (_, __, ___) => Image.asset(fallbackAsset, height: logoSize),
-    );
-  }
-
-  Widget _logoShimmer(double size) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
-      child: Container(
-        height: size,
-        width: size,
-        color: Colors.white,
-      ),
-    );
-  }
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
