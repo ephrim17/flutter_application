@@ -52,6 +52,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   double fontSize = 22;
   bool isBold = true;
+  double blurIntensity = 10;
+  int selectedFontStyleIndex = 0;
 
   File? selectedImage;
 
@@ -71,6 +73,14 @@ class _VerseShareModalState extends State<VerseShareModal> {
     Colors.blue,
     Colors.green,
     Colors.orange,
+  ];
+
+  final List<_FontStyleOption> fontStyleOptions = const [
+    _FontStyleOption(label: 'Default', fontFamily: null),
+    _FontStyleOption(label: 'Serif', fontFamily: 'serif'),
+    _FontStyleOption(label: 'Sans', fontFamily: 'sans-serif'),
+    _FontStyleOption(label: 'Mono', fontFamily: 'monospace'),
+    _FontStyleOption(label: 'Rounded', fontFamily: 'Roboto'),
   ];
 
   @override
@@ -202,6 +212,23 @@ class _VerseShareModalState extends State<VerseShareModal> {
                       }).toList(),
                     ),
 
+                  if (backgroundType == BackgroundType.image) ...[
+                    const SizedBox(height: 20),
+                    const Text("Blur"),
+                    Slider(
+                      value: blurIntensity,
+                      min: 0,
+                      max: 24,
+                      divisions: 24,
+                      label: blurIntensity.toStringAsFixed(0),
+                      onChanged: (value) {
+                        setState(() {
+                          blurIntensity = value;
+                        });
+                      },
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
 
                   /// FONT SIZE
@@ -210,11 +237,36 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     value: fontSize,
                     min: 14,
                     max: 30,
+                    divisions: 16,
+                    label: fontSize.toStringAsFixed(0),
                     onChanged: (value) {
                       setState(() {
                         fontSize = value;
                       });
                     },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// FONT STYLE
+                  const Text("Font Style"),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(fontStyleOptions.length, (index) {
+                      final option = fontStyleOptions[index];
+                      final selected = index == selectedFontStyleIndex;
+                      return ChoiceChip(
+                        label: Text(option.label),
+                        selected: selected,
+                        onSelected: (_) {
+                          setState(() {
+                            selectedFontStyleIndex = index;
+                          });
+                        },
+                      );
+                    }),
                   ),
 
                   const SizedBox(height: 20),
@@ -341,7 +393,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
             if (backgroundType == BackgroundType.image &&
                 selectedImage != null)
               BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                filter: ui.ImageFilter.blur(
+                  sigmaX: blurIntensity,
+                  sigmaY: blurIntensity,
+                ),
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.2),
                 ),
@@ -367,12 +422,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     while (adjustedSize > 12) {
                       painter.text = TextSpan(
                         text: "${widget.text}\n\n- ${widget.reference}",
-                        style: TextStyle(
-                          fontSize: adjustedSize,
-                          fontWeight:
-                              isBold ? FontWeight.bold : FontWeight.normal,
-                          color: fontColor,
-                        ),
+                        style: _textStyle(adjustedSize),
                       );
 
                       painter.layout(maxWidth: maxWidth);
@@ -385,12 +435,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     return Text(
                       "${widget.text}\n\n- ${widget.reference}",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: adjustedSize,
-                        fontWeight:
-                            isBold ? FontWeight.bold : FontWeight.normal,
-                        color: fontColor,
-                      ),
+                      style: _textStyle(adjustedSize),
                     );
                   },
                 ),
@@ -493,4 +538,24 @@ class _VerseShareModalState extends State<VerseShareModal> {
       debugPrint("Download error: $e");
     }
   }
+
+  TextStyle _textStyle(double size) {
+    final selectedFont = fontStyleOptions[selectedFontStyleIndex];
+    return TextStyle(
+      fontSize: size,
+      fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+      color: fontColor,
+      fontFamily: selectedFont.fontFamily,
+    );
+  }
+}
+
+class _FontStyleOption {
+  final String label;
+  final String? fontFamily;
+
+  const _FontStyleOption({
+    required this.label,
+    required this.fontFamily,
+  });
 }
