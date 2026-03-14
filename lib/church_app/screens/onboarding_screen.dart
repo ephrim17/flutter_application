@@ -84,8 +84,8 @@ class _OnboardingScreenState
                           mainAxisAlignment:
                               MainAxisAlignment.center,
                           children: [
-                            page.imageUrl.isNotEmpty
-                                ? ClipRRect(
+                           if (page.imageUrl.isNotEmpty)
+                                ClipRRect(
                                     borderRadius:
                                         BorderRadius
                                             .circular(20),
@@ -95,8 +95,7 @@ class _OnboardingScreenState
                                       fit: BoxFit.cover,
                                     ),
                                   )
-                                : const SizedBox(
-                                    height: 260),
+                                ,
                             const SizedBox(height: 40),
                             Text(
                               page.title,

@@ -19,6 +19,18 @@ class ChurchUsersRepository extends ChurchScopedRepository {
     });
   }
 
+  Future<void> updateProfile({
+    required String uid,
+    required String location,
+    required String address,
+  }) async {
+    await collectionRef().doc(uid).update({
+      'location': location.trim(),
+      'address': address.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<String?> getExistingAuthToken(String uid) async {
     final doc = await collectionRef().doc(uid).get();
     if (!doc.exists) return null;

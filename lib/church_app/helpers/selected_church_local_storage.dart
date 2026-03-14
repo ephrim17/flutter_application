@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ChurchLocalStorage {
   static const _churchKey = 'selected_church';
+  static const _churchTopicKey = 'selected_church_topic';
 
   Future<void> saveChurch({
     required String id,
@@ -30,5 +31,20 @@ class ChurchLocalStorage {
   Future<void> clearChurch() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_churchKey);
+  }
+
+  Future<void> saveSubscribedChurchTopic(String topic) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_churchTopicKey, topic);
+  }
+
+  Future<String?> getSubscribedChurchTopic() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_churchTopicKey);
+  }
+
+  Future<void> clearSubscribedChurchTopic() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_churchTopicKey);
   }
 }

@@ -5,6 +5,11 @@ class AppUser {
   final String name;
   final String email;
   final String phone;
+  final String location;
+  final String address;
+  final String gender;
+  final String category;
+  final String familyId;
   final String role;
   final String authToken;
   final DateTime? dob;
@@ -17,6 +22,11 @@ class AppUser {
     required this.role,
     required this.approved,
     required this.phone,
+    required this.location,
+    required this.address,
+    required this.gender,
+    required this.category,
+    required this.familyId,
     required this.authToken,
     required this.dob,
   });
@@ -32,6 +42,11 @@ class AppUser {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'] ?? '',
+      location: data['location'] ?? '',
+      address: data['address'] ?? '',
+      gender: data['gender'] ?? '',
+      category: data['category'] ?? '',
+      familyId: data['familyId'] ?? '',
       authToken: data['authToken'] ?? '',
       dob: dobRaw is Timestamp
           ? dobRaw.toDate()
@@ -51,6 +66,11 @@ class AppUser {
       phone: json['phone'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
+      location: json['location'] ?? '',
+      address: json['address'] ?? '',
+      gender: json['gender'] ?? '',
+      category: json['category'] ?? '',
+      familyId: json['familyId'] ?? '',
       authToken: json['authToken'] ?? '',
       dob: dobRaw is Timestamp
           ? dobRaw.toDate()
@@ -67,6 +87,11 @@ class AppUser {
       'name': name,
       'email': email,
       'phone': phone,
+      'location': location,
+      'address': address,
+      'gender': gender,
+      'category': category,
+      'familyId': familyId,
       'role': role,
       'authToken': authToken,
       'approved': approved,

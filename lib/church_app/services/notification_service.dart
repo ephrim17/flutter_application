@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
@@ -24,8 +25,10 @@ Future<void> handleNotificationSetup({
 
     /// 2️⃣ Show custom sheet if needed
     if (!isAuthorized) {
+      if (!context.mounted) return;
       final shouldRequest =
           await showNotificationPermissionSheet(context);
+      if (!context.mounted) return;
 
       if (shouldRequest != true) return;
 
@@ -54,11 +57,13 @@ Future<void> handleNotificationSetup({
     final churchId =
         await ref.read(currentChurchIdProvider.future);
     if (churchId == null) return;
+    final churchTopic = 'church_$churchId';
 
     final repo = ChurchUsersRepository(
       firestore: ref.read(firestoreProvider),
       churchId: churchId,
     );
+    final localStorage = ChurchLocalStorage();
 
     /// 4️⃣ Update only if changed
     final existingToken =
@@ -71,6 +76,18 @@ Future<void> handleNotificationSetup({
       );
     }
 
+    final previousTopic = await localStorage.getSubscribedChurchTopic();
+    if (previousTopic != null &&
+        previousTopic.isNotEmpty &&
+        previousTopic != churchTopic) {
+      await messaging.unsubscribeFromTopic(previousTopic);
+    }
+
+    if (previousTopic != churchTopic) {
+      await messaging.subscribeToTopic(churchTopic);
+      await localStorage.saveSubscribedChurchTopic(churchTopic);
+    }
+
     /// 5️⃣ Listen for token refresh (scoped)
     FirebaseMessaging.instance.onTokenRefresh.listen(
       (newToken) async {
@@ -78,6 +95,7 @@ Future<void> handleNotificationSetup({
           uid: firebaseUser.uid,
           token: newToken,
         );
+        await messaging.subscribeToTopic(churchTopic);
       },
     );
 
