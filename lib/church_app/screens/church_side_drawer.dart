@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -65,7 +66,10 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(appUserProvider);
-    final items = DrawerMenuItem.values;
+    final isAdmin = ref.watch(isAdminProvider);
+    final items = DrawerMenuItem.values
+        .where((item) => isAdmin || item != DrawerMenuItem.studio)
+        .toList();
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

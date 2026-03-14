@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ShimmerImage extends StatelessWidget {
   final String imageUrl;
@@ -21,32 +20,45 @@ class ShimmerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRemote =
+        imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+
     return AspectRatio(
       aspectRatio: aspectRatio,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        child: CachedNetworkImage(
-          imageUrl: imageUrl,
-          fit: fit,
-          width: double.infinity,
-
-          // Shimmer while loading
-          placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey.shade300,
-            highlightColor: Colors.grey.shade100,
-            child: Container(color: Colors.white),
-          ),
-
-          // Error UI
-          errorWidget: (context, url, error) =>
-              errorWidget ??
-              Container(
-                color: Colors.grey.shade200,
-                child: const Center(
-                  child: Icon(Icons.broken_image, size: 40),
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: isRemote
+            ? CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: fit,
+                width: double.infinity,
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(color: Colors.white),
                 ),
+                errorWidget: (context, url, error) =>
+                    errorWidget ??
+                    Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 40),
+                      ),
+                    ),
+              )
+            : Image.asset(
+                imageUrl,
+                fit: fit,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) =>
+                    errorWidget ??
+                    Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 40),
+                      ),
+                    ),
               ),
-        ),
       ),
     );
   }

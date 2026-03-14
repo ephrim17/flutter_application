@@ -118,6 +118,10 @@ class EventsCard extends StatelessWidget {
               return DetailWidget(
                 title: a.title,
                 description: a.description,
+                contact: a.contact,
+                location: a.location,
+                imageUrl: a.type.imageAsset,
+                timing: a.timing,
               );
             },
           ),
@@ -125,8 +129,8 @@ class EventsCard extends StatelessWidget {
       },
       child: BlurImageTextContainer(
           a.type.imageAsset,
-         a.title,
-          a.description,
+          a.title,
+          "",
           a.type.badgeColor,
           a.type.label,
         ),

@@ -5,9 +5,11 @@ import 'package:flutter_application/church_app/screens/side_drawer/favorite_vers
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/studio_screen.dart';
 
 enum DrawerMenuItem {
   //events,
+  studio,
   prayerRequest,
   members,
   favorites,
@@ -21,6 +23,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
     switch (this) {
       // case DrawerMenuItem.events:
       //   return 'Events';
+      case DrawerMenuItem.studio:
+        return 'Studio';
       case DrawerMenuItem.prayerRequest:
         return 'Prayer Request';
       case DrawerMenuItem.about:
@@ -40,6 +44,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
     switch (this) {
       // case DrawerMenuItem.events:
       //   return Icons.event;
+      case DrawerMenuItem.studio:
+        return Icons.design_services_outlined;
       case DrawerMenuItem.prayerRequest:
         return Icons.volunteer_activism;
       case DrawerMenuItem.about:
@@ -59,6 +65,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
     switch (this) {
       // case DrawerMenuItem.events:
       //   return const EventsScreen();
+      case DrawerMenuItem.studio:
+        return const StudioScreen();
       case DrawerMenuItem.prayerRequest:
         return const PrayerRequestScreen();
       case DrawerMenuItem.about:

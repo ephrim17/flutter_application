@@ -1,80 +1,152 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
+import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
+import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 
-class DetailWidget extends StatefulWidget {
-  const DetailWidget(
-      {super.key,
-      required this.title,
-      required this.description,
-      this.imageUrl});
+class DetailWidget extends StatelessWidget {
+  const DetailWidget({
+    super.key,
+    required this.title,
+    required this.description,
+    this.imageUrl,
+    this.contact,
+    this.location,
+    this.timing,
+  });
 
   final String title;
   final String description;
   final String? imageUrl;
+  final String? contact;
+  final String? location;
+  final String? timing;
 
-  @override
-  State<DetailWidget> createState() => _DetailWidgetState();
-}
-
-class _DetailWidgetState extends State<DetailWidget> {
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context);
+    final hasImage = (imageUrl ?? '').trim().isNotEmpty;
+    final hasLocation = (location ?? '').trim().isNotEmpty;
+    final hasTiming = (timing ?? '').trim().isNotEmpty;
+    final contactItems = <ContactItem>[
+      if ((contact ?? '').trim().isNotEmpty)
+        ContactItem(
+          id: 'detail-contact',
+          label: contact!.trim(),
+          type: 'phone',
+          action: contact!.trim(),
+          order: 0,
+          isActive: true,
+        ),
+      if (hasLocation)
+        ContactItem(
+          id: 'detail-location',
+          label: 'Open location',
+          type: 'location',
+          action: location!.trim(),
+          order: 1,
+          isActive: true,
+        ),
+    ];
 
     return Scaffold(
+      //backgroundColor: Colors.white,
       appBar: AppBar(
-          //title: AppBarTitle(text: widget.title),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: hasImage ? Colors.white : Colors.black,
           ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// 🔹 Image (same 16:9 landscape)
-            if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
-              Container(
-                width: width - 32,
-                height: cardHeight(AnnouncementSection().id),
-                padding: const EdgeInsets.all(5),
-                decoration: carouselBoxDecoration(context),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16), // SAME radius
-                    child: ShimmerImage(
-                      imageUrl: widget.imageUrl!,
-                    ),
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 8.0),
-
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: carouselBoxDecoration(context),
+        ),
+      ),
+      extendBodyBehindAppBar: true,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    widget.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontSize: 24),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    widget.description,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  if (hasImage)
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.38,
+                      child: ShimmerImage(
+                        imageUrl: imageUrl!,
+                        aspectRatio: 1,
+                        borderRadius: 0,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    SizedBox(height: MediaQuery.sizeOf(context).height * 0.16),
+                  Transform.translate(
+                    offset: const Offset(0, -24),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                      //decoration: carouselBoxDecoration(context),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 25,),
+                          Text(
+                            title,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontSize: 28
+                            ),
+                          ),
+                          if (hasTiming) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              timing!.trim(),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                          Text(
+                            description,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          if (contactItems.isNotEmpty)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: carouselBoxDecoration(context),
+                  child: Row(
+                    children: buildContacts(
+                      contactItems,
+                      context,
+                      textStyle: theme.textTheme.bodyMedium?.copyWith(
+                        //color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

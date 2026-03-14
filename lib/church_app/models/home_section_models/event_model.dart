@@ -5,6 +5,9 @@ class Event {
   final String id; // docId
   final String title;
   final String description;
+  final String contact;
+  final String location;
+  final String timing;
   final EventType type;
   final bool isActive;
 
@@ -12,6 +15,9 @@ class Event {
     required this.id,
     required this.title,
     required this.description,
+    required this.contact,
+    required this.location,
+    required this.timing,
     required this.type,
     required this.isActive,
   });
@@ -20,6 +26,9 @@ class Event {
     String? id,
     String? title,
     String? description,
+    String? contact,
+    String? location,
+    String? timing,
     EventType? type,
     bool? isActive,
   }) {
@@ -27,6 +36,9 @@ class Event {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      contact: contact ?? this.contact,
+      location: location ?? this.location,
+      timing: timing ?? this.timing,
       type: type ?? this.type,
       isActive: isActive ?? this.isActive
     );
@@ -36,6 +48,9 @@ class Event {
   Map<String, dynamic> toMap() => {
         'title': title,
         'description': description,
+        'contact': contact,
+        'location': location,
+        'timing': timing,
         'type': type, 
         'isActive': isActive,
       };
@@ -48,6 +63,9 @@ class Event {
       id: doc.id,
       title: (data['title'] ?? '') as String,
       description: (data['description'] ?? '') as String,
+      contact: (data['contact'] ?? '') as String,
+      location: (data['location'] ?? '') as String,
+      timing: (data['timing'] ?? '') as String,
       type: EventTypeX.fromString(data['type'] as String?), 
       isActive: (data['isActive'] ?? true) as bool,
     );

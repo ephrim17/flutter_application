@@ -17,6 +17,80 @@ Icon _iconForType(String type) {
   }
 }
 
+List<Widget> buildContacts(
+  List<ContactItem> contacts,
+  BuildContext context, {
+  bool expanded = true,
+  TextStyle? textStyle,
+}) {
+  return contacts.map((contact) {
+    final child = InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => onContactTap(context, contact),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _iconForType(contact.type),
+              const SizedBox(height: 8),
+              Text(
+                contact.label,
+                textAlign: TextAlign.center,
+                style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!expanded) return child;
+
+    return Expanded(child: child);
+  }).toList();
+}
+
+Future<void> onContactTap(BuildContext context, ContactItem contact) async {
+  final raw = (contact.action.isNotEmpty ? contact.action : contact.label).trim();
+  if (raw.isEmpty) return;
+
+  final uri = buildContactUri(contact.type, raw);
+  if (uri == null) return;
+
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open contact action')),
+    );
+  }
+}
+
+Uri? buildContactUri(String type, String value) {
+  switch (type.toLowerCase()) {
+    case 'email':
+      if (value.startsWith('mailto:')) return Uri.parse(value);
+      return Uri.parse('mailto:$value');
+    case 'phone':
+      if (value.startsWith('tel:')) return Uri.parse(value);
+      return Uri.parse('tel:$value');
+    case 'location':
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        return Uri.parse(value);
+      }
+      return Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(value)}',
+      );
+    default:
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        return Uri.parse(value);
+      }
+      return null;
+  }
+}
+
 class FooterContactsWidget extends ConsumerWidget {
   const FooterContactsWidget({super.key});
 
@@ -40,75 +114,5 @@ class FooterContactsWidget extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  List<Widget> buildContacts(
-    List<ContactItem> contacts,
-    BuildContext context,
-  ) {
-    return contacts.map((contact) {
-      return Expanded(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _onContactTap(context, contact),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _iconForType(contact.type),
-                  const SizedBox(height: 8),
-                  Text(
-                    contact.label,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }).toList();
-  }
-
-  Future<void> _onContactTap(BuildContext context, ContactItem contact) async {
-    final raw = (contact.action.isNotEmpty ? contact.action : contact.label).trim();
-    if (raw.isEmpty) return;
-
-    final uri = _buildContactUri(contact.type, raw);
-    if (uri == null) return;
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open contact action')),
-      );
-    }
-  }
-
-  Uri? _buildContactUri(String type, String value) {
-    switch (type.toLowerCase()) {
-      case 'email':
-        if (value.startsWith('mailto:')) return Uri.parse(value);
-        return Uri.parse('mailto:$value');
-      case 'phone':
-        if (value.startsWith('tel:')) return Uri.parse(value);
-        return Uri.parse('tel:$value');
-      case 'location':
-        if (value.startsWith('http://') || value.startsWith('https://')) {
-          return Uri.parse(value);
-        }
-        return Uri.parse(
-          'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(value)}',
-        );
-      default:
-        if (value.startsWith('http://') || value.startsWith('https://')) {
-          return Uri.parse(value);
-        }
-        return null;
-    }
   }
 }
