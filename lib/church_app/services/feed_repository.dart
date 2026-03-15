@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class FeedRepository {
@@ -74,7 +74,7 @@ class FeedRepository {
     required String userName,
     required String title,
     required String description,
-    File? imageFile,
+    PickedImageData? imageFile,
   }) async {
     final postsRef = FirestorePaths.feedCollection(_firestore, churchId);
 
@@ -96,10 +96,10 @@ class FeedRepository {
           .ref()
           .child('churches/$churchId/feed/${docRef.id}.jpg');
 
-      print("<<< storageRef >>>");
-      print(storageRef);
-
-      await storageRef.putFile(imageFile);
+      await storageRef.putData(
+        imageFile.bytes,
+        _metadataFor(imageFile.name),
+      );
 
       final downloadUrl = await storageRef.getDownloadURL();
 
@@ -115,7 +115,7 @@ class FeedRepository {
     required String postId,
     required String title,
     required String description,
-    File? imageFile,
+    PickedImageData? imageFile,
     String? existingImageUrl,
   }) async {
     String? imageUrl = existingImageUrl;
@@ -125,7 +125,10 @@ class FeedRepository {
           .ref()
           .child('churches/$churchId/posts/$postId.jpg');
 
-      await storageRef.putFile(imageFile);
+      await storageRef.putData(
+        imageFile.bytes,
+        _metadataFor(imageFile.name),
+      );
       imageUrl = await storageRef.getDownloadURL();
     }
 
@@ -160,6 +163,14 @@ class FeedRepository {
     // Always delete the feed document (text/title/description).
     await FirestorePaths.feedCollection(_firestore, churchId).doc(postId).delete();
   }
+}
+
+SettableMetadata _metadataFor(String fileName) {
+  final lower = fileName.toLowerCase();
+  if (lower.endsWith('.png')) return SettableMetadata(contentType: 'image/png');
+  if (lower.endsWith('.webp')) return SettableMetadata(contentType: 'image/webp');
+  if (lower.endsWith('.gif')) return SettableMetadata(contentType: 'image/gif');
+  return SettableMetadata(contentType: 'image/jpeg');
 }
 
 class FeedPageResult {

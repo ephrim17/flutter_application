@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
@@ -56,7 +56,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     required String postId,
     required String title,
     required String description,
-    File? imageFile,
+    PickedImageData? imageFile,
     String? existingImageUrl,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
@@ -99,5 +99,5 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-File? selectedImage;
+PickedImageData? selectedImage;
 final picker = ImagePicker();

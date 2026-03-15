@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
@@ -47,8 +47,10 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
     );
 
     if (image != null) {
+      final picked = await PickedImageData.fromXFile(image);
+      if (picked == null) return;
       setState(() {
-        selectedImage = File(image.path);
+        selectedImage = picked;
       });
     }
   }
@@ -163,10 +165,10 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
               if (selectedImage != null && isCreateMode)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      selectedImage!,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      selectedImage!.bytes,
                       //height: 150,
                       width: double.infinity,
                       fit: BoxFit.cover,

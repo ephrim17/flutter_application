@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class StudioRepository {
@@ -66,7 +65,7 @@ class StudioRepository {
 
   Future<void> createAnnouncement({
     required Map<String, dynamic> data,
-    File? imageFile,
+    PickedImageData? imageFile,
   }) async {
     final docRef = announcementsRef.doc();
 
@@ -91,7 +90,7 @@ class StudioRepository {
   Future<void> updateAnnouncement({
     required String id,
     required Map<String, dynamic> data,
-    File? imageFile,
+    PickedImageData? imageFile,
     String? existingImageUrl,
   }) async {
     var imageUrl = existingImageUrl ?? '';
@@ -126,13 +125,16 @@ class StudioRepository {
 
   Future<String> _uploadAnnouncementImage({
     required String announcementId,
-    required File imageFile,
+    required PickedImageData imageFile,
   }) async {
     final storageRef = _storage
         .ref()
         .child('churches/$churchId/announcements/$announcementId.jpg');
 
-    await storageRef.putFile(imageFile);
+    await storageRef.putData(
+      imageFile.bytes,
+      _metadataFor(imageFile.name),
+    );
     return storageRef.getDownloadURL();
   }
 
@@ -175,4 +177,12 @@ class StudioRepository {
       },
     }, SetOptions(merge: true));
   }
+}
+
+SettableMetadata _metadataFor(String fileName) {
+  final lower = fileName.toLowerCase();
+  if (lower.endsWith('.png')) return SettableMetadata(contentType: 'image/png');
+  if (lower.endsWith('.webp')) return SettableMetadata(contentType: 'image/webp');
+  if (lower.endsWith('.gif')) return SettableMetadata(contentType: 'image/gif');
+  return SettableMetadata(contentType: 'image/jpeg');
 }

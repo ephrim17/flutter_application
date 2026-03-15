@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -522,7 +521,7 @@ Future<void> _showAnnouncementEditor(
   final priorityController =
       TextEditingController(text: '${(data['priority'] ?? 0) as int}');
   final existingImageUrl = (data['imageUrl'] ?? '') as String;
-  File? selectedImage;
+  PickedImageData? selectedImage;
   bool isActive = (data['isActive'] ?? true) as bool;
   var isSaving = false;
 
@@ -575,8 +574,10 @@ Future<void> _showAnnouncementEditor(
                         imageQuality: 85,
                       );
                       if (picked != null) {
+                        final imageData = await PickedImageData.fromXFile(picked);
+                        if (imageData == null) return;
                         setState(() {
-                          selectedImage = File(picked.path);
+                          selectedImage = imageData;
                         });
                       }
                     },
@@ -595,8 +596,8 @@ Future<void> _showAnnouncementEditor(
                         width: double.infinity,
                         constraints: const BoxConstraints(maxHeight: 280),
                         color: Colors.black12,
-                        child: Image.file(
-                          selectedImage!,
+                        child: Image.memory(
+                          selectedImage!.bytes,
                           width: double.infinity,
                           fit: BoxFit.contain,
                         ),

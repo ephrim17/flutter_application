@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
@@ -55,7 +55,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   double blurIntensity = 10;
   int selectedFontStyleIndex = 0;
 
-  File? selectedImage;
+  PickedImageData? selectedImage;
 
   final List<Color> backgroundPalette = [
     const Color(0xFFF5E6E1),
@@ -384,8 +384,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
             /// IMAGE
             if (backgroundType == BackgroundType.image &&
                 selectedImage != null)
-              Image.file(
-                selectedImage!,
+              Image.memory(
+                selectedImage!.bytes,
                 fit: BoxFit.cover,
               ),
 
@@ -493,8 +493,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
     final XFile? file = await picker.pickImage(source: ImageSource.gallery);
 
     if (file != null) {
+      final imageData = await PickedImageData.fromXFile(file);
+      if (imageData == null) return;
       setState(() {
-        selectedImage = File(file.path);
+        selectedImage = imageData;
         backgroundType = BackgroundType.image;
       });
     }
