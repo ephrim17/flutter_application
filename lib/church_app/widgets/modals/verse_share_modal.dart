@@ -2,8 +2,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/file_download.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_builder.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
 
@@ -514,18 +516,29 @@ class _VerseShareModalState extends State<VerseShareModal> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       final pngBytes = byteData!.buffer.asUint8List();
+      final fileName = "daily_verse_${DateTime.now().millisecondsSinceEpoch}.png";
 
-      await Gal.putImageBytes(
-        pngBytes,
-        name: "daily_verse_${DateTime.now().millisecondsSinceEpoch}",
-      );
+      if (kIsWeb) {
+        await downloadBytes(
+          bytes: pngBytes,
+          fileName: fileName,
+          mimeType: 'image/png',
+        );
+      } else {
+        await Gal.putImageBytes(
+          pngBytes,
+          name: "daily_verse_${DateTime.now().millisecondsSinceEpoch}",
+        );
+      }
 
       if (!mounted) return;
 
       /// Show snackbar
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Saved to gallery"),
+        SnackBar(
+          content: Text(
+            kIsWeb ? "Image downloaded" : "Saved to gallery",
+          ),
           duration: Duration(seconds: 2),
         ),
       );
