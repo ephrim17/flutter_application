@@ -50,7 +50,7 @@ class StudioScreen extends ConsumerWidget {
         );
 
         return DefaultTabController(
-          length: 5,
+          length: 8,
           child: Scaffold(
             appBar: AppBar(
               title: const Text('Studio'),
@@ -62,6 +62,9 @@ class StudioScreen extends ConsumerWidget {
                   Tab(text: 'Daily Verse'),
                   Tab(text: 'Articles'),
                   Tab(text: 'Promise'),
+                  Tab(text: 'Notifications'),
+                  Tab(text: 'Admins'),
+                  Tab(text: 'Prompt'),
                 ],
               ),
             ),
@@ -145,6 +148,32 @@ class StudioScreen extends ConsumerWidget {
                       book: book,
                       chapter: chapter,
                       verse: verse,
+                    );
+                  },
+                ),
+                _NotificationComposer(
+                  churchId: churchId,
+                  onSend: ({required title, required body, required topic}) {
+                    return repository.queueTopicNotification(
+                      title: title,
+                      body: body,
+                      topic: topic,
+                    );
+                  },
+                ),
+                _AdminsEditor(
+                  onSave: repository.updateAdmins,
+                ),
+                _PromptSheetEditor(
+                  onSave: ({
+                    required title,
+                    required desc,
+                    required enabled,
+                  }) {
+                    return repository.updatePromptSheet(
+                      title: title,
+                      desc: desc,
+                      enabled: enabled,
                     );
                   },
                 ),
@@ -327,6 +356,372 @@ class _ConfigVerseEditor extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _NotificationComposer extends StatefulWidget {
+  const _NotificationComposer({
+    required this.churchId,
+    required this.onSend,
+  });
+
+  final String churchId;
+  final Future<void> Function({
+    required String title,
+    required String body,
+    required String topic,
+  }) onSend;
+
+  @override
+  State<_NotificationComposer> createState() => _NotificationComposerState();
+}
+
+class _NotificationComposerState extends State<_NotificationComposer> {
+  final _titleController = TextEditingController();
+  final _bodyController = TextEditingController();
+  bool _isSending = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topic = 'church_${widget.churchId}';
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Church Topic Notification',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text('Topic: $topic'),
+                const SizedBox(height: 8),
+                const Text(
+                  'This queues a church-topic notification request in Firestore. A backend sender is still required to deliver it to FCM.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Notification title'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _bodyController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Notification body'),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isSending
+                        ? null
+                        : () async {
+                            setState(() => _isSending = true);
+                            try {
+                              await widget.onSend(
+                                title: _titleController.text.trim(),
+                                body: _bodyController.text.trim(),
+                                topic: topic,
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notification request queued'),
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSending = false);
+                              }
+                            }
+                          },
+                    child: _isSending
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Send Notification'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AdminsEditor extends ConsumerWidget {
+  const _AdminsEditor({
+    required this.onSave,
+  });
+
+  final Future<void> Function(List<String> admins) onSave;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    return configAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(child: Text('Error: $error')),
+      data: (config) => _AdminsEditorForm(
+        initialAdmins: config.admins,
+        onSave: onSave,
+      ),
+    );
+  }
+}
+
+class _AdminsEditorForm extends StatefulWidget {
+  const _AdminsEditorForm({
+    required this.initialAdmins,
+    required this.onSave,
+  });
+
+  final List<String> initialAdmins;
+  final Future<void> Function(List<String> admins) onSave;
+
+  @override
+  State<_AdminsEditorForm> createState() => _AdminsEditorFormState();
+}
+
+class _AdminsEditorFormState extends State<_AdminsEditorForm> {
+  late final TextEditingController _controller;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialAdmins.join('\n'),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Admins',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                const Text('Enter one admin email per line.'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _controller,
+                  maxLines: 10,
+                  decoration: const InputDecoration(
+                    labelText: 'Admin emails',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            setState(() => _isSaving = true);
+                            try {
+                              final admins = _controller.text
+                                  .split('\n')
+                                  .map((value) => value.trim())
+                                  .where((value) => value.isNotEmpty)
+                                  .toList();
+                              await widget.onSave(admins);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Admins updated')),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSaving = false);
+                              }
+                            }
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save Admins'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PromptSheetEditor extends ConsumerWidget {
+  const _PromptSheetEditor({
+    required this.onSave,
+  });
+
+  final Future<void> Function({
+    required String title,
+    required String desc,
+    required bool enabled,
+  }) onSave;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    return configAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(child: Text('Error: $error')),
+      data: (config) => _PromptSheetEditorForm(
+        promptSheet: config.promptSheet,
+        onSave: onSave,
+      ),
+    );
+  }
+}
+
+class _PromptSheetEditorForm extends StatefulWidget {
+  const _PromptSheetEditorForm({
+    required this.promptSheet,
+    required this.onSave,
+  });
+
+  final PromptSheetModel promptSheet;
+  final Future<void> Function({
+    required String title,
+    required String desc,
+    required bool enabled,
+  }) onSave;
+
+  @override
+  State<_PromptSheetEditorForm> createState() => _PromptSheetEditorFormState();
+}
+
+class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descController;
+  late bool _enabled;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.promptSheet.title);
+    _descController = TextEditingController(text: widget.promptSheet.desc);
+    _enabled = widget.promptSheet.enabled;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Prompt Sheet',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Enabled'),
+                  value: _enabled,
+                  onChanged: (value) => setState(() => _enabled = value),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            setState(() => _isSaving = true);
+                            try {
+                              await widget.onSave(
+                                title: _titleController.text.trim(),
+                                desc: _descController.text.trim(),
+                                enabled: _enabled,
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Prompt updated')),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSaving = false);
+                              }
+                            }
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save Prompt'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

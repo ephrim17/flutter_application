@@ -44,6 +44,7 @@ class FirestorePaths {
   static const events = 'events';
   static const pastor = 'pastor';
   static const families = 'families';
+  static const notificationRequests = 'notification_requests';
 
   /// Church document
   static DocumentReference churchDoc(
@@ -79,6 +80,11 @@ class FirestorePaths {
   static CollectionReference<Map<String, dynamic>> churchFamilies(
       FirebaseFirestore firestore, String churchId) {
     return churchDoc(firestore, churchId).collection(families);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchNotificationRequests(
+      FirebaseFirestore firestore, String churchId) {
+    return churchDoc(firestore, churchId).collection(notificationRequests);
   }
 
   /// daily Article subcollection under church

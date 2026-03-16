@@ -1,12 +1,94 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_application/firebase_options.dart';
+
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+const AndroidNotificationChannel _churchMessageChannel =
+    AndroidNotificationChannel(
+  'church_messages',
+  'Church Messages',
+  description: 'Push notifications for church updates and activity',
+  importance: Importance.max,
+);
+
+bool _notificationPresentationInitialized = false;
+bool _notificationListenersAttached = false;
+
+Future<void> initializeNotificationPresentation() async {
+  if (_notificationPresentationInitialized || kIsWeb) {
+    return;
+  }
+
+  const settings = InitializationSettings(
+    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    iOS: DarwinInitializationSettings(),
+  );
+
+  await _localNotifications.initialize(settings);
+
+  await _localNotifications
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_churchMessageChannel);
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  _notificationPresentationInitialized = true;
+}
+
+Future<void> showRemoteMessageNotification(RemoteMessage message) async {
+  if (kIsWeb) {
+    return;
+  }
+
+  await initializeNotificationPresentation();
+
+  final notification = message.notification;
+  final title = notification?.title ?? message.data['title']?.toString();
+  final body = notification?.body ?? message.data['body']?.toString();
+
+  if ((title == null || title.isEmpty) && (body == null || body.isEmpty)) {
+    return;
+  }
+
+  await _localNotifications.show(
+    message.hashCode,
+    title,
+    body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        _churchMessageChannel.id,
+        _churchMessageChannel.name,
+        channelDescription: _churchMessageChannel.description,
+        importance: Importance.max,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+  );
+}
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await showRemoteMessageNotification(message);
+}
 
 Future<void> handleNotificationSetup({
   required BuildContext context,
@@ -15,6 +97,8 @@ Future<void> handleNotificationSetup({
   final messaging = FirebaseMessaging.instance;
 
   try {
+    await initializeNotificationPresentation();
+
     /// 1️⃣ Check permission
     NotificationSettings settings =
         await messaging.getNotificationSettings();
@@ -98,6 +182,25 @@ Future<void> handleNotificationSetup({
         await messaging.subscribeToTopic(churchTopic);
       },
     );
+
+    if (!_notificationListenersAttached) {
+      FirebaseMessaging.onMessage.listen(showRemoteMessageNotification);
+      FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        debugPrint(
+          'Notification opened: ${message.messageId ?? 'unknown-message'}',
+        );
+      });
+
+      final initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint(
+          'Notification opened from terminated state: '
+          '${initialMessage.messageId ?? 'unknown-message'}',
+        );
+      }
+
+      _notificationListenersAttached = true;
+    }
 
   } catch (e) {
     debugPrint("Notification setup error: $e");

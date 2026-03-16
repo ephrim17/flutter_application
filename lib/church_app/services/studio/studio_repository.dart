@@ -35,6 +35,8 @@ class StudioRepository {
 
   DocumentReference<Map<String, dynamic>> get appConfigRef =>
       FirestorePaths.churchAppConfig(firestore, churchId);
+  CollectionReference<Map<String, dynamic>> get notificationRequestsRef =>
+      FirestorePaths.churchNotificationRequests(firestore, churchId);
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchEvents() {
     return eventsRef.snapshots().map((snapshot) => snapshot.docs);
@@ -176,6 +178,40 @@ class StudioRepository {
         'verse': verse,
       },
     }, SetOptions(merge: true));
+  }
+
+  Future<void> updateAdmins(List<String> admins) async {
+    await appConfigRef.set({
+      'admins': admins,
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updatePromptSheet({
+    required String title,
+    required String desc,
+    required bool enabled,
+  }) async {
+    await appConfigRef.set({
+      'promptSheet': {
+        'title': title,
+        'desc': desc,
+        'enabled': enabled,
+      },
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> queueTopicNotification({
+    required String title,
+    required String body,
+    required String topic,
+  }) async {
+    await notificationRequestsRef.add({
+      'title': title,
+      'body': body,
+      'topic': topic,
+      'status': 'queued',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 }
 
