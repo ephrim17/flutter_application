@@ -408,10 +408,6 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                 ),
                 const SizedBox(height: 8),
                 Text('Topic: $topic'),
-                const SizedBox(height: 8),
-                const Text(
-                  'This queues a church-topic notification request in Firestore. A backend sender is still required to deliver it to FCM.',
-                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _titleController,
