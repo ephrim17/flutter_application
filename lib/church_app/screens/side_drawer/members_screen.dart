@@ -8,7 +8,6 @@ import 'package:flutter_application/church_app/providers/members_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MembersScreen extends ConsumerStatefulWidget {
   const MembersScreen({super.key});
@@ -204,7 +203,7 @@ class _FamilyGroupsView extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: ExpansionTile(
-            title: Text(entry.key),
+            title: Text(_formatFamilyHeader(entry.key)),
             subtitle: Text('${members.length} member(s)'),
             children: members
                 .map(
@@ -236,22 +235,12 @@ class _MemberTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      onTap: () => _confirmAndCall(context, member),
       leading: CircleAvatar(
         child: Text(
           member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
         ),
       ),
       title: Text(member.name),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(member.email),
-          Text(member.phone),
-          if (member.familyId.trim().isNotEmpty) Text('Family ID: ${member.familyId}'),
-          if (member.category.trim().isNotEmpty) Text('Category: ${member.category}'),
-        ],
-      ),
       trailing: (isAdmin && member.uid != currentUid)
           ? Switch(
               value: member.approved,
@@ -269,37 +258,6 @@ class _MemberTile extends ConsumerWidget {
             )
           : null,
     );
-  }
-
-  Future<void> _confirmAndCall(BuildContext context, AppUser member) async {
-    if (member.phone.trim().isEmpty) return;
-
-    final shouldCall = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Call Member'),
-        content: Text('Do you want to call ${member.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Call'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldCall != true || !context.mounted) return;
-
-    final launched = await launchUrl(Uri.parse('tel:${member.phone.trim()}'));
-    if (!launched && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to place call')),
-      );
-    }
   }
 }
 
@@ -352,4 +310,32 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
   }
 
   return entries;
+}
+
+String _formatFamilyHeader(String familyId) {
+  final normalized = familyId.trim().toLowerCase();
+  if (normalized.isEmpty || normalized == 'no family id') {
+    return 'Unknown family';
+  }
+
+  var cleaned = normalized
+      .replaceFirst(RegExp(r'^family_'), '')
+      .replaceFirst(RegExp(r'^individual_'), '');
+
+  final parts = cleaned.split('_').where((part) => part.isNotEmpty).toList();
+  if (parts.length > 1) {
+    parts.removeLast();
+  }
+
+  final displayName = parts
+      .map((part) => part[0].toUpperCase() + part.substring(1))
+      .join(' ')
+      .trim();
+
+  if (displayName.isEmpty) {
+    return 'Unknown family';
+  }
+
+  final suffix = displayName.endsWith('s') ? "'" : "'s";
+  return '$displayName$suffix family';
 }

@@ -141,13 +141,54 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         : _nameController.text.trim();
     if (_category.isEmpty || seed.isEmpty) return '';
 
-    final normalizedSeed = seed
+    final normalizedSeed = _normalizeCategorySeed(seed);
+    if (normalizedSeed.isEmpty) return '';
+
+    return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
+  }
+
+  String _normalizeCategorySeed(String value) {
+    final churchSuffix = widget.churchId.toLowerCase();
+    var normalized = value
+        .trim()
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
         .replaceAll(RegExp(r'_+'), '_')
         .replaceAll(RegExp(r'^_|_$'), '');
 
-    return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
+    normalized = normalized
+        .replaceFirst(RegExp(r'^(family|individual)_+'), '')
+        .replaceFirst(RegExp('_$churchSuffix\$'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+
+    return normalized;
+  }
+
+  String _formatFamilyOptionLabel(String familyId) {
+    final normalized = familyId.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return familyId;
+    }
+
+    var cleaned = normalized
+        .replaceFirst(RegExp(r'^family_'), '')
+        .replaceFirst(RegExp(r'^individual_'), '')
+        .replaceFirst(RegExp('_${widget.churchId.toLowerCase()}\$'), '');
+
+    final displayName = cleaned
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1))
+        .join(' ')
+        .trim();
+
+    if (displayName.isEmpty) {
+      return familyId;
+    }
+
+    final suffix = displayName.endsWith('s') ? "'" : "'s";
+    return '$displayName$suffix family';
   }
 
   String? _validateCurrentStep() {
@@ -564,7 +605,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         .map(
                                           (familyId) => DropdownMenuItem(
                                             value: familyId,
-                                            child: Text(familyId),
+                                            child: Text(
+                                              _formatFamilyOptionLabel(familyId),
+                                            ),
                                           ),
                                         )
                                         .toList(),
