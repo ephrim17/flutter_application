@@ -19,30 +19,83 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  // ignore: unused_field
-  late final ProviderSubscription<bool> _birthdayListener;
+  ProviderSubscription<PromptSheetModel?>? _announcementListener;
+  ProviderSubscription<bool>? _birthdayListener;
+  bool _isPromptOpen = false;
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final announcement = ref.read(isAnnouncementEnabledProvider);
-      if (announcement?.enabled ?? false) {
-        // ⏳ Wait until announcement sheet closes
-        await showPromptSheet(PromptType.announcement, announcement);
-      }
-
-      // 🎂 Now check birthday AFTER announcement
-      _birthdayListener = ref.listenManual<bool>(
-        isBirthdayProvider,
-        (previous, next) {
-          if (next == true) {
-            showPromptSheet(PromptType.birthday, null);
+      _announcementListener = ref.listenManual<PromptSheetModel?>(
+        isAnnouncementEnabledProvider,
+        (previous, next) async {
+          if (next?.enabled ?? false) {
+            await _maybeShowPrompt(
+              PromptType.announcement,
+              promptSheetModel: next,
+            );
           }
         },
       );
+
+      _birthdayListener = ref.listenManual<bool>(
+        isBirthdayProvider,
+        (previous, next) async {
+          if (next == true) {
+            await _maybeShowPrompt(PromptType.birthday);
+          }
+        },
+      );
+
+      await _showInitialPrompts();
     });
+  }
+
+  @override
+  void dispose() {
+    _announcementListener?.close();
+    _birthdayListener?.close();
+    super.dispose();
+  }
+
+  Future<void> _showInitialPrompts() async {
+    final announcement = ref.read(isAnnouncementEnabledProvider);
+    if (announcement?.enabled ?? false) {
+      await _maybeShowPrompt(
+        PromptType.announcement,
+        promptSheetModel: announcement,
+      );
+    }
+
+    if (ref.read(isBirthdayProvider) == true) {
+      await _maybeShowPrompt(PromptType.birthday);
+    }
+  }
+
+  Future<void> _maybeShowPrompt(
+    PromptType sheetType, {
+    PromptSheetModel? promptSheetModel,
+  }) async {
+    if (!mounted || _isPromptOpen) return;
+
+    final key = promptSessionKey(sheetType, promptSheetModel);
+    final shownPrompts = ref.read(promptSessionShownProvider);
+
+    if (shownPrompts.contains(key)) return;
+
+    ref.read(promptSessionShownProvider.notifier).state = {
+      ...shownPrompts,
+      key,
+    };
+    _isPromptOpen = true;
+
+    try {
+      await showPromptSheet(sheetType, promptSheetModel);
+    } finally {
+      _isPromptOpen = false;
+    }
   }
 
   Future<dynamic> showPromptSheet(PromptType sheetType, PromptSheetModel? promptSheetModel) {

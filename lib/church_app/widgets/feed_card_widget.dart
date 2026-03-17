@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/widgets/linkified_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:intl/intl.dart';
 
@@ -97,8 +98,8 @@ class FeedCard extends ConsumerWidget {
             const SizedBox(height: 8),
 
             /// DESCRIPTION
-            Text(
-              post.description,
+            LinkifiedText(
+              text: post.description,
               style: const TextStyle(fontSize: 14),
             ),
 

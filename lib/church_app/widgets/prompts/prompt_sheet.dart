@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/prompts/announcement_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/legacy.dart';
 
 class PromptSheet extends StatelessWidget {
   final PromptType type;
@@ -47,6 +48,21 @@ enum PromptType {
   announcement,
 }
 
+final promptSessionShownProvider = StateProvider<Set<String>>(
+  (ref) => <String>{},
+);
+
+String promptSessionKey(PromptType type, [PromptSheetModel? promptSheetModel]) {
+  switch (type) {
+    case PromptType.birthday:
+      return 'birthday';
+    case PromptType.announcement:
+      final title = promptSheetModel?.title.trim() ?? '';
+      final desc = promptSheetModel?.desc.trim() ?? '';
+      return 'announcement:$title|$desc';
+  }
+}
+
 final isBirthdayProvider = Provider<bool>((ref) {
   final user = ref.watch(getCurrentUserProvider).value;
   final now = ref.watch(todayProvider).value ?? DateTime.now();
@@ -76,4 +92,3 @@ final isAnnouncementEnabledProvider = Provider<PromptSheetModel?>((ref) {
     orElse: () => null,
   );
 });
-

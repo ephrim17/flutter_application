@@ -88,8 +88,8 @@ export const notifyOnFeedPostCreated = onDocumentCreated(
     const userName = String(data.userName ?? "").trim() || "Someone";
 
     await sendTopicNotification({
-      title: "New Feed Post",
-      body: `User ${userName} has posted a new feed`,
+      title: `User ${userName} has posted a new feed`,
+      body: "Tap to see more",
       topic: `church_${churchId}`,
     });
   }
