@@ -48,6 +48,13 @@ class _LinkifiedTextState extends State<LinkifiedText> {
           decoration: TextDecoration.underline,
         );
 
+    if (!_urlPattern.hasMatch(widget.text)) {
+      return Text(
+        widget.text,
+        style: defaultStyle,
+      );
+    }
+
     return RichText(
       text: TextSpan(
         style: defaultStyle,
