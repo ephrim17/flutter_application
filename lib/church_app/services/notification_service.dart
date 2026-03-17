@@ -93,6 +93,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> handleNotificationSetup({
   required BuildContext context,
   required WidgetRef ref,
+  bool promptIfNeeded = true,
 }) async {
   final messaging = FirebaseMessaging.instance;
 
@@ -109,6 +110,8 @@ Future<void> handleNotificationSetup({
 
     /// 2️⃣ Show custom sheet if needed
     if (!isAuthorized) {
+      if (!promptIfNeeded) return;
+
       if (!context.mounted) return;
       final shouldRequest =
           await showNotificationPermissionSheet(context);

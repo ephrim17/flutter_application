@@ -181,6 +181,18 @@ const Map<String, String> defaultTextContentValues = {
   'settings.profile_updated': 'Profile updated',
   'settings.delete_account': 'Delete Account',
   'settings.delete_account_subtitle': 'Permanently remove your account and user data',
+  'settings.push_notifications': 'Push Notifications',
+  'settings.push_enabled': 'Enabled and synced for church updates',
+  'settings.push_provisional': 'Enabled with provisional permission',
+  'settings.push_not_determined': 'Not enabled yet',
+  'settings.push_blocked': 'Blocked at system level. Open settings to enable.',
+  'settings.push_manage': 'Manage',
+  'settings.push_enable': 'Enable',
+  'settings.push_refresh': 'Refresh',
+  'settings.push_not_signed_in': 'Sign in to manage push notifications',
+  'settings.push_no_church': 'Select a church before enabling notifications',
+  'settings.push_status_unavailable':
+      'Unable to check notification status right now',
 
   // Common
   'common.error_prefix': 'Error',

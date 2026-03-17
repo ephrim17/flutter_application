@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
@@ -10,11 +11,13 @@ import 'package:flutter_application/church_app/providers/for_you_sections/favori
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
+import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -38,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
                   children: const [
                     _EditProfileSection(),
                     _AppearanceSection(),
+                    _PushNotificationSection(),
                     _PrayerReminderSection(),
                     _StorageSection(),
                     _DeleteAccountSection(),
@@ -175,6 +179,199 @@ class _AppearanceSection extends ConsumerWidget {
       onChanged: (value) {
         ref.read(themeProvider.notifier).toggle(value);
       },
+    );
+  }
+}
+
+class _PushNotificationSection extends ConsumerStatefulWidget {
+  const _PushNotificationSection();
+
+  @override
+  ConsumerState<_PushNotificationSection> createState() =>
+      _PushNotificationSectionState();
+}
+
+class _PushNotificationSectionState
+    extends ConsumerState<_PushNotificationSection>
+    with WidgetsBindingObserver {
+  NotificationSettings? _settings;
+  bool _isLoading = true;
+  bool _isBusy = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadStatus();
+    }
+  }
+
+  Future<void> _loadStatus() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      if (!mounted) return;
+      setState(() {
+        _settings = settings;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = ref.t(
+          'settings.push_status_unavailable',
+          fallback: 'Unable to check notification status right now',
+        );
+      });
+    }
+  }
+
+  bool get _isAuthorized {
+    final status = _settings?.authorizationStatus;
+    return status == AuthorizationStatus.authorized ||
+        status == AuthorizationStatus.provisional;
+  }
+
+  String _subtitleText() {
+    if (_errorMessage != null) {
+      return _errorMessage!;
+    }
+
+    if (_settings == null) {
+      return ref.t('common.loading', fallback: 'Loading...');
+    }
+
+    switch (_settings!.authorizationStatus) {
+      case AuthorizationStatus.authorized:
+        return ref.t(
+          'settings.push_enabled',
+          fallback: 'Enabled and synced for church updates',
+        );
+      case AuthorizationStatus.provisional:
+        return ref.t(
+          'settings.push_provisional',
+          fallback: 'Enabled with provisional permission',
+        );
+      case AuthorizationStatus.denied:
+        return ref.t(
+          'settings.push_blocked',
+          fallback: 'Blocked at system level. Open settings to enable.',
+        );
+      case AuthorizationStatus.notDetermined:
+        return ref.t(
+          'settings.push_not_determined',
+          fallback: 'Not enabled yet',
+        );
+    }
+  }
+
+  Future<void> _handleAction() async {
+    if (_isBusy) return;
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.push_not_signed_in',
+              fallback: 'Sign in to manage push notifications',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (!mounted) return;
+    if (churchId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.push_no_church',
+              fallback: 'Select a church before enabling notifications',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final status = _settings?.authorizationStatus;
+
+    setState(() {
+      _isBusy = true;
+    });
+
+    try {
+      if (status == AuthorizationStatus.denied) {
+        await openAppSettings();
+      } else {
+        await handleNotificationSetup(context: context, ref: ref);
+      }
+    } finally {
+      await _loadStatus();
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actionLabel = _settings?.authorizationStatus == AuthorizationStatus.denied
+        ? ref.t('settings.push_manage', fallback: 'Manage')
+        : _isAuthorized
+            ? ref.t('settings.push_refresh', fallback: 'Refresh')
+            : ref.t('settings.push_enable', fallback: 'Enable');
+
+    return ListTile(
+      leading: const Icon(Icons.notifications_outlined),
+      title: Text(
+        ref.t('settings.push_notifications', fallback: 'Push Notifications'),
+      ),
+      subtitle: Text(_subtitleText()),
+      trailing: _isLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : TextButton(
+              onPressed: _isBusy ? null : _handleAction,
+              child: _isBusy
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(actionLabel),
+            ),
     );
   }
 }

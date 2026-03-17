@@ -44,6 +44,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       await handleNotificationSetup(
         context: context,
         ref: ref,
+        promptIfNeeded: false,
       );
     });
   }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -57,6 +59,24 @@ class LoginScreen extends ConsumerWidget {
         .get();
 
     return snapshot.docs.isNotEmpty;
+  }
+
+  Future<void> _ensureNotificationsAfterLogin(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    final isAuthorized =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    if (!context.mounted) return;
+
+    await handleNotificationSetup(
+      context: context,
+      ref: ref,
+      promptIfNeeded: !isAuthorized,
+    );
   }
 
   @override
@@ -165,6 +185,9 @@ class LoginScreen extends ConsumerWidget {
                             );
                             return;
                           }
+
+                          await _ensureNotificationsAfterLogin(context, ref);
+                          if (!context.mounted) return;
 
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => const AppEntry()),
