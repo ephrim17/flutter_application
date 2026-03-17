@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class EventsRepository extends ChurchScopedRepository{
   EventsRepository({
@@ -9,11 +10,8 @@ class EventsRepository extends ChurchScopedRepository{
   });
 
  CollectionReference<Event> collectionRef() {
-    return 
-      firestore
-      .collection('churches')
-      .doc('tnbm')
-      .collection('events')
+    return
+      FirestorePaths.churchEvents(firestore, churchId)
         .withConverter<Event>(
           fromFirestore: (snap, _) => Event.fromFirestore(snap),
           toFirestore: (a, _) => a.toMap(),
