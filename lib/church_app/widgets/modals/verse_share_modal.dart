@@ -47,6 +47,8 @@ class VerseShareModal extends StatefulWidget {
 }
 
 class _VerseShareModalState extends State<VerseShareModal> {
+  static const double _downloadScaleMultiplier = 3.6;
+
   final GlobalKey _previewKey = GlobalKey();
   final TextEditingController _storyCaptionController = TextEditingController();
 
@@ -673,7 +675,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
       final boundary = _previewKey.currentContext!.findRenderObject()
           as RenderRepaintBoundary;
 
-      final image = await boundary.toImage(pixelRatio: 3);
+      final image = await boundary.toImage(
+        pixelRatio: _downloadScaleMultiplier,
+      );
 
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 

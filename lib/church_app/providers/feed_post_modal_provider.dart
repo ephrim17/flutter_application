@@ -25,6 +25,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   Future<void> createPost({
     required String title,
     required String description,
+    PickedImageData? imageFile,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
@@ -47,7 +48,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         userName: user.name,
         title: title,
         description: description,
-        imageFile: selectedImage,
+        imageFile: imageFile,
       );
     });
   }

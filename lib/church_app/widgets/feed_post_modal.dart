@@ -10,8 +10,22 @@ import 'package:image_picker/image_picker.dart';
 class CreatePostModal extends ConsumerStatefulWidget {
   final FeedPost? post;
   final bool? edit; // 👈 if not null → edit mode
+  final String? initialTitle;
+  final String? initialDescription;
+  final PickedImageData? initialImage;
+  final bool requireImage;
+  final bool allowImagePicking;
 
-  const CreatePostModal({super.key, this.post, this.edit});
+  const CreatePostModal({
+    super.key,
+    this.post,
+    this.edit,
+    this.initialTitle,
+    this.initialDescription,
+    this.initialImage,
+    this.requireImage = false,
+    this.allowImagePicking = true,
+  });
 
   @override
   ConsumerState<CreatePostModal> createState() => _CreatePostModalState();
@@ -24,11 +38,14 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   @override
   void initState() {
     super.initState();
-    selectedImage = null;
+    selectedImage = widget.initialImage;
 
     if (widget.post != null) {
       _titleController.text = widget.post!.title;
       _descriptionController.text = widget.post!.description;
+    } else {
+      _titleController.text = widget.initialTitle ?? '';
+      _descriptionController.text = widget.initialDescription ?? '';
     }
   }
 
@@ -148,15 +165,17 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
               
               Align(
                 alignment: Alignment.centerLeft,
-                child: isCreateMode
+                child: isCreateMode && widget.allowImagePicking
                     ? TextButton.icon(
                         onPressed: _pickImage,
                         icon: const Icon(Icons.image),
                         label: Text(
-                          ref.t(
-                            'feed.add_image_optional',
-                            fallback: 'Add Image (Optional)',
-                          ),
+                          widget.requireImage
+                              ? 'Change Image'
+                              : ref.t(
+                                  'feed.add_image_optional',
+                                  fallback: 'Add Image (Optional)',
+                                ),
                         ),
                       )
                     : null,
@@ -185,9 +204,10 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                           final title = _titleController.text.trim();
                           final description =
                               _descriptionController.text.trim();
+                          final messenger = ScaffoldMessenger.of(context);
 
                           if (title.isEmpty || description.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
                                   ref.t(
@@ -200,8 +220,16 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             return;
                           }
 
+                          if (widget.requireImage && selectedImage == null) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('An image is required for this post'),
+                              ),
+                            );
+                            return;
+                          }
+
                           final navigator = Navigator.of(context);
-                          final messenger = ScaffoldMessenger.of(context);
                           try {
                             if (widget.post == null) {
                               /// CREATE
@@ -210,6 +238,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                   .createPost(
                                     title: title,
                                     description: description,
+                                    imageFile: selectedImage,
                                   );
                             } else {
                               /// UPDATE

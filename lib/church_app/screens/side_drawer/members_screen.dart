@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/members_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MembersScreen extends ConsumerStatefulWidget {
@@ -31,6 +32,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
     final membersAsync = ref.watch(membersProvider);
     final isAdmin = ref.watch(isAdminProvider);
     final currentUid = ref.watch(firebaseAuthProvider).currentUser?.uid;
+    final allMembers = membersAsync.asData?.value ?? const <AppUser>[];
+    final todayBirthdays = allMembers.where((member) => isBirthdayToday(member.dob)).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return DefaultTabController(
       length: 3,
@@ -47,6 +51,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
             ],
           ),
         ),
+        floatingActionButton: isAdmin
+            ? FloatingActionButton.extended(
+                onPressed: () => showTodayBirthdaysModal(
+                  context,
+                  members: todayBirthdays,
+                ),
+                icon: const Icon(Icons.cake_outlined),
+                label: Text('Birthdays (${todayBirthdays.length})'),
+              )
+            : null,
         body: membersAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
