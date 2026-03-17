@@ -17,8 +17,8 @@ class AuthRepository {
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'Login failed');
+    } on FirebaseAuthException {
+      rethrow;
     }
   }
 

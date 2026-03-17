@@ -9,6 +9,11 @@ String mapFirebaseAuthError(Object e) {
         return 'No account found with this email.';
       case 'wrong-password':
         return 'Incorrect password. Please try again.';
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        return 'Incorrect email or password. Please try again.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
       case 'email-already-in-use':
         return 'This email is already registered.';
       case 'weak-password':

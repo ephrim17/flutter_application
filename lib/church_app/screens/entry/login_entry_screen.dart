@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
@@ -18,6 +22,42 @@ class LoginScreen extends ConsumerWidget {
     required this.churchName,
   });
 
+  Future<bool> _showRegisterPrompt(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('User not found'),
+            content: const Text(
+              'No registered user was found for this church. Would you like to register as a new user?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Register'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<bool> _churchUserExistsByEmail(
+    WidgetRef ref, {
+    required String churchId,
+    required String email,
+  }) async {
+    final snapshot = await FirestorePaths
+        .churchUsers(ref.read(firestoreProvider), churchId)
+        .where('email', isEqualTo: email.trim())
+        .limit(1)
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,16 +102,22 @@ class LoginScreen extends ConsumerWidget {
                 onPressed: isLoading
                     ? null
                     : () async {
-                        if (emailCtrl.text.isEmpty ||
-                            passCtrl.text.length < 6) {
+                        final email = emailCtrl.text.trim();
+                        final password = passCtrl.text;
+
+                        if (email.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  ref.t(
-                                    'auth.login_validation',
-                                    fallback:
-                                        'Please fill all fields (password min 6 chars)',
-                                  )),
+                            const SnackBar(
+                              content: Text('Please enter your email address.'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (password.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter your password.'),
                             ),
                           );
                           return;
@@ -80,16 +126,99 @@ class LoginScreen extends ConsumerWidget {
                             true;
                         try {
                           await ref.read(authRepositoryProvider).signIn(
-                                email: emailCtrl.text.trim(),
-                                password: passCtrl.text,
+                                email: email,
+                                password: password,
                               );
+
+                          final firebaseUser =
+                              ref.read(firebaseAuthProvider).currentUser;
+                          if (firebaseUser == null) {
+                            throw Exception('Unable to fetch logged in user');
+                          }
+
+                          final userDoc = await FirestorePaths.churchUserDoc(
+                            ref.read(firestoreProvider),
+                            churchId,
+                            firebaseUser.uid,
+                          ).get();
 
                           ref.read(logginAccessLoadingProvider.notifier).state =
                               false;
                           if (!context.mounted) return;
+
+                          if (!userDoc.exists) {
+                            await ref.read(firebaseAuthProvider).signOut();
+                            if (!context.mounted) return;
+
+                            final shouldRegister =
+                                await _showRegisterPrompt(context);
+
+                            if (!context.mounted || !shouldRegister) return;
+
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => LoginRequestScreen(
+                                  churchId: churchId,
+                                  churchName: churchName,
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => const AppEntry()),
                             (route) => false,
+                          );
+                        } on FirebaseAuthException catch (e) {
+                          ref.read(logginAccessLoadingProvider.notifier).state =
+                              false;
+
+                          if (!context.mounted) return;
+
+                          if (e.code == 'invalid-email') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(mapFirebaseAuthError(e))),
+                            );
+                            return;
+                          }
+
+                          if (e.code == 'network-request-failed' ||
+                              e.code == 'too-many-requests' ||
+                              e.code == 'operation-not-allowed' ||
+                              e.code == 'user-disabled') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(mapFirebaseAuthError(e))),
+                            );
+                            return;
+                          }
+
+                          final userExistsInChurch = await _churchUserExistsByEmail(
+                            ref,
+                            churchId: churchId,
+                            email: email,
+                          );
+
+                          if (!context.mounted) return;
+
+                          if (!userExistsInChurch) {
+                            final shouldRegister =
+                                await _showRegisterPrompt(context);
+                            if (!context.mounted || !shouldRegister) return;
+
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => LoginRequestScreen(
+                                  churchId: churchId,
+                                  churchName: churchName,
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(mapFirebaseAuthError(e))),
                           );
                         } catch (e) {
                           ref.read(logginAccessLoadingProvider.notifier).state =
