@@ -1,0 +1,246 @@
+{
+  "month": "April",
+  "monthIndex": 4,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "Numbers", "chapters": "15" },
+        { "book": "Proverbs", "chapters": "11" },
+        { "book": "Luke", "chapters": "24" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "Numbers", "chapters": "16" },
+        { "book": "Proverbs", "chapters": "12" },
+        { "book": "Galatians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Numbers", "chapters": "17-18" },
+        { "book": "Proverbs", "chapters": "13" },
+        { "book": "Galatians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Numbers", "chapters": "19" },
+        { "book": "Proverbs", "chapters": "14" },
+        { "book": "Galatians", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Numbers", "chapters": "20-21" },
+        { "book": "Proverbs", "chapters": "15" },
+        { "book": "Ephesians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Numbers", "chapters": "22-23" },
+        { "book": "Proverbs", "chapters": "16" },
+        { "book": "Ephesians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Numbers", "chapters": "24-25" },
+        { "book": "Proverbs", "chapters": "17" },
+        { "book": "Ephesians", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Numbers", "chapters": "26" },
+        { "book": "Proverbs", "chapters": "18" },
+        { "book": "Philippians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Numbers", "chapters": "27" },
+        { "book": "Proverbs", "chapters": "19" },
+        { "book": "Philippians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Numbers", "chapters": "28" },
+        { "book": "Proverbs", "chapters": "20" },
+        { "book": "John", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Numbers", "chapters": "29-30" },
+        { "book": "Proverbs", "chapters": "21" },
+        { "book": "John", "chapters": "2-3" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Numbers", "chapters": "31" },
+        { "book": "Proverbs", "chapters": "22" },
+        { "book": "John", "chapters": "4" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Numbers", "chapters": "32" },
+        { "book": "Proverbs", "chapters": "23" },
+        { "book": "John", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Numbers", "chapters": "33" },
+        { "book": "Proverbs", "chapters": "24" },
+        { "book": "John", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Numbers", "chapters": "34" },
+        { "book": "Proverbs", "chapters": "25" },
+        { "book": "John", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Numbers", "chapters": "35" },
+        { "book": "Proverbs", "chapters": "26" },
+        { "book": "John", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Numbers", "chapters": "36" },
+        { "book": "Proverbs", "chapters": "27" },
+        { "book": "John", "chapters": "9-10" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "1" },
+        { "book": "Proverbs", "chapters": "28" },
+        { "book": "John", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "2" },
+        { "book": "Proverbs", "chapters": "29" },
+        { "book": "John", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "3" },
+        { "book": "Proverbs", "chapters": "30" },
+        { "book": "John", "chapters": "13-14" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "4" },
+        { "book": "Proverbs", "chapters": "31" },
+        { "book": "John", "chapters": "15-16" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "5" },
+        { "book": "Ecclesiastes", "chapters": "1" },
+        { "book": "John", "chapters": "17-18" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "6-7" },
+        { "book": "Ecclesiastes", "chapters": "2" },
+        { "book": "John", "chapters": "19" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "8-9" },
+        { "book": "Ecclesiastes", "chapters": "3" },
+        { "book": "John", "chapters": "20-21" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "10-11" },
+        { "book": "Ecclesiastes", "chapters": "4" },
+        { "book": "Acts", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "12" },
+        { "book": "Ecclesiastes", "chapters": "5" },
+        { "book": "Acts", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "13-14" },
+        { "book": "Ecclesiastes", "chapters": "6" },
+        { "book": "Acts", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "15" },
+        { "book": "Ecclesiastes", "chapters": "7" },
+        { "book": "Acts", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "16" },
+        { "book": "Ecclesiastes", "chapters": "8" },
+        { "book": "Acts", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "17" },
+        { "book": "Ecclesiastes", "chapters": "9" },
+        { "book": "Acts", "chapters": "8" }
+      ]
+    }
+  ]
+}

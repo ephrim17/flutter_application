@@ -21,12 +21,20 @@ class ChurchUsersRepository extends ChurchScopedRepository {
 
   Future<void> updateProfile({
     required String uid,
+    required String phone,
     required String location,
     required String address,
+    required String category,
+    required String familyId,
+    required DateTime? dob,
   }) async {
     await collectionRef().doc(uid).update({
+      'phone': phone.trim(),
       'location': location.trim(),
       'address': address.trim(),
+      'category': category.trim(),
+      'familyId': familyId.trim(),
+      'dob': dob != null ? Timestamp.fromDate(dob) : null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

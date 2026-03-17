@@ -1,0 +1,254 @@
+{
+  "month": "July",
+  "monthIndex": 7,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "13" },
+        { "book": "Isaiah", "chapters": "56-57" },
+        { "book": "Revelation", "chapters": "21-22" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "14" },
+        { "book": "Isaiah", "chapters": "58" },
+        { "book": "Matthew", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "15" },
+        { "book": "Isaiah", "chapters": "59" },
+        { "book": "Matthew", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "16" },
+        { "book": "Isaiah", "chapters": "60" },
+        { "book": "Matthew", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "17" },
+        { "book": "Isaiah", "chapters": "61" },
+        { "book": "Matthew", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "18" },
+        { "book": "Isaiah", "chapters": "62" },
+        { "book": "Matthew", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "19" },
+        { "book": "Isaiah", "chapters": "63" },
+        { "book": "Matthew", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "20" },
+        { "book": "Isaiah", "chapters": "64" },
+        { "book": "Matthew", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "21-22" },
+        { "book": "Isaiah", "chapters": "65" },
+        { "book": "Matthew", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "23" },
+        { "book": "Isaiah", "chapters": "66" },
+        { "book": "Matthew", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "24" },
+        { "book": "Jeremiah", "chapters": "1" },
+        { "book": "Matthew", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "25" },
+        { "book": "Jeremiah", "chapters": "2" },
+        { "book": "Matthew", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "26-27" },
+        { "book": "Jeremiah", "chapters": "3" },
+        { "book": "Matthew", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "28" },
+        { "book": "Jeremiah", "chapters": "4" },
+        { "book": "Matthew", "chapters": "15" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "29-30" },
+        { "book": "Jeremiah", "chapters": "5" },
+        { "book": "Matthew", "chapters": "16" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "31" },
+        { "book": "Jeremiah", "chapters": "6" },
+        { "book": "Matthew", "chapters": "17" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "1" },
+        { "book": "Jeremiah", "chapters": "7" },
+        { "book": "Matthew", "chapters": "18" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "2" },
+        { "book": "Jeremiah", "chapters": "8" },
+        { "book": "Matthew", "chapters": "19" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "3" },
+        { "book": "Jeremiah", "chapters": "9" },
+        { "book": "Matthew", "chapters": "20" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "4-5" },
+        { "book": "Jeremiah", "chapters": "10" },
+        { "book": "Matthew", "chapters": "21" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "6" },
+        { "book": "Jeremiah", "chapters": "11" },
+        { "book": "Matthew", "chapters": "22" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "7" },
+        { "book": "Jeremiah", "chapters": "12" },
+        { "book": "Matthew", "chapters": "23" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "8-9" },
+        { "book": "Jeremiah", "chapters": "13" },
+        { "book": "Matthew", "chapters": "24" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "10" },
+        { "book": "Jeremiah", "chapters": "14" },
+        { "book": "Matthew", "chapters": "25" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "11" },
+        { "book": "Jeremiah", "chapters": "15" },
+        { "book": "Matthew", "chapters": "26" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "12" },
+        { "book": "Jeremiah", "chapters": "16" },
+        { "book": "Matthew", "chapters": "27" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "13" },
+        { "book": "Jeremiah", "chapters": "17" },
+        { "book": "Matthew", "chapters": "28" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "14" },
+        { "book": "Jeremiah", "chapters": "18" },
+        { "book": "Romans", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "15" },
+        { "book": "Jeremiah", "chapters": "19" },
+        { "book": "Romans", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "16" },
+        { "book": "Jeremiah", "chapters": "20" },
+        { "book": "Romans", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "17" },
+        { "book": "Jeremiah", "chapters": "21" },
+        { "book": "Romans", "chapters": "7-8" }
+      ]
+    }
+  ]
+}

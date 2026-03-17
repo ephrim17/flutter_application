@@ -1,0 +1,247 @@
+{
+  "month": "June",
+  "monthIndex": 6,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "Joshua", "chapters": "18" },
+        { "book": "Isaiah", "chapters": "24" },
+        { "book": "Hebrews", "chapters": "6-7" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "Joshua", "chapters": "19" },
+        { "book": "Isaiah", "chapters": "25" },
+        { "book": "Hebrews", "chapters": "8-9" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Joshua", "chapters": "20-21" },
+        { "book": "Isaiah", "chapters": "26-27" },
+        { "book": "Hebrews", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Joshua", "chapters": "22" },
+        { "book": "Isaiah", "chapters": "28" },
+        { "book": "Hebrews", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Joshua", "chapters": "23-24" },
+        { "book": "Isaiah", "chapters": "29" },
+        { "book": "Hebrews", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Judges", "chapters": "1" },
+        { "book": "Isaiah", "chapters": "30" },
+        { "book": "Hebrews", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Judges", "chapters": "2-3" },
+        { "book": "Isaiah", "chapters": "31" },
+        { "book": "James", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Judges", "chapters": "4-5" },
+        { "book": "Isaiah", "chapters": "32" },
+        { "book": "James", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Judges", "chapters": "6" },
+        { "book": "Isaiah", "chapters": "33" },
+        { "book": "James", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Judges", "chapters": "7-8" },
+        { "book": "Isaiah", "chapters": "34" },
+        { "book": "James", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Judges", "chapters": "9" },
+        { "book": "Isaiah", "chapters": "35" },
+        { "book": "1 Peter", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Judges", "chapters": "10-11" },
+        { "book": "Isaiah", "chapters": "36" },
+        { "book": "1 Peter", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Judges", "chapters": "12-13" },
+        { "book": "Isaiah", "chapters": "37" },
+        { "book": "1 Peter", "chapters": "3-5" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Judges", "chapters": "14-15" },
+        { "book": "Isaiah", "chapters": "38" },
+        { "book": "2 Peter", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Judges", "chapters": "16" },
+        { "book": "Isaiah", "chapters": "39" },
+        { "book": "2 Peter", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Judges", "chapters": "17-18" },
+        { "book": "Isaiah", "chapters": "40" },
+        { "book": "1 John", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Judges", "chapters": "19" },
+        { "book": "Isaiah", "chapters": "41" },
+        { "book": "1 John", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Judges", "chapters": "20" },
+        { "book": "Isaiah", "chapters": "42" },
+        { "book": "1 John", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Judges", "chapters": "21" },
+        { "book": "Isaiah", "chapters": "43" },
+        { "book": "2 John", "chapters": "1" },
+        { "book": "3 John", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Ruth", "chapters": "1-2" },
+        { "book": "Isaiah", "chapters": "44" },
+        { "book": "Jude", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Ruth", "chapters": "3-4" },
+        { "book": "Isaiah", "chapters": "45" },
+        { "book": "Revelation", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "1" },
+        { "book": "Isaiah", "chapters": "46-47" },
+        { "book": "Revelation", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "2" },
+        { "book": "Isaiah", "chapters": "48" },
+        { "book": "Revelation", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "3" },
+        { "book": "Isaiah", "chapters": "49" },
+        { "book": "Revelation", "chapters": "7-9" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "4" },
+        { "book": "Isaiah", "chapters": "50" },
+        { "book": "Revelation", "chapters": "10-11" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "5-6" },
+        { "book": "Isaiah", "chapters": "51" },
+        { "book": "Revelation", "chapters": "12-13" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "7-8" },
+        { "book": "Isaiah", "chapters": "52" },
+        { "book": "Revelation", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "9" },
+        { "book": "Isaiah", "chapters": "53" },
+        { "book": "Revelation", "chapters": "15-16" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "10" },
+        { "book": "Isaiah", "chapters": "54" },
+        { "book": "Revelation", "chapters": "17-18" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "1 Samuel", "chapters": "11" },
+        { "book": "Isaiah", "chapters": "55" },
+        { "book": "Revelation", "chapters": "19-20" }
+      ]
+    }
+  ]
+}

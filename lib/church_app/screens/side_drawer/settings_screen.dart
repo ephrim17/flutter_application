@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
@@ -38,6 +40,7 @@ class SettingsScreen extends ConsumerWidget {
                     _AppearanceSection(),
                     _PrayerReminderSection(),
                     _StorageSection(),
+                    _DeleteAccountSection(),
                     _LogoutSection(),
                   ],
                 ),
@@ -85,11 +88,6 @@ class _EditProfileSection extends ConsumerWidget {
           title: Text(
             ref.t('settings.edit_profile', fallback: 'Edit Profile'),
           ),
-          subtitle: Text(
-            user.address.isNotEmpty ? user.address : user.location,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
           onTap: () => showModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
@@ -115,6 +113,32 @@ class _LogoutSection extends ConsumerWidget {
         Navigator.of(context).pop();
         await FirebaseAuth.instance.signOut();
       },
+    );
+  }
+}
+
+class _DeleteAccountSection extends ConsumerWidget {
+  const _DeleteAccountSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+      title: Text(
+        ref.t('settings.delete_account', fallback: 'Delete Account'),
+        style: const TextStyle(color: Colors.red),
+      ),
+      subtitle: Text(
+        ref.t(
+          'settings.delete_account_subtitle',
+          fallback: 'Permanently remove your account and user data',
+        ),
+      ),
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => const _DeleteAccountSheet(),
+      ),
     );
   }
 }
@@ -326,33 +350,184 @@ class _StorageSection extends ConsumerWidget {
   }
 }
 
+class _DeleteAccountSheet extends ConsumerStatefulWidget {
+  const _DeleteAccountSheet();
+
+  @override
+  ConsumerState<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
+}
+
+class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
+  final _passwordController = TextEditingController();
+  bool _isDeleting = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _deleteAccount() async {
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your password to continue.')),
+      );
+      return;
+    }
+
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (churchId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No church selected.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount(
+            churchId: churchId,
+            password: password,
+          );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      await ref.read(favoritesProvider.notifier).clearAll();
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account has been deleted.')),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(e))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Delete Account',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'This permanently deletes your account, reading progress, and church user profile. Enter your password to confirm.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: _isDeleting ? null : _deleteAccount,
+                  child: _isDeleting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Delete'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EditProfileSheet extends ConsumerStatefulWidget {
   const _EditProfileSheet({required this.user});
 
-  final dynamic user;
+  final AppUser user;
 
   @override
   ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
 }
 
 class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
+  late final TextEditingController _phoneController;
   late final TextEditingController _locationController;
   late final TextEditingController _addressController;
   bool _isSaving = false;
   bool _isFetchingLocation = false;
+  DateTime? _dob;
 
   @override
   void initState() {
     super.initState();
+    _phoneController = TextEditingController(text: widget.user.phone);
     _locationController = TextEditingController(text: widget.user.location);
     _addressController = TextEditingController(text: widget.user.address);
+    _dob = widget.user.dob;
   }
 
   @override
   void dispose() {
+    _phoneController.dispose();
     _locationController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  String _formatDob(DateTime? date) {
+    if (date == null) return '';
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
   }
 
   Future<void> _fillCurrentLocation() async {
@@ -420,7 +595,28 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     if (firebaseUser == null) return;
 
     final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null) return;
+    if (!mounted || churchId == null) return;
+
+    final phone = _phoneController.text.trim();
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid 10-digit phone number')),
+      );
+      return;
+    }
+    if (_locationController.text.trim().isEmpty ||
+        _addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Address and maps location are required')),
+      );
+      return;
+    }
+    if (_dob == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your birthday')),
+      );
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -434,8 +630,12 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
 
       await repo.updateProfile(
         uid: firebaseUser.uid,
+        phone: phone,
         location: _locationController.text,
         address: _addressController.text,
+        category: widget.user.category,
+        familyId: widget.user.familyId,
+        dob: _dob,
       );
 
       if (!mounted) return;
@@ -475,6 +675,49 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
+            _SettingsReviewCard(
+              rows: [
+                _SettingsReviewRow('Name', widget.user.name),
+                _SettingsReviewRow('Email', widget.user.email),
+                _SettingsReviewRow('Category', widget.user.category),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: _dob ?? DateTime(2000),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime.now(),
+                );
+                if (pickedDate == null) return;
+                setState(() {
+                  _dob = pickedDate;
+                });
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Birthday',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today_outlined),
+                ),
+                child: Text(
+                  _formatDob(_dob).isEmpty ? 'Select your birthday' : _formatDob(_dob),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _locationController,
               keyboardType: TextInputType.url,
@@ -487,6 +730,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   'auth.location_helper',
                   fallback: 'Use current location or paste your Google Maps link',
                 ),
+                border: const OutlineInputBorder(),
                 suffixIcon: _isFetchingLocation
                     ? const Padding(
                         padding: EdgeInsets.all(12),
@@ -526,6 +770,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   'auth.address_helper',
                   fallback: 'Enter your address manually',
                 ),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -547,4 +792,58 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ),
     );
   }
+}
+
+class _SettingsReviewCard extends StatelessWidget {
+  const _SettingsReviewCard({required this.rows});
+
+  final List<_SettingsReviewRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: rows
+            .where((row) => row.value.trim().isNotEmpty)
+            .map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: Text(
+                        row.label,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        row.value,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _SettingsReviewRow {
+  const _SettingsReviewRow(this.label, this.value);
+
+  final String label;
+  final String value;
 }

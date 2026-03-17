@@ -1,0 +1,254 @@
+{
+  "month": "October",
+  "monthIndex": 10,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "15" },
+        { "book": "Ezekiel", "chapters": "27" },
+        { "book": "Luke", "chapters": "24" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "16" },
+        { "book": "Ezekiel", "chapters": "28" },
+        { "book": "Galatians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "17" },
+        { "book": "Ezekiel", "chapters": "29" },
+        { "book": "Galatians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "18-19" },
+        { "book": "Ezekiel", "chapters": "30" },
+        { "book": "Galatians", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "20-21" },
+        { "book": "Ezekiel", "chapters": "31" },
+        { "book": "Ephesians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "22" },
+        { "book": "Ezekiel", "chapters": "32" },
+        { "book": "Ephesians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "23" },
+        { "book": "Ezekiel", "chapters": "33" },
+        { "book": "Ephesians", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "24-25" },
+        { "book": "Ezekiel", "chapters": "34" },
+        { "book": "Philippians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "26" },
+        { "book": "Ezekiel", "chapters": "35" },
+        { "book": "Philippians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "27" },
+        { "book": "Ezekiel", "chapters": "36" },
+        { "book": "John", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "28" },
+        { "book": "Ezekiel", "chapters": "37" },
+        { "book": "John", "chapters": "2-3" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "1 Chronicles", "chapters": "29" },
+        { "book": "Ezekiel", "chapters": "38" },
+        { "book": "John", "chapters": "4" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "1-2" },
+        { "book": "Ezekiel", "chapters": "39" },
+        { "book": "John", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "3-4" },
+        { "book": "Ezekiel", "chapters": "40" },
+        { "book": "John", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "5-6" },
+        { "book": "Ezekiel", "chapters": "41" },
+        { "book": "John", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "7" },
+        { "book": "Ezekiel", "chapters": "42" },
+        { "book": "John", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "8" },
+        { "book": "Ezekiel", "chapters": "43" },
+        { "book": "John", "chapters": "9-10" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "9" },
+        { "book": "Ezekiel", "chapters": "44" },
+        { "book": "John", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "10-11" },
+        { "book": "Ezekiel", "chapters": "45" },
+        { "book": "John", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "12-13" },
+        { "book": "Ezekiel", "chapters": "46" },
+        { "book": "John", "chapters": "13-14" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "14-15" },
+        { "book": "Ezekiel", "chapters": "47" },
+        { "book": "John", "chapters": "15-16" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "16-17" },
+        { "book": "Ezekiel", "chapters": "48" },
+        { "book": "John", "chapters": "17-18" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "18-19" },
+        { "book": "Daniel", "chapters": "1" },
+        { "book": "John", "chapters": "19" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "20" },
+        { "book": "Daniel", "chapters": "2" },
+        { "book": "John", "chapters": "20-21" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "21-22" },
+        { "book": "Daniel", "chapters": "3" },
+        { "book": "Acts", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "23" },
+        { "book": "Daniel", "chapters": "4" },
+        { "book": "Acts", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "24" },
+        { "book": "Daniel", "chapters": "5" },
+        { "book": "Acts", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "25" },
+        { "book": "Daniel", "chapters": "6" },
+        { "book": "Acts", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "26-27" },
+        { "book": "Daniel", "chapters": "7" },
+        { "book": "Acts", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "28" },
+        { "book": "Daniel", "chapters": "8" },
+        { "book": "Acts", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "29" },
+        { "book": "Daniel", "chapters": "9" },
+        { "book": "Acts", "chapters": "9" }
+      ]
+    }
+  ]
+}

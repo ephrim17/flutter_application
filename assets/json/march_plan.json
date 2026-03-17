@@ -1,0 +1,254 @@
+{
+  "month": "March",
+  "monthIndex": 3,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "Leviticus", "chapters": "5-6" },
+        { "book": "Psalms", "chapters": "105" },
+        { "book": "1 Corinthians", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "Leviticus", "chapters": "7" },
+        { "book": "Psalms", "chapters": "106" },
+        { "book": "1 Corinthians", "chapters": "15" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Leviticus", "chapters": "8" },
+        { "book": "Psalms", "chapters": "107" },
+        { "book": "1 Corinthians", "chapters": "16" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Leviticus", "chapters": "9-10" },
+        { "book": "Psalms", "chapters": "108-109" },
+        { "book": "2 Corinthians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Leviticus", "chapters": "11" },
+        { "book": "Psalms", "chapters": "110-112" },
+        { "book": "2 Corinthians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Leviticus", "chapters": "12-13" },
+        { "book": "Psalms", "chapters": "113-114" },
+        { "book": "2 Corinthians", "chapters": "5-7" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Leviticus", "chapters": "14" },
+        { "book": "Psalms", "chapters": "115-116" },
+        { "book": "2 Corinthians", "chapters": "8-9" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Leviticus", "chapters": "15" },
+        { "book": "Psalms", "chapters": "117-118" },
+        { "book": "2 Corinthians", "chapters": "10-11" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Leviticus", "chapters": "16" },
+        { "book": "Psalms", "chapters": "119 v 1-40" },
+        { "book": "2 Corinthians", "chapters": "12-13" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Leviticus", "chapters": "17-18" },
+        { "book": "Psalms", "chapters": "119 v 41-80" },
+        { "book": "Luke", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Leviticus", "chapters": "19" },
+        { "book": "Psalms", "chapters": "119 v 81-128" },
+        { "book": "Luke", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Leviticus", "chapters": "20" },
+        { "book": "Psalms", "chapters": "119 v 129-176" },
+        { "book": "Luke", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Leviticus", "chapters": "21" },
+        { "book": "Psalms", "chapters": "120-124" },
+        { "book": "Luke", "chapters": "4" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Leviticus", "chapters": "22" },
+        { "book": "Psalms", "chapters": "125-127" },
+        { "book": "Luke", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Leviticus", "chapters": "23" },
+        { "book": "Psalms", "chapters": "128-130" },
+        { "book": "Luke", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Leviticus", "chapters": "24" },
+        { "book": "Psalms", "chapters": "131-134" },
+        { "book": "Luke", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Leviticus", "chapters": "25" },
+        { "book": "Psalms", "chapters": "135-136" },
+        { "book": "Luke", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Leviticus", "chapters": "26" },
+        { "book": "Psalms", "chapters": "137-139" },
+        { "book": "Luke", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Leviticus", "chapters": "27" },
+        { "book": "Psalms", "chapters": "140-142" },
+        { "book": "Luke", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Numbers", "chapters": "1" },
+        { "book": "Psalms", "chapters": "143-144" },
+        { "book": "Luke", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Numbers", "chapters": "2" },
+        { "book": "Psalms", "chapters": "145-147" },
+        { "book": "Luke", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Numbers", "chapters": "3" },
+        { "book": "Psalms", "chapters": "148-150" },
+        { "book": "Luke", "chapters": "13-14" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Numbers", "chapters": "4" },
+        { "book": "Proverbs", "chapters": "1" },
+        { "book": "Luke", "chapters": "15" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Numbers", "chapters": "5" },
+        { "book": "Proverbs", "chapters": "2" },
+        { "book": "Luke", "chapters": "16" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Numbers", "chapters": "6" },
+        { "book": "Proverbs", "chapters": "3" },
+        { "book": "Luke", "chapters": "17" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Numbers", "chapters": "7" },
+        { "book": "Proverbs", "chapters": "4" },
+        { "book": "Luke", "chapters": "18" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Numbers", "chapters": "8-9" },
+        { "book": "Proverbs", "chapters": "5" },
+        { "book": "Luke", "chapters": "19" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Numbers", "chapters": "10" },
+        { "book": "Proverbs", "chapters": "6" },
+        { "book": "Luke", "chapters": "20" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Numbers", "chapters": "11" },
+        { "book": "Proverbs", "chapters": "7" },
+        { "book": "Luke", "chapters": "21" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Numbers", "chapters": "12-13" },
+        { "book": "Proverbs", "chapters": "8-9" },
+        { "book": "Luke", "chapters": "22" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "Numbers", "chapters": "14" },
+        { "book": "Proverbs", "chapters": "10" },
+        { "book": "Luke", "chapters": "23" }
+      ]
+    }
+  ]
+}

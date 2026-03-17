@@ -1,0 +1,255 @@
+{
+  "month": "December",
+  "monthIndex": 12,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "Esther", "chapters": "9-10" },
+        { "book": "Jonah", "chapters": "1" },
+        { "book": "Hebrews", "chapters": "6-7" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "Job", "chapters": "1-2" },
+        { "book": "Jonah", "chapters": "2-3" },
+        { "book": "Hebrews", "chapters": "8-9" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Job", "chapters": "3-4" },
+        { "book": "Jonah", "chapters": "4" },
+        { "book": "Hebrews", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Job", "chapters": "5" },
+        { "book": "Micah", "chapters": "1" },
+        { "book": "Hebrews", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Job", "chapters": "6-7" },
+        { "book": "Micah", "chapters": "2" },
+        { "book": "Hebrews", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Job", "chapters": "8" },
+        { "book": "Micah", "chapters": "3-4" },
+        { "book": "Hebrews", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Job", "chapters": "9" },
+        { "book": "Micah", "chapters": "5" },
+        { "book": "James", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Job", "chapters": "10" },
+        { "book": "Micah", "chapters": "6" },
+        { "book": "James", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Job", "chapters": "11" },
+        { "book": "Micah", "chapters": "7" },
+        { "book": "James", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Job", "chapters": "12" },
+        { "book": "Nahum", "chapters": "1-2" },
+        { "book": "James", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Job", "chapters": "13" },
+        { "book": "Nahum", "chapters": "3" },
+        { "book": "1 Peter", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Job", "chapters": "14" },
+        { "book": "Habakkuk", "chapters": "1" },
+        { "book": "1 Peter", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Job", "chapters": "15" },
+        { "book": "Habakkuk", "chapters": "2" },
+        { "book": "1 Peter", "chapters": "3-5" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Job", "chapters": "16-17" },
+        { "book": "Habakkuk", "chapters": "3" },
+        { "book": "2 Peter", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Job", "chapters": "18-19" },
+        { "book": "Zephaniah", "chapters": "1" },
+        { "book": "2 Peter", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Job", "chapters": "20" },
+        { "book": "Zephaniah", "chapters": "2" },
+        { "book": "1 John", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Job", "chapters": "21" },
+        { "book": "Zephaniah", "chapters": "3" },
+        { "book": "1 John", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Job", "chapters": "22" },
+        { "book": "Haggai", "chapters": "1-2" },
+        { "book": "1 John", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Job", "chapters": "23-24" },
+        { "book": "Zechariah", "chapters": "1" },
+        { "book": "2 John", "chapters": "1" },
+        { "book": "3 John", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Job", "chapters": "25-27" },
+        { "book": "Zechariah", "chapters": "2-3" },
+        { "book": "Jude", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Job", "chapters": "28" },
+        { "book": "Zechariah", "chapters": "4-5" },
+        { "book": "Revelation", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Job", "chapters": "29-30" },
+        { "book": "Zechariah", "chapters": "6-7" },
+        { "book": "Revelation", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Job", "chapters": "31-32" },
+        { "book": "Zechariah", "chapters": "8" },
+        { "book": "Revelation", "chapters": "5-6" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Job", "chapters": "33" },
+        { "book": "Zechariah", "chapters": "9" },
+        { "book": "Revelation", "chapters": "7-9" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Job", "chapters": "34" },
+        { "book": "Zechariah", "chapters": "10" },
+        { "book": "Revelation", "chapters": "10-11" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Job", "chapters": "35-36" },
+        { "book": "Zechariah", "chapters": "11" },
+        { "book": "Revelation", "chapters": "12-13" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Job", "chapters": "37" },
+        { "book": "Zechariah", "chapters": "12" },
+        { "book": "Revelation", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Job", "chapters": "38" },
+        { "book": "Zechariah", "chapters": "13-14" },
+        { "book": "Revelation", "chapters": "15-16" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Job", "chapters": "39" },
+        { "book": "Malachi", "chapters": "1" },
+        { "book": "Revelation", "chapters": "17-18" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Job", "chapters": "40-41" },
+        { "book": "Malachi", "chapters": "2-3" },
+        { "book": "Revelation", "chapters": "19-20" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "Job", "chapters": "42" },
+        { "book": "Malachi", "chapters": "4" },
+        { "book": "Revelation", "chapters": "21-22" }
+      ]
+    }
+  ]
+}

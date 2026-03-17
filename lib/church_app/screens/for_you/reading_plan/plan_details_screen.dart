@@ -141,14 +141,26 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
 }
 
 List<int> parseChapterRange(String chapters) {
-  if (!chapters.contains('-')) {
-    final ch = int.parse(chapters.trim());
-    return [ch, ch];
+  final numbers = RegExp(r'\d+')
+      .allMatches(chapters)
+      .map((match) => int.parse(match.group(0)!))
+      .toList();
+
+  if (numbers.isEmpty) {
+    throw FormatException('Invalid chapter range: $chapters');
   }
 
-  final parts = chapters.split('-');
+  // Entries like "119 v 1-40" represent a single chapter with a verse slice.
+  if (chapters.toLowerCase().contains('v')) {
+    return [numbers.first, numbers.first];
+  }
+
+  if (!chapters.contains('-') || numbers.length == 1) {
+    return [numbers.first, numbers.first];
+  }
+
   return [
-    int.parse(parts[0].trim()),
-    int.parse(parts[1].trim()),
+    numbers.first,
+    numbers.last,
   ];
 }

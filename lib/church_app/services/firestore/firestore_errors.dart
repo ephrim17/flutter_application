@@ -12,6 +12,12 @@ String mapFirebaseAuthError(Object e) {
       case 'invalid-credential':
       case 'invalid-login-credentials':
         return 'Incorrect email or password. Please try again.';
+      case 'requires-recent-login':
+        return 'Please sign in again and retry deleting your account.';
+      case 'no-current-user':
+        return 'No signed in user found.';
+      case 'missing-email':
+        return 'Unable to verify this account email.';
       case 'user-disabled':
         return 'This account has been disabled. Please contact support.';
       case 'email-already-in-use':

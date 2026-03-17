@@ -1,0 +1,246 @@
+{
+  "month": "November",
+  "monthIndex": 11,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "30" },
+        { "book": "Daniel", "chapters": "10" },
+        { "book": "Acts", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "31" },
+        { "book": "Daniel", "chapters": "11" },
+        { "book": "Acts", "chapters": "11-12" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "32" },
+        { "book": "Daniel", "chapters": "12" },
+        { "book": "Acts", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "33" },
+        { "book": "Hosea", "chapters": "1" },
+        { "book": "Acts", "chapters": "14-15" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "34" },
+        { "book": "Hosea", "chapters": "2" },
+        { "book": "Acts", "chapters": "16-17" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "35" },
+        { "book": "Hosea", "chapters": "3" },
+        { "book": "Acts", "chapters": "18-19" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "2 Chronicles", "chapters": "36" },
+        { "book": "Hosea", "chapters": "4" },
+        { "book": "Acts", "chapters": "20" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Ezra", "chapters": "1-2" },
+        { "book": "Hosea", "chapters": "5" },
+        { "book": "Acts", "chapters": "21-22" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Ezra", "chapters": "3-4" },
+        { "book": "Hosea", "chapters": "6" },
+        { "book": "Acts", "chapters": "23-24" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Ezra", "chapters": "5-6" },
+        { "book": "Hosea", "chapters": "7" },
+        { "book": "Acts", "chapters": "25-26" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Ezra", "chapters": "7" },
+        { "book": "Hosea", "chapters": "8" },
+        { "book": "Acts", "chapters": "27" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Ezra", "chapters": "8" },
+        { "book": "Hosea", "chapters": "9" },
+        { "book": "Acts", "chapters": "28" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Ezra", "chapters": "9" },
+        { "book": "Hosea", "chapters": "10" },
+        { "book": "Colossians", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Ezra", "chapters": "10" },
+        { "book": "Hosea", "chapters": "11" },
+        { "book": "Colossians", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "1-2" },
+        { "book": "Hosea", "chapters": "12" },
+        { "book": "Colossians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "3" },
+        { "book": "Hosea", "chapters": "13" },
+        { "book": "1 Thessalonians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "4" },
+        { "book": "Hosea", "chapters": "14" },
+        { "book": "1 Thessalonians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "5-6" },
+        { "book": "Joel", "chapters": "1" },
+        { "book": "1 Thessalonians", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "7" },
+        { "book": "Joel", "chapters": "2" },
+        { "book": "2 Thessalonians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "8" },
+        { "book": "Joel", "chapters": "3" },
+        { "book": "2 Thessalonians", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "9" },
+        { "book": "Amos", "chapters": "1" },
+        { "book": "1 Timothy", "chapters": "1-3" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "10" },
+        { "book": "Amos", "chapters": "2" },
+        { "book": "1 Timothy", "chapters": "4-5" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "11" },
+        { "book": "Amos", "chapters": "3" },
+        { "book": "1 Timothy", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "12" },
+        { "book": "Amos", "chapters": "4" },
+        { "book": "2 Timothy", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Nehemiah", "chapters": "13" },
+        { "book": "Amos", "chapters": "5" },
+        { "book": "2 Timothy", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Esther", "chapters": "1" },
+        { "book": "Amos", "chapters": "6" },
+        { "book": "2 Timothy", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Esther", "chapters": "2" },
+        { "book": "Amos", "chapters": "7" },
+        { "book": "Titus", "chapters": "1-3" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Esther", "chapters": "3-4" },
+        { "book": "Amos", "chapters": "8" },
+        { "book": "Philemon", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Esther", "chapters": "5-6" },
+        { "book": "Amos", "chapters": "9" },
+        { "book": "Hebrews", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Esther", "chapters": "7-8" },
+        { "book": "Obadiah", "chapters": "1" },
+        { "book": "Hebrews", "chapters": "3-4" }
+      ]
+    }
+  ]
+}

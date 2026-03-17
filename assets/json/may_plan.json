@@ -1,0 +1,254 @@
+{
+  "month": "May",
+  "monthIndex": 5,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "18" },
+        { "book": "Ecclesiastes", "chapters": "10" },
+        { "book": "Acts", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "19" },
+        { "book": "Ecclesiastes", "chapters": "11" },
+        { "book": "Acts", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "20" },
+        { "book": "Ecclesiastes", "chapters": "12" },
+        { "book": "Acts", "chapters": "11-12" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "21" },
+        { "book": "Song", "chapters": "1" },
+        { "book": "Acts", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "22" },
+        { "book": "Song", "chapters": "2" },
+        { "book": "Acts", "chapters": "14-15" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "23" },
+        { "book": "Song", "chapters": "3" },
+        { "book": "Acts", "chapters": "16-17" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "24" },
+        { "book": "Song", "chapters": "4" },
+        { "book": "Acts", "chapters": "18-19" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "25" },
+        { "book": "Song", "chapters": "5" },
+        { "book": "Acts", "chapters": "20" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "26" },
+        { "book": "Song", "chapters": "6" },
+        { "book": "Acts", "chapters": "21-22" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "27" },
+        { "book": "Song", "chapters": "7" },
+        { "book": "Acts", "chapters": "23-24" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "28" },
+        { "book": "Song", "chapters": "8" },
+        { "book": "Acts", "chapters": "25-26" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "29" },
+        { "book": "Isaiah", "chapters": "1" },
+        { "book": "Acts", "chapters": "27" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "30" },
+        { "book": "Isaiah", "chapters": "2" },
+        { "book": "Acts", "chapters": "28" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "31" },
+        { "book": "Isaiah", "chapters": "3-4" },
+        { "book": "Colossians", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "32" },
+        { "book": "Isaiah", "chapters": "5" },
+        { "book": "Colossians", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "Deuteronomy", "chapters": "33-34" },
+        { "book": "Isaiah", "chapters": "6" },
+        { "book": "Colossians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "Joshua", "chapters": "1" },
+        { "book": "Isaiah", "chapters": "7" },
+        { "book": "1 Thessalonians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "Joshua", "chapters": "2" },
+        { "book": "Isaiah", "chapters": "8" },
+        { "book": "1 Thessalonians", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "Joshua", "chapters": "3-4" },
+        { "book": "Isaiah", "chapters": "9" },
+        { "book": "1 Thessalonians", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "Joshua", "chapters": "5-6" },
+        { "book": "Isaiah", "chapters": "10" },
+        { "book": "2 Thessalonians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "Joshua", "chapters": "7" },
+        { "book": "Isaiah", "chapters": "11" },
+        { "book": "2 Thessalonians", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "Joshua", "chapters": "8" },
+        { "book": "Isaiah", "chapters": "12" },
+        { "book": "1 Timothy", "chapters": "1-3" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "Joshua", "chapters": "9" },
+        { "book": "Isaiah", "chapters": "13" },
+        { "book": "1 Timothy", "chapters": "4-5" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "Joshua", "chapters": "10" },
+        { "book": "Isaiah", "chapters": "14" },
+        { "book": "1 Timothy", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "Joshua", "chapters": "11" },
+        { "book": "Isaiah", "chapters": "15" },
+        { "book": "2 Timothy", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "Joshua", "chapters": "12" },
+        { "book": "Isaiah", "chapters": "16" },
+        { "book": "2 Timothy", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "Joshua", "chapters": "13" },
+        { "book": "Isaiah", "chapters": "17-18" },
+        { "book": "2 Timothy", "chapters": "3-4" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "Joshua", "chapters": "14" },
+        { "book": "Isaiah", "chapters": "19" },
+        { "book": "Titus", "chapters": "1-3" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "Joshua", "chapters": "15" },
+        { "book": "Isaiah", "chapters": "20-21" },
+        { "book": "Philemon", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "Joshua", "chapters": "16-17" },
+        { "book": "Isaiah", "chapters": "22-23" },
+        { "book": "Hebrews", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "Joshua", "chapters": "18-19" },
+        { "book": "Isaiah", "chapters": "24-25" },
+        { "book": "Hebrews", "chapters": "3-4" }
+      ]
+    }
+  ]
+}

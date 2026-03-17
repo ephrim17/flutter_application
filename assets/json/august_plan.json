@@ -1,0 +1,254 @@
+{
+  "month": "August",
+  "monthIndex": 8,
+  "days": [
+    {
+      "day": 1,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "18" },
+        { "book": "Jeremiah", "chapters": "22" },
+        { "book": "Romans", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 2,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "19" },
+        { "book": "Jeremiah", "chapters": "23" },
+        { "book": "Romans", "chapters": "10-11" }
+      ]
+    },
+    {
+      "day": 3,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "20-21" },
+        { "book": "Jeremiah", "chapters": "24" },
+        { "book": "Romans", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 4,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "22" },
+        { "book": "Jeremiah", "chapters": "25" },
+        { "book": "Romans", "chapters": "13-14" }
+      ]
+    },
+    {
+      "day": 5,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "23" },
+        { "book": "Jeremiah", "chapters": "26" },
+        { "book": "Romans", "chapters": "15-16" }
+      ]
+    },
+    {
+      "day": 6,
+      "readings": [
+        { "book": "2 Samuel", "chapters": "24" },
+        { "book": "Jeremiah", "chapters": "27" },
+        { "book": "Mark", "chapters": "1" }
+      ]
+    },
+    {
+      "day": 7,
+      "readings": [
+        { "book": "1 Kings", "chapters": "1" },
+        { "book": "Jeremiah", "chapters": "28" },
+        { "book": "Mark", "chapters": "2" }
+      ]
+    },
+    {
+      "day": 8,
+      "readings": [
+        { "book": "1 Kings", "chapters": "2" },
+        { "book": "Jeremiah", "chapters": "29" },
+        { "book": "Mark", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 9,
+      "readings": [
+        { "book": "1 Kings", "chapters": "3" },
+        { "book": "Jeremiah", "chapters": "30" },
+        { "book": "Mark", "chapters": "4" }
+      ]
+    },
+    {
+      "day": 10,
+      "readings": [
+        { "book": "1 Kings", "chapters": "4-5" },
+        { "book": "Jeremiah", "chapters": "31" },
+        { "book": "Mark", "chapters": "5" }
+      ]
+    },
+    {
+      "day": 11,
+      "readings": [
+        { "book": "1 Kings", "chapters": "6" },
+        { "book": "Jeremiah", "chapters": "32" },
+        { "book": "Mark", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 12,
+      "readings": [
+        { "book": "1 Kings", "chapters": "7" },
+        { "book": "Jeremiah", "chapters": "33" },
+        { "book": "Mark", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 13,
+      "readings": [
+        { "book": "1 Kings", "chapters": "8" },
+        { "book": "Jeremiah", "chapters": "34" },
+        { "book": "Mark", "chapters": "8" }
+      ]
+    },
+    {
+      "day": 14,
+      "readings": [
+        { "book": "1 Kings", "chapters": "9" },
+        { "book": "Jeremiah", "chapters": "35" },
+        { "book": "Mark", "chapters": "9" }
+      ]
+    },
+    {
+      "day": 15,
+      "readings": [
+        { "book": "1 Kings", "chapters": "10" },
+        { "book": "Jeremiah", "chapters": "36" },
+        { "book": "Mark", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 16,
+      "readings": [
+        { "book": "1 Kings", "chapters": "11" },
+        { "book": "Jeremiah", "chapters": "37" },
+        { "book": "Mark", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 17,
+      "readings": [
+        { "book": "1 Kings", "chapters": "12" },
+        { "book": "Jeremiah", "chapters": "38" },
+        { "book": "Mark", "chapters": "12" }
+      ]
+    },
+    {
+      "day": 18,
+      "readings": [
+        { "book": "1 Kings", "chapters": "13" },
+        { "book": "Jeremiah", "chapters": "39" },
+        { "book": "Mark", "chapters": "13" }
+      ]
+    },
+    {
+      "day": 19,
+      "readings": [
+        { "book": "1 Kings", "chapters": "14" },
+        { "book": "Jeremiah", "chapters": "40" },
+        { "book": "Mark", "chapters": "14" }
+      ]
+    },
+    {
+      "day": 20,
+      "readings": [
+        { "book": "1 Kings", "chapters": "15" },
+        { "book": "Jeremiah", "chapters": "41" },
+        { "book": "Mark", "chapters": "15" }
+      ]
+    },
+    {
+      "day": 21,
+      "readings": [
+        { "book": "1 Kings", "chapters": "16" },
+        { "book": "Jeremiah", "chapters": "42" },
+        { "book": "Mark", "chapters": "16" }
+      ]
+    },
+    {
+      "day": 22,
+      "readings": [
+        { "book": "1 Kings", "chapters": "17" },
+        { "book": "Jeremiah", "chapters": "43" },
+        { "book": "1 Corinthians", "chapters": "1-2" }
+      ]
+    },
+    {
+      "day": 23,
+      "readings": [
+        { "book": "1 Kings", "chapters": "18" },
+        { "book": "Jeremiah", "chapters": "44" },
+        { "book": "1 Corinthians", "chapters": "3" }
+      ]
+    },
+    {
+      "day": 24,
+      "readings": [
+        { "book": "1 Kings", "chapters": "19" },
+        { "book": "Jeremiah", "chapters": "45-46" },
+        { "book": "1 Corinthians", "chapters": "4-5" }
+      ]
+    },
+    {
+      "day": 25,
+      "readings": [
+        { "book": "1 Kings", "chapters": "20" },
+        { "book": "Jeremiah", "chapters": "47" },
+        { "book": "1 Corinthians", "chapters": "6" }
+      ]
+    },
+    {
+      "day": 26,
+      "readings": [
+        { "book": "1 Kings", "chapters": "21" },
+        { "book": "Jeremiah", "chapters": "48" },
+        { "book": "1 Corinthians", "chapters": "7" }
+      ]
+    },
+    {
+      "day": 27,
+      "readings": [
+        { "book": "1 Kings", "chapters": "22" },
+        { "book": "Jeremiah", "chapters": "49" },
+        { "book": "1 Corinthians", "chapters": "8-9" }
+      ]
+    },
+    {
+      "day": 28,
+      "readings": [
+        { "book": "2 Kings", "chapters": "1-2" },
+        { "book": "Jeremiah", "chapters": "50" },
+        { "book": "1 Corinthians", "chapters": "10" }
+      ]
+    },
+    {
+      "day": 29,
+      "readings": [
+        { "book": "2 Kings", "chapters": "3" },
+        { "book": "Jeremiah", "chapters": "51" },
+        { "book": "1 Corinthians", "chapters": "11" }
+      ]
+    },
+    {
+      "day": 30,
+      "readings": [
+        { "book": "2 Kings", "chapters": "4" },
+        { "book": "Jeremiah", "chapters": "52" },
+        { "book": "1 Corinthians", "chapters": "12-13" }
+      ]
+    },
+    {
+      "day": 31,
+      "readings": [
+        { "book": "2 Kings", "chapters": "5" },
+        { "book": "Lamentations", "chapters": "1" },
+        { "book": "1 Corinthians", "chapters": "14" }
+      ]
+    }
+  ]
+}

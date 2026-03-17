@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_application/church_app/providers/authentication/admin_pr
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -21,9 +23,9 @@ class StudioScreen extends ConsumerWidget {
 
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Studio')),
-        body: const Center(
-          child: Text('Studio is available only for admins.'),
+        appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
+        body: Center(
+          child: Text(ref.t('studio.admin_only', fallback: 'Studio is available only for admins.')),
         ),
       );
     }
@@ -33,14 +35,14 @@ class StudioScreen extends ConsumerWidget {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Studio')),
-        body: Center(child: Text('Error: $error')),
+        appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
+        body: Center(child: Text('${ref.t('common.error_prefix', fallback: 'Error')}: $error')),
       ),
       data: (churchId) {
         if (churchId == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Studio')),
-            body: const Center(child: Text('No church selected.')),
+            appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
+            body: Center(child: Text(ref.t('studio.no_church_selected', fallback: 'No church selected.'))),
           );
         }
 
@@ -53,37 +55,37 @@ class StudioScreen extends ConsumerWidget {
           length: 8,
           child: Scaffold(
             appBar: AppBar(
-              title: const Text('Studio'),
-              bottom: const TabBar(
+              title: Text(ref.t('studio.title', fallback: 'Studio')),
+              bottom: TabBar(
                 isScrollable: true,
                 tabs: [
-                  Tab(text: 'Events'),
-                  Tab(text: 'Announcements'),
-                  Tab(text: 'Daily Verse'),
-                  Tab(text: 'Articles'),
-                  Tab(text: 'Promise'),
-                  Tab(text: 'Notifications'),
-                  Tab(text: 'Admins'),
-                  Tab(text: 'Prompt'),
+                  Tab(text: ref.t('studio.tab_events', fallback: 'Events')),
+                  Tab(text: ref.t('studio.tab_announcements', fallback: 'Announcements')),
+                  Tab(text: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse')),
+                  Tab(text: ref.t('studio.tab_articles', fallback: 'Articles')),
+                  Tab(text: ref.t('studio.tab_promise', fallback: 'Promise')),
+                  Tab(text: ref.t('studio.tab_notifications', fallback: 'Notifications')),
+                  Tab(text: ref.t('studio.tab_admins', fallback: 'Admins')),
+                  Tab(text: ref.t('studio.tab_prompt', fallback: 'Prompt')),
                 ],
               ),
             ),
             body: TabBarView(
               children: [
                 _CollectionEditor(
-                  title: 'Events',
+                  title: ref.t('studio.tab_events', fallback: 'Events'),
                   stream: repository.watchEvents(),
-                  addLabel: 'Add event',
-                  emptyText: 'No events yet.',
+                  addLabel: ref.t('studio.add_event', fallback: 'Add event'),
+                  emptyText: ref.t('studio.no_events', fallback: 'No events yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) {
                     final parts = <String>[
                       if ((data['type'] ?? '').toString().isNotEmpty)
-                        'Type: ${data['type']}',
+                        '${ref.t('studio.event_type_prefix', fallback: 'Type')}: ${data['type']}',
                       if ((data['contact'] ?? '').toString().isNotEmpty)
-                        'Contact: ${data['contact']}',
+                        '${ref.t('studio.event_contact_prefix', fallback: 'Contact')}: ${data['contact']}',
                       if ((data['location'] ?? '').toString().isNotEmpty)
-                        'Location: ${data['location']}',
+                        '${ref.t('studio.event_location_prefix', fallback: 'Location')}: ${data['location']}',
                     ];
                     return parts.join('\n');
                   },
@@ -96,13 +98,13 @@ class StudioScreen extends ConsumerWidget {
                   onDelete: (doc) => repository.deleteEvent(doc.id),
                 ),
                 _CollectionEditor(
-                  title: 'Announcements',
+                  title: ref.t('studio.tab_announcements', fallback: 'Announcements'),
                   stream: repository.watchAnnouncements(),
-                  addLabel: 'Add announcement',
-                  emptyText: 'No announcements yet.',
+                  addLabel: ref.t('studio.add_announcement', fallback: 'Add announcement'),
+                  emptyText: ref.t('studio.no_announcements', fallback: 'No announcements yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) =>
-                      'Priority: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
+                      '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
                   onAdd: () => _showAnnouncementEditor(context, repository),
                   onEdit: (doc) => _showAnnouncementEditor(
                     context,
@@ -115,7 +117,7 @@ class StudioScreen extends ConsumerWidget {
                   ),
                 ),
                 _ConfigVerseEditor(
-                  title: 'Daily Verse',
+                  title: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
                   configSelector: (config) => config.dailyVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updateDailyVerse(
@@ -126,10 +128,10 @@ class StudioScreen extends ConsumerWidget {
                   },
                 ),
                 _CollectionEditor(
-                  title: 'Daily Articles',
+                  title: ref.t('studio.tab_articles', fallback: 'Articles'),
                   stream: repository.watchArticles(),
-                  addLabel: 'Add article',
-                  emptyText: 'No articles yet.',
+                  addLabel: ref.t('studio.add_article', fallback: 'Add article'),
+                  emptyText: ref.t('studio.no_articles', fallback: 'No articles yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) => (data['description'] ?? '') as String,
                   onAdd: () => _showArticleEditor(context, repository),
@@ -141,7 +143,7 @@ class StudioScreen extends ConsumerWidget {
                   onDelete: (doc) => repository.deleteArticle(doc.id),
                 ),
                 _ConfigVerseEditor(
-                  title: 'Promise Word',
+                  title: ref.t('studio.tab_promise', fallback: 'Promise'),
                   configSelector: (config) => config.promiseVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updatePromiseWord(
@@ -215,7 +217,9 @@ class _CollectionEditor extends StatelessWidget {
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text('${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}'),
+          );
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -258,16 +262,20 @@ class _CollectionEditor extends StatelessWidget {
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Delete item?'),
-                              content: Text('Remove "${tileTitle(data)}"?'),
+                              title: AppBarTitle(
+                                text: context.t('studio.delete_title', fallback: 'Delete'),
+                              ),
+                              content: Text(
+                                '${context.t('studio.delete_confirm_remove_prefix', fallback: 'Remove')} "${tileTitle(data)}"?',
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
+                                  child: Text(context.t('settings.cancel', fallback: 'Cancel')),
                                 ),
                                 FilledButton(
                                   onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete'),
+                                  child: Text(context.t('common.delete', fallback: 'Delete')),
                                 ),
                               ],
                             ),
@@ -314,7 +322,9 @@ class _ConfigVerseEditor extends ConsumerWidget {
 
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => Center(
+        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+      ),
       data: (config) {
         final verseRef = configSelector(config);
 
@@ -347,7 +357,9 @@ class _ConfigVerseEditor extends ConsumerWidget {
                         onSave: onSave,
                       ),
                       icon: const Icon(Icons.edit_outlined),
-                      label: Text('Edit $title'),
+                      label: Text(
+                        '${context.t('studio.edit_item_prefix', fallback: 'Edit')} $title',
+                      ),
                     ),
                   ],
                 ),
@@ -403,21 +415,31 @@ class _NotificationComposerState extends State<_NotificationComposer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Church Topic Notification',
+                  context.t('studio.notification_title', fallback: 'Church Topic Notification'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text('Topic: $topic'),
+                Text('${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Notification title'),
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.notification_title_label',
+                      fallback: 'Notification title',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _bodyController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Notification body'),
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.notification_body_label',
+                      fallback: 'Notification body',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -435,8 +457,13 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                               );
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notification request queued'),
+                                SnackBar(
+                                  content: Text(
+                                    context.t(
+                                      'studio.notification_queued',
+                                      fallback: 'Notification request queued',
+                                    ),
+                                  ),
                                 ),
                               );
                             } finally {
@@ -451,7 +478,12 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Send Notification'),
+                        : Text(
+                            context.t(
+                              'studio.notification_send',
+                              fallback: 'Send Notification',
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -476,7 +508,9 @@ class _AdminsEditor extends ConsumerWidget {
 
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => Center(
+        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+      ),
       data: (config) => _AdminsEditorForm(
         initialAdmins: config.admins,
         onSave: onSave,
@@ -528,17 +562,19 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Admins',
+                  context.t('studio.tab_admins', fallback: 'Admins'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                const Text('Enter one admin email per line.'),
+                Text(
+                  context.t('studio.admins_hint', fallback: 'Enter one admin email per line.'),
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _controller,
                   maxLines: 10,
-                  decoration: const InputDecoration(
-                    labelText: 'Admin emails',
+                  decoration: InputDecoration(
+                    labelText: context.t('studio.admins_label', fallback: 'Admin emails'),
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -559,7 +595,11 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                               await widget.onSave(admins);
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Admins updated')),
+                                SnackBar(
+                                  content: Text(
+                                    context.t('studio.admins_updated', fallback: 'Admins updated'),
+                                  ),
+                                ),
                               );
                             } finally {
                               if (mounted) {
@@ -573,7 +613,9 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Save Admins'),
+                        : Text(
+                            context.t('studio.admins_save', fallback: 'Save Admins'),
+                          ),
                   ),
                 ),
               ],
@@ -602,7 +644,9 @@ class _PromptSheetEditor extends ConsumerWidget {
 
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => Center(
+        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+      ),
       data: (config) => _PromptSheetEditorForm(
         promptSheet: config.promptSheet,
         onSave: onSave,
@@ -661,23 +705,27 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Prompt Sheet',
+                  context.t('studio.prompt_title', fallback: 'Prompt Sheet'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
+                  decoration: InputDecoration(
+                    labelText: context.t('common.title', fallback: 'Title'),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _descController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Description'),
+                  decoration: InputDecoration(
+                    labelText: context.t('common.description', fallback: 'Description'),
+                  ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Enabled'),
+                  title: Text(context.t('common.enabled', fallback: 'Enabled')),
                   value: _enabled,
                   onChanged: (value) => setState(() => _enabled = value),
                 ),
@@ -696,7 +744,11 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                               );
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Prompt updated')),
+                                SnackBar(
+                                  content: Text(
+                                    context.t('studio.prompt_updated', fallback: 'Prompt updated'),
+                                  ),
+                                ),
                               );
                             } finally {
                               if (mounted) {
@@ -710,7 +762,7 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Save Prompt'),
+                        : Text(context.t('studio.prompt_save', fallback: 'Save Prompt')),
                   ),
                 ),
               ],
@@ -760,23 +812,44 @@ Future<void> _showEventEditor(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    doc == null ? 'Create event' : 'Edit event',
+                    context.t(
+                      doc == null ? 'studio.event_create' : 'studio.event_edit',
+                      fallback: doc == null ? 'Create event' : 'Edit event',
+                    ),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: context.t('common.title', fallback: 'Title'),
+                    ),
+                  ),
                   TextField(
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    decoration: InputDecoration(
+                      labelText: context.t('common.description', fallback: 'Description'),
+                    ),
                     maxLines: 3,
                   ),
                   DropdownButtonFormField<String>(
                     value: type,
-                    decoration: const InputDecoration(labelText: 'Type'),
-                    items: const [
-                      DropdownMenuItem(value: 'family', child: Text('family')),
-                      DropdownMenuItem(value: 'kids', child: Text('kids')),
-                      DropdownMenuItem(value: 'youth', child: Text('youth')),
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.event_type', fallback: 'Type'),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'family',
+                        child: Text(context.t('studio.event_type_family', fallback: 'family')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'kids',
+                        child: Text(context.t('studio.event_type_kids', fallback: 'kids')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'youth',
+                        child: Text(context.t('studio.event_type_youth', fallback: 'youth')),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -784,13 +857,23 @@ Future<void> _showEventEditor(
                       }
                     },
                   ),
-                  TextField(controller: contactController, decoration: const InputDecoration(labelText: 'Contact')),
-                  TextField(controller: locationController, decoration: const InputDecoration(labelText: 'Location')),
+                  TextField(
+                    controller: contactController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.event_contact', fallback: 'Contact'),
+                    ),
+                  ),
+                  TextField(
+                    controller: locationController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.event_location', fallback: 'Location'),
+                    ),
+                  ),
                   TextField(
                     controller: timingController,
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText: 'Timing',
+                      labelText: context.t('studio.event_timing', fallback: 'Timing'),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -851,7 +934,7 @@ Future<void> _showEventEditor(
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Active'),
+                    title: Text(context.t('common.active', fallback: 'Active')),
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
@@ -889,7 +972,12 @@ Future<void> _showEventEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(doc == null ? 'Create' : 'Save'),
+                        : Text(
+                            context.t(
+                              doc == null ? 'common.create' : 'common.save',
+                              fallback: doc == null ? 'Create' : 'Save',
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -939,21 +1027,34 @@ Future<void> _showAnnouncementEditor(
                   Row(
                     children: [
                       Text(
-                        doc == null ? 'Create announcement' : 'Edit announcement',
+                        context.t(
+                          doc == null
+                              ? 'studio.announcement_create'
+                              : 'studio.announcement_edit',
+                          fallback:
+                              doc == null ? 'Create announcement' : 'Edit announcement',
+                        ),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const Spacer(),
                       OutlinedButton(
                         onPressed: isSaving ? null : () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                        child: Text(context.t('settings.cancel', fallback: 'Cancel')),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: context.t('common.title', fallback: 'Title'),
+                    ),
+                  ),
                   TextField(
                     controller: bodyController,
-                    decoration: const InputDecoration(labelText: 'Body'),
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.announcement_body', fallback: 'Body'),
+                    ),
                     maxLines: 4,
                   ),
                   const SizedBox(height: 12),
@@ -975,8 +1076,19 @@ Future<void> _showAnnouncementEditor(
                     icon: const Icon(Icons.image_outlined),
                     label: Text(
                       selectedImage == null
-                          ? (existingImageUrl.isEmpty ? 'Upload image' : 'Replace image')
-                          : 'Change image',
+                          ? (existingImageUrl.isEmpty
+                              ? context.t(
+                                  'studio.announcement_upload_image',
+                                  fallback: 'Upload image',
+                                )
+                              : context.t(
+                                  'studio.announcement_replace_image',
+                                  fallback: 'Replace image',
+                                ))
+                          : context.t(
+                              'studio.announcement_change_image',
+                              fallback: 'Change image',
+                            ),
                     ),
                   ),
                   if (selectedImage != null) ...[
@@ -1012,12 +1124,14 @@ Future<void> _showAnnouncementEditor(
                   ],
                   TextField(
                     controller: priorityController,
-                    decoration: const InputDecoration(labelText: 'Priority'),
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.priority_label', fallback: 'Priority'),
+                    ),
                     keyboardType: TextInputType.number,
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Active'),
+                    title: Text(context.t('common.active', fallback: 'Active')),
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
@@ -1067,7 +1181,12 @@ Future<void> _showAnnouncementEditor(
                               width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(doc == null ? 'Create' : 'Save'),
+                          : Text(
+                              context.t(
+                                doc == null ? 'common.create' : 'common.save',
+                                fallback: doc == null ? 'Create' : 'Save',
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -1112,19 +1231,31 @@ Future<void> _showArticleEditor(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    doc == null ? 'Create article' : 'Edit article',
+                    context.t(
+                      doc == null ? 'studio.article_create' : 'studio.article_edit',
+                      fallback: doc == null ? 'Create article' : 'Edit article',
+                    ),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: context.t('common.title', fallback: 'Title'),
+                    ),
+                  ),
                   TextField(
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    decoration: InputDecoration(
+                      labelText: context.t('common.description', fallback: 'Description'),
+                    ),
                     maxLines: 3,
                   ),
                   TextField(
                     controller: contentController,
-                    decoration: const InputDecoration(labelText: 'Content'),
+                    decoration: InputDecoration(
+                      labelText: context.t('common.content', fallback: 'Content'),
+                    ),
                     maxLines: 8,
                   ),
                   const SizedBox(height: 16),
@@ -1157,7 +1288,12 @@ Future<void> _showArticleEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(doc == null ? 'Create' : 'Save'),
+                        : Text(
+                            context.t(
+                              doc == null ? 'common.create' : 'common.save',
+                              fallback: doc == null ? 'Create' : 'Save',
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -1205,19 +1341,28 @@ Future<void> _showVerseEditor(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Edit $title',
+                    '${context.t('studio.edit_item_prefix', fallback: 'Edit')} $title',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(controller: bookController, decoration: const InputDecoration(labelText: 'Book')),
+                  TextField(
+                    controller: bookController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.verse_book', fallback: 'Book'),
+                    ),
+                  ),
                   TextField(
                     controller: chapterController,
-                    decoration: const InputDecoration(labelText: 'Chapter'),
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.verse_chapter', fallback: 'Chapter'),
+                    ),
                     keyboardType: TextInputType.number,
                   ),
                   TextField(
                     controller: verseController,
-                    decoration: const InputDecoration(labelText: 'Verse'),
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.verse_verse', fallback: 'Verse'),
+                    ),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
@@ -1245,7 +1390,7 @@ Future<void> _showVerseEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Save'),
+                        : Text(context.t('common.save', fallback: 'Save')),
                   ),
                 ],
               ),
