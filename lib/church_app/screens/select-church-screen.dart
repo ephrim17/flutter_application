@@ -8,6 +8,8 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/screens/auth_options_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
+import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
+import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -22,98 +24,217 @@ class SelectChurchScreen extends ConsumerWidget {
     final churchesAsync = ref.watch(churchesProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: AppBarTitle(
-          text: context.t('auth_entry.welcome', fallback: 'Welcome'),
-        ),
+        title: AppBarTitle(text: ''),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            const Icon(Icons.church, size: 72),
-            const SizedBox(height: 16),
-            Text(
-              context.t(
-                'church.select_subtitle',
-                fallback: 'Select your church to proceed further',
-              ),
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-
-            /// 🔹 If no church selected → show button
-            if (selectedChurch == null)
-              SolidButton(
-                label: context.t(
-                  'church.select_button',
-                  fallback: 'Select Church',
-                ),
-                onPressed: () {
-                  _showChurchBottomSheet(
-                    context,
-                    ref,
-                    churchesAsync,
-                  );
-                },
-              ),
-
-            /// 🔹 If church selected → show options
-            if (selectedChurch != null) ...[
-              Container(
-                decoration: carouselBoxDecoration(context),
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ChurchLogoAvatar(
-                      logo: selectedChurch.logo,
-                      size: 48,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            selectedChurch.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+      body: LinearScreenBackground(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 6),
+                        Center(
+                          child: Container(
+                            width: 96,
+                            height: 96,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x12000000),
+                                  blurRadius: 24,
+                                  offset: Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: SizedBox.expand(
+                                child: Image.asset(
+                                  'assets/images/appLogo.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: carouselBoxDecoration(context),
+                          padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Welcome Home.',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                context.t(
+                                  'church.select_subtitle',
+                                  fallback:
+                                      'Select your church to proceed further',
+                                ),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                "We'll help you find a local congregation to stay connected with services, events, and news.",
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(height: 1.45),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        if (selectedChurch == null)
+                          SolidButton(
+                            label: context.t(
+                              'church.select_button',
+                              fallback: 'Select Church',
+                            ),
+                            onPressed: () {
+                              _showChurchBottomSheet(
+                                context,
+                                ref,
+                                churchesAsync,
+                              );
+                            },
+                          ),
+                        if (selectedChurch != null) ...[
+                          Container(
+                            decoration: carouselBoxDecoration(context),
+                            padding: const EdgeInsets.all(18),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ChurchLogoAvatar(
+                                  logo: selectedChurch.logo,
+                                  size: 48,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Selected Church',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        selectedChurch.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        _valueOrFallback(
+                                          selectedChurch.pastorName,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined),
+                                  onPressed: () {
+                                    ref
+                                        .read(selectedChurchProvider.notifier)
+                                        .state = null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SolidButton(
+                            label: context.t(
+                              'auth_entry.continue',
+                              fallback: 'Continue',
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AuthOptionsScreen(
+                                    churchId: selectedChurch.id,
+                                    churchName: selectedChurch.name,
+                                    churchLogo: selectedChurch.logo,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
-                      ),
+                        const Spacer(),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Register your church coming soon',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: ColorText(
+                                badgeText: 'Register your church',
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () {
-                        ref.read(selectedChurchProvider.notifier).state = null;
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SolidButton(
-                label: context.t('common.proceed', fallback: 'Proceed'),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AuthOptionsScreen(
-                        churchId: selectedChurch.id,
-                        churchName: selectedChurch.name,
-                        churchLogo: selectedChurch.logo,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -326,17 +447,6 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
                             ),
                           ],
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Register your church coming soon'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add_business_outlined),
-                        label: const Text('Register'),
                       ),
                     ],
                   ),

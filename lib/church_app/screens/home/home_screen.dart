@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
@@ -98,25 +99,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<dynamic> showPromptSheet(PromptType sheetType, PromptSheetModel? promptSheetModel) {
+  Future<dynamic> showPromptSheet(
+      PromptType sheetType, PromptSheetModel? promptSheetModel) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => PromptSheet(type: sheetType, promptSheetModel: promptSheetModel,),
+      builder: (_) => PromptSheet(
+        type: sheetType,
+        promptSheetModel: promptSheetModel,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final sectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
+    final userAsync = ref.watch(appUserProvider);
 
     return sectionConfigsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
-        child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+        child:
+            Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
       ),
       data: (configs) {
         final registry = HomeSectionRegistry.all();
@@ -132,6 +139,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ..sort((a, b) => a.order.compareTo(b.order));
 
         final slivers = <Widget>[];
+        final userName = userAsync.asData?.value?.name.trim() ?? '';
+
+        if (userName.isNotEmpty) {
+          slivers.add(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: _WelcomeCard(userName: userName),
+              ),
+            ),
+          );
+        }
 
         for (final ordered in activeSections) {
           final spacing = spacingForOrder(ordered.order);
@@ -181,4 +200,40 @@ class OrderedSectionHome {
 
   final MasterSection section;
   final int order;
+}
+
+class _WelcomeCard extends StatelessWidget {
+  const _WelcomeCard({
+    required this.userName,
+  });
+
+  final String userName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome back,',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            userName,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

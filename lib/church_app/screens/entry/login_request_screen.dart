@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/services/FCM/FCM_notification_ser
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
+import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -422,454 +423,463 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     final progress = (_stepIndex + 1) / _stepCount;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
           text: context.t('auth.request_access', fallback: 'Request Access'),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              ChurchLogoAvatar(
-                logo: widget.churchLogo,
-                size: 84,
-              ),
-              const SizedBox(height: 14),
-              _FlowHeader(
-                title: widget.churchName,
-                stepIndex: _stepIndex,
-                stepCount: _stepCount,
-                progress: progress,
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _StepShell(
-                      title: 'Tell us about you',
-                      subtitle: 'Start with your basic details.',
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _nameController,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: context.t('auth.name_label',
-                                  fallback: 'Your Name'),
-                              helperText: context.t(
-                                'auth.name_helper',
-                                fallback:
-                                    'Name should have only characters, not numbers',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.email_address_label',
-                                fallback: 'Email Address',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.done,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.phone_label',
-                                fallback: 'Phone Number',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _StepShell(
-                      title: 'Identity',
-                      subtitle: 'A couple of personal details.',
-                      child: Column(
-                        children: [
-                          DropdownButtonFormField<String>(
-                            value: _gender.isEmpty ? null : _gender,
-                            decoration: InputDecoration(
-                              labelText: context.t('auth.gender_label',
-                                  fallback: 'Gender'),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: 'male', child: Text('Male')),
-                              DropdownMenuItem(
-                                  value: 'female', child: Text('Female')),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _gender = value ?? '';
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () async {
-                              FocusScope.of(context).unfocus();
-                              final pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now()
-                                    .subtract(const Duration(days: 365 * 18)),
-                                firstDate: DateTime(1900),
-                                lastDate: DateTime.now(),
-                              );
-                              if (pickedDate != null) {
-                                setState(() {
-                                  _dob = pickedDate;
-                                });
-                              }
-                            },
-                            child: InputDecorator(
+      body: LinearScreenBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                ChurchLogoAvatar(
+                  logo: widget.churchLogo,
+                  size: 84,
+                ),
+                const SizedBox(height: 14),
+                _FlowHeader(
+                  title: widget.churchName,
+                  stepIndex: _stepIndex,
+                  stepCount: _stepCount,
+                  progress: progress,
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _StepShell(
+                        title: 'Tell us about you',
+                        subtitle: 'Start with your basic details.',
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _nameController,
+                              textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                labelText: context.t('auth.dob_label',
-                                    fallback: 'Date of Birth'),
-                                suffixIcon: const Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                _dob == null
-                                    ? context.t(
-                                        'auth.dob_hint',
-                                        fallback: 'Select your date of birth',
-                                      )
-                                    : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                        '${_dob!.month.toString().padLeft(2, '0')}/'
-                                        '${_dob!.year}',
+                                labelText: context.t('auth.name_label',
+                                    fallback: 'Your Name'),
+                                helperText: context.t(
+                                  'auth.name_helper',
+                                  fallback:
+                                      'Name should have only characters, not numbers',
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _StepShell(
-                      title: 'Household',
-                      subtitle:
-                          'Choose whether this request is for a family or an individual.',
-                      child: FutureBuilder<List<String>>(
-                        future: _familyIdsFuture,
-                        builder: (context, snapshot) {
-                          final familyIds = snapshot.data ?? const <String>[];
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DropdownButtonFormField<String>(
-                                value: _category.isEmpty ? null : _category,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.category_label',
-                                    fallback: 'Category',
-                                  ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.email_address_label',
+                                  fallback: 'Email Address',
                                 ),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'family', child: Text('Family')),
-                                  DropdownMenuItem(
-                                    value: 'individual',
-                                    child: Text('Individual'),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              textInputAction: TextInputAction.done,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.phone_label',
+                                  fallback: 'Phone Number',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _StepShell(
+                        title: 'Identity',
+                        subtitle: 'A couple of personal details.',
+                        child: Column(
+                          children: [
+                            DropdownButtonFormField<String>(
+                              value: _gender.isEmpty ? null : _gender,
+                              decoration: InputDecoration(
+                                labelText: context.t('auth.gender_label',
+                                    fallback: 'Gender'),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'male', child: Text('Male')),
+                                DropdownMenuItem(
+                                    value: 'female', child: Text('Female')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _gender = value ?? '';
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            InkWell(
+                              onTap: () async {
+                                FocusScope.of(context).unfocus();
+                                final pickedDate = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now()
+                                      .subtract(const Duration(days: 365 * 18)),
+                                  firstDate: DateTime(1900),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (pickedDate != null) {
+                                  setState(() {
+                                    _dob = pickedDate;
+                                  });
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: context.t('auth.dob_label',
+                                      fallback: 'Date of Birth'),
+                                  suffixIcon: const Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _dob == null
+                                      ? context.t(
+                                          'auth.dob_hint',
+                                          fallback: 'Select your date of birth',
+                                        )
+                                      : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                          '${_dob!.month.toString().padLeft(2, '0')}/'
+                                          '${_dob!.year}',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _StepShell(
+                        title: 'Household',
+                        subtitle:
+                            'Choose whether this request is for a family or an individual.',
+                        child: FutureBuilder<List<String>>(
+                          future: _familyIdsFuture,
+                          builder: (context, snapshot) {
+                            final familyIds = snapshot.data ?? const <String>[];
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                DropdownButtonFormField<String>(
+                                  value: _category.isEmpty ? null : _category,
+                                  decoration: InputDecoration(
+                                    labelText: context.t(
+                                      'auth.category_label',
+                                      fallback: 'Category',
+                                    ),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'family', child: Text('Family')),
+                                    DropdownMenuItem(
+                                      value: 'individual',
+                                      child: Text('Individual'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _category = value ?? '';
+                                      if (_category != 'family') {
+                                        _useExistingFamilyId = false;
+                                        _selectedExistingFamilyId = null;
+                                        _familyNameController.clear();
+                                      }
+                                    });
+                                  },
+                                ),
+                                if (_category == 'family') ...[
+                                  const SizedBox(height: 16),
+                                  if (familyIds.isNotEmpty)
+                                    SwitchListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(
+                                        context.t(
+                                          'auth.family_existing_toggle',
+                                          fallback: 'Use existing family ID',
+                                        ),
+                                      ),
+                                      value: _useExistingFamilyId,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _useExistingFamilyId = value;
+                                          if (!value) {
+                                            _selectedExistingFamilyId = null;
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  const SizedBox(height: 8),
+                                  if (familyIds.isNotEmpty &&
+                                      _useExistingFamilyId)
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedExistingFamilyId,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.family_id_label',
+                                          fallback: 'Family ID',
+                                        ),
+                                      ),
+                                      items: familyIds
+                                          .map(
+                                            (familyId) => DropdownMenuItem(
+                                              value: familyId,
+                                              child: Text(
+                                                _formatFamilyOptionLabel(
+                                                    familyId),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedExistingFamilyId = value;
+                                        });
+                                      },
+                                    )
+                                  else
+                                    TextField(
+                                      controller: _familyNameController,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.family_name_label',
+                                          fallback: 'Family Name',
+                                        ),
+                                        helperText: context.t(
+                                          'auth.family_name_helper',
+                                          fallback:
+                                              'Used to generate a new family ID',
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                                if (_category == 'individual') ...[
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    context.t(
+                                      'auth.individual_family_hint',
+                                      fallback:
+                                          'Family ID will be generated automatically',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _resolveFamilyId(),
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
                                   ),
                                 ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _category = value ?? '';
-                                    if (_category != 'family') {
-                                      _useExistingFamilyId = false;
-                                      _selectedExistingFamilyId = null;
-                                      _familyNameController.clear();
-                                    }
-                                  });
-                                },
-                              ),
-                              if (_category == 'family') ...[
-                                const SizedBox(height: 16),
-                                if (familyIds.isNotEmpty)
-                                  SwitchListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(
-                                      context.t(
-                                        'auth.family_existing_toggle',
-                                        fallback: 'Use existing family ID',
-                                      ),
-                                    ),
-                                    value: _useExistingFamilyId,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _useExistingFamilyId = value;
-                                        if (!value) {
-                                          _selectedExistingFamilyId = null;
-                                        }
-                                      });
-                                    },
-                                  ),
-                                const SizedBox(height: 8),
-                                if (familyIds.isNotEmpty &&
-                                    _useExistingFamilyId)
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedExistingFamilyId,
-                                    decoration: InputDecoration(
-                                      labelText: context.t(
-                                        'auth.family_id_label',
-                                        fallback: 'Family ID',
-                                      ),
-                                    ),
-                                    items: familyIds
-                                        .map(
-                                          (familyId) => DropdownMenuItem(
-                                            value: familyId,
-                                            child: Text(
-                                              _formatFamilyOptionLabel(
-                                                  familyId),
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedExistingFamilyId = value;
-                                      });
-                                    },
-                                  )
-                                else
-                                  TextField(
-                                    controller: _familyNameController,
-                                    decoration: InputDecoration(
-                                      labelText: context.t(
-                                        'auth.family_name_label',
-                                        fallback: 'Family Name',
-                                      ),
-                                      helperText: context.t(
-                                        'auth.family_name_helper',
-                                        fallback:
-                                            'Used to generate a new family ID',
-                                      ),
-                                    ),
-                                  ),
                               ],
-                              if (_category == 'individual') ...[
-                                const SizedBox(height: 16),
-                                Text(
+                            );
+                          },
+                        ),
+                      ),
+                      _StepShell(
+                        title: 'Where are you located?',
+                        subtitle:
+                            'Use current location or paste your Google Maps link, then add your address.',
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _locationController,
+                              keyboardType: TextInputType.url,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.location_label',
+                                  fallback: 'Google Maps Location',
+                                ),
+                                helperText: context.t(
+                                  'auth.location_helper',
+                                  fallback:
+                                      'Use current location or paste your Google Maps link',
+                                ),
+                                suffixIcon: _isFetchingLocation
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      )
+                                    : IconButton(
+                                        onPressed: _fillCurrentLocation,
+                                        icon: const Icon(Icons.my_location),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: _isFetchingLocation
+                                    ? null
+                                    : _fillCurrentLocation,
+                                icon: const Icon(
+                                    Icons.location_searching_outlined),
+                                label: Text(
                                   context.t(
-                                    'auth.individual_family_hint',
-                                    fallback:
-                                        'Family ID will be generated automatically',
+                                    'auth.location_use_current',
+                                    fallback: 'Use Current Location',
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _resolveFamilyId(),
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _addressController,
+                              keyboardType: TextInputType.streetAddress,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.address_label',
+                                  fallback: 'Address',
                                 ),
-                              ],
-                            ],
-                          );
-                        },
+                                helperText: context.t(
+                                  'auth.address_helper',
+                                  fallback: 'Enter your address manually',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    _StepShell(
-                      title: 'Where are you located?',
-                      subtitle:
-                          'Use current location or paste your Google Maps link, then add your address.',
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _locationController,
-                            keyboardType: TextInputType.url,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.location_label',
-                                fallback: 'Google Maps Location',
-                              ),
-                              helperText: context.t(
-                                'auth.location_helper',
-                                fallback:
-                                    'Use current location or paste your Google Maps link',
-                              ),
-                              suffixIcon: _isFetchingLocation
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2),
-                                      ),
-                                    )
-                                  : IconButton(
-                                      onPressed: _fillCurrentLocation,
-                                      icon: const Icon(Icons.my_location),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: _isFetchingLocation
-                                  ? null
-                                  : _fillCurrentLocation,
-                              icon:
-                                  const Icon(Icons.location_searching_outlined),
-                              label: Text(
-                                context.t(
-                                  'auth.location_use_current',
-                                  fallback: 'Use Current Location',
+                      _StepShell(
+                        title: 'Secure your account',
+                        subtitle:
+                            'Create your password to complete access request.',
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _passwordController,
+                              obscureText: !isPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.password_label',
+                                  fallback: 'Password',
+                                ),
+                                helperText: context.t(
+                                  'auth.password_helper',
+                                  fallback:
+                                      'Min 8 chars, 1 uppercase, 1 number',
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isPasswordVisible
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                  ),
+                                  onPressed: () {
+                                    ref
+                                        .read(passwordVisibleProvider.notifier)
+                                        .state = !isPasswordVisible;
+                                  },
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _addressController,
-                            keyboardType: TextInputType.streetAddress,
-                            maxLines: 3,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.address_label',
-                                fallback: 'Address',
-                              ),
-                              helperText: context.t(
-                                'auth.address_helper',
-                                fallback: 'Enter your address manually',
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _confirmPasswordController,
+                              obscureText: !isConfirmPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: context.t(
+                                  'auth.confirm_password_label',
+                                  fallback: 'Confirm Password',
+                                ),
+                                helperText: context.t(
+                                  'auth.confirm_password_helper',
+                                  fallback:
+                                      'Password and Confirm passwords must be same',
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isConfirmPasswordVisible
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                  ),
+                                  onPressed: () {
+                                    ref
+                                        .read(confirmPasswordVisibleProvider
+                                            .notifier)
+                                        .state = !isConfirmPasswordVisible;
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    _StepShell(
-                      title: 'Secure your account',
-                      subtitle:
-                          'Create your password to complete access request.',
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: !isPasswordVisible,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.password_label',
-                                fallback: 'Password',
-                              ),
-                              helperText: context.t(
-                                'auth.password_helper',
-                                fallback: 'Min 8 chars, 1 uppercase, 1 number',
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  isPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
-                                onPressed: () {
-                                  ref
-                                      .read(passwordVisibleProvider.notifier)
-                                      .state = !isPasswordVisible;
-                                },
-                              ),
+                      _StepShell(
+                        title: 'Review',
+                        subtitle:
+                            'Check the details before submitting your request.',
+                        child: _ReviewCard(
+                          rows: [
+                            _ReviewRow('Name', _nameController.text.trim()),
+                            _ReviewRow('Email', _emailController.text.trim()),
+                            _ReviewRow('Phone', _phoneController.text.trim()),
+                            _ReviewRow('Gender', _gender),
+                            _ReviewRow(
+                              'Date of Birth',
+                              _dob == null
+                                  ? ''
+                                  : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                      '${_dob!.month.toString().padLeft(2, '0')}/'
+                                      '${_dob!.year}',
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _confirmPasswordController,
-                            obscureText: !isConfirmPasswordVisible,
-                            decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.confirm_password_label',
-                                fallback: 'Confirm Password',
-                              ),
-                              helperText: context.t(
-                                'auth.confirm_password_helper',
-                                fallback:
-                                    'Password and Confirm passwords must be same',
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  isConfirmPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
-                                onPressed: () {
-                                  ref
-                                      .read(confirmPasswordVisibleProvider
-                                          .notifier)
-                                      .state = !isConfirmPasswordVisible;
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+                            _ReviewRow('Category', _category),
+                            _ReviewRow('Family ID', _resolveFamilyId()),
+                            _ReviewRow(
+                                'Location', _locationController.text.trim()),
+                            _ReviewRow(
+                                'Address', _addressController.text.trim()),
+                          ],
+                        ),
                       ),
-                    ),
-                    _StepShell(
-                      title: 'Review',
-                      subtitle:
-                          'Check the details before submitting your request.',
-                      child: _ReviewCard(
-                        rows: [
-                          _ReviewRow('Name', _nameController.text.trim()),
-                          _ReviewRow('Email', _emailController.text.trim()),
-                          _ReviewRow('Phone', _phoneController.text.trim()),
-                          _ReviewRow('Gender', _gender),
-                          _ReviewRow(
-                            'Date of Birth',
-                            _dob == null
-                                ? ''
-                                : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                    '${_dob!.month.toString().padLeft(2, '0')}/'
-                                    '${_dob!.year}',
-                          ),
-                          _ReviewRow('Category', _category),
-                          _ReviewRow('Family ID', _resolveFamilyId()),
-                          _ReviewRow(
-                              'Location', _locationController.text.trim()),
-                          _ReviewRow('Address', _addressController.text.trim()),
-                        ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (_stepIndex > 0)
+                      Expanded(
+                        child: SolidButton(
+                          label: 'Back',
+                          onPressed: isLoading
+                              ? null
+                              : () => _goToStep(_stepIndex - 1),
+                        ),
+                      ),
+                    if (_stepIndex > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: SolidButton(
+                        label: _stepIndex == _stepCount - 1 ? 'Submit' : 'Next',
+                        isLoading: isLoading,
+                        onPressed: isLoading
+                            ? null
+                            : _stepIndex == _stepCount - 1
+                                ? _submit
+                                : _handleNext,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  if (_stepIndex > 0)
-                    Expanded(
-                      child: SolidButton(
-                        label: 'Back',
-                        onPressed:
-                            isLoading ? null : () => _goToStep(_stepIndex - 1),
-                      ),
-                    ),
-                  if (_stepIndex > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: SolidButton(
-                      label: _stepIndex == _stepCount - 1 ? 'Submit' : 'Next',
-                      isLoading: isLoading,
-                      onPressed: isLoading
-                          ? null
-                          : _stepIndex == _stepCount - 1
-                              ? _submit
-                              : _handleNext,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
