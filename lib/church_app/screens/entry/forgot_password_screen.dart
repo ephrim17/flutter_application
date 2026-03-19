@@ -2,9 +2,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
+import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({
+    super.key,
+    this.churchName = '',
+    this.churchLogo = '',
+  });
+
+  final String churchName;
+  final String churchLogo;
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -70,7 +79,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('auth.forgot_password_title', fallback: 'Forgot Password'),
+          text: context.t('auth.forgot_password_title',
+              fallback: 'Forgot Password'),
         ),
       ),
       body: Padding(
@@ -80,6 +90,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              ChurchLogoAvatar(
+                logo: widget.churchLogo,
+                size: 84,
+              ),
+              if (widget.churchName.trim().isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  widget.churchName,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -98,17 +123,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _sendResetEmail,
-                      child: Text(
-                        context.t(
-                          'auth.send_reset_email',
-                          fallback: 'Send Reset Email',
-                        ),
-                      ),
-                    ),
+              SolidButton(
+                label: context.t(
+                  'auth.send_reset_email',
+                  fallback: 'Send Reset Email',
+                ),
+                isLoading: _isLoading,
+                onPressed: _sendResetEmail,
+              ),
             ],
           ),
         ),

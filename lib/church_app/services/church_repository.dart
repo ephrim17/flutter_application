@@ -12,9 +12,15 @@ class ChurchRepository {
         .where('enabled', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
+      final churches = snapshot.docs
           .map((doc) => Church.fromFirestore(doc.id, doc.data()))
           .toList();
+
+      churches.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+
+      return churches;
     });
   }
 }

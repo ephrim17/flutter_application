@@ -1,11 +1,21 @@
 class Church {
   final String id;
   final String name;
+  final String address;
+  final String contact;
+  final String email;
+  final String pastorName;
+  final String logo;
   final bool enabled;
 
   Church({
     required this.id,
     required this.name,
+    required this.address,
+    required this.contact,
+    required this.email,
+    required this.pastorName,
+    required this.logo,
     required this.enabled,
   });
 
@@ -13,6 +23,11 @@ class Church {
     return Church(
       id: id,
       name: data['name'] ?? '',
+      address: data['address'] ?? '',
+      contact: data['contact'] ?? '',
+      email: data['email'] ?? '',
+      pastorName: data['pastorName'] ?? '',
+      logo: data['logo'] ?? data['logoUrl'] ?? data['imageUrl'] ?? '',
       enabled: data['enabled'] ?? false,
     );
   }

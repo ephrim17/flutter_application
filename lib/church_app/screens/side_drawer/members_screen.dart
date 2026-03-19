@@ -9,6 +9,7 @@ import 'package:flutter_application/church_app/services/side_drawer/members_repo
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class MembersScreen extends ConsumerStatefulWidget {
   const MembersScreen({super.key});
@@ -33,7 +34,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
     final isAdmin = ref.watch(isAdminProvider);
     final currentUid = ref.watch(firebaseAuthProvider).currentUser?.uid;
     final allMembers = membersAsync.asData?.value ?? const <AppUser>[];
-    final todayBirthdays = allMembers.where((member) => isBirthdayToday(member.dob)).toList()
+    final todayBirthdays = allMembers
+        .where((member) => isBirthdayToday(member.dob))
+        .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return DefaultTabController(
@@ -65,7 +68,8 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
             child: Text(
-              context.t('members.error_loading', fallback: 'Error loading members'),
+              context.t('members.error_loading',
+                  fallback: 'Error loading members'),
             ),
           ),
           data: (members) {
@@ -77,15 +81,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               );
             }
 
-            final sortedMembers = [...members]
-              ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            final sortedMembers = [...members]..sort(
+                (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
             final filteredMembers = _filterMembers(sortedMembers, _query);
             final familyMembers = filteredMembers
                 .where((member) => member.category.toLowerCase() == 'family')
                 .toList();
             final individualMembers = filteredMembers
-                .where((member) => member.category.toLowerCase() == 'individual')
+                .where(
+                    (member) => member.category.toLowerCase() == 'individual')
                 .toList();
             final groupedFamilies = _groupFamilies(familyMembers);
 
@@ -123,9 +128,13 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _CountChip(label: 'All', count: filteredMembers.length),
-                          _CountChip(label: 'Families', count: groupedFamilies.length),
-                          _CountChip(label: 'Individuals', count: individualMembers.length),
+                          _CountChip(
+                              label: 'All', count: filteredMembers.length),
+                          _CountChip(
+                              label: 'Families', count: groupedFamilies.length),
+                          _CountChip(
+                              label: 'Individuals',
+                              count: individualMembers.length),
                         ],
                       ),
                     ],
@@ -249,6 +258,7 @@ class _MemberTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
+      onTap: () => _showMemberDetailsSheet(context, member),
       leading: CircleAvatar(
         child: Text(
           member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
@@ -273,6 +283,87 @@ class _MemberTile extends ConsumerWidget {
           : null,
     );
   }
+}
+
+Future<void> _showMemberDetailsSheet(BuildContext context, AppUser member) {
+  final theme = Theme.of(context);
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            20 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    child: Text(
+                      member.name.isNotEmpty
+                          ? member.name[0].toUpperCase()
+                          : '?',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _valueOrFallback(member.name),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatCategory(member.category),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _MemberDetailRow(
+                icon: Icons.location_on_outlined,
+                label: 'Address',
+                value: _valueOrFallback(member.address),
+              ),
+              _MemberDetailRow(
+                icon: Icons.cake_outlined,
+                label: 'DOB',
+                value: _formatDob(member.dob),
+              ),
+              _MemberDetailRow(
+                icon: Icons.email_outlined,
+                label: 'Email',
+                value: _valueOrFallback(member.email),
+              ),
+              _MemberDetailRow(
+                icon: Icons.phone_outlined,
+                label: 'Phone',
+                value: _valueOrFallback(member.phone),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class _CountChip extends StatelessWidget {
@@ -312,7 +403,9 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
   final grouped = <String, List<AppUser>>{};
 
   for (final member in members) {
-    final familyId = member.familyId.trim().isEmpty ? 'No Family ID' : member.familyId.trim();
+    final familyId = member.familyId.trim().isEmpty
+        ? 'No Family ID'
+        : member.familyId.trim();
     grouped.putIfAbsent(familyId, () => []).add(member);
   }
 
@@ -320,7 +413,8 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
     ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()));
 
   for (final entry in entries) {
-    entry.value.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    entry.value
+        .sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 
   return entries;
@@ -352,4 +446,66 @@ String _formatFamilyHeader(String familyId) {
 
   final suffix = displayName.endsWith('s') ? "'" : "'s";
   return '$displayName$suffix family';
+}
+
+class _MemberDetailRow extends StatelessWidget {
+  const _MemberDetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatDob(DateTime? date) {
+  if (date == null) return 'Not provided';
+  return DateFormat('dd MMM yyyy').format(date);
+}
+
+String _formatCategory(String category) {
+  final normalized = category.trim().toLowerCase();
+  if (normalized.isEmpty) return 'Not provided';
+  return normalized[0].toUpperCase() + normalized.substring(1);
+}
+
+String _valueOrFallback(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? 'Not provided' : trimmed;
 }

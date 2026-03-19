@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
@@ -8,7 +9,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppEntry extends ConsumerStatefulWidget {
-  const AppEntry({super.key});
+  const AppEntry({
+    super.key,
+    this.initialUser,
+  });
+
+  final AppUser? initialUser;
 
   @override
   ConsumerState<AppEntry> createState() => _AppEntryState();
@@ -52,21 +58,27 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
     // Existing logic (do not change)
     final userAsync = ref.watch(appUserProvider);
+    final resolvedUser = userAsync.maybeWhen(
+      data: (user) => user,
+      orElse: () => widget.initialUser,
+    );
 
     return userAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () => _buildResolvedScreen(resolvedUser),
       error: (e, _) => const SelectChurchScreen(),
       data: (user) {
-        if (user == null) {
-          return const SelectChurchScreen();
-        }
-        if (!user.approved) {
-          return const PendingApprovalWidget();
-        }
-        return const ChurchTabScreen();
+        return _buildResolvedScreen(user);
       },
     );
+  }
+
+  Widget _buildResolvedScreen(AppUser? user) {
+    if (user == null) {
+      return const SelectChurchScreen();
+    }
+    if (!user.approved) {
+      return const PendingApprovalWidget();
+    }
+    return const ChurchTabScreen();
   }
 }

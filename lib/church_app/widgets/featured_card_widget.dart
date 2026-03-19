@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
+import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 
 class FeaturedCard extends StatelessWidget {
   final String badgeText;
@@ -37,13 +38,14 @@ class FeaturedCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ColorText(badgeText: badgeText, fontSize: 15,),
+                    ColorText(
+                      badgeText: badgeText,
+                      fontSize: 15,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -61,7 +63,6 @@ class FeaturedCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                 ),
-                
                 child: Image.asset(
                   imagePath,
                   height: 120,
@@ -74,15 +75,9 @@ class FeaturedCard extends StatelessWidget {
           const SizedBox(height: 24),
 
           /// CTA Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-                onPressed: onPressed,
-                child: Text(
-                  buttonText,
-                ),
-              ),
+          SolidButton(
+            label: buttonText,
+            onPressed: onPressed,
           ),
         ],
       ),

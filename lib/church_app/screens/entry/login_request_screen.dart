@@ -7,17 +7,21 @@ import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
+import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginRequestScreen extends ConsumerStatefulWidget {
   final String churchId;
   final String churchName;
+  final String churchLogo;
 
   const LoginRequestScreen({
     super.key,
     required this.churchId,
     required this.churchName,
+    this.churchLogo = '',
   });
 
   @override
@@ -49,7 +53,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   @override
   void initState() {
     super.initState();
-    _familyIdsFuture = ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
+    _familyIdsFuture =
+        ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
   }
 
   @override
@@ -77,7 +82,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     );
     final permissionDeniedForeverMessage = context.t(
       'auth.location_permission_denied_forever',
-      fallback: 'Location permission denied permanently. Enable it from settings.',
+      fallback:
+          'Location permission denied permanently. Enable it from settings.',
     );
     final fetchFailedMessage = context.t(
       'auth.location_fetch_failed',
@@ -96,7 +102,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied) throw permissionDeniedMessage;
+      if (permission == LocationPermission.denied) {
+        throw permissionDeniedMessage;
+      }
       if (permission == LocationPermission.deniedForever) {
         throw permissionDeniedForeverMessage;
       }
@@ -198,7 +206,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         final email = _emailController.text.trim();
         final phone = _phoneController.text.trim();
         if (name.isEmpty) {
-          return context.t('auth.name_required', fallback: 'Please enter your name');
+          return context.t('auth.name_required',
+              fallback: 'Please enter your name');
         }
         if (name.length < 3) {
           return context.t(
@@ -207,7 +216,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           );
         }
         if (email.isEmpty) {
-          return context.t('auth.email_required', fallback: 'Please enter your email');
+          return context.t('auth.email_required',
+              fallback: 'Please enter your email');
         }
         final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
         if (!emailRegex.hasMatch(email)) {
@@ -254,7 +264,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
               fallback: 'Please select or create a family ID',
             );
           }
-          if (!_useExistingFamilyId && _familyNameController.text.trim().isEmpty) {
+          if (!_useExistingFamilyId &&
+              _familyNameController.text.trim().isEmpty) {
             return context.t(
               'auth.family_name_required',
               fallback: 'Please enter a family name',
@@ -421,6 +432,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
+              ChurchLogoAvatar(
+                logo: widget.churchLogo,
+                size: 84,
+              ),
+              const SizedBox(height: 14),
               _FlowHeader(
                 title: widget.churchName,
                 stepIndex: _stepIndex,
@@ -442,10 +458,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                             controller: _nameController,
                             textInputAction: TextInputAction.next,
                             decoration: InputDecoration(
-                              labelText: context.t('auth.name_label', fallback: 'Your Name'),
+                              labelText: context.t('auth.name_label',
+                                  fallback: 'Your Name'),
                               helperText: context.t(
                                 'auth.name_helper',
-                                fallback: 'Name should have only characters, not numbers',
+                                fallback:
+                                    'Name should have only characters, not numbers',
                               ),
                             ),
                           ),
@@ -484,11 +502,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                           DropdownButtonFormField<String>(
                             value: _gender.isEmpty ? null : _gender,
                             decoration: InputDecoration(
-                              labelText: context.t('auth.gender_label', fallback: 'Gender'),
+                              labelText: context.t('auth.gender_label',
+                                  fallback: 'Gender'),
                             ),
                             items: const [
-                              DropdownMenuItem(value: 'male', child: Text('Male')),
-                              DropdownMenuItem(value: 'female', child: Text('Female')),
+                              DropdownMenuItem(
+                                  value: 'male', child: Text('Male')),
+                              DropdownMenuItem(
+                                  value: 'female', child: Text('Female')),
                             ],
                             onChanged: (value) {
                               setState(() {
@@ -515,7 +536,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                             },
                             child: InputDecorator(
                               decoration: InputDecoration(
-                                labelText: context.t('auth.dob_label', fallback: 'Date of Birth'),
+                                labelText: context.t('auth.dob_label',
+                                    fallback: 'Date of Birth'),
                                 suffixIcon: const Icon(Icons.calendar_today),
                               ),
                               child: Text(
@@ -535,7 +557,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     ),
                     _StepShell(
                       title: 'Household',
-                      subtitle: 'Choose whether this request is for a family or an individual.',
+                      subtitle:
+                          'Choose whether this request is for a family or an individual.',
                       child: FutureBuilder<List<String>>(
                         future: _familyIdsFuture,
                         builder: (context, snapshot) {
@@ -553,7 +576,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                   ),
                                 ),
                                 items: const [
-                                  DropdownMenuItem(value: 'family', child: Text('Family')),
+                                  DropdownMenuItem(
+                                      value: 'family', child: Text('Family')),
                                   DropdownMenuItem(
                                     value: 'individual',
                                     child: Text('Individual'),
@@ -592,7 +616,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     },
                                   ),
                                 const SizedBox(height: 8),
-                                if (familyIds.isNotEmpty && _useExistingFamilyId)
+                                if (familyIds.isNotEmpty &&
+                                    _useExistingFamilyId)
                                   DropdownButtonFormField<String>(
                                     value: _selectedExistingFamilyId,
                                     decoration: InputDecoration(
@@ -606,7 +631,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           (familyId) => DropdownMenuItem(
                                             value: familyId,
                                             child: Text(
-                                              _formatFamilyOptionLabel(familyId),
+                                              _formatFamilyOptionLabel(
+                                                  familyId),
                                             ),
                                           ),
                                         )
@@ -627,7 +653,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                       helperText: context.t(
                                         'auth.family_name_helper',
-                                        fallback: 'Used to generate a new family ID',
+                                        fallback:
+                                            'Used to generate a new family ID',
                                       ),
                                     ),
                                   ),
@@ -637,13 +664,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 Text(
                                   context.t(
                                     'auth.individual_family_hint',
-                                    fallback: 'Family ID will be generated automatically',
+                                    fallback:
+                                        'Family ID will be generated automatically',
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   _resolveFamilyId(),
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
                               ],
                             ],
@@ -653,7 +682,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     ),
                     _StepShell(
                       title: 'Where are you located?',
-                      subtitle: 'Use current location or paste your Google Maps link, then add your address.',
+                      subtitle:
+                          'Use current location or paste your Google Maps link, then add your address.',
                       child: Column(
                         children: [
                           TextField(
@@ -666,7 +696,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               ),
                               helperText: context.t(
                                 'auth.location_helper',
-                                fallback: 'Use current location or paste your Google Maps link',
+                                fallback:
+                                    'Use current location or paste your Google Maps link',
                               ),
                               suffixIcon: _isFetchingLocation
                                   ? const Padding(
@@ -674,7 +705,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       child: SizedBox(
                                         height: 20,
                                         width: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
                                       ),
                                     )
                                   : IconButton(
@@ -687,8 +719,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: TextButton.icon(
-                              onPressed: _isFetchingLocation ? null : _fillCurrentLocation,
-                              icon: const Icon(Icons.location_searching_outlined),
+                              onPressed: _isFetchingLocation
+                                  ? null
+                                  : _fillCurrentLocation,
+                              icon:
+                                  const Icon(Icons.location_searching_outlined),
                               label: Text(
                                 context.t(
                                   'auth.location_use_current',
@@ -718,7 +753,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     ),
                     _StepShell(
                       title: 'Secure your account',
-                      subtitle: 'Create your password to complete access request.',
+                      subtitle:
+                          'Create your password to complete access request.',
                       child: Column(
                         children: [
                           TextField(
@@ -740,8 +776,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       : Icons.visibility,
                                 ),
                                 onPressed: () {
-                                  ref.read(passwordVisibleProvider.notifier).state =
-                                      !isPasswordVisible;
+                                  ref
+                                      .read(passwordVisibleProvider.notifier)
+                                      .state = !isPasswordVisible;
                                 },
                               ),
                             ),
@@ -757,7 +794,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               ),
                               helperText: context.t(
                                 'auth.confirm_password_helper',
-                                fallback: 'Password and Confirm passwords must be same',
+                                fallback:
+                                    'Password and Confirm passwords must be same',
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -767,7 +805,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 ),
                                 onPressed: () {
                                   ref
-                                      .read(confirmPasswordVisibleProvider.notifier)
+                                      .read(confirmPasswordVisibleProvider
+                                          .notifier)
                                       .state = !isConfirmPasswordVisible;
                                 },
                               ),
@@ -778,7 +817,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     ),
                     _StepShell(
                       title: 'Review',
-                      subtitle: 'Check the details before submitting your request.',
+                      subtitle:
+                          'Check the details before submitting your request.',
                       child: _ReviewCard(
                         rows: [
                           _ReviewRow('Name', _nameController.text.trim()),
@@ -795,7 +835,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                           ),
                           _ReviewRow('Category', _category),
                           _ReviewRow('Family ID', _resolveFamilyId()),
-                          _ReviewRow('Location', _locationController.text.trim()),
+                          _ReviewRow(
+                              'Location', _locationController.text.trim()),
                           _ReviewRow('Address', _addressController.text.trim()),
                         ],
                       ),
@@ -808,29 +849,22 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 children: [
                   if (_stepIndex > 0)
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: isLoading ? null : () => _goToStep(_stepIndex - 1),
-                        child: const Text('Back'),
+                      child: SolidButton(
+                        label: 'Back',
+                        onPressed:
+                            isLoading ? null : () => _goToStep(_stepIndex - 1),
                       ),
                     ),
                   if (_stepIndex > 0) const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton(
+                    child: SolidButton(
+                      label: _stepIndex == _stepCount - 1 ? 'Submit' : 'Next',
+                      isLoading: isLoading,
                       onPressed: isLoading
                           ? null
                           : _stepIndex == _stepCount - 1
                               ? _submit
                               : _handleNext,
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(_stepIndex == _stepCount - 1 ? 'Submit' : 'Next'),
                     ),
                   ),
                 ],
