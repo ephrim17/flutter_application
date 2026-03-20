@@ -128,70 +128,65 @@ class SelectChurchScreen extends ConsumerWidget {
                           Container(
                             decoration: carouselBoxDecoration(context),
                             padding: const EdgeInsets.all(18),
-                            child: Row(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ChurchLogoAvatar(
-                                  logo: selectedChurch.logo,
-                                  size: 48,
+                                Text(
+                                  'Selected Church',
+                                  style:
+                                      Theme.of(context).textTheme.labelMedium,
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Selected Church',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        selectedChurch.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
+                                const SizedBox(height: 10),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    ChurchLogoAvatar(
+                                      logo: selectedChurch.logo,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            selectedChurch.name,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _valueOrFallback(
+                                              selectedChurch.pastorName,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        _valueOrFallback(
-                                          selectedChurch.pastorName,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  tooltip: selectedChurch.contact.trim().isEmpty
-                                      ? null
-                                      : 'Call church',
-                                  onPressed:
-                                      selectedChurch.contact.trim().isEmpty
-                                          ? null
-                                          : () => launchPhoneCall(
-                                                context,
-                                                selectedChurch.contact,
-                                              ),
-                                  icon: const Icon(Icons.call_outlined),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined),
-                                  onPressed: () {
-                                    ref
-                                        .read(selectedChurchProvider.notifier)
-                                        .state = null;
-                                  },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      icon: const Icon(Icons.edit_outlined),
+                                      onPressed: () {
+                                        ref
+                                            .read(
+                                                selectedChurchProvider.notifier)
+                                            .state = null;
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
