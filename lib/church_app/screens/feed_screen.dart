@@ -160,9 +160,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             Text(feedState.errorMessage!),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: () => ref
-                  .read(feedPaginationControllerProvider(churchId).notifier)
-                  .refresh(),
+              onPressed: () => _refreshFeed(churchId, isGlobal: isGlobal),
               child: Text(
                 ref.t('feed.retry', fallback: 'Retry'),
               ),
@@ -174,9 +172,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     if (feedState.posts.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () => ref
-            .read(feedPaginationControllerProvider(churchId).notifier)
-            .refresh(),
+        onRefresh: () => _refreshFeed(churchId, isGlobal: isGlobal),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
@@ -196,9 +192,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final itemCount = feedState.posts.length + (feedState.hasMore ? 1 : 0);
 
     return RefreshIndicator(
-      onRefresh: () => ref
-          .read(feedPaginationControllerProvider(churchId).notifier)
-          .refresh(),
+      onRefresh: () => _refreshFeed(churchId, isGlobal: isGlobal),
       child: ListView.builder(
         controller:
             isGlobal ? _globalScrollController : _churchScrollController,
@@ -237,6 +231,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     );
 
     if (!mounted) return;
+    if (isGlobal) {
+      await ref.read(globalFeedPaginationControllerProvider.notifier).refresh();
+      return;
+    }
+
+    await ref
+        .read(feedPaginationControllerProvider(churchId).notifier)
+        .refresh();
+  }
+
+  Future<void> _refreshFeed(
+    String churchId, {
+    required bool isGlobal,
+  }) async {
     if (isGlobal) {
       await ref.read(globalFeedPaginationControllerProvider.notifier).refresh();
       return;

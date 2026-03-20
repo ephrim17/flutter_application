@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:intl/intl.dart';
 
@@ -93,6 +94,9 @@ Future<void> showUserQuickCardWithChurch(
                 icon: Icons.phone_outlined,
                 label: 'Phone',
                 value: _valueOrFallback(user.phone),
+                onActionTap: user.phone.trim().isEmpty
+                    ? null
+                    : () => launchPhoneCall(context, user.phone),
               ),
             ],
           ),
@@ -107,11 +111,13 @@ class _UserDetailRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onActionTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +148,17 @@ class _UserDetailRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onActionTap != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: onActionTap,
+              tooltip: 'Call',
+              icon: Icon(
+                Icons.call_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );

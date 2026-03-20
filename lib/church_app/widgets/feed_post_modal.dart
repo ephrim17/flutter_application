@@ -345,6 +345,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                   .deletePost(
                                     postId: widget.post!.id,
                                     imageUrl: widget.post!.imageUrl,
+                                    isGlobal: widget.isGlobal,
                                   );
                               navigator.pop();
                             } catch (e) {

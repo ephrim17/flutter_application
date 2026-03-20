@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -357,6 +358,9 @@ Future<void> _showMemberDetailsSheet(BuildContext context, AppUser member) {
                 icon: Icons.phone_outlined,
                 label: 'Phone',
                 value: _valueOrFallback(member.phone),
+                onActionTap: member.phone.trim().isEmpty
+                    ? null
+                    : () => launchPhoneCall(context, member.phone),
               ),
             ],
           ),
@@ -453,11 +457,13 @@ class _MemberDetailRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onActionTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -488,6 +494,17 @@ class _MemberDetailRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onActionTap != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: onActionTap,
+              tooltip: 'Call',
+              icon: Icon(
+                Icons.call_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );

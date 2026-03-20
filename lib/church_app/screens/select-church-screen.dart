@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -171,6 +172,19 @@ class SelectChurchScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: selectedChurch.contact.trim().isEmpty
+                                      ? null
+                                      : 'Call church',
+                                  onPressed:
+                                      selectedChurch.contact.trim().isEmpty
+                                          ? null
+                                          : () => launchPhoneCall(
+                                                context,
+                                                selectedChurch.contact,
+                                              ),
+                                  icon: const Icon(Icons.call_outlined),
+                                ),
                                 IconButton(
                                   icon: const Icon(Icons.edit_outlined),
                                   onPressed: () {
@@ -352,6 +366,9 @@ class SelectChurchScreen extends ConsumerWidget {
                   icon: Icons.phone_outlined,
                   label: 'Contact',
                   value: _valueOrFallback(church.contact),
+                  onActionTap: church.contact.trim().isEmpty
+                      ? null
+                      : () => launchPhoneCall(context, church.contact),
                 ),
                 _ChurchDetailRow(
                   icon: Icons.location_on_outlined,
@@ -556,11 +573,13 @@ class _ChurchDetailRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onActionTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -588,6 +607,17 @@ class _ChurchDetailRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onActionTap != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: onActionTap,
+              tooltip: 'Call',
+              icon: Icon(
+                Icons.call_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );
