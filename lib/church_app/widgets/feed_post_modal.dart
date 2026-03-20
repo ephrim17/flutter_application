@@ -36,6 +36,7 @@ class CreatePostModal extends ConsumerStatefulWidget {
 class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  bool _sharePersonalDetails = false;
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
     if (widget.post != null) {
       _titleController.text = widget.post!.title;
       _descriptionController.text = widget.post!.description;
+      _sharePersonalDetails = widget.post!.sharePersonalDetails;
     } else {
       _titleController.text = widget.initialTitle ?? '';
       _descriptionController.text = widget.initialDescription ?? '';
@@ -164,6 +166,24 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   ),
                 ),
               ),
+              if (widget.isGlobal) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _sharePersonalDetails,
+                  onChanged: (value) {
+                    setState(() {
+                      _sharePersonalDetails = value;
+                    });
+                  },
+                  title: const Text('Share personal details'),
+                  subtitle: Text(
+                    _sharePersonalDetails
+                        ? 'Name, category, address, DOB, email, and phone will be available from this global post.'
+                        : 'Only name, church, and church pastor will be shown from this global post.',
+                  ),
+                ),
+              ],
               Align(
                 alignment: Alignment.centerLeft,
                 child: isCreateMode && widget.allowImagePicking
@@ -246,6 +266,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                     title: title,
                                     description: description,
                                     imageFile: selectedImage,
+                                    sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
                                   );
                             } else {
@@ -259,6 +280,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                     description: description,
                                     imageFile: selectedImage,
                                     existingImageUrl: widget.post!.imageUrl,
+                                    sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
                                   );
                             }

@@ -31,8 +31,13 @@ class FeedCard extends ConsumerWidget {
     final firebaseUser = ref.watch(firebaseAuthProvider).currentUser;
     final currentUid = firebaseUser?.uid;
     final isAdmin = ref.watch(isAdminProvider);
+    final postChurchId = post.churchId?.trim() ?? '';
+    final isPostChurchAdmin = isGlobal && postChurchId.isNotEmpty
+        ? ref.watch(churchAdminProvider(postChurchId))
+        : false;
 
     final isOwner = currentUid != null && currentUid == post.userId;
+    final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -80,7 +85,7 @@ class FeedCard extends ConsumerWidget {
                   ],
                 ),
                 const Spacer(),
-                if (isOwner || isAdmin)
+                if (isOwner || canDelete)
                   PopupMenuButton<_FeedPostAction>(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (action) async {
@@ -99,7 +104,7 @@ class FeedCard extends ConsumerWidget {
                           value: _FeedPostAction.edit,
                           child: Text('Edit post'),
                         ),
-                      if (isAdmin)
+                      if (canDelete)
                         const PopupMenuItem(
                           value: _FeedPostAction.delete,
                           child: Text('Delete post'),
@@ -223,17 +228,6 @@ class FeedCard extends ConsumerWidget {
       BuildContext context, WidgetRef ref) async {
     final postChurchId = post.churchId?.trim() ?? '';
     if (postChurchId.isEmpty) return;
-
-    final doc = await FirestorePaths.churchUserDoc(
-      ref.read(firestoreProvider),
-      postChurchId,
-      post.userId,
-    ).get();
-
-    if (!doc.exists) return;
-    if (!context.mounted) return;
-
-    final user = AppUser.fromJson(doc.data() as Map<String, dynamic>);
     var churchName = post.churchName?.trim() ?? '';
     var churchPastorName = post.churchPastorName?.trim() ?? '';
 
@@ -258,12 +252,78 @@ class FeedCard extends ConsumerWidget {
     }
 
     if (!context.mounted) return;
+    if (!post.sharePersonalDetails) {
+      await showUserQuickCardWithChurch(
+        context,
+        AppUser(
+          uid: post.userId,
+          name: post.userName,
+          email: '',
+          role: 'user',
+          approved: true,
+          phone: '',
+          location: '',
+          address: '',
+          gender: '',
+          category: '',
+          familyId: '',
+          authToken: '',
+          dob: null,
+        ),
+        churchName: churchName,
+        churchPastorName: churchPastorName,
+        showCategory: false,
+        showAddress: false,
+        showDob: false,
+        showEmail: false,
+        showPhone: false,
+      );
+      return;
+    }
+
+    final postHasStoredPersonalDetails =
+        (post.userCategory?.trim().isNotEmpty ?? false) ||
+            (post.userAddress?.trim().isNotEmpty ?? false) ||
+            (post.userEmail?.trim().isNotEmpty ?? false) ||
+            (post.userPhone?.trim().isNotEmpty ?? false) ||
+            post.userDob != null;
+
+    final user = postHasStoredPersonalDetails
+        ? AppUser(
+            uid: post.userId,
+            name: post.userName,
+            email: post.userEmail ?? '',
+            role: 'user',
+            approved: true,
+            phone: post.userPhone ?? '',
+            location: '',
+            address: post.userAddress ?? '',
+            gender: '',
+            category: post.userCategory ?? '',
+            familyId: '',
+            authToken: '',
+            dob: post.userDob,
+          )
+        : await _loadAuthorFromChurch(ref, postChurchId);
+
+    if (user == null || !context.mounted) return;
     await showUserQuickCardWithChurch(
       context,
       user,
       churchName: churchName,
       churchPastorName: churchPastorName,
     );
+  }
+
+  Future<AppUser?> _loadAuthorFromChurch(WidgetRef ref, String churchId) async {
+    final doc = await FirestorePaths.churchUserDoc(
+      ref.read(firestoreProvider),
+      churchId,
+      post.userId,
+    ).get();
+
+    if (!doc.exists) return null;
+    return AppUser.fromJson(doc.data() as Map<String, dynamic>);
   }
 }
 

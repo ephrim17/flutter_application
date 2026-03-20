@@ -469,43 +469,40 @@ class _MemberDetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyLarge,
-                ),
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onActionTap,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              onActionTap != null ? Icons.call_outlined : icon,
+              size: 20,
+              color: theme.colorScheme.primary,
             ),
-          ),
-          if (onActionTap != null) ...[
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onActionTap,
-              tooltip: 'Call',
-              icon: Icon(
-                Icons.call_outlined,
-                color: theme.colorScheme.primary,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                ],
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }

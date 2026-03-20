@@ -28,6 +28,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     required String title,
     required String description,
     PickedImageData? imageFile,
+    bool sharePersonalDetails = false,
     bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
@@ -63,6 +64,12 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         userPhoto: null,
         churchName: church?.name,
         churchPastorName: church?.pastorName,
+        sharePersonalDetails: isGlobal && sharePersonalDetails,
+        userCategory: user.category,
+        userAddress: user.address,
+        userEmail: user.email,
+        userPhone: user.phone,
+        userDob: user.dob,
         title: title,
         description: description,
         imageFile: imageFile,
@@ -77,6 +84,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     required String description,
     PickedImageData? imageFile,
     String? existingImageUrl,
+    bool? sharePersonalDetails,
     bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
@@ -87,6 +95,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
+      final user = _ref.read(getCurrentUserProvider).value;
       await _repository.updatePost(
         churchId: churchId,
         postId: postId,
@@ -94,6 +103,12 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         description: description,
         imageFile: imageFile,
         existingImageUrl: existingImageUrl,
+        sharePersonalDetails: isGlobal ? (sharePersonalDetails ?? false) : null,
+        userCategory: user?.category,
+        userAddress: user?.address,
+        userEmail: user?.email,
+        userPhone: user?.phone,
+        userDob: user?.dob,
         isGlobal: isGlobal,
       );
     });

@@ -92,6 +92,12 @@ class FeedRepository {
     String? userPhoto,
     String? churchName,
     String? churchPastorName,
+    bool sharePersonalDetails = false,
+    String? userCategory,
+    String? userAddress,
+    String? userEmail,
+    String? userPhone,
+    DateTime? userDob,
     required String title,
     required String description,
     PickedImageData? imageFile,
@@ -111,6 +117,14 @@ class FeedRepository {
       'churchId': churchId,
       'churchName': churchName,
       'churchPastorName': churchPastorName,
+      'sharePersonalDetails': sharePersonalDetails,
+      'userCategory': sharePersonalDetails ? userCategory : null,
+      'userAddress': sharePersonalDetails ? userAddress : null,
+      'userEmail': sharePersonalDetails ? userEmail : null,
+      'userPhone': sharePersonalDetails ? userPhone : null,
+      'userDob': sharePersonalDetails && userDob != null
+          ? Timestamp.fromDate(userDob)
+          : null,
       'title': title,
       'description': description,
       'imageUrl': null,
@@ -146,6 +160,12 @@ class FeedRepository {
     required String description,
     PickedImageData? imageFile,
     String? existingImageUrl,
+    bool? sharePersonalDetails,
+    String? userCategory,
+    String? userAddress,
+    String? userEmail,
+    String? userPhone,
+    DateTime? userDob,
     bool isGlobal = false,
   }) async {
     String? imageUrl = existingImageUrl;
@@ -172,6 +192,20 @@ class FeedRepository {
       'title': title,
       'description': description,
       'imageUrl': imageUrl,
+      if (sharePersonalDetails != null)
+        'sharePersonalDetails': sharePersonalDetails,
+      if (sharePersonalDetails != null)
+        'userCategory': sharePersonalDetails ? userCategory : null,
+      if (sharePersonalDetails != null)
+        'userAddress': sharePersonalDetails ? userAddress : null,
+      if (sharePersonalDetails != null)
+        'userEmail': sharePersonalDetails ? userEmail : null,
+      if (sharePersonalDetails != null)
+        'userPhone': sharePersonalDetails ? userPhone : null,
+      if (sharePersonalDetails != null)
+        'userDob': sharePersonalDetails && userDob != null
+            ? Timestamp.fromDate(userDob)
+            : null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

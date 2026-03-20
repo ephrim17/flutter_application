@@ -12,8 +12,14 @@ Future<void> showUserQuickCardWithChurch(
   AppUser user, {
   String? churchName,
   String? churchPastorName,
+  bool showCategory = true,
+  bool showAddress = true,
+  bool showDob = true,
+  bool showEmail = true,
+  bool showPhone = true,
 }) {
   final theme = Theme.of(context);
+  final subtitle = showCategory ? _formatCategory(user.category) : '';
 
   return showModalBottomSheet<void>(
     context: context,
@@ -50,24 +56,20 @@ Future<void> showUserQuickCardWithChurch(
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          _formatCategory(user.category),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
+                        if (subtitle.isNotEmpty)
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              _UserDetailRow(
-                icon: Icons.location_on_outlined,
-                label: 'Address',
-                value: _valueOrFallback(user.address),
-              ),
               if ((churchName ?? '').trim().isNotEmpty)
                 _UserDetailRow(
                   icon: Icons.church_outlined,
@@ -80,24 +82,33 @@ Future<void> showUserQuickCardWithChurch(
                   label: 'Church Pastor',
                   value: _valueOrFallback(churchPastorName ?? ''),
                 ),
-              _UserDetailRow(
-                icon: Icons.cake_outlined,
-                label: 'DOB',
-                value: _formatDob(user.dob),
-              ),
-              _UserDetailRow(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                value: _valueOrFallback(user.email),
-              ),
-              _UserDetailRow(
-                icon: Icons.phone_outlined,
-                label: 'Phone',
-                value: _valueOrFallback(user.phone),
-                onActionTap: user.phone.trim().isEmpty
-                    ? null
-                    : () => launchPhoneCall(context, user.phone),
-              ),
+              if (showAddress)
+                _UserDetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Address',
+                  value: _valueOrFallback(user.address),
+                ),
+              if (showDob)
+                _UserDetailRow(
+                  icon: Icons.cake_outlined,
+                  label: 'DOB',
+                  value: _formatDob(user.dob),
+                ),
+              if (showEmail)
+                _UserDetailRow(
+                  icon: Icons.email_outlined,
+                  label: 'Email',
+                  value: _valueOrFallback(user.email),
+                ),
+              if (showPhone)
+                _UserDetailRow(
+                  icon: Icons.phone_outlined,
+                  label: 'Phone',
+                  value: _valueOrFallback(user.phone),
+                  onActionTap: user.phone.trim().isEmpty
+                      ? null
+                      : () => launchPhoneCall(context, user.phone),
+                ),
             ],
           ),
         ),

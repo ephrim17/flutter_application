@@ -8,6 +8,12 @@ class FeedPost {
   final String? churchId;
   final String? churchName;
   final String? churchPastorName;
+  final bool sharePersonalDetails;
+  final String? userCategory;
+  final String? userAddress;
+  final String? userEmail;
+  final String? userPhone;
+  final DateTime? userDob;
   final String title;
   final String description;
   final String? imageUrl;
@@ -23,6 +29,12 @@ class FeedPost {
     this.churchId,
     this.churchName,
     this.churchPastorName,
+    this.sharePersonalDetails = false,
+    this.userCategory,
+    this.userAddress,
+    this.userEmail,
+    this.userPhone,
+    this.userDob,
     required this.title,
     required this.description,
     this.imageUrl,
@@ -40,6 +52,12 @@ class FeedPost {
       churchId: json['churchId'],
       churchName: json['churchName'],
       churchPastorName: json['churchPastorName'],
+      sharePersonalDetails: json['sharePersonalDetails'] ?? false,
+      userCategory: json['userCategory'],
+      userAddress: json['userAddress'],
+      userEmail: json['userEmail'],
+      userPhone: json['userPhone'],
+      userDob: _parseDate(json['userDob']),
       title: json['title'],
       description: json['description'],
       imageUrl: json['imageUrl'],
@@ -47,5 +65,11 @@ class FeedPost {
       likeCount: json['likeCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,
     );
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return null;
   }
 }

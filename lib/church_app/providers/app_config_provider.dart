@@ -28,6 +28,17 @@ final appConfigProvider = StreamProvider<AppConfig>((ref) {
   );
 });
 
+final churchAppConfigProvider =
+    StreamProvider.family<AppConfig, String>((ref, churchId) {
+  final firestore = ref.watch(firestoreProvider);
+  final repo = AppConfigRepository(
+    firestore: firestore,
+    churchId: churchId,
+  );
+
+  return repo.watchAppConfig();
+});
+
 final textContentProvider = Provider<TextContent>((ref) {
   final configAsync = ref.watch(appConfigProvider);
   return configAsync.maybeWhen(
