@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/bible_font_size_constant.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,7 +21,7 @@ class BibleReaderAppBar extends ConsumerWidget implements PreferredSizeWidget {
       title: title,
       actions: [
         PopupMenuButton<BibleFontSize>(
-          tooltip: 'Font size',
+          tooltip: context.t('common.font_size', fallback: 'Font size'),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -36,17 +37,17 @@ class BibleReaderAppBar extends ConsumerWidget implements PreferredSizeWidget {
           },
           itemBuilder: (context) => [
             _fontItem(
-              label: 'Small',
+              label: context.t('common.small', fallback: 'Small'),
               value: BibleFontSize.small,
               selected: fontSize == BibleFontSize.small,
             ),
             _fontItem(
-              label: 'Medium',
+              label: context.t('common.medium', fallback: 'Medium'),
               value: BibleFontSize.medium,
               selected: fontSize == BibleFontSize.medium,
             ),
             _fontItem(
-              label: 'Large',
+              label: context.t('common.large', fallback: 'Large'),
               value: BibleFontSize.large,
               selected: fontSize == BibleFontSize.large,
             ),

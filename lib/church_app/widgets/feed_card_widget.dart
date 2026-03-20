@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -100,14 +101,18 @@ class FeedCard extends ConsumerWidget {
                     },
                     itemBuilder: (context) => [
                       if (isOwner)
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: _FeedPostAction.edit,
-                          child: Text('Edit post'),
+                          child: Text(
+                            ref.t('feed.edit_post', fallback: 'Edit post'),
+                          ),
                         ),
                       if (canDelete)
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: _FeedPostAction.delete,
-                          child: Text('Delete post'),
+                          child: Text(
+                            ref.t('feed.delete_post', fallback: 'Delete post'),
+                          ),
                         ),
                     ],
                   ),
@@ -173,18 +178,22 @@ class FeedCard extends ConsumerWidget {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete post?'),
+        title: Text('Delete post?', style: Theme.of(context).textTheme.bodyMedium),
         content: const Text(
           'This will permanently delete the post and its image.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              ref.t('settings.cancel', fallback: 'Cancel'),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(
+              ref.t('common.delete', fallback: 'Delete'),
+            ),
           ),
         ],
       ),

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
+import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
@@ -60,7 +62,7 @@ class StudioScreen extends ConsumerWidget {
         );
 
         return DefaultTabController(
-          length: 8,
+          length: 9,
           child: Scaffold(
             appBar: AppBar(
               title: Text(ref.t('studio.title', fallback: 'Studio')),
@@ -76,6 +78,9 @@ class StudioScreen extends ConsumerWidget {
                           fallback: 'Daily Verse')),
                   Tab(text: ref.t('studio.tab_articles', fallback: 'Articles')),
                   Tab(text: ref.t('studio.tab_promise', fallback: 'Promise')),
+                  Tab(
+                    text: ref.t('studio.tab_sections', fallback: 'Sections'),
+                  ),
                   Tab(
                       text: ref.t('studio.tab_notifications',
                           fallback: 'Notifications')),
@@ -174,6 +179,7 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                _SectionsEditor(repository: repository),
                 _NotificationComposer(
                   churchId: churchId,
                   onSend: ({required title, required body, required topic}) {
@@ -525,6 +531,346 @@ class _NotificationComposerState extends State<_NotificationComposer> {
     );
   }
 }
+
+class _SectionsEditor extends StatelessWidget {
+  const _SectionsEditor({
+    required this.repository,
+  });
+
+  final StudioRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _SectionGroupCard<HomeSectionConfigModel>(
+          title: context.t('studio.section_home', fallback: 'Home Sections'),
+          definitions: _homeSectionDefinitions,
+          stream: repository.watchHomeSectionConfigs(),
+          itemId: (item) => item.id,
+          itemEnabled: (item) => item.enabled,
+          itemOrder: (item) => item.order,
+          onSave: ({required id, required enabled, required order}) {
+            return repository.updateHomeSectionConfig(
+              id: id,
+              enabled: enabled,
+              order: order,
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _SectionGroupCard<ForYouSectionConfigModel>(
+          title: context.t(
+            'studio.section_for_you',
+            fallback: 'For You Sections',
+          ),
+          definitions: _forYouSectionDefinitions,
+          stream: repository.watchForYouSectionConfigs(),
+          itemId: (item) => item.id,
+          itemEnabled: (item) => item.enabled,
+          itemOrder: (item) => item.order,
+          onSave: ({required id, required enabled, required order}) {
+            return repository.updateForYouSectionConfig(
+              id: id,
+              enabled: enabled,
+              order: order,
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionGroupCard<T> extends StatelessWidget {
+  const _SectionGroupCard({
+    required this.title,
+    required this.definitions,
+    required this.stream,
+    required this.itemId,
+    required this.itemEnabled,
+    required this.itemOrder,
+    required this.onSave,
+  });
+
+  final String title;
+  final List<_StudioSectionDefinition> definitions;
+  final Stream<List<T>> stream;
+  final String Function(T item) itemId;
+  final bool Function(T item) itemEnabled;
+  final int Function(T item) itemOrder;
+  final Future<void> Function({
+    required String id,
+    required bool enabled,
+    required int order,
+  }) onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: StreamBuilder<List<T>>(
+          stream: stream,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Text(
+                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+              );
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final configById = {
+              for (final item in snapshot.data!) itemId(item): item,
+            };
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                ...definitions.map((definition) {
+                  final config = configById[definition.id];
+                  final enabled = config != null ? itemEnabled(config) : true;
+                  final order = config != null
+                      ? itemOrder(config)
+                      : definition.defaultOrder;
+
+                  return _SectionConfigTile(
+                    definition: definition,
+                    enabled: enabled,
+                    order: order,
+                    onSave: (enabled, order) {
+                      return onSave(
+                        id: definition.id,
+                        enabled: enabled,
+                        order: order,
+                      );
+                    },
+                  );
+                }),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionConfigTile extends StatelessWidget {
+  const _SectionConfigTile({
+    required this.definition,
+    required this.enabled,
+    required this.order,
+    required this.onSave,
+  });
+
+  final _StudioSectionDefinition definition;
+  final bool enabled;
+  final int order;
+  final Future<void> Function(bool enabled, int order) onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        context.t(definition.titleKey, fallback: definition.fallbackTitle),
+      ),
+      subtitle: Text(
+        enabled
+            ? context.t('studio.section_enabled', fallback: 'Enabled')
+            : context.t('studio.section_disabled', fallback: 'Disabled'),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.edit_outlined),
+        onPressed: () => _showSectionConfigEditor(
+          context,
+          definition: definition,
+          initialEnabled: enabled,
+          initialOrder: order,
+          onSave: onSave,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showSectionConfigEditor(
+  BuildContext context, {
+  required _StudioSectionDefinition definition,
+  required bool initialEnabled,
+  required int initialOrder,
+  required Future<void> Function(bool enabled, int order) onSave,
+}) {
+  final orderController = TextEditingController(text: '$initialOrder');
+  var enabled = initialEnabled;
+  var isSaving = false;
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t(definition.titleKey,
+                      fallback: definition.fallbackTitle),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    context.t('studio.section_enabled', fallback: 'Enabled'),
+                  ),
+                  value: enabled,
+                  onChanged: (value) => setState(() => enabled = value),
+                ),
+                TextField(
+                  controller: orderController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText:
+                        context.t('studio.section_order', fallback: 'Order'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final parsedOrder =
+                                int.tryParse(orderController.text.trim()) ??
+                                    initialOrder;
+                            setState(() => isSaving = true);
+                            try {
+                              await onSave(enabled, parsedOrder);
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    context.t(
+                                      'studio.section_updated',
+                                      fallback: 'Section updated',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } finally {
+                              if (context.mounted) {
+                                setState(() => isSaving = false);
+                              }
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.t('common.save', fallback: 'Save')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+class _StudioSectionDefinition {
+  const _StudioSectionDefinition({
+    required this.id,
+    required this.titleKey,
+    required this.fallbackTitle,
+    required this.defaultOrder,
+  });
+
+  final String id;
+  final String titleKey;
+  final String fallbackTitle;
+  final int defaultOrder;
+}
+
+const List<_StudioSectionDefinition> _homeSectionDefinitions = [
+  _StudioSectionDefinition(
+    id: 'announcements',
+    titleKey: 'studio.section_announcements',
+    fallbackTitle: 'Announcements',
+    defaultOrder: 10,
+  ),
+  _StudioSectionDefinition(
+    id: 'events',
+    titleKey: 'studio.section_events',
+    fallbackTitle: 'Events',
+    defaultOrder: 20,
+  ),
+  _StudioSectionDefinition(
+    id: 'promise',
+    titleKey: 'studio.section_promise',
+    fallbackTitle: 'Promise',
+    defaultOrder: 30,
+  ),
+  _StudioSectionDefinition(
+    id: 'footer',
+    titleKey: 'studio.section_footer',
+    fallbackTitle: 'Footer',
+    defaultOrder: 100,
+  ),
+];
+
+const List<_StudioSectionDefinition> _forYouSectionDefinitions = [
+  _StudioSectionDefinition(
+    id: 'dailyVerse',
+    titleKey: 'studio.section_daily_verse',
+    fallbackTitle: 'Daily Verse',
+    defaultOrder: 10,
+  ),
+  _StudioSectionDefinition(
+    id: 'featured',
+    titleKey: 'studio.section_featured',
+    fallbackTitle: 'Featured',
+    defaultOrder: 20,
+  ),
+  _StudioSectionDefinition(
+    id: 'article',
+    titleKey: 'studio.section_article',
+    fallbackTitle: 'Article',
+    defaultOrder: 30,
+  ),
+  _StudioSectionDefinition(
+    id: 'footer',
+    titleKey: 'studio.section_footer',
+    fallbackTitle: 'Footer',
+    defaultOrder: 100,
+  ),
+];
 
 class _AdminsEditor extends ConsumerWidget {
   const _AdminsEditor({

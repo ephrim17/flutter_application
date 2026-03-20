@@ -858,7 +858,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     if (_stepIndex > 0)
                       Expanded(
                         child: SolidButton(
-                          label: 'Back',
+                          label: context.t('common.back', fallback: 'Back'),
                           onPressed: isLoading
                               ? null
                               : () => _goToStep(_stepIndex - 1),
@@ -867,7 +867,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     if (_stepIndex > 0) const SizedBox(width: 12),
                     Expanded(
                       child: SolidButton(
-                        label: _stepIndex == _stepCount - 1 ? 'Submit' : 'Next',
+                        label: _stepIndex == _stepCount - 1
+                            ? context.t('common.submit', fallback: 'Submit')
+                            : context.t('onboarding.next', fallback: 'Next'),
                         isLoading: isLoading,
                         onPressed: isLoading
                             ? null

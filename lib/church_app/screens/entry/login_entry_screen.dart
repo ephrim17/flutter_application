@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
@@ -40,18 +41,31 @@ class LoginScreen extends ConsumerWidget {
     return await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('User not found'),
-            content: const Text(
-              'No registered user was found for this church. Would you like to register as a new user?',
+            title: Text(
+              context.t(
+                'auth.user_not_found_title',
+                fallback: 'User not found',
+              ),
+            ),
+            content: Text(
+              context.t(
+                'auth.user_not_found_message',
+                fallback:
+                    'No registered user was found for this church. Would you like to register as a new user?',
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
+                child: Text(
+                  context.t('settings.cancel', fallback: 'Cancel'),
+                ),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Register'),
+                child: Text(
+                  context.t('auth.register', fallback: 'Register'),
+                ),
               ),
             ],
           ),

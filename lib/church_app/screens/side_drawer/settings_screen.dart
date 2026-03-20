@@ -2,16 +2,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart'
+    show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
@@ -544,30 +550,33 @@ class _DeleteAccountSheet extends ConsumerStatefulWidget {
 }
 
 class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
-  final _passwordController = TextEditingController();
   bool _isDeleting = false;
 
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _deleteAccount() async {
-    final password = _passwordController.text;
-    if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please enter your password to continue.')),
-      );
-      return;
-    }
-
     final churchId = await ref.read(currentChurchIdProvider.future);
     if (churchId == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No church selected.')),
+        SnackBar(
+          content: Text(
+            ref.t('settings.delete_account_no_church',
+                fallback: 'No church selected.'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    if (firebaseUser == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t('settings.push_not_signed_in',
+                fallback: 'Sign in to manage push notifications'),
+          ),
+        ),
       );
       return;
     }
@@ -577,19 +586,25 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
     });
 
     try {
-      await ref.read(authRepositoryProvider).deleteAccount(
-            churchId: churchId,
-            password: password,
-          );
+      final repository = MembersRepository(
+        firestore: ref.read(firestoreProvider),
+        churchId: churchId,
+      );
+      await repository.deleteMember(firebaseUser.uid);
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      await ChurchLocalStorage().clearChurch();
       await ref.read(favoritesProvider.notifier).clearAll();
+      ref.read(selectedChurchProvider.notifier).state = null;
+      ref.invalidate(currentChurchIdProvider);
+      ref.invalidate(appUserProvider);
+      ref.invalidate(getCurrentUserProvider);
 
       if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your account has been deleted.')),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const SelectChurchScreen(),
+        ),
+        (route) => false,
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -624,20 +639,18 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Delete Account',
+            context.t(
+              'settings.delete_account',
+              fallback: 'Delete Account',
+            ),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'This permanently deletes your account, reading progress, and church user profile. Enter your password to confirm.',
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              border: OutlineInputBorder(),
+          Text(
+            context.t(
+              'settings.delete_account_message',
+              fallback:
+                  'This removes your profile from the currently selected church and takes you back to church selection.',
             ),
           ),
           const SizedBox(height: 16),
@@ -647,7 +660,9 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
                 child: OutlinedButton(
                   onPressed:
                       _isDeleting ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    context.t('settings.cancel', fallback: 'Cancel'),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -666,7 +681,9 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Delete'),
+                      : Text(
+                          context.t('common.delete', fallback: 'Delete'),
+                        ),
                 ),
               ),
             ],

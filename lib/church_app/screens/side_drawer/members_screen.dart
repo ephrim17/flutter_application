@@ -259,7 +259,13 @@ class _MemberTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      onTap: () => _showMemberDetailsSheet(context, member),
+      onTap: () => _showMemberDetailsSheet(
+        context,
+        ref,
+        member,
+        isAdmin: isAdmin,
+        currentUid: currentUid,
+      ),
       leading: CircleAvatar(
         child: Text(
           member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
@@ -286,8 +292,15 @@ class _MemberTile extends ConsumerWidget {
   }
 }
 
-Future<void> _showMemberDetailsSheet(BuildContext context, AppUser member) {
+Future<void> _showMemberDetailsSheet(
+  BuildContext context,
+  WidgetRef ref,
+  AppUser member, {
+  required bool isAdmin,
+  required String? currentUid,
+}) {
   final theme = Theme.of(context);
+  final canDelete = isAdmin && member.uid != currentUid;
 
   return showModalBottomSheet<void>(
     context: context,
@@ -362,6 +375,96 @@ Future<void> _showMemberDetailsSheet(BuildContext context, AppUser member) {
                     ? null
                     : () => launchPhoneCall(context, member.phone),
               ),
+              if (canDelete) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(
+                            context.t(
+                              'members.delete_title',
+                              fallback: 'Delete member?',
+                            ), style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          content: Text(
+                            context.t(
+                              'members.delete_message',
+                              fallback:
+                                  'This will remove the member from this church.',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(false),
+                              child: Text(
+                                context.t(
+                                  'settings.cancel',
+                                  fallback: 'Cancel',
+                                ),
+                              ),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(true),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: theme.colorScheme.error,
+                              ),
+                              child: Text(
+                                context.t(
+                                  'common.delete',
+                                  fallback: 'Delete',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldDelete != true) return;
+
+                      final churchId =
+                          await ref.read(currentChurchIdProvider.future);
+                      if (churchId == null) return;
+
+                      final repo = MembersRepository(
+                        firestore: ref.read(firestoreProvider),
+                        churchId: churchId,
+                      );
+
+                      await repo.deleteMember(member.uid);
+
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            context.t(
+                              'members.delete_success',
+                              fallback: 'Member deleted',
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: Text(
+                      context.t(
+                        'common.delete',
+                        fallback: 'Delete',
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(color: theme.colorScheme.error),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -133,8 +133,6 @@ class SelectChurchScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Selected Church',
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
                                 ),
                                 const SizedBox(height: 10),
                                 Row(
@@ -160,17 +158,6 @@ class SelectChurchScreen extends ConsumerWidget {
                                                 ?.copyWith(
                                                   fontWeight: FontWeight.w700,
                                                 ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            _valueOrFallback(
-                                              selectedChurch.pastorName,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium,
                                           ),
                                         ],
                                       ),
@@ -230,10 +217,7 @@ class SelectChurchScreen extends ConsumerWidget {
                                 horizontal: 12,
                                 vertical: 8,
                               ),
-                              child: ColorText(
-                                badgeText: 'Register your church',
-                                fontSize: 16,
-                              ),
+                              child: _RegisterChurchText(),
                             ),
                           ),
                         ),
@@ -372,7 +356,10 @@ class SelectChurchScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 SolidButton(
-                  label: 'Select Church',
+                  label: context.t(
+                    'church.select_action',
+                    fallback: 'Select Church',
+                  ),
                   onPressed: () async {
                     final storage = ChurchLocalStorage();
 
@@ -559,6 +546,21 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
           ],
         );
       },
+    );
+  }
+}
+
+class _RegisterChurchText extends StatelessWidget {
+  const _RegisterChurchText();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColorText(
+      badgeText: context.t(
+        'church.register_your_church',
+        fallback: 'Register your church',
+      ),
+      fontSize: 16,
     );
   }
 }

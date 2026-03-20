@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
@@ -41,7 +42,7 @@ class DetailWidget extends StatelessWidget {
       if (hasLocation)
         ContactItem(
           id: 'detail-location',
-          label: 'Open location',
+          label: context.t('common.open_location', fallback: 'Open location'),
           type: 'location',
           action: location!.trim(),
           order: 1,
@@ -90,12 +91,13 @@ class DetailWidget extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 25,),
+                          const SizedBox(
+                            height: 25,
+                          ),
                           Text(
                             title,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontSize: 28
-                            ),
+                            style: theme.textTheme.headlineMedium
+                                ?.copyWith(fontSize: 28),
                           ),
                           if (hasTiming) ...[
                             const SizedBox(height: 12),

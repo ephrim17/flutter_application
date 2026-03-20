@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
@@ -46,21 +47,32 @@ class _TodayBirthdaysModal extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            "Today's Birthdays",
+            context.t('birthday.today_title', fallback: "Today's Birthdays"),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 6),
           Text(
             members.isEmpty
-                ? 'No members have birthdays today.'
-                : 'Choose a member to prepare a birthday post.',
+                ? context.t(
+                    'birthday.none_subtitle',
+                    fallback: 'No members have birthdays today.',
+                  )
+                : context.t(
+                    'birthday.pick_member_subtitle',
+                    fallback: 'Choose a member to prepare a birthday post.',
+                  ),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           Expanded(
             child: members.isEmpty
-                ? const Center(
-                    child: Text('No birthdays today'),
+                ? Center(
+                    child: Text(
+                      context.t(
+                        'birthday.none_today',
+                        fallback: 'No birthdays today',
+                      ),
+                    ),
                   )
                 : ListView.separated(
                     itemCount: members.length,
@@ -85,11 +97,14 @@ class _TodayBirthdaysModal extends StatelessWidget {
                                 isScrollControlled: true,
                                 builder: (_) => FractionallySizedBox(
                                   heightFactor: 0.95,
-                                  child: BirthdayPostComposerModal(member: member),
+                                  child:
+                                      BirthdayPostComposerModal(member: member),
                                 ),
                               );
                             },
-                            child: const Text('Send'),
+                            child: Text(
+                              context.t('common.send', fallback: 'Send'),
+                            ),
                           ),
                         ),
                       );
@@ -225,13 +240,17 @@ class _BirthdayPostComposerModalState
             Row(
               children: [
                 Text(
-                  'Birthday Post',
+                  context.t('birthday.post_title', fallback: 'Birthday Post'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: state.isLoading ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+                  onPressed: state.isLoading
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                  child: Text(
+                    context.t('birthday.close', fallback: 'Close'),
+                  ),
                 ),
               ],
             ),
@@ -265,16 +284,24 @@ class _BirthdayPostComposerModalState
               ),
               error: (error, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text('Unable to load birthday verse: $error'),
+                child: Text(
+                  '${context.t('birthday.verse_load_error', fallback: 'Unable to load birthday verse:')} $error',
+                ),
               ),
               data: (verses) {
                 _pickVerse(verses);
                 _queueCapture();
 
                 if (_selectedVerse == null) {
-                  return const Padding(
+                  return Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No verse available for birthday posts right now.'),
+                    child: Text(
+                      context.t(
+                        'birthday.no_verse_available',
+                        fallback:
+                            'No verse available for birthday posts right now.',
+                      ),
+                    ),
                   );
                 }
 
@@ -282,7 +309,10 @@ class _BirthdayPostComposerModalState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Image preview',
+                      context.t(
+                        'birthday.image_preview',
+                        fallback: 'Image preview',
+                      ),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 10),
@@ -296,8 +326,14 @@ class _BirthdayPostComposerModalState
                     const SizedBox(height: 10),
                     Text(
                       _generatedImage == null
-                          ? 'Preparing image...'
-                          : 'Birthday image ready',
+                          ? context.t(
+                              'birthday.image_preparing',
+                              fallback: 'Preparing image...',
+                            )
+                          : context.t(
+                              'birthday.image_ready',
+                              fallback: 'Birthday image ready',
+                            ),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -315,7 +351,12 @@ class _BirthdayPostComposerModalState
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Post Birthday Wish'),
+                    : Text(
+                        context.t(
+                          'birthday.post_wish',
+                          fallback: 'Post Birthday Wish',
+                        ),
+                      ),
               ),
             ),
           ],

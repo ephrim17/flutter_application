@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
+import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
@@ -14,21 +16,22 @@ class StudioRepository {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   CollectionReference<Map<String, dynamic>> get eventsRef =>
-      FirestorePaths.churchEvents(firestore, churchId).withConverter<Map<String, dynamic>>(
+      FirestorePaths.churchEvents(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
         fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
         toFirestore: (value, _) => value,
       );
 
-  CollectionReference<Map<String, dynamic>> get announcementsRef => FirestorePaths
-      .churchAnnouncements(firestore, churchId)
-      .withConverter<Map<String, dynamic>>(
+  CollectionReference<Map<String, dynamic>> get announcementsRef =>
+      FirestorePaths.churchAnnouncements(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
         fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
         toFirestore: (value, _) => value,
       );
 
-  CollectionReference<Map<String, dynamic>> get articlesRef => FirestorePaths
-      .churchDailyArticles(firestore, churchId)
-      .withConverter<Map<String, dynamic>>(
+  CollectionReference<Map<String, dynamic>> get articlesRef =>
+      FirestorePaths.churchDailyArticles(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
         fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
         toFirestore: (value, _) => value,
       );
@@ -37,12 +40,27 @@ class StudioRepository {
       FirestorePaths.churchAppConfig(firestore, churchId);
   CollectionReference<Map<String, dynamic>> get notificationRequestsRef =>
       FirestorePaths.churchNotificationRequests(firestore, churchId);
+  CollectionReference<HomeSectionConfigModel> get homeSectionsRef =>
+      FirestorePaths.churchHomeSections(firestore, churchId)
+          .withConverter<HomeSectionConfigModel>(
+        fromFirestore: (snapshot, _) =>
+            HomeSectionConfigModel.fromFirestore(snapshot),
+        toFirestore: (value, _) => value.toMap(),
+      );
+  CollectionReference<ForYouSectionConfigModel> get forYouSectionsRef =>
+      FirestorePaths.churchForYouSections(firestore, churchId)
+          .withConverter<ForYouSectionConfigModel>(
+        fromFirestore: (snapshot, _) =>
+            ForYouSectionConfigModel.fromFirestore(snapshot),
+        toFirestore: (value, _) => value.toMap(),
+      );
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchEvents() {
     return eventsRef.snapshots().map((snapshot) => snapshot.docs);
   }
 
-  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchAnnouncements() {
+  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      watchAnnouncements() {
     return announcementsRef
         .orderBy('priority')
         .snapshots()
@@ -51,6 +69,20 @@ class StudioRepository {
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchArticles() {
     return articlesRef.snapshots().map((snapshot) => snapshot.docs);
+  }
+
+  Stream<List<HomeSectionConfigModel>> watchHomeSectionConfigs() {
+    return homeSectionsRef
+        .orderBy('order')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<ForYouSectionConfigModel>> watchForYouSectionConfigs() {
+    return forYouSectionsRef
+        .orderBy('order')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   Future<void> createEvent(Map<String, dynamic> data) async {
@@ -152,6 +184,36 @@ class StudioRepository {
     await articlesRef.doc(id).delete();
   }
 
+  Future<void> updateHomeSectionConfig({
+    required String id,
+    required bool enabled,
+    required int order,
+  }) async {
+    await homeSectionsRef.doc(id).set(
+          HomeSectionConfigModel(
+            id: id,
+            enabled: enabled,
+            order: order,
+          ),
+          SetOptions(merge: true),
+        );
+  }
+
+  Future<void> updateForYouSectionConfig({
+    required String id,
+    required bool enabled,
+    required int order,
+  }) async {
+    await forYouSectionsRef.doc(id).set(
+          ForYouSectionConfigModel(
+            id: id,
+            enabled: enabled,
+            order: order,
+          ),
+          SetOptions(merge: true),
+        );
+  }
+
   Future<void> updateDailyVerse({
     required String book,
     required int chapter,
@@ -218,7 +280,9 @@ class StudioRepository {
 SettableMetadata _metadataFor(String fileName) {
   final lower = fileName.toLowerCase();
   if (lower.endsWith('.png')) return SettableMetadata(contentType: 'image/png');
-  if (lower.endsWith('.webp')) return SettableMetadata(contentType: 'image/webp');
+  if (lower.endsWith('.webp')) {
+    return SettableMetadata(contentType: 'image/webp');
+  }
   if (lower.endsWith('.gif')) return SettableMetadata(contentType: 'image/gif');
   return SettableMetadata(contentType: 'image/jpeg');
 }

@@ -1,5 +1,3 @@
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
@@ -12,24 +10,19 @@ class MembersRepository extends ChurchScopedRepository {
   });
 
   CollectionReference<AppUser> collectionRef() {
-  return FirestorePaths
-      .churchUsers(firestore, churchId)
-      .withConverter<AppUser>(
-        fromFirestore: (snap, _) =>
-            AppUser.fromFirestore(
-              snap.id,               // 👈 document ID
-              snap.data()!,
-            ),
-        toFirestore: (user, _) => user.toMap(),
-      );
-}
+    return FirestorePaths.churchUsers(firestore, churchId)
+        .withConverter<AppUser>(
+      fromFirestore: (snap, _) => AppUser.fromFirestore(
+        snap.id, // 👈 document ID
+        snap.data()!,
+      ),
+      toFirestore: (user, _) => user.toMap(),
+    );
+  }
 
   Stream<List<AppUser>> getMembers() {
-    return collectionRef()
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => doc.data()).toList(),
+    return collectionRef().snapshots().map(
+          (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
         );
   }
 
@@ -38,5 +31,9 @@ class MembersRepository extends ChurchScopedRepository {
       'approved': value,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> deleteMember(String userId) {
+    return collectionRef().doc(userId).delete();
   }
 }

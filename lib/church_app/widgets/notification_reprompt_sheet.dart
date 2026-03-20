@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 
 Future<bool?> showNotificationPermissionSheet(
   BuildContext context,
@@ -41,7 +42,12 @@ Future<bool?> showNotificationPermissionSheet(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Not now'),
+                      child: Text(
+                        context.t(
+                          'notifications.not_now',
+                          fallback: 'Not now',
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -50,7 +56,12 @@ Future<bool?> showNotificationPermissionSheet(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Enable'),
+                      child: Text(
+                        context.t(
+                          'notifications.enable',
+                          fallback: 'Enable',
+                        ),
+                      ),
                     ),
                   ),
                 ],

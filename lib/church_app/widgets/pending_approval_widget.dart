@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
@@ -71,14 +72,20 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     SolidButton(
-                      label: 'Refresh Status',
+                      label: context.t(
+                        'approval.refresh_status',
+                        fallback: 'Refresh Status',
+                      ),
                       onPressed: () {
                         ref.invalidate(appUserProvider);
                       },
                     ),
                     const SizedBox(height: 12),
                     SolidButton(
-                      label: 'Choose Another Church',
+                      label: context.t(
+                        'approval.choose_another_church',
+                        fallback: 'Choose Another Church',
+                      ),
                       onPressed: () async {
                         final storage = ChurchLocalStorage();
                         await storage.clearChurch();

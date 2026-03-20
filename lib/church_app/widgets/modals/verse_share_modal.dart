@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/file_download.dart';
@@ -86,11 +87,26 @@ class _VerseShareModalState extends State<VerseShareModal> {
   ];
 
   final List<_FontStyleOption> fontStyleOptions = const [
-    _FontStyleOption(label: 'Default', fontFamily: null),
-    _FontStyleOption(label: 'Serif', fontFamily: 'serif'),
-    _FontStyleOption(label: 'Sans', fontFamily: 'sans-serif'),
-    _FontStyleOption(label: 'Mono', fontFamily: 'monospace'),
-    _FontStyleOption(label: 'Rounded', fontFamily: 'Roboto'),
+    _FontStyleOption(
+        labelKey: 'verse_share.default_font',
+        fallback: 'Default',
+        fontFamily: null),
+    _FontStyleOption(
+        labelKey: 'verse_share.serif_font',
+        fallback: 'Serif',
+        fontFamily: 'serif'),
+    _FontStyleOption(
+        labelKey: 'verse_share.sans_font',
+        fallback: 'Sans',
+        fontFamily: 'sans-serif'),
+    _FontStyleOption(
+        labelKey: 'verse_share.mono_font',
+        fallback: 'Mono',
+        fontFamily: 'monospace'),
+    _FontStyleOption(
+        labelKey: 'verse_share.rounded_font',
+        fallback: 'Rounded',
+        fontFamily: 'Roboto'),
   ];
 
   @override
@@ -136,12 +152,18 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const TabBar(
+                child: TabBar(
                   dividerColor: Colors.transparent,
                   tabs: [
-                    Tab(text: 'Layout'),
-                    Tab(text: 'Style'),
-                    Tab(text: 'Footer'),
+                    Tab(
+                      text: context.t('verse_share.layout', fallback: 'Layout'),
+                    ),
+                    Tab(
+                      text: context.t('verse_share.style', fallback: 'Style'),
+                    ),
+                    Tab(
+                      text: context.t('verse_share.footer', fallback: 'Footer'),
+                    ),
                   ],
                 ),
               ),
@@ -168,7 +190,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 56),
                   ),
-                  child: const Text("Download"),
+                  child: Text(
+                    context.t('common.download', fallback: 'Download'),
+                  ),
                 ),
               ),
             ),
@@ -347,8 +371,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Format',
+          Text(
+            context.t('verse_share.format', fallback: 'Format'),
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -363,20 +387,24 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 format = i == 0 ? ShareFormat.square : ShareFormat.story;
               });
             },
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Square'),
+                child: Text(
+                  context.t('verse_share.square', fallback: 'Square'),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Story'),
+                child: Text(
+                  context.t('verse_share.story', fallback: 'Story'),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Background',
+          Text(
+            context.t('verse_share.background', fallback: 'Background'),
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -392,14 +420,18 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     i == 0 ? BackgroundType.color : BackgroundType.image;
               });
             },
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Color'),
+                child: Text(
+                  context.t('verse_share.color', fallback: 'Color'),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Image'),
+                child: Text(
+                  context.t('verse_share.image', fallback: 'Image'),
+                ),
               ),
             ],
           ),
@@ -436,11 +468,19 @@ class _VerseShareModalState extends State<VerseShareModal> {
               onPressed: pickImage,
               icon: const Icon(Icons.add_photo_alternate_outlined),
               label: Text(
-                selectedImage == null ? 'Choose image' : 'Replace image',
+                selectedImage == null
+                    ? context.t(
+                        'verse_share.choose_image',
+                        fallback: 'Choose image',
+                      )
+                    : context.t(
+                        'verse_share.replace_image',
+                        fallback: 'Replace image',
+                      ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Blur'),
+            Text(context.t('verse_share.blur', fallback: 'Blur')),
             Slider(
               value: blurIntensity,
               min: 0,
@@ -465,7 +505,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Font Size'),
+          Text(context.t('verse_share.font_size', fallback: 'Font Size')),
           Slider(
             value: fontSize,
             min: 12,
@@ -479,7 +519,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
             },
           ),
           const SizedBox(height: 12),
-          const Text('Font Style'),
+          Text(context.t('verse_share.font_style', fallback: 'Font Style')),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -488,7 +528,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
               final option = fontStyleOptions[index];
               final selected = index == selectedFontStyleIndex;
               return ChoiceChip(
-                label: Text(option.label),
+                label: Text(
+                  context.t(option.labelKey, fallback: option.fallback),
+                ),
                 selected: selected,
                 onSelected: (_) {
                   setState(() {
@@ -499,7 +541,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
             }),
           ),
           const SizedBox(height: 16),
-          const Text('Font Weight'),
+          Text(context.t('verse_share.font_weight', fallback: 'Font Weight')),
           const SizedBox(height: 8),
           ToggleButtons(
             borderRadius: BorderRadius.circular(cornerRadius),
@@ -513,24 +555,28 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 fontStyleOption = VerseFontStyleOption.values[index];
               });
             },
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Bold'),
+                child: Text(context.t('verse_share.bold', fallback: 'Bold')),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Normal'),
+                child: Text(
+                  context.t('verse_share.normal', fallback: 'Normal'),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Italic'),
+                child: Text(
+                  context.t('verse_share.italic', fallback: 'Italic'),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Font Color',
+          Text(
+            context.t('verse_share.font_color', fallback: 'Font Color'),
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -899,11 +945,13 @@ class _BrandText extends StatelessWidget {
 }
 
 class _FontStyleOption {
-  final String label;
+  final String labelKey;
+  final String fallback;
   final String? fontFamily;
 
   const _FontStyleOption({
-    required this.label,
+    required this.labelKey,
+    required this.fallback,
     required this.fontFamily,
   });
 }
