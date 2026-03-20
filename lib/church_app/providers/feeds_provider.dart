@@ -13,16 +13,28 @@ final feedPaginationControllerProvider = StateNotifierProvider.autoDispose
   (ref, churchId) => FeedPaginationController(
     repository: ref.read(feedRepositoryProvider),
     churchId: churchId,
+    isGlobal: false,
+  ),
+);
+
+final globalFeedPaginationControllerProvider = StateNotifierProvider
+    .autoDispose<FeedPaginationController, FeedPaginationState>(
+  (ref) => FeedPaginationController(
+    repository: ref.read(feedRepositoryProvider),
+    churchId: null,
+    isGlobal: true,
   ),
 );
 
 class FeedPaginationController extends StateNotifier<FeedPaginationState> {
   final FeedRepository _repository;
-  final String churchId;
+  final String? churchId;
+  final bool isGlobal;
 
   FeedPaginationController({
     required FeedRepository repository,
     required this.churchId,
+    required this.isGlobal,
   })  : _repository = repository,
         super(const FeedPaginationState()) {
     _loadInitial();
@@ -32,7 +44,10 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
     state = state.copyWith(isInitialLoading: true, errorMessage: null);
 
     try {
-      final page = await _repository.fetchFeedPage(churchId: churchId);
+      final page = await _repository.fetchFeedPage(
+        churchId: churchId,
+        isGlobal: isGlobal,
+      );
       state = state.copyWith(
         posts: page.posts,
         lastDocument: page.lastDocument,
@@ -60,6 +75,7 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
     try {
       final page = await _repository.fetchFeedPage(
         churchId: churchId,
+        isGlobal: isGlobal,
         startAfter: state.lastDocument,
       );
 

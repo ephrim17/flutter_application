@@ -44,7 +44,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       await handleNotificationSetup(
         context: context,
         ref: ref,
-        promptIfNeeded: false,
+        promptIfNeeded: true,
       );
     });
   }
@@ -53,7 +53,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   Widget build(BuildContext context) {
     if (selectedIndex == 0) {
       _activeScreen = HomeScreen();
-    } else if(selectedIndex == 1) {
+    } else if (selectedIndex == 1) {
       _activeScreen = ForYouScreen();
     } else {
       _activeScreen = FeedScreen();

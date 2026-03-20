@@ -1,9 +1,11 @@
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,6 +28,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     required String title,
     required String description,
     PickedImageData? imageFile,
+    bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
@@ -42,13 +45,28 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
+      Church? church;
+      if (churchId != null) {
+        final churchDoc = await FirestorePaths.churchDoc(
+                _ref.read(firestoreProvider), churchId)
+            .get();
+        if (churchDoc.exists) {
+          final data = churchDoc.data() as Map<String, dynamic>? ?? {};
+          church = Church.fromFirestore(churchDoc.id, data);
+        }
+      }
+
       await _repository.createPost(
-        churchId: churchId!,
+        churchId: churchId,
         userId: currentUid,
         userName: user.name,
+        userPhoto: null,
+        churchName: church?.name,
+        churchPastorName: church?.pastorName,
         title: title,
         description: description,
         imageFile: imageFile,
+        isGlobal: isGlobal,
       );
     });
   }
@@ -59,11 +77,12 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     required String description,
     PickedImageData? imageFile,
     String? existingImageUrl,
+    bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
 
-    if (churchId == null) return;
+    if (!isGlobal && churchId == null) return;
 
     state = const AsyncLoading();
 
@@ -75,6 +94,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         description: description,
         imageFile: imageFile,
         existingImageUrl: existingImageUrl,
+        isGlobal: isGlobal,
       );
     });
   }
@@ -82,11 +102,12 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   Future<void> deletePost({
     required String postId,
     String? imageUrl,
+    bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
 
-    if (churchId == null) return;
+    if (!isGlobal && churchId == null) return;
 
     state = const AsyncLoading();
 
@@ -95,6 +116,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         churchId: churchId,
         postId: postId,
         imageUrl: imageUrl,
+        isGlobal: isGlobal,
       );
     });
   }

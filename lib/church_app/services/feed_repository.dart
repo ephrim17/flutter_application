@@ -13,16 +13,21 @@ class FeedRepository {
   static const int defaultFeedPageSize = 20;
 
   Query<Map<String, dynamic>> _feedQuery({
-    required String churchId,
+    String? churchId,
+    bool isGlobal = false,
     DocumentSnapshot? startAfter,
     int limit = defaultFeedPageSize,
   }) {
-    Query<Map<String, dynamic>> query = FirestorePaths
-        .feedCollection(_firestore, churchId)
+    final collection = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore)
+        : FirestorePaths.feedCollection(_firestore, churchId!);
+
+    Query<Map<String, dynamic>> query = collection
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
+          fromFirestore: (snapshot, _) =>
+              snapshot.data() ?? <String, dynamic>{},
           toFirestore: (value, _) => value,
         );
 
@@ -34,12 +39,14 @@ class FeedRepository {
   }
 
   Future<FeedPageResult> fetchFeedPage({
-    required String churchId,
+    String? churchId,
+    bool isGlobal = false,
     DocumentSnapshot? startAfter,
     int limit = defaultFeedPageSize,
   }) async {
     final snapshot = await _feedQuery(
       churchId: churchId,
+      isGlobal: isGlobal,
       startAfter: startAfter,
       limit: limit,
     ).get();
@@ -56,9 +63,7 @@ class FeedRepository {
   }
 
   Stream<List<FeedPost>> watchFeed(String churchId) {
-    return _feedQuery(churchId: churchId)
-        .snapshots()
-        .map((snapshot) {
+    return _feedQuery(churchId: churchId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return FeedPost.fromJson(
           doc.id,
@@ -68,15 +73,33 @@ class FeedRepository {
     });
   }
 
+  Reference _feedImageRef({
+    String? churchId,
+    required String postId,
+    bool isGlobal = false,
+  }) {
+    if (isGlobal) {
+      return _storage.ref().child('churches/global/feeds/$postId.jpg');
+    }
+
+    return _storage.ref().child('churches/$churchId/feed/$postId.jpg');
+  }
+
   Future<void> createPost({
-    required String churchId,
+    String? churchId,
     required String userId,
     required String userName,
+    String? userPhoto,
+    String? churchName,
+    String? churchPastorName,
     required String title,
     required String description,
     PickedImageData? imageFile,
+    bool isGlobal = false,
   }) async {
-    final postsRef = FirestorePaths.feedCollection(_firestore, churchId);
+    final postsRef = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore)
+        : FirestorePaths.feedCollection(_firestore, churchId!);
 
     // 1️⃣ Create post first (without image)
     final docRef = postsRef.doc();
@@ -84,6 +107,10 @@ class FeedRepository {
     await docRef.set({
       'userId': userId,
       'userName': userName,
+      'userPhoto': userPhoto,
+      'churchId': churchId,
+      'churchName': churchName,
+      'churchPastorName': churchPastorName,
       'title': title,
       'description': description,
       'imageUrl': null,
@@ -92,9 +119,11 @@ class FeedRepository {
 
     // 2️⃣ Upload image if exists
     if (imageFile != null) {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('churches/$churchId/feed/${docRef.id}.jpg');
+      final storageRef = _feedImageRef(
+        churchId: churchId,
+        postId: docRef.id,
+        isGlobal: isGlobal,
+      );
 
       await storageRef.putData(
         imageFile.bytes,
@@ -111,19 +140,22 @@ class FeedRepository {
   }
 
   Future<void> updatePost({
-    required String churchId,
+    String? churchId,
     required String postId,
     required String title,
     required String description,
     PickedImageData? imageFile,
     String? existingImageUrl,
+    bool isGlobal = false,
   }) async {
     String? imageUrl = existingImageUrl;
 
     if (imageFile != null) {
-      final storageRef = _storage
-          .ref()
-          .child('churches/$churchId/posts/$postId.jpg');
+      final storageRef = _feedImageRef(
+        churchId: churchId,
+        postId: postId,
+        isGlobal: isGlobal,
+      );
 
       await storageRef.putData(
         imageFile.bytes,
@@ -132,10 +164,11 @@ class FeedRepository {
       imageUrl = await storageRef.getDownloadURL();
     }
 
-    await FirestorePaths
-        .feedCollection(_firestore, churchId)
-        .doc(postId)
-        .update({
+    final docRef = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore).doc(postId)
+        : FirestorePaths.feedCollection(_firestore, churchId!).doc(postId);
+
+    await docRef.update({
       'title': title,
       'description': description,
       'imageUrl': imageUrl,
@@ -144,31 +177,49 @@ class FeedRepository {
   }
 
   Future<void> deletePost({
-    required String churchId,
+    String? churchId,
     required String postId,
     String? imageUrl,
+    bool isGlobal = false,
   }) async {
-    // Delete storage object only when this post has an image.
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      try {
-        await _storage.refFromURL(imageUrl).delete();
-      } on FirebaseException catch (e) {
-        // Don't block post deletion if image is already missing.
-        if (e.code != 'object-not-found') {
-          rethrow;
+    try {
+      await _feedImageRef(
+        churchId: churchId,
+        postId: postId,
+        isGlobal: isGlobal,
+      ).delete();
+    } on FirebaseException catch (e) {
+      // Fall back to the saved URL for older posts or mismatched legacy paths.
+      if (e.code != 'object-not-found') {
+        rethrow;
+      }
+
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        try {
+          await _storage.refFromURL(imageUrl).delete();
+        } on FirebaseException catch (fallbackError) {
+          if (fallbackError.code != 'object-not-found') {
+            rethrow;
+          }
         }
       }
     }
 
     // Always delete the feed document (text/title/description).
-    await FirestorePaths.feedCollection(_firestore, churchId).doc(postId).delete();
+    final docRef = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore).doc(postId)
+        : FirestorePaths.feedCollection(_firestore, churchId!).doc(postId);
+
+    await docRef.delete();
   }
 }
 
 SettableMetadata _metadataFor(String fileName) {
   final lower = fileName.toLowerCase();
   if (lower.endsWith('.png')) return SettableMetadata(contentType: 'image/png');
-  if (lower.endsWith('.webp')) return SettableMetadata(contentType: 'image/webp');
+  if (lower.endsWith('.webp')) {
+    return SettableMetadata(contentType: 'image/webp');
+  }
   if (lower.endsWith('.gif')) return SettableMetadata(contentType: 'image/gif');
   return SettableMetadata(contentType: 'image/jpeg');
 }

@@ -6,6 +6,7 @@ class FirestorePaths {
   static const main = 'main';
   static const churches = 'churches';
   static const users = 'users';
+  static const globalFeeds = 'globalFeeds';
 
   //Section paths
   static const homeSections = 'home_sections';
@@ -209,9 +210,12 @@ class FirestorePaths {
     FirebaseFirestore firestore,
     String churchId,
   ) {
-    return firestore
-        .collection('churches')
-        .doc(churchId)
-        .collection('feeds');
-  } 
+    return firestore.collection('churches').doc(churchId).collection('feeds');
+  }
+
+  static CollectionReference<Map<String, dynamic>> globalFeedCollection(
+    FirebaseFirestore firestore,
+  ) {
+    return firestore.collection(globalFeeds);
+  }
 }

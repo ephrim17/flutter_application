@@ -1,11 +1,12 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/file_download.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
-import 'package:flutter_application/church_app/widgets/church_logo_builder.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:gal/gal.dart';
@@ -101,9 +102,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
   @override
   Widget build(BuildContext context) {
     final sheetHeight = MediaQuery.of(context).size.height * 0.92;
-    final height = format == ShareFormat.square
-        ? sheetHeight * 0.34
-        : sheetHeight * 0.46;
+    final height =
+        format == ShareFormat.square ? sheetHeight * 0.34 : sheetHeight * 0.46;
 
     return DefaultTabController(
       length: 3,
@@ -309,7 +309,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (format == ShareFormat.story && storyCaption.isNotEmpty) ...[
+                      if (format == ShareFormat.story &&
+                          storyCaption.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           storyCaption,
@@ -330,9 +331,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 right: 12,
                 child: Opacity(
                   opacity: 0.85,
-                  child: ClipOval(
-                    child: const ChurchLogoBuilder(size: 38),
-                  ),
+                  child: const _VerseShareBranding(),
                 ),
               ),
             ],
@@ -682,7 +681,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       final pngBytes = byteData!.buffer.asUint8List();
-      final fileName = "daily_verse_${DateTime.now().millisecondsSinceEpoch}.png";
+      final fileName =
+          "daily_verse_${DateTime.now().millisecondsSinceEpoch}.png";
 
       if (kIsWeb) {
         await downloadBytes(
@@ -827,6 +827,74 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   String _todayDateLabel() {
     return DateFormat('dd/MM/yyyy').format(DateTime.now());
+  }
+}
+
+class _VerseShareBranding extends ConsumerWidget {
+  const _VerseShareBranding();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    final churchLogo = configAsync.maybeWhen(
+      data: (config) => config.churchLogo.trim(),
+      orElse: () => '',
+    );
+    final appTitle = ref.t('church_tab.app_title', fallback: 'Church');
+
+    if (churchLogo.isNotEmpty) {
+      final uri = Uri.tryParse(churchLogo);
+      final isNetwork =
+          uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+
+      return ClipOval(
+        child: isNetwork
+            ? Image.network(
+                churchLogo,
+                width: 38,
+                height: 38,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _BrandText(appTitle: appTitle),
+              )
+            : Image.asset(
+                churchLogo,
+                width: 38,
+                height: 38,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _BrandText(appTitle: appTitle),
+              ),
+      );
+    }
+
+    return _BrandText(appTitle: appTitle);
+  }
+}
+
+class _BrandText extends StatelessWidget {
+  const _BrandText({
+    required this.appTitle,
+  });
+
+  final String appTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        appTitle,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.92),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }
 

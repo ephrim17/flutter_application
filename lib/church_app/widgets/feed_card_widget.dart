@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
+import 'package:flutter_application/church_app/services/feed_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/widgets/linkified_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
+import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
 
 class FeedCard extends ConsumerWidget {
   final FeedPost post;
+  final bool isGlobal;
 
-  const FeedCard({super.key, required this.post});
+  const FeedCard({
+    super.key,
+    required this.post,
+    this.isGlobal = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final firebaseUser = ref.watch(firebaseAuthProvider).currentUser;
     final currentUid = firebaseUser?.uid;
+    final isAdmin = ref.watch(isAdminProvider);
 
     final isOwner = currentUid != null && currentUid == post.userId;
 
@@ -33,14 +45,20 @@ class FeedCard extends ConsumerWidget {
             /// HEADER
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: post.userPhoto != null
-                      ? NetworkImage(post.userPhoto!)
+                InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: isGlobal
+                      ? () => _showPostAuthorDetails(context, ref)
                       : null,
-                  child: post.userPhoto == null
-                      ? Text(post.userName[0].toUpperCase())
-                      : null,
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: post.userPhoto != null
+                        ? NetworkImage(post.userPhoto!)
+                        : null,
+                    child: post.userPhoto == null
+                        ? Text(post.userName[0].toUpperCase())
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Column(
@@ -62,24 +80,31 @@ class FeedCard extends ConsumerWidget {
                   ],
                 ),
                 const Spacer(),
-
-                /// 👇 Show only if current user owns the post
-                if (isOwner)
-                  IconButton.filledTonal(
-                    onPressed: () async {
-                      await showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => CreatePostModal(post: post, edit: true),
-                      );
-
-                      final churchId = ref.read(currentChurchIdProvider).value;
-                      if (churchId == null) return;
-                      await ref
-                          .read(feedPaginationControllerProvider(churchId).notifier)
-                          .refresh();
+                if (isOwner || isAdmin)
+                  PopupMenuButton<_FeedPostAction>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (action) async {
+                      switch (action) {
+                        case _FeedPostAction.edit:
+                          await _editPost(context, ref);
+                          break;
+                        case _FeedPostAction.delete:
+                          await _confirmAndDeletePost(context, ref);
+                          break;
+                      }
                     },
-                    icon: const Icon(Icons.edit_note),
+                    itemBuilder: (context) => [
+                      if (isOwner)
+                        const PopupMenuItem(
+                          value: _FeedPostAction.edit,
+                          child: Text('Edit post'),
+                        ),
+                      if (isAdmin)
+                        const PopupMenuItem(
+                          value: _FeedPostAction.delete,
+                          child: Text('Delete post'),
+                        ),
+                    ],
                   ),
               ],
             ),
@@ -123,4 +148,126 @@ class FeedCard extends ConsumerWidget {
     final timePart = DateFormat('h:mm a').format(createdAt);
     return "$datePart at $timePart";
   }
+
+  Future<void> _editPost(BuildContext context, WidgetRef ref) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => CreatePostModal(
+        post: post,
+        edit: true,
+        isGlobal: isGlobal,
+      ),
+    );
+
+    await _refreshFeed(ref);
+  }
+
+  Future<void> _confirmAndDeletePost(
+      BuildContext context, WidgetRef ref) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete post?'),
+        content: const Text(
+          'This will permanently delete the post and its image.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    final churchId = ref.read(currentChurchIdProvider).value;
+    if (!isGlobal && churchId == null) return;
+
+    final repository = FeedRepository(ref.read(firestoreProvider));
+    await repository.deletePost(
+      churchId: post.churchId ?? churchId,
+      postId: post.id,
+      imageUrl: post.imageUrl,
+      isGlobal: isGlobal,
+    );
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Post deleted')),
+    );
+
+    await _refreshFeed(ref);
+  }
+
+  Future<void> _refreshFeed(WidgetRef ref) async {
+    if (isGlobal) {
+      await ref.read(globalFeedPaginationControllerProvider.notifier).refresh();
+      return;
+    }
+
+    final churchId = ref.read(currentChurchIdProvider).value;
+    if (churchId == null) return;
+    await ref
+        .read(feedPaginationControllerProvider(churchId).notifier)
+        .refresh();
+  }
+
+  Future<void> _showPostAuthorDetails(
+      BuildContext context, WidgetRef ref) async {
+    final postChurchId = post.churchId?.trim() ?? '';
+    if (postChurchId.isEmpty) return;
+
+    final doc = await FirestorePaths.churchUserDoc(
+      ref.read(firestoreProvider),
+      postChurchId,
+      post.userId,
+    ).get();
+
+    if (!doc.exists) return;
+    if (!context.mounted) return;
+
+    final user = AppUser.fromJson(doc.data() as Map<String, dynamic>);
+    var churchName = post.churchName?.trim() ?? '';
+    var churchPastorName = post.churchPastorName?.trim() ?? '';
+
+    if (churchName.isEmpty || churchPastorName.isEmpty) {
+      final churchDoc = await FirestorePaths.churchDoc(
+        ref.read(firestoreProvider),
+        postChurchId,
+      ).get();
+
+      if (churchDoc.exists) {
+        final church = Church.fromFirestore(
+          churchDoc.id,
+          churchDoc.data() as Map<String, dynamic>? ?? {},
+        );
+        if (churchName.isEmpty) {
+          churchName = church.name;
+        }
+        if (churchPastorName.isEmpty) {
+          churchPastorName = church.pastorName;
+        }
+      }
+    }
+
+    if (!context.mounted) return;
+    await showUserQuickCardWithChurch(
+      context,
+      user,
+      churchName: churchName,
+      churchPastorName: churchPastorName,
+    );
+  }
+}
+
+enum _FeedPostAction {
+  edit,
+  delete,
 }

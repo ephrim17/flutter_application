@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
@@ -14,32 +15,44 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _churchScrollController = ScrollController();
+  final ScrollController _globalScrollController = ScrollController();
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _churchScrollController.addListener(_onChurchScroll);
+    _globalScrollController.addListener(_onGlobalScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _churchScrollController.removeListener(_onChurchScroll);
+    _globalScrollController.removeListener(_onGlobalScroll);
+    _churchScrollController.dispose();
+    _globalScrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
+  void _onChurchScroll() {
+    if (!_churchScrollController.hasClients) return;
     const triggerThreshold = 300.0;
-    final position = _scrollController.position;
-    if (position.maxScrollExtent - position.pixels <= triggerThreshold) {
-      final churchId = ref.read(currentChurchIdProvider).value;
-      if (churchId == null) return;
-      ref
-          .read(feedPaginationControllerProvider(churchId).notifier)
-          .loadMore();
-    }
+    final position = _churchScrollController.position;
+    if (position.maxScrollExtent - position.pixels > triggerThreshold) return;
+
+    final churchId = ref.read(currentChurchIdProvider).value;
+    if (churchId == null) return;
+    ref.read(feedPaginationControllerProvider(churchId).notifier).loadMore();
+  }
+
+  void _onGlobalScroll() {
+    if (!_globalScrollController.hasClients) return;
+    const triggerThreshold = 300.0;
+    final position = _globalScrollController.position;
+    if (position.maxScrollExtent - position.pixels > triggerThreshold) return;
+
+    ref.read(globalFeedPaginationControllerProvider.notifier).loadMore();
   }
 
   @override
@@ -72,23 +85,69 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         }
 
         final feedState = ref.watch(feedPaginationControllerProvider(churchId));
+        final globalFeedState =
+            ref.watch(globalFeedPaginationControllerProvider);
 
-        return Scaffold(
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _openCreatePostModal(context, churchId),
-            child: const Icon(Icons.add),
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => _openCreatePostModal(
+                context,
+                churchId,
+                isGlobal: _selectedTabIndex == 1,
+              ),
+              child: const Icon(Icons.add),
+            ),
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Container(
+                    decoration: carouselBoxDecoration(context),
+                    child: TabBar(
+                      dividerColor: Colors.transparent,
+                      onTap: (index) {
+                        setState(() {
+                          _selectedTabIndex = index;
+                        });
+                      },
+                      tabs: const [
+                        Tab(text: 'Church'),
+                        Tab(text: 'Global'),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildBody(
+                        context,
+                        churchId,
+                        feedState,
+                        isGlobal: false,
+                      ),
+                      _buildBody(
+                        context,
+                        churchId,
+                        globalFeedState,
+                        isGlobal: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          body: _buildBody(context, churchId, feedState),
         );
       },
     );
   }
 
   Widget _buildBody(
-    BuildContext context,
-    String churchId,
-    FeedPaginationState feedState,
-  ) {
+      BuildContext context, String churchId, FeedPaginationState feedState,
+      {required bool isGlobal}) {
     if (feedState.isInitialLoading && feedState.posts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -115,15 +174,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     if (feedState.posts.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () =>
-            ref.read(feedPaginationControllerProvider(churchId).notifier).refresh(),
+        onRefresh: () => ref
+            .read(feedPaginationControllerProvider(churchId).notifier)
+            .refresh(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             const SizedBox(height: 280),
             Center(
               child: Text(
-                ref.t('feed.no_posts', fallback: 'No posts yet'),
+                isGlobal
+                    ? 'No global posts yet'
+                    : ref.t('feed.no_posts', fallback: 'No posts yet'),
               ),
             ),
           ],
@@ -134,10 +196,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final itemCount = feedState.posts.length + (feedState.hasMore ? 1 : 0);
 
     return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(feedPaginationControllerProvider(churchId).notifier).refresh(),
+      onRefresh: () => ref
+          .read(feedPaginationControllerProvider(churchId).notifier)
+          .refresh(),
       child: ListView.builder(
-        controller: _scrollController,
+        controller:
+            isGlobal ? _globalScrollController : _churchScrollController,
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: itemCount,
         itemBuilder: (context, index) {
@@ -149,23 +213,37 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           }
 
           final post = feedState.posts[index];
-          return FeedCard(post: post);
+          return FeedCard(
+            post: post,
+            isGlobal: isGlobal,
+          );
         },
       ),
     );
   }
 
-  Future<void> _openCreatePostModal(BuildContext context, String churchId) async {
+  Future<void> _openCreatePostModal(
+    BuildContext context,
+    String churchId, {
+    required bool isGlobal,
+  }) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: 0.95,
-        child: const CreatePostModal(),
+        child: CreatePostModal(isGlobal: isGlobal),
       ),
     );
 
     if (!mounted) return;
-    await ref.read(feedPaginationControllerProvider(churchId).notifier).refresh();
+    if (isGlobal) {
+      await ref.read(globalFeedPaginationControllerProvider.notifier).refresh();
+      return;
+    }
+
+    await ref
+        .read(feedPaginationControllerProvider(churchId).notifier)
+        .refresh();
   }
 }

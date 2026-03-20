@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -17,6 +19,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
+import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -224,6 +227,9 @@ class LoginScreen extends ConsumerWidget {
                               enabled: true,
                             );
                             ref.invalidate(currentChurchIdProvider);
+                            unawaited(
+                              syncNotificationTopicIfAuthorized(ref),
+                            );
 
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(

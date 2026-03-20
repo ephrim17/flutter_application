@@ -25,6 +25,7 @@ const AndroidNotificationChannel _churchMessageChannel =
 
 bool _notificationPresentationInitialized = false;
 bool _notificationListenersAttached = false;
+bool _notificationInitialMessageHandled = false;
 
 Future<void> initializeNotificationPresentation() async {
   if (_notificationPresentationInitialized || kIsWeb) {
@@ -101,20 +102,18 @@ Future<void> handleNotificationSetup({
     await initializeNotificationPresentation();
 
     /// 1️⃣ Check permission
-    NotificationSettings settings =
-        await messaging.getNotificationSettings();
+    NotificationSettings settings = await messaging.getNotificationSettings();
 
     bool isAuthorized =
         settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+            settings.authorizationStatus == AuthorizationStatus.provisional;
 
     /// 2️⃣ Show custom sheet if needed
     if (!isAuthorized) {
       if (!promptIfNeeded) return;
 
       if (!context.mounted) return;
-      final shouldRequest =
-          await showNotificationPermissionSheet(context);
+      final shouldRequest = await showNotificationPermissionSheet(context);
       if (!context.mounted) return;
 
       if (shouldRequest != true) return;
@@ -126,86 +125,111 @@ Future<void> handleNotificationSetup({
       );
 
       isAuthorized =
-          settings.authorizationStatus ==
-                  AuthorizationStatus.authorized ||
-              settings.authorizationStatus ==
-                  AuthorizationStatus.provisional;
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus == AuthorizationStatus.provisional;
 
       if (!isAuthorized) return;
     }
 
-    /// 3️⃣ Get FCM token
-    final token = await messaging.getToken();
-    if (token == null) return;
-
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) return;
-
-    final churchId =
-        await ref.read(currentChurchIdProvider.future);
-    if (churchId == null) return;
-    final churchTopic = 'church_$churchId';
-
-    final repo = ChurchUsersRepository(
-      firestore: ref.read(firestoreProvider),
-      churchId: churchId,
-    );
-    final localStorage = ChurchLocalStorage();
-
-    /// 4️⃣ Update only if changed
-    final existingToken =
-        await repo.getExistingAuthToken(firebaseUser.uid);
-
-    if (existingToken != token) {
-      await repo.updateAuthToken(
-        uid: firebaseUser.uid,
-        token: token,
-      );
-    }
-
-    final previousTopic = await localStorage.getSubscribedChurchTopic();
-    if (previousTopic != null &&
-        previousTopic.isNotEmpty &&
-        previousTopic != churchTopic) {
-      await messaging.unsubscribeFromTopic(previousTopic);
-    }
-
-    if (previousTopic != churchTopic) {
-      await messaging.subscribeToTopic(churchTopic);
-      await localStorage.saveSubscribedChurchTopic(churchTopic);
-    }
-
-    /// 5️⃣ Listen for token refresh (scoped)
-    FirebaseMessaging.instance.onTokenRefresh.listen(
-      (newToken) async {
-        await repo.updateAuthToken(
-          uid: firebaseUser.uid,
-          token: newToken,
-        );
-        await messaging.subscribeToTopic(churchTopic);
-      },
-    );
-
-    if (!_notificationListenersAttached) {
-      FirebaseMessaging.onMessage.listen(showRemoteMessageNotification);
-      FirebaseMessaging.onMessageOpenedApp.listen((message) {
-        debugPrint(
-          'Notification opened: ${message.messageId ?? 'unknown-message'}',
-        );
-      });
-
-      final initialMessage = await messaging.getInitialMessage();
-      if (initialMessage != null) {
-        debugPrint(
-          'Notification opened from terminated state: '
-          '${initialMessage.messageId ?? 'unknown-message'}',
-        );
-      }
-
-      _notificationListenersAttached = true;
-    }
-
+    await _syncNotificationState(ref);
+    await _attachNotificationListeners(messaging);
   } catch (e) {
     debugPrint("Notification setup error: $e");
   }
+}
+
+Future<void> syncNotificationTopicIfAuthorized(WidgetRef ref) async {
+  final messaging = FirebaseMessaging.instance;
+
+  try {
+    await initializeNotificationPresentation();
+
+    final settings = await messaging.getNotificationSettings();
+    final isAuthorized =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    if (!isAuthorized) return;
+
+    await _syncNotificationState(ref);
+    await _attachNotificationListeners(messaging);
+  } catch (e) {
+    debugPrint("Notification topic sync error: $e");
+  }
+}
+
+Future<void> _syncNotificationState(WidgetRef ref) async {
+  final messaging = FirebaseMessaging.instance;
+  final token = await messaging.getToken();
+  if (token == null) return;
+
+  final firebaseUser = FirebaseAuth.instance.currentUser;
+  if (firebaseUser == null) return;
+
+  final churchId = await ref.read(currentChurchIdProvider.future);
+  if (churchId == null) return;
+  final churchTopic = 'church_$churchId';
+
+  final repo = ChurchUsersRepository(
+    firestore: ref.read(firestoreProvider),
+    churchId: churchId,
+  );
+  final localStorage = ChurchLocalStorage();
+
+  final existingToken = await repo.getExistingAuthToken(firebaseUser.uid);
+
+  if (existingToken != token) {
+    await repo.updateAuthToken(
+      uid: firebaseUser.uid,
+      token: token,
+    );
+  }
+
+  final previousTopic = await localStorage.getSubscribedChurchTopic();
+  if (previousTopic != null &&
+      previousTopic.isNotEmpty &&
+      previousTopic != churchTopic) {
+    await messaging.unsubscribeFromTopic(previousTopic);
+  }
+
+  if (previousTopic != churchTopic) {
+    await messaging.subscribeToTopic(churchTopic);
+    await localStorage.saveSubscribedChurchTopic(churchTopic);
+  }
+
+  FirebaseMessaging.instance.onTokenRefresh.listen(
+    (newToken) async {
+      await repo.updateAuthToken(
+        uid: firebaseUser.uid,
+        token: newToken,
+      );
+      await messaging.subscribeToTopic(churchTopic);
+    },
+  );
+}
+
+Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
+  if (_notificationListenersAttached) {
+    return;
+  }
+
+  FirebaseMessaging.onMessage.listen(showRemoteMessageNotification);
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    debugPrint(
+      'Notification opened: ${message.messageId ?? 'unknown-message'}',
+    );
+  });
+
+  if (!_notificationInitialMessageHandled) {
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint(
+        'Notification opened from terminated state: '
+        '${initialMessage.messageId ?? 'unknown-message'}',
+      );
+    }
+    _notificationInitialMessageHandled = true;
+  }
+
+  _notificationListenersAttached = true;
 }

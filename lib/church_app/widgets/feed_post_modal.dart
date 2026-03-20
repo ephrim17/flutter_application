@@ -15,6 +15,7 @@ class CreatePostModal extends ConsumerStatefulWidget {
   final PickedImageData? initialImage;
   final bool requireImage;
   final bool allowImagePicking;
+  final bool isGlobal;
 
   const CreatePostModal({
     super.key,
@@ -25,6 +26,7 @@ class CreatePostModal extends ConsumerStatefulWidget {
     this.initialImage,
     this.requireImage = false,
     this.allowImagePicking = true,
+    this.isGlobal = false,
   });
 
   @override
@@ -162,7 +164,6 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   ),
                 ),
               ),
-              
               Align(
                 alignment: Alignment.centerLeft,
                 child: isCreateMode && widget.allowImagePicking
@@ -180,12 +181,14 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                       )
                     : null,
               ),
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
               if (selectedImage != null && isCreateMode)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
                       selectedImage!.bytes,
                       //height: 150,
@@ -194,7 +197,9 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -223,7 +228,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                           if (widget.requireImage && selectedImage == null) {
                             messenger.showSnackBar(
                               const SnackBar(
-                                content: Text('An image is required for this post'),
+                                content:
+                                    Text('An image is required for this post'),
                               ),
                             );
                             return;
@@ -234,22 +240,26 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             if (widget.post == null) {
                               /// CREATE
                               await ref
-                                  .read(feedPostModalControllerProvider.notifier)
+                                  .read(
+                                      feedPostModalControllerProvider.notifier)
                                   .createPost(
                                     title: title,
                                     description: description,
                                     imageFile: selectedImage,
+                                    isGlobal: widget.isGlobal,
                                   );
                             } else {
                               /// UPDATE
                               await ref
-                                  .read(feedPostModalControllerProvider.notifier)
+                                  .read(
+                                      feedPostModalControllerProvider.notifier)
                                   .updatePost(
                                     postId: widget.post!.id,
                                     title: title,
                                     description: description,
                                     imageFile: selectedImage,
                                     existingImageUrl: widget.post!.imageUrl,
+                                    isGlobal: widget.isGlobal,
                                   );
                             }
 
@@ -306,15 +316,19 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(false),
                                     child: Text(
-                                      ref.t('settings.cancel', fallback: 'Cancel'),
+                                      ref.t('settings.cancel',
+                                          fallback: 'Cancel'),
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(true),
                                     child: Text(
-                                      ref.t('feed.delete_action', fallback: 'Delete Post'),
+                                      ref.t('feed.delete_action',
+                                          fallback: 'Delete Post'),
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -326,7 +340,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
 
                             try {
                               await ref
-                                  .read(feedPostModalControllerProvider.notifier)
+                                  .read(
+                                      feedPostModalControllerProvider.notifier)
                                   .deletePost(
                                     postId: widget.post!.id,
                                     imageUrl: widget.post!.imageUrl,

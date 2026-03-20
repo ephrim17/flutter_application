@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible_verse_swipe_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_application/church_app/helpers/youtube_utils.dart';
 import 'package:flutter_application/church_app/widgets/card_Link_button_widget.dart';
 import 'package:flutter_application/church_app/widgets/featured_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FeaturedSection implements MasterSection {
   const FeaturedSection();
@@ -37,39 +39,43 @@ class FeaturedSection implements MasterSection {
                 buttonText: "Explore Now",
                 imagePath: "assets/images/bible_read.png",
                 onPressed: () {
-                   Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PlanListScreen(),
-                        ),
-                      );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlanListScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 10),
-              
               SectionHeader(text: "Featured for you ✮", padding: 0.0),
-
               const SizedBox(height: 10),
-              
+              Consumer(
+                builder: (context, ref, _) {
+                  final youtubeLink = ref.watch(appConfigProvider).maybeWhen(
+                        data: (config) => config.youtubeLink,
+                        orElse: () => '',
+                      );
 
-              CardLinkButtonWidget(
-                title: "Deepen the Word, One Video at a Time. Follow us on YouTube.",
-                buttonText: "Start Watching",
-                iconStyle: Icon(
-                  Icons.video_collection,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 28,
-                ),
-                onPressed: () {
-                   YoutubeUtils.openYoutubeChannel(
-                    'UCfMUXhM4ujEI8aDTAh34K3A');
+                  return CardLinkButtonWidget(
+                    title:
+                        "Deepen the Word, One Video at a Time. Follow us on YouTube.",
+                    buttonText: "Start Watching",
+                    iconStyle: Icon(
+                      Icons.video_collection,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      YoutubeUtils.openYoutubeChannel(youtubeLink);
+                    },
+                  );
                 },
               ),
-
               const SizedBox(height: 30),
-
               CardLinkButtonWidget(
-                title: "Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.",
+                title:
+                    "Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.",
                 buttonText: "Let’s Go",
                 iconStyle: Icon(
                   Icons.swipe_up,
@@ -78,7 +84,7 @@ class FeaturedSection implements MasterSection {
                 ),
                 onPressed: () {
                   Navigator.push(
-                        context,
+                    context,
                     MaterialPageRoute(
                       builder: (_) => BibleSwipeVerseScreen(),
                     ),

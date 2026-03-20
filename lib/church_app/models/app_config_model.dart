@@ -15,52 +15,56 @@ class AppConfig {
   final PromptSheetModel promptSheet;
   final TextContent textContent;
   final String churchLogo;
+  final String youtubeLink;
 
-  const AppConfig({
-    required this.admins,
-    required this.membersEnabled,
-    required this.eventsEnabled,
-    required this.onboardingTitle,
-    required this.onboardingSubtitle,
-    required this.primaryColorHex,
-    required this.secondaryColorHex,
-    required this.backgroundColorHex,
-    required this.cardColorHex,
-    required this.dailyVerseRef,
-    required this.promptSheet,
-    required this.bibleSwipeFetchEnabled,
-    required this.bibleSwipeFetchVersion,
-    required this.promiseVerseRef,
-    required this.textContent,
-    required this.churchLogo
-  });
+  const AppConfig(
+      {required this.admins,
+      required this.membersEnabled,
+      required this.eventsEnabled,
+      required this.onboardingTitle,
+      required this.onboardingSubtitle,
+      required this.primaryColorHex,
+      required this.secondaryColorHex,
+      required this.backgroundColorHex,
+      required this.cardColorHex,
+      required this.dailyVerseRef,
+      required this.promptSheet,
+      required this.bibleSwipeFetchEnabled,
+      required this.bibleSwipeFetchVersion,
+      required this.promiseVerseRef,
+      required this.textContent,
+      required this.churchLogo,
+      required this.youtubeLink});
 
   factory AppConfig.fromFirestore(Map<String, dynamic> data) {
     final features = data['features'] as Map<String, dynamic>? ?? {};
     return AppConfig(
       admins: List<String>.from(data['admins'] ?? []),
-      dailyVerseRef:DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
-      promiseVerseRef:PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
-      promptSheet:PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
+      dailyVerseRef: DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
+      promiseVerseRef: PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
+      promptSheet: PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
-      bibleSwipeFetchEnabled: data['features']?['bibleSwipeFetchEnabled'] ?? false,
-      bibleSwipeFetchVersion: (features['bibleSwipeVersion'] as num?)?.toInt() ?? 0,
+      bibleSwipeFetchEnabled:
+          data['features']?['bibleSwipeFetchEnabled'] ?? false,
+      bibleSwipeFetchVersion:
+          (features['bibleSwipeVersion'] as num?)?.toInt() ?? 0,
       eventsEnabled: data['features']?['eventsEnabled'] ?? false,
       onboardingTitle: data['onboarding']?['title'] ?? '',
       onboardingSubtitle: data['onboarding']?['subtitle'] ?? '',
-      textContent: TextContent.fromMap(data['textContent'] as Map<String, dynamic>?),
+      textContent:
+          TextContent.fromMap(data['textContent'] as Map<String, dynamic>?),
       primaryColorHex: data['theme']?['primaryColor'] ?? '#000000',
       secondaryColorHex: data['theme']?['secondaryColor'] ?? '#000000',
       backgroundColorHex: data['theme']?['backgroundColor'] ?? '#000000',
       cardColorHex: data['theme']?['cardBackgroundColor'] ?? '#000000',
-      churchLogo: data['churchLogo'] ?? ""
+      churchLogo: data['churchLogo'] ?? "",
+      youtubeLink: data['youtubeLink'] ?? "",
       //logoUrl: data['theme']?['logoUrl'] ?? '',
     );
   }
 
   bool isAdmin(String email) => admins.contains(email);
 }
-
 
 class DailyVerseRef {
   final String book;
@@ -73,7 +77,7 @@ class DailyVerseRef {
     required this.verse,
   });
 
-   factory DailyVerseRef.fromMap(Map<String, dynamic> map) {
+  factory DailyVerseRef.fromMap(Map<String, dynamic> map) {
     return DailyVerseRef(
       book: map['book'] as String,
       chapter: map['chapter'] as int,
@@ -93,7 +97,7 @@ class PromiseVerseRef {
     required this.verse,
   });
 
-   factory PromiseVerseRef.fromMap(Map<String, dynamic> map) {
+  factory PromiseVerseRef.fromMap(Map<String, dynamic> map) {
     return PromiseVerseRef(
       book: map['book'] as String,
       chapter: map['chapter'] as int,
@@ -113,7 +117,7 @@ class PromptSheetModel {
     required this.enabled,
   });
 
-   factory PromptSheetModel.fromMap(Map<String, dynamic> map) {
+  factory PromptSheetModel.fromMap(Map<String, dynamic> map) {
     return PromptSheetModel(
       title: map['title'] as String,
       desc: map['desc'] as String,
@@ -180,7 +184,8 @@ const Map<String, String> defaultTextContentValues = {
   'settings.edit_profile': 'Review Profile',
   'settings.profile_updated': 'Profile updated',
   'settings.delete_account': 'Delete Account',
-  'settings.delete_account_subtitle': 'Permanently remove your account and user data',
+  'settings.delete_account_subtitle':
+      'Permanently remove your account and user data',
   'settings.push_notifications': 'Push Notifications',
   'settings.push_enabled': 'Enabled and synced for church updates',
   'settings.push_provisional': 'Enabled with provisional permission',
@@ -354,7 +359,7 @@ const Map<String, String> defaultTextContentValues = {
   'studio.tab_promise': 'Promise',
   'studio.tab_notifications': 'Notifications',
   'studio.tab_admins': 'Admins',
-  'studio.tab_prompt': 'Prompt',
+  'studio.tab_prompt': 'Important',
   'studio.add_event': 'Add event',
   'studio.no_events': 'No events yet.',
   'studio.add_announcement': 'Add announcement',
@@ -378,9 +383,11 @@ const Map<String, String> defaultTextContentValues = {
   'studio.admins_label': 'Admin emails',
   'studio.admins_updated': 'Admins updated',
   'studio.admins_save': 'Save Admins',
-  'studio.prompt_title': 'Prompt Sheet',
-  'studio.prompt_updated': 'Prompt updated',
-  'studio.prompt_save': 'Save Prompt',
+  'studio.prompt_title': 'Important',
+  'studio.prompt_description':
+      'This controls the important pop-up card shown to members for urgent announcements or special updates.',
+  'studio.prompt_updated': 'Important updated',
+  'studio.prompt_save': 'Save Important',
   'studio.announcement_create': 'Create announcement',
   'studio.announcement_edit': 'Edit announcement',
   'studio.announcement_body': 'Body',

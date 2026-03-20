@@ -5,6 +5,9 @@ class FeedPost {
   final String userId;
   final String userName;
   final String? userPhoto;
+  final String? churchId;
+  final String? churchName;
+  final String? churchPastorName;
   final String title;
   final String description;
   final String? imageUrl;
@@ -17,6 +20,9 @@ class FeedPost {
     required this.userId,
     required this.userName,
     this.userPhoto,
+    this.churchId,
+    this.churchName,
+    this.churchPastorName,
     required this.title,
     required this.description,
     this.imageUrl,
@@ -31,6 +37,9 @@ class FeedPost {
       userId: json['userId'],
       userName: json['userName'],
       userPhoto: json['userPhoto'],
+      churchId: json['churchId'],
+      churchName: json['churchName'],
+      churchPastorName: json['churchPastorName'],
       title: json['title'],
       description: json['description'],
       imageUrl: json['imageUrl'],

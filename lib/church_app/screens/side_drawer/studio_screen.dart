@@ -25,7 +25,8 @@ class StudioScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
         body: Center(
-          child: Text(ref.t('studio.admin_only', fallback: 'Studio is available only for admins.')),
+          child: Text(ref.t('studio.admin_only',
+              fallback: 'Studio is available only for admins.')),
         ),
       );
     }
@@ -36,13 +37,18 @@ class StudioScreen extends ConsumerWidget {
       ),
       error: (error, _) => Scaffold(
         appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
-        body: Center(child: Text('${ref.t('common.error_prefix', fallback: 'Error')}: $error')),
+        body: Center(
+            child: Text(
+                '${ref.t('common.error_prefix', fallback: 'Error')}: $error')),
       ),
       data: (churchId) {
         if (churchId == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
-            body: Center(child: Text(ref.t('studio.no_church_selected', fallback: 'No church selected.'))),
+            appBar:
+                AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
+            body: Center(
+                child: Text(ref.t('studio.no_church_selected',
+                    fallback: 'No church selected.'))),
           );
         }
 
@@ -60,11 +66,17 @@ class StudioScreen extends ConsumerWidget {
                 isScrollable: true,
                 tabs: [
                   Tab(text: ref.t('studio.tab_events', fallback: 'Events')),
-                  Tab(text: ref.t('studio.tab_announcements', fallback: 'Announcements')),
-                  Tab(text: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse')),
+                  Tab(
+                      text: ref.t('studio.tab_announcements',
+                          fallback: 'Announcements')),
+                  Tab(
+                      text: ref.t('studio.tab_daily_verse',
+                          fallback: 'Daily Verse')),
                   Tab(text: ref.t('studio.tab_articles', fallback: 'Articles')),
                   Tab(text: ref.t('studio.tab_promise', fallback: 'Promise')),
-                  Tab(text: ref.t('studio.tab_notifications', fallback: 'Notifications')),
+                  Tab(
+                      text: ref.t('studio.tab_notifications',
+                          fallback: 'Notifications')),
                   Tab(text: ref.t('studio.tab_admins', fallback: 'Admins')),
                   Tab(text: ref.t('studio.tab_prompt', fallback: 'Prompt')),
                 ],
@@ -76,7 +88,8 @@ class StudioScreen extends ConsumerWidget {
                   title: ref.t('studio.tab_events', fallback: 'Events'),
                   stream: repository.watchEvents(),
                   addLabel: ref.t('studio.add_event', fallback: 'Add event'),
-                  emptyText: ref.t('studio.no_events', fallback: 'No events yet.'),
+                  emptyText:
+                      ref.t('studio.no_events', fallback: 'No events yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) {
                     final parts = <String>[
@@ -98,10 +111,13 @@ class StudioScreen extends ConsumerWidget {
                   onDelete: (doc) => repository.deleteEvent(doc.id),
                 ),
                 _CollectionEditor(
-                  title: ref.t('studio.tab_announcements', fallback: 'Announcements'),
+                  title: ref.t('studio.tab_announcements',
+                      fallback: 'Announcements'),
                   stream: repository.watchAnnouncements(),
-                  addLabel: ref.t('studio.add_announcement', fallback: 'Add announcement'),
-                  emptyText: ref.t('studio.no_announcements', fallback: 'No announcements yet.'),
+                  addLabel: ref.t('studio.add_announcement',
+                      fallback: 'Add announcement'),
+                  emptyText: ref.t('studio.no_announcements',
+                      fallback: 'No announcements yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) =>
                       '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
@@ -117,7 +133,8 @@ class StudioScreen extends ConsumerWidget {
                   ),
                 ),
                 _ConfigVerseEditor(
-                  title: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
+                  title:
+                      ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
                   configSelector: (config) => config.dailyVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updateDailyVerse(
@@ -130,8 +147,10 @@ class StudioScreen extends ConsumerWidget {
                 _CollectionEditor(
                   title: ref.t('studio.tab_articles', fallback: 'Articles'),
                   stream: repository.watchArticles(),
-                  addLabel: ref.t('studio.add_article', fallback: 'Add article'),
-                  emptyText: ref.t('studio.no_articles', fallback: 'No articles yet.'),
+                  addLabel:
+                      ref.t('studio.add_article', fallback: 'Add article'),
+                  emptyText:
+                      ref.t('studio.no_articles', fallback: 'No articles yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) => (data['description'] ?? '') as String,
                   onAdd: () => _showArticleEditor(context, repository),
@@ -208,8 +227,10 @@ class _CollectionEditor extends StatelessWidget {
   final String Function(Map<String, dynamic>) tileTitle;
   final String Function(Map<String, dynamic>) tileSubtitle;
   final Future<void> Function() onAdd;
-  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc) onEdit;
-  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc) onDelete;
+  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc)
+      onEdit;
+  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc)
+      onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +239,8 @@ class _CollectionEditor extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
-            child: Text('${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}'),
+            child: Text(
+                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}'),
           );
         }
         if (!snapshot.hasData) {
@@ -263,19 +285,23 @@ class _CollectionEditor extends StatelessWidget {
                             context: context,
                             builder: (context) => AlertDialog(
                               title: AppBarTitle(
-                                text: context.t('studio.delete_title', fallback: 'Delete'),
+                                text: context.t('studio.delete_title',
+                                    fallback: 'Delete'),
                               ),
                               content: Text(
                                 '${context.t('studio.delete_confirm_remove_prefix', fallback: 'Remove')} "${tileTitle(data)}"?',
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text(context.t('settings.cancel', fallback: 'Cancel')),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(context.t('settings.cancel',
+                                      fallback: 'Cancel')),
                                 ),
                                 FilledButton(
                                   onPressed: () => Navigator.pop(context, true),
-                                  child: Text(context.t('common.delete', fallback: 'Delete')),
+                                  child: Text(context.t('common.delete',
+                                      fallback: 'Delete')),
                                 ),
                               ],
                             ),
@@ -323,7 +349,8 @@ class _ConfigVerseEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
-        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text(
+            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
       ),
       data: (config) {
         final verseRef = configSelector(config);
@@ -415,11 +442,13 @@ class _NotificationComposerState extends State<_NotificationComposer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t('studio.notification_title', fallback: 'Church Topic Notification'),
+                  context.t('studio.notification_title',
+                      fallback: 'Church Topic Notification'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text('${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
+                Text(
+                    '${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _titleController,
@@ -509,7 +538,8 @@ class _AdminsEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
-        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text(
+            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
       ),
       data: (config) => _AdminsEditorForm(
         initialAdmins: config.admins,
@@ -567,14 +597,16 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  context.t('studio.admins_hint', fallback: 'Enter one admin email per line.'),
+                  context.t('studio.admins_hint',
+                      fallback: 'Enter one admin email per line.'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _controller,
                   maxLines: 10,
                   decoration: InputDecoration(
-                    labelText: context.t('studio.admins_label', fallback: 'Admin emails'),
+                    labelText: context.t('studio.admins_label',
+                        fallback: 'Admin emails'),
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -597,7 +629,8 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t('studio.admins_updated', fallback: 'Admins updated'),
+                                    context.t('studio.admins_updated',
+                                        fallback: 'Admins updated'),
                                   ),
                                 ),
                               );
@@ -614,7 +647,8 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            context.t('studio.admins_save', fallback: 'Save Admins'),
+                            context.t('studio.admins_save',
+                                fallback: 'Save Admins'),
                           ),
                   ),
                 ),
@@ -645,7 +679,8 @@ class _PromptSheetEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
-        child: Text('${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text(
+            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
       ),
       data: (config) => _PromptSheetEditorForm(
         promptSheet: config.promptSheet,
@@ -705,8 +740,17 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t('studio.prompt_title', fallback: 'Prompt Sheet'),
+                  context.t('studio.prompt_title', fallback: 'Important'),
                   style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.t(
+                    'studio.prompt_description',
+                    fallback:
+                        'This controls the important pop-up card shown to members for urgent announcements or special updates.',
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -720,7 +764,8 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                   controller: _descController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    labelText: context.t('common.description', fallback: 'Description'),
+                    labelText: context.t('common.description',
+                        fallback: 'Description'),
                   ),
                 ),
                 SwitchListTile(
@@ -746,7 +791,10 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t('studio.prompt_updated', fallback: 'Prompt updated'),
+                                    context.t(
+                                      'studio.prompt_updated',
+                                      fallback: 'Important updated',
+                                    ),
                                   ),
                                 ),
                               );
@@ -762,7 +810,12 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(context.t('studio.prompt_save', fallback: 'Save Prompt')),
+                        : Text(
+                            context.t(
+                              'studio.prompt_save',
+                              fallback: 'Save Important',
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -780,7 +833,8 @@ Future<void> _showEventEditor(
   QueryDocumentSnapshot<Map<String, dynamic>>? doc,
 }) {
   final data = doc?.data() ?? <String, dynamic>{};
-  final titleController = TextEditingController(text: (data['title'] ?? '') as String);
+  final titleController =
+      TextEditingController(text: (data['title'] ?? '') as String);
   final descriptionController =
       TextEditingController(text: (data['description'] ?? '') as String);
   final contactController =
@@ -828,27 +882,32 @@ Future<void> _showEventEditor(
                   TextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.description', fallback: 'Description'),
+                      labelText: context.t('common.description',
+                          fallback: 'Description'),
                     ),
                     maxLines: 3,
                   ),
                   DropdownButtonFormField<String>(
                     value: type,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_type', fallback: 'Type'),
+                      labelText:
+                          context.t('studio.event_type', fallback: 'Type'),
                     ),
                     items: [
                       DropdownMenuItem(
                         value: 'family',
-                        child: Text(context.t('studio.event_type_family', fallback: 'family')),
+                        child: Text(context.t('studio.event_type_family',
+                            fallback: 'family')),
                       ),
                       DropdownMenuItem(
                         value: 'kids',
-                        child: Text(context.t('studio.event_type_kids', fallback: 'kids')),
+                        child: Text(context.t('studio.event_type_kids',
+                            fallback: 'kids')),
                       ),
                       DropdownMenuItem(
                         value: 'youth',
-                        child: Text(context.t('studio.event_type_youth', fallback: 'youth')),
+                        child: Text(context.t('studio.event_type_youth',
+                            fallback: 'youth')),
                       ),
                     ],
                     onChanged: (value) {
@@ -860,20 +919,23 @@ Future<void> _showEventEditor(
                   TextField(
                     controller: contactController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_contact', fallback: 'Contact'),
+                      labelText: context.t('studio.event_contact',
+                          fallback: 'Contact'),
                     ),
                   ),
                   TextField(
                     controller: locationController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_location', fallback: 'Location'),
+                      labelText: context.t('studio.event_location',
+                          fallback: 'Location'),
                     ),
                   ),
                   TextField(
                     controller: timingController,
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_timing', fallback: 'Timing'),
+                      labelText:
+                          context.t('studio.event_timing', fallback: 'Timing'),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -899,7 +961,8 @@ Future<void> _showEventEditor(
                                       firstDate: DateTime(now.year - 1),
                                       lastDate: DateTime(now.year + 10),
                                     );
-                                    if (pickedDate == null || !context.mounted) {
+                                    if (pickedDate == null ||
+                                        !context.mounted) {
                                       return;
                                     }
 
@@ -908,7 +971,8 @@ Future<void> _showEventEditor(
                                       initialTime: TimeOfDay.fromDateTime(now),
                                     );
 
-                                    var formatted = _formatHumanReadableDate(pickedDate);
+                                    var formatted =
+                                        _formatHumanReadableDate(pickedDate);
                                     if (pickedTime != null) {
                                       final dateTime = DateTime(
                                         pickedDate.year,
@@ -945,21 +1009,22 @@ Future<void> _showEventEditor(
                         : () async {
                             setState(() => isSaving = true);
                             try {
-                      final payload = {
-                        'title': titleController.text.trim(),
-                        'description': descriptionController.text.trim(),
-                        'type': type,
-                        'contact': contactController.text.trim(),
-                        'location': locationController.text.trim(),
-                        'timing': timingController.text.trim(),
-                        'isActive': isActive,
-                      };
-                      if (doc == null) {
-                        await repository.createEvent(payload);
-                      } else {
-                        await repository.updateEvent(doc.id, payload);
-                      }
-                      if (context.mounted) Navigator.pop(context);
+                              final payload = {
+                                'title': titleController.text.trim(),
+                                'description':
+                                    descriptionController.text.trim(),
+                                'type': type,
+                                'contact': contactController.text.trim(),
+                                'location': locationController.text.trim(),
+                                'timing': timingController.text.trim(),
+                                'isActive': isActive,
+                              };
+                              if (doc == null) {
+                                await repository.createEvent(payload);
+                              } else {
+                                await repository.updateEvent(doc.id, payload);
+                              }
+                              if (context.mounted) Navigator.pop(context);
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -995,8 +1060,10 @@ Future<void> _showAnnouncementEditor(
   QueryDocumentSnapshot<Map<String, dynamic>>? doc,
 }) {
   final data = doc?.data() ?? <String, dynamic>{};
-  final titleController = TextEditingController(text: (data['title'] ?? '') as String);
-  final bodyController = TextEditingController(text: (data['body'] ?? '') as String);
+  final titleController =
+      TextEditingController(text: (data['title'] ?? '') as String);
+  final bodyController =
+      TextEditingController(text: (data['body'] ?? '') as String);
   final priorityController =
       TextEditingController(text: '${(data['priority'] ?? 0) as int}');
   final existingImageUrl = (data['imageUrl'] ?? '') as String;
@@ -1010,9 +1077,8 @@ Future<void> _showAnnouncementEditor(
     builder: (context) {
       return FractionallySizedBox(
         heightFactor: 0.95,
-        child: StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
+        child: StatefulBuilder(builder: (context, setState) {
+          return Padding(
             padding: EdgeInsets.fromLTRB(
               16,
               16,
@@ -1031,15 +1097,18 @@ Future<void> _showAnnouncementEditor(
                           doc == null
                               ? 'studio.announcement_create'
                               : 'studio.announcement_edit',
-                          fallback:
-                              doc == null ? 'Create announcement' : 'Edit announcement',
+                          fallback: doc == null
+                              ? 'Create announcement'
+                              : 'Edit announcement',
                         ),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const Spacer(),
                       OutlinedButton(
-                        onPressed: isSaving ? null : () => Navigator.of(context).pop(),
-                        child: Text(context.t('settings.cancel', fallback: 'Cancel')),
+                        onPressed:
+                            isSaving ? null : () => Navigator.of(context).pop(),
+                        child: Text(
+                            context.t('settings.cancel', fallback: 'Cancel')),
                       ),
                     ],
                   ),
@@ -1053,7 +1122,8 @@ Future<void> _showAnnouncementEditor(
                   TextField(
                     controller: bodyController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.announcement_body', fallback: 'Body'),
+                      labelText: context.t('studio.announcement_body',
+                          fallback: 'Body'),
                     ),
                     maxLines: 4,
                   ),
@@ -1066,7 +1136,8 @@ Future<void> _showAnnouncementEditor(
                         imageQuality: 85,
                       );
                       if (picked != null) {
-                        final imageData = await PickedImageData.fromXFile(picked);
+                        final imageData =
+                            await PickedImageData.fromXFile(picked);
                         if (imageData == null) return;
                         setState(() {
                           selectedImage = imageData;
@@ -1125,7 +1196,8 @@ Future<void> _showAnnouncementEditor(
                   TextField(
                     controller: priorityController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.priority_label', fallback: 'Priority'),
+                      labelText: context.t('studio.priority_label',
+                          fallback: 'Priority'),
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -1144,37 +1216,39 @@ Future<void> _showAnnouncementEditor(
                           : () async {
                               setState(() => isSaving = true);
                               try {
-                        final payload = {
-                          'title': titleController.text.trim(),
-                          'body': bodyController.text.trim(),
-                          'priority': int.tryParse(priorityController.text.trim()) ?? 0,
-                          'isActive': isActive,
-                        };
-                        if (doc == null) {
-                          await repository.createAnnouncement(
-                            data: payload,
-                            imageFile: selectedImage,
-                          );
-                        } else {
-                          await repository.updateAnnouncement(
-                            id: doc.id,
-                            data: payload,
-                            imageFile: selectedImage,
-                            existingImageUrl: existingImageUrl,
-                          );
-                        }
-                        if (context.mounted) Navigator.pop(context);
-                      } catch (error) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(error.toString())),
-                        );
-                      } finally {
-                        if (context.mounted) {
-                          setState(() => isSaving = false);
-                        }
-                      }
-                    },
+                                final payload = {
+                                  'title': titleController.text.trim(),
+                                  'body': bodyController.text.trim(),
+                                  'priority': int.tryParse(
+                                          priorityController.text.trim()) ??
+                                      0,
+                                  'isActive': isActive,
+                                };
+                                if (doc == null) {
+                                  await repository.createAnnouncement(
+                                    data: payload,
+                                    imageFile: selectedImage,
+                                  );
+                                } else {
+                                  await repository.updateAnnouncement(
+                                    id: doc.id,
+                                    data: payload,
+                                    imageFile: selectedImage,
+                                    existingImageUrl: existingImageUrl,
+                                  );
+                                }
+                                if (context.mounted) Navigator.pop(context);
+                              } catch (error) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                              } finally {
+                                if (context.mounted) {
+                                  setState(() => isSaving = false);
+                                }
+                              }
+                            },
                       child: isSaving
                           ? const SizedBox(
                               height: 18,
@@ -1205,7 +1279,8 @@ Future<void> _showArticleEditor(
   QueryDocumentSnapshot<Map<String, dynamic>>? doc,
 }) {
   final data = doc?.data() ?? <String, dynamic>{};
-  final titleController = TextEditingController(text: (data['title'] ?? '') as String);
+  final titleController =
+      TextEditingController(text: (data['title'] ?? '') as String);
   final descriptionController =
       TextEditingController(text: (data['description'] ?? '') as String);
   final contentController =
@@ -1232,7 +1307,9 @@ Future<void> _showArticleEditor(
                 children: [
                   Text(
                     context.t(
-                      doc == null ? 'studio.article_create' : 'studio.article_edit',
+                      doc == null
+                          ? 'studio.article_create'
+                          : 'studio.article_edit',
                       fallback: doc == null ? 'Create article' : 'Edit article',
                     ),
                     style: Theme.of(context).textTheme.titleLarge,
@@ -1247,14 +1324,16 @@ Future<void> _showArticleEditor(
                   TextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.description', fallback: 'Description'),
+                      labelText: context.t('common.description',
+                          fallback: 'Description'),
                     ),
                     maxLines: 3,
                   ),
                   TextField(
                     controller: contentController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.content', fallback: 'Content'),
+                      labelText:
+                          context.t('common.content', fallback: 'Content'),
                     ),
                     maxLines: 8,
                   ),
@@ -1265,17 +1344,18 @@ Future<void> _showArticleEditor(
                         : () async {
                             setState(() => isSaving = true);
                             try {
-                  final payload = {
-                    'title': titleController.text.trim(),
-                    'description': descriptionController.text.trim(),
-                    'content': contentController.text.trim(),
-                  };
-                  if (doc == null) {
-                    await repository.createArticle(payload);
-                  } else {
-                    await repository.updateArticle(doc.id, payload);
-                  }
-                  if (context.mounted) Navigator.pop(context);
+                              final payload = {
+                                'title': titleController.text.trim(),
+                                'description':
+                                    descriptionController.text.trim(),
+                                'content': contentController.text.trim(),
+                              };
+                              if (doc == null) {
+                                await repository.createArticle(payload);
+                              } else {
+                                await repository.updateArticle(doc.id, payload);
+                              }
+                              if (context.mounted) Navigator.pop(context);
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -1348,20 +1428,23 @@ Future<void> _showVerseEditor(
                   TextField(
                     controller: bookController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.verse_book', fallback: 'Book'),
+                      labelText:
+                          context.t('studio.verse_book', fallback: 'Book'),
                     ),
                   ),
                   TextField(
                     controller: chapterController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.verse_chapter', fallback: 'Chapter'),
+                      labelText: context.t('studio.verse_chapter',
+                          fallback: 'Chapter'),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   TextField(
                     controller: verseController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.verse_verse', fallback: 'Verse'),
+                      labelText:
+                          context.t('studio.verse_verse', fallback: 'Verse'),
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -1372,12 +1455,16 @@ Future<void> _showVerseEditor(
                         : () async {
                             setState(() => isSaving = true);
                             try {
-                  await onSave(
-                    book: bookController.text.trim(),
-                    chapter: int.tryParse(chapterController.text.trim()) ?? 1,
-                    verse: int.tryParse(verseController.text.trim()) ?? 1,
-                  );
-                  if (context.mounted) Navigator.pop(context);
+                              await onSave(
+                                book: bookController.text.trim(),
+                                chapter: int.tryParse(
+                                        chapterController.text.trim()) ??
+                                    1,
+                                verse:
+                                    int.tryParse(verseController.text.trim()) ??
+                                        1,
+                              );
+                              if (context.mounted) Navigator.pop(context);
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
