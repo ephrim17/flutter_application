@@ -582,7 +582,7 @@ class _ChurchDetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,19 +604,16 @@ class _ChurchDetailRow extends StatelessWidget {
               ],
             ),
           ),
-          if (onActionTap != null) ...[
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onActionTap,
-              tooltip: 'Call',
-              icon: Icon(
-                Icons.call_outlined,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
         ],
       ),
+    );
+
+    if (onActionTap == null) return row;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onActionTap,
+      child: row,
     );
   }
 }
