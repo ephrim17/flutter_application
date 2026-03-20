@@ -31,38 +31,23 @@ class SettingsScreen extends ConsumerWidget {
           text: ref.t('settings.title', fallback: 'Settings'),
         ),
       ),
-      body: Column(
-        children: [
-          /// 🔹 Scrollable content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-                child: ListView(
-                  children: const [
-                    _EditProfileSection(),
-                    _AppearanceSection(),
-                    _PushNotificationSection(),
-                    _PrayerReminderSection(),
-                    _StorageSection(),
-                    _DeleteAccountSection(),
-                    _LogoutSection(),
-                  ],
-                ),
-            ),
-          ),
-
-          //Spacer(),
-          Padding(
-            padding: EdgeInsets.all(15.0),
-            child: PraiseTheLordCard(),
-          ),
-
-          /// 🔹 Fixed bottom copyright
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: CopyrightWidget(),
-          ),
-        ],
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.all(8),
+          children: const [
+            _EditProfileSection(),
+            _AppearanceSection(),
+            _PushNotificationSection(),
+            _PrayerReminderSection(),
+            _StorageSection(),
+            _DeleteAccountSection(),
+            _LogoutSection(),
+            SizedBox(height: 12),
+            PraiseTheLordCard(),
+            CopyrightWidget(),
+          ],
+        ),
       ),
     );
   }
@@ -228,7 +213,8 @@ class _PushNotificationSectionState
     }
 
     try {
-      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      final settings =
+          await FirebaseMessaging.instance.getNotificationSettings();
       if (!mounted) return;
       setState(() {
         _settings = settings;
@@ -344,11 +330,12 @@ class _PushNotificationSectionState
 
   @override
   Widget build(BuildContext context) {
-    final actionLabel = _settings?.authorizationStatus == AuthorizationStatus.denied
-        ? ref.t('settings.push_manage', fallback: 'Manage')
-        : _isAuthorized
-            ? ref.t('settings.push_refresh', fallback: 'Refresh')
-            : ref.t('settings.push_enable', fallback: 'Enable');
+    final actionLabel =
+        _settings?.authorizationStatus == AuthorizationStatus.denied
+            ? ref.t('settings.push_manage', fallback: 'Manage')
+            : _isAuthorized
+                ? ref.t('settings.push_refresh', fallback: 'Refresh')
+                : ref.t('settings.push_enable', fallback: 'Enable');
 
     return ListTile(
       leading: const Icon(Icons.notifications_outlined),
@@ -384,7 +371,8 @@ class _PrayerReminderSection extends ConsumerStatefulWidget {
       _PrayerReminderSectionState();
 }
 
-class _PrayerReminderSectionState extends ConsumerState<_PrayerReminderSection> {
+class _PrayerReminderSectionState
+    extends ConsumerState<_PrayerReminderSection> {
   bool enabled = false;
   TimeOfDay? selectedTime;
 
@@ -551,7 +539,8 @@ class _DeleteAccountSheet extends ConsumerStatefulWidget {
   const _DeleteAccountSheet();
 
   @override
-  ConsumerState<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
+  ConsumerState<_DeleteAccountSheet> createState() =>
+      _DeleteAccountSheetState();
 }
 
 class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
@@ -568,7 +557,8 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
     final password = _passwordController.text;
     if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your password to continue.')),
+        const SnackBar(
+            content: Text('Please enter your password to continue.')),
       );
       return;
     }
@@ -655,7 +645,8 @@ class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
+                  onPressed:
+                      _isDeleting ? null : () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
               ),
@@ -738,7 +729,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     );
     final permissionDeniedForeverMessage = ref.t(
       'auth.location_permission_denied_forever',
-      fallback: 'Location permission denied permanently. Enable it from settings.',
+      fallback:
+          'Location permission denied permanently. Enable it from settings.',
     );
     final fetchFailedMessage = ref.t(
       'auth.location_fetch_failed',
@@ -757,7 +749,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied) throw permissionDeniedMessage;
+      if (permission == LocationPermission.denied) {
+        throw permissionDeniedMessage;
+      }
       if (permission == LocationPermission.deniedForever) {
         throw permissionDeniedForeverMessage;
       }
@@ -910,7 +904,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   suffixIcon: Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(
-                  _formatDob(_dob).isEmpty ? 'Select your birthday' : _formatDob(_dob),
+                  _formatDob(_dob).isEmpty
+                      ? 'Select your birthday'
+                      : _formatDob(_dob),
                 ),
               ),
             ),
@@ -925,7 +921,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 ),
                 helperText: ref.t(
                   'auth.location_helper',
-                  fallback: 'Use current location or paste your Google Maps link',
+                  fallback:
+                      'Use current location or paste your Google Maps link',
                 ),
                 border: const OutlineInputBorder(),
                 suffixIcon: _isFetchingLocation
