@@ -77,7 +77,7 @@ class SelectChurchScreen extends ConsumerWidget {
                           child: Column(
                             children: [
                               Text(
-                                'Welcome Home.',
+                                'Welcome Home',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -420,130 +420,140 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
       minChildSize: 0.85,
       maxChildSize: 0.96,
       builder: (context, scrollController) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Choose a church',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${filteredChurches.length} of ${widget.churches.length} churches',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
+        return Material(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(28),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                color: theme.cardColor,
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Choose a church',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${filteredChurches.length} of ${widget.churches.length} churches',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _query = value.trim().toLowerCase();
-                      });
-                    },
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
-                      hintText: 'Search by church, pastor, email or address',
-                      suffixIcon: _query.isEmpty
-                          ? null
-                          : IconButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _query = '';
-                                });
-                              },
-                              icon: const Icon(Icons.clear),
-                            ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: filteredChurches.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('No churches match your search'),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _query = value.trim().toLowerCase();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: theme.cardColor,
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search by church, pastor, email or address',
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _query = '';
+                                  });
+                                },
+                                icon: const Icon(Icons.clear),
+                              ),
                       ),
-                    )
-                  : ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      itemCount: filteredChurches.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final church = filteredChurches[index];
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: filteredChurches.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('No churches match your search'),
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        itemCount: filteredChurches.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final church = filteredChurches[index];
 
-                        return InkWell(
-                          borderRadius: BorderRadius.circular(cornerRadius),
-                          onTap: () => widget.onChurchTap(church),
-                          child: Ink(
-                            decoration: carouselBoxDecoration(context),
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ChurchLogoAvatar(
-                                    logo: church.logo,
-                                    size: 46,
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          church.name,
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        _ChurchPreviewLine(
-                                          icon: Icons.person_outline,
-                                          text: _valueOrFallback(
-                                            church.pastorName,
-                                          ),
-                                        ),
-                                      ],
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(cornerRadius),
+                            onTap: () => widget.onChurchTap(church),
+                            child: Ink(
+                              decoration: carouselBoxDecoration(context),
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ChurchLogoAvatar(
+                                      logo: church.logo,
+                                      size: 46,
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ],
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            church.name,
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _ChurchPreviewLine(
+                                            icon: Icons.person_outline,
+                                            text: _valueOrFallback(
+                                              church.pastorName,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         );
       },
     );

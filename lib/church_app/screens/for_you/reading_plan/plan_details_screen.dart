@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/reading_plan_progress_provider.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -71,62 +72,76 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                           final dayPlan = _readingPlan!.days[index];
                           final isCompleted =
                               completedDays.contains(dayPlan.day);
+                          final theme = Theme.of(context);
 
-                          return Card(
-                            color: isCompleted
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer
-                                    .withValues(alpha: 0.85)
-                                : null,
+                          return Container(
                             margin: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
-                            child: ExpansionTile(
-                              title: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("Day ${dayPlan.day}"),
-                                  IconButton(
-                                    icon: Icon(
-                                      isCompleted
-                                          ? Icons.check_circle
-                                          : Icons.radio_button_unchecked,
-                                      color: isCompleted ? Theme.of(context).colorScheme.secondary : null,
-                                    ),
-                                    onPressed: () {
-                                      ref
-                                          .read(readingPlanProgressProvider(
-                                                  widget.month)
-                                              .notifier)
-                                          .toggleDay(dayPlan.day);
-                                    },
-                                  ),
-                                ],
-                              ),
-                              children: dayPlan.readings.map((reading) {
-                                return ListTile(
-                                  title: Text(reading.book),
-                                  trailing:
-                                      Text("Chapters: ${reading.chapters}"),
-                                  onTap: () {
-                                    final range = parseChapterRange(reading.chapters);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => VerseScreen(
-                                          book: BibleBook(
-                                            key: reading.book,
-                                            name: reading.book,
-                                          ),
-                                          startChapterIndex: range[0] - 1,
-                                          endChapterIndex: range[1] - 1,
+                            decoration: carouselBoxDecoration(context).copyWith(
+                              color: isCompleted
+                                  ? theme.colorScheme.primaryContainer
+                                      .withValues(alpha: 0.85)
+                                  : null,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: (carouselBoxDecoration(context)
+                                      .borderRadius as BorderRadius?) ??
+                                  BorderRadius.circular(cornerRadius),
+                              child: Theme(
+                                data: theme.copyWith(
+                                  dividerColor: Colors.transparent,
+                                ),
+                                child: ExpansionTile(
+                                  title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text("Day ${dayPlan.day}"),
+                                      IconButton(
+                                        icon: Icon(
+                                          isCompleted
+                                              ? Icons.check_circle
+                                              : Icons.radio_button_unchecked,
+                                          color: isCompleted
+                                              ? theme.colorScheme.secondary
+                                              : null,
                                         ),
+                                        onPressed: () {
+                                          ref
+                                              .read(readingPlanProgressProvider(
+                                                      widget.month)
+                                                  .notifier)
+                                              .toggleDay(dayPlan.day);
+                                        },
                                       ),
+                                    ],
+                                  ),
+                                  children: dayPlan.readings.map((reading) {
+                                    return ListTile(
+                                      title: Text(reading.book),
+                                      trailing:
+                                          Text("Chapters: ${reading.chapters}"),
+                                      onTap: () {
+                                        final range =
+                                            parseChapterRange(reading.chapters);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => VerseScreen(
+                                              book: BibleBook(
+                                                key: reading.book,
+                                                name: reading.book,
+                                              ),
+                                              startChapterIndex: range[0] - 1,
+                                              endChapterIndex: range[1] - 1,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     );
-                                  },
-                                );
-                              }).toList(),
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           );
                         },

@@ -33,7 +33,39 @@ class MembersRepository extends ChurchScopedRepository {
     });
   }
 
+  Future<void> updateMemberCategory(
+    String userId, {
+    required String category,
+    required String familyId,
+  }) {
+    return collectionRef().doc(userId).update({
+      'category': category.trim().toLowerCase(),
+      'familyId': familyId.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> deleteMember(String userId) {
-    return collectionRef().doc(userId).delete();
+    return _deleteChurchUserData(userId);
+  }
+
+  Future<void> _deleteChurchUserData(String userId) async {
+    await _deleteCollection(
+      FirestorePaths.churchUserReadingPlans(firestore, churchId, userId),
+    );
+    await FirestorePaths.churchUserDoc(firestore, churchId, userId).delete();
+  }
+
+  Future<void> _deleteCollection(CollectionReference collectionRef) async {
+    while (true) {
+      final snapshot = await collectionRef.limit(50).get();
+      if (snapshot.docs.isEmpty) {
+        break;
+      }
+
+      for (final doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+    }
   }
 }

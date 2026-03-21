@@ -6,7 +6,8 @@ class PlanCard extends StatelessWidget {
   final Gradient gradient;
   final VoidCallback onTap;
 
-  const PlanCard({super.key, 
+  const PlanCard({
+    super.key,
     required this.month,
     required this.gradient,
     required this.onTap,
@@ -16,26 +17,19 @@ class PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(cornerRadius),
+      child: Container(
+        width: 220,
+        height: 120,
+        decoration: carouselBoxDecoration(context).copyWith(
+          gradient: gradient,
         ),
-        child: Container(
-          width: 220,
-          height: 120,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cornerRadius),
-            gradient: gradient,
-          ),
-          child: Center(
-            child: Text(
-              month,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+        child: Center(
+          child: Text(
+            month,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),

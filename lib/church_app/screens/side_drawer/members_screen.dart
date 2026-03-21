@@ -301,6 +301,7 @@ Future<void> _showMemberDetailsSheet(
 }) {
   final theme = Theme.of(context);
   final canDelete = isAdmin && member.uid != currentUid;
+  final canEditCategory = isAdmin && member.uid != currentUid;
 
   return showModalBottomSheet<void>(
     context: context,
@@ -375,6 +376,216 @@ Future<void> _showMemberDetailsSheet(
                     ? null
                     : () => launchPhoneCall(context, member.phone),
               ),
+              if (canEditCategory) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final churchId =
+                          await ref.read(currentChurchIdProvider.future);
+                      if (churchId == null) return;
+
+                      final familyIds = await ref
+                          .read(authRepositoryProvider)
+                          .getFamilyIds(churchId);
+                      if (!context.mounted) return;
+
+                      final selectedValue = await showDialog<String>(
+                        context: context,
+                        builder: (dialogContext) {
+                          String category =
+                              member.category.trim().toLowerCase();
+                          String? selectedFamilyId =
+                              familyIds.contains(member.familyId.trim())
+                                  ? member.familyId.trim()
+                                  : null;
+                          if (category != 'family' &&
+                              category != 'individual') {
+                            category = 'individual';
+                          }
+
+                          return StatefulBuilder(
+                            builder: (context, setLocalState) => AlertDialog(
+                              title: Text(
+                                context.t(
+                                  'members.edit_category_title',
+                                  fallback: 'Edit category',
+                                ),
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DropdownButtonFormField<String>(
+                                    value: category,
+                                    decoration: InputDecoration(
+                                      labelText: context.t(
+                                        'auth.category_label',
+                                        fallback: 'Category',
+                                      ),
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'individual',
+                                        child: Text('Individual'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'family',
+                                        child: Text('Family'),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      setLocalState(() {
+                                        category = value;
+                                        if (category != 'family') {
+                                          selectedFamilyId = null;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  if (category == 'family') ...[
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      value: selectedFamilyId,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.family_id_label',
+                                          fallback: 'Family ID',
+                                        ),
+                                      ),
+                                      items: familyIds
+                                          .map(
+                                            (familyId) => DropdownMenuItem(
+                                              value: familyId,
+                                              child: Text(
+                                                _formatFamilyOptionLabel(
+                                                  familyId,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (value) {
+                                        setLocalState(() {
+                                          selectedFamilyId = value;
+                                        });
+                                      },
+                                    ),
+                                    if (familyIds.isEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        context.t(
+                                          'members.no_families_available',
+                                          fallback:
+                                              'No families are available for this church yet.',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                    ],
+                                  ] else ...[
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      context.t(
+                                        'auth.individual_family_hint',
+                                        fallback:
+                                            'Family ID will be generated automatically',
+                                      ),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
+                                  child: Text(
+                                    context.t(
+                                      'settings.cancel',
+                                      fallback: 'Cancel',
+                                    ),
+                                  ),
+                                ),
+                                FilledButton(
+                                  onPressed: category == 'family' &&
+                                          (selectedFamilyId == null ||
+                                              selectedFamilyId!.trim().isEmpty)
+                                      ? null
+                                      : () => Navigator.of(dialogContext).pop(
+                                            category == 'family'
+                                                ? '$category|${selectedFamilyId!.trim()}'
+                                                : '$category|${_buildIndividualFamilyId(member.name, churchId)}',
+                                          ),
+                                  child: Text(
+                                    context.t(
+                                      'common.save',
+                                      fallback: 'Save',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+
+                      if (selectedValue == null) {
+                        return;
+                      }
+
+                      final parts = selectedValue.split('|');
+                      if (parts.length != 2) return;
+
+                      final selectedCategory = parts[0];
+                      final selectedFamilyId = parts[1];
+                      final currentCategory =
+                          member.category.trim().toLowerCase();
+                      final currentFamilyId = member.familyId.trim();
+
+                      if (selectedCategory == currentCategory &&
+                          selectedFamilyId == currentFamilyId) {
+                        return;
+                      }
+
+                      final repo = MembersRepository(
+                        firestore: ref.read(firestoreProvider),
+                        churchId: churchId,
+                      );
+
+                      await repo.updateMemberCategory(
+                        member.uid,
+                        category: selectedCategory,
+                        familyId: selectedFamilyId,
+                      );
+
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            context.t(
+                              'members.edit_category_success',
+                              fallback: 'Category updated',
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(
+                      context.t(
+                        'members.edit_category_action',
+                        fallback: 'Edit Category',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               if (canDelete) ...[
                 const SizedBox(height: 8),
                 SizedBox(
@@ -388,7 +599,8 @@ Future<void> _showMemberDetailsSheet(
                             context.t(
                               'members.delete_title',
                               fallback: 'Delete member?',
-                            ), style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           content: Text(
                             context.t(
@@ -553,6 +765,48 @@ String _formatFamilyHeader(String familyId) {
 
   final suffix = displayName.endsWith('s') ? "'" : "'s";
   return '$displayName$suffix family';
+}
+
+String _formatFamilyOptionLabel(String familyId) {
+  final normalized = familyId.trim().toLowerCase();
+  if (normalized.isEmpty) {
+    return familyId;
+  }
+
+  final parts = normalized
+      .replaceFirst(RegExp(r'^family_'), '')
+      .replaceFirst(RegExp(r'^individual_'), '')
+      .split('_')
+      .where((part) => part.isNotEmpty)
+      .toList();
+
+  if (parts.length > 1) {
+    parts.removeLast();
+  }
+
+  final displayName = parts
+      .map((part) => part[0].toUpperCase() + part.substring(1))
+      .join(' ')
+      .trim();
+
+  if (displayName.isEmpty) {
+    return familyId;
+  }
+
+  final suffix = displayName.endsWith('s') ? "'" : "'s";
+  return '$displayName$suffix family';
+}
+
+String _buildIndividualFamilyId(String name, String churchId) {
+  final normalizedName = name
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .replaceAll(RegExp(r'^_|_$'), '');
+
+  final seed = normalizedName.isEmpty ? 'member' : normalizedName;
+  return 'individual_${seed}_${churchId.toLowerCase()}';
 }
 
 class _MemberDetailRow extends StatelessWidget {

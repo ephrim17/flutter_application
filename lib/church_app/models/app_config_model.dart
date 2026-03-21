@@ -305,6 +305,11 @@ const Map<String, String> defaultTextContentValues = {
   'members.delete_title': 'Delete member?',
   'members.delete_message': 'This will remove the member from this church.',
   'members.delete_success': 'Member deleted',
+  'members.edit_category_title': 'Edit category',
+  'members.edit_category_action': 'Edit Category',
+  'members.edit_category_success': 'Category updated',
+  'members.no_families_available':
+      'No families are available for this church yet.',
 
   // Favorites
   'favorites.title': 'Favorites',

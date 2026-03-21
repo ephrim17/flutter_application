@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
@@ -273,7 +274,8 @@ class _CollectionEditor extends StatelessWidget {
               ),
             ...docs.map((doc) {
               final data = doc.data();
-              return Card(
+              return Container(
+                decoration: carouselBoxDecoration(context),
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   title: Text(tileTitle(data)),
@@ -366,7 +368,8 @@ class _ConfigVerseEditor extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Card(
+            Container(
+              decoration: carouselBoxDecoration(context),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -443,7 +446,8 @@ class _NotificationComposerState extends State<_NotificationComposer> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
+        Container(
+          decoration: carouselBoxDecoration(context),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -608,7 +612,8 @@ class _SectionGroupCard<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
+      decoration: carouselBoxDecoration(context),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<List<T>>(
@@ -933,7 +938,8 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
+        Container(
+          decoration: carouselBoxDecoration(context),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1081,7 +1087,8 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
+        Container(
+          decoration: carouselBoxDecoration(context),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1998,11 +2005,7 @@ class _VerseEditorSheetState extends State<_VerseEditorSheet> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                decoration: carouselBoxDecoration(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2110,12 +2113,7 @@ class _VersePickerTile extends StatelessWidget {
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: carouselBoxDecoration(context),
           child: Row(
             children: [
               Expanded(
