@@ -26,6 +26,16 @@ class AppEntry extends ConsumerStatefulWidget {
 class _AppEntryState extends ConsumerState<AppEntry> {
   bool? _showOnboarding;
 
+  void _syncPreflowTheme(bool enabled) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final notifier = ref.read(forcePreflowThemeProvider.notifier);
+      if (notifier.state != enabled) {
+        notifier.state = enabled;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -78,16 +88,18 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   Widget _buildResolvedScreen(AppUser? user) {
     final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
     if (firebaseUser == null) {
+      _syncPreflowTheme(true);
       return const CreateAuthAccountScreen();
     }
     if (user == null) {
+      _syncPreflowTheme(true);
       return const SelectChurchScreen();
     }
     if (!user.approved) {
-      ref.read(forcePreflowThemeProvider.notifier).state = true;
+      _syncPreflowTheme(true);
       return const PendingApprovalWidget();
     }
-    ref.read(forcePreflowThemeProvider.notifier).state = false;
+    _syncPreflowTheme(false);
     return const ChurchTabScreen();
   }
 }

@@ -553,7 +553,7 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
       maxChildSize: 0.96,
       builder: (context, scrollController) {
         return Material(
-          color: theme.cardColor,
+          color: theme.scaffoldBackgroundColor,
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(28),
           ),
