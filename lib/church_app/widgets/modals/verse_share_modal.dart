@@ -18,6 +18,12 @@ enum BackgroundType { color, image }
 
 enum VerseFontStyleOption { bold, normal, italic }
 
+enum HighlightPreset { emphasis, outline }
+
+enum HighlightMatchMode { all, firstOnly, next }
+
+enum HighlightTarget { verse, reference }
+
 Future<void> showVerseShareModal(
   BuildContext context, {
   required String text,
@@ -53,6 +59,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   final GlobalKey _previewKey = GlobalKey();
   final TextEditingController _storyCaptionController = TextEditingController();
+  final Map<String, TextEditingController> _highlightControllers = {};
 
   ShareFormat format = ShareFormat.square;
   BackgroundType backgroundType = BackgroundType.color;
@@ -65,6 +72,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   VerseFontStyleOption fontStyleOption = VerseFontStyleOption.bold;
   double blurIntensity = 10;
   int selectedFontStyleIndex = 0;
+  final List<_HighlightRule> _highlightRules = [];
 
   PickedImageData? selectedImage;
 
@@ -78,6 +86,17 @@ class _VerseShareModalState extends State<VerseShareModal> {
   ];
 
   final List<Color> fontPalette = [
+    Colors.transparent,
+    Colors.black,
+    Colors.white,
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
+  ];
+
+  final List<Color> fillPalette = [
+    Colors.transparent,
     Colors.black,
     Colors.white,
     Colors.red,
@@ -112,6 +131,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
   @override
   void dispose() {
     _storyCaptionController.dispose();
+    for (final controller in _highlightControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -269,16 +291,26 @@ class _VerseShareModalState extends State<VerseShareModal> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  widget.text,
+                                Text.rich(
+                                  TextSpan(
+                                    children: _buildVerseInlineSpans(
+                                      fittedSize,
+                                    ),
+                                  ),
                                   textAlign: TextAlign.center,
-                                  style: _textStyle(fittedSize),
                                 ),
                                 SizedBox(height: fittedSize * 0.9),
-                                Text(
-                                  "- ${widget.reference}",
+                                Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '- ',
+                                        style: _referenceTextStyle(fittedSize),
+                                      ),
+                                      ..._buildReferenceInlineSpans(fittedSize),
+                                    ],
+                                  ),
                                   textAlign: TextAlign.center,
-                                  style: _referenceTextStyle(fittedSize),
                                 ),
                               ],
                             ),
@@ -505,117 +537,157 @@ class _VerseShareModalState extends State<VerseShareModal> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.t('verse_share.font_size', fallback: 'Font Size')),
-          Slider(
-            value: fontSize,
-            min: 12,
-            max: 28,
-            divisions: 16,
-            label: fontSize.toStringAsFixed(0),
-            onChanged: (value) {
-              setState(() {
-                fontSize = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          Text(context.t('verse_share.font_style', fallback: 'Font Style')),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(fontStyleOptions.length, (index) {
-              final option = fontStyleOptions[index];
-              final selected = index == selectedFontStyleIndex;
-              return ChoiceChip(
-                label: Text(
-                  context.t(option.labelKey, fallback: option.fallback),
+          _buildSectionCard(
+            title: context.t(
+              'verse_share.base_style',
+              fallback: 'Base Style',
+            ),
+            description: context.t(
+              'verse_share.base_style_desc',
+              fallback:
+                  'This style applies to the full verse unless a highlight rule overrides part of it.',
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.t('verse_share.font_size', fallback: 'Font Size')),
+                Slider(
+                  value: fontSize,
+                  min: 12,
+                  max: 28,
+                  divisions: 16,
+                  label: fontSize.toStringAsFixed(0),
+                  onChanged: (value) {
+                    setState(() {
+                      fontSize = value;
+                    });
+                  },
                 ),
-                selected: selected,
-                onSelected: (_) {
-                  setState(() {
-                    selectedFontStyleIndex = index;
-                  });
-                },
-              );
-            }),
+                const SizedBox(height: 12),
+                Text(
+                  context.t('verse_share.font_style', fallback: 'Font Family'),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(fontStyleOptions.length, (index) {
+                    final option = fontStyleOptions[index];
+                    final selected = index == selectedFontStyleIndex;
+                    return ChoiceChip(
+                      label: Text(
+                        context.t(option.labelKey, fallback: option.fallback),
+                      ),
+                      selected: selected,
+                      onSelected: (_) {
+                        setState(() {
+                          selectedFontStyleIndex = index;
+                        });
+                      },
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.t('verse_share.font_weight', fallback: 'Font Weight'),
+                ),
+                const SizedBox(height: 8),
+                ToggleButtons(
+                  borderRadius: BorderRadius.circular(cornerRadius),
+                  isSelected: [
+                    fontStyleOption == VerseFontStyleOption.bold,
+                    fontStyleOption == VerseFontStyleOption.normal,
+                    fontStyleOption == VerseFontStyleOption.italic,
+                  ],
+                  onPressed: (index) {
+                    setState(() {
+                      fontStyleOption = VerseFontStyleOption.values[index];
+                    });
+                  },
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        context.t('verse_share.bold', fallback: 'Bold'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        context.t('verse_share.normal', fallback: 'Normal'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        context.t('verse_share.italic', fallback: 'Italic'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildColorPaletteSection(
+                  title: context.t(
+                    'verse_share.font_color',
+                    fallback: 'Font Color',
+                  ),
+                  selectedColor: fontColor,
+                  colors: fontPalette,
+                  onSelected: (color) {
+                    setState(() {
+                      fontColor = color;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
-          Text(context.t('verse_share.font_weight', fallback: 'Font Weight')),
-          const SizedBox(height: 8),
-          ToggleButtons(
-            borderRadius: BorderRadius.circular(cornerRadius),
-            isSelected: [
-              fontStyleOption == VerseFontStyleOption.bold,
-              fontStyleOption == VerseFontStyleOption.normal,
-              fontStyleOption == VerseFontStyleOption.italic,
-            ],
-            onPressed: (index) {
-              setState(() {
-                fontStyleOption = VerseFontStyleOption.values[index];
-              });
-            },
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(context.t('verse_share.bold', fallback: 'Bold')),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  context.t('verse_share.normal', fallback: 'Normal'),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  context.t('verse_share.italic', fallback: 'Italic'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            context.t('verse_share.font_color', fallback: 'Font Color'),
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: fontPalette.map((color) {
-              final isSelected = fontColor == color;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    fontColor = color;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? Colors.black : Colors.grey.shade400,
-                      width: isSelected ? 2 : 1,
+          _buildSectionCard(
+            title: context.t(
+              'verse_share.highlights',
+              fallback: 'Highlights',
+            ),
+            description: context.t(
+              'verse_share.highlights_desc',
+              fallback:
+                  'Add multiple words or phrases and give each one its own look.',
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_highlightRules.isEmpty)
+                  Text(
+                    context.t(
+                      'verse_share.highlights_empty',
+                      fallback:
+                          'No highlight rules yet. Add one to style a specific word or phrase.',
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  )
+                else
+                  Column(
+                    children: [
+                      for (final rule in _highlightRules)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildHighlightRuleCard(rule),
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: _addHighlightRule,
+                  icon: const Icon(Icons.add),
+                  label: Text(
+                    context.t(
+                      'verse_share.add_highlight',
+                      fallback: 'Add Highlight',
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: color,
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            size: 18,
-                            color: color.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                          )
-                        : null,
-                  ),
                 ),
-              );
-            }).toList(),
+              ],
+            ),
           ),
         ],
       ),
@@ -777,6 +849,108 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
+  List<InlineSpan> _buildVerseInlineSpans(double size) {
+    final matches = _resolvedHighlightMatches(
+      source: widget.text,
+      target: HighlightTarget.verse,
+    );
+    if (matches.isEmpty) {
+      return [
+        TextSpan(
+          text: widget.text,
+          style: _textStyle(size),
+        ),
+      ];
+    }
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(
+          TextSpan(
+            text: widget.text.substring(cursor, match.start),
+            style: _textStyle(size),
+          ),
+        );
+      }
+
+      spans.add(
+        TextSpan(
+          text: widget.text.substring(match.start, match.end),
+          style: _highlightTextStyle(
+            rule: match.rule,
+            size: size,
+          ),
+        ),
+      );
+      cursor = match.end;
+    }
+
+    if (cursor < widget.text.length) {
+      spans.add(
+        TextSpan(
+          text: widget.text.substring(cursor),
+          style: _textStyle(size),
+        ),
+      );
+    }
+
+    return spans;
+  }
+
+  List<InlineSpan> _buildReferenceInlineSpans(double size) {
+    final matches = _resolvedHighlightMatches(
+      source: widget.reference,
+      target: HighlightTarget.reference,
+    );
+    if (matches.isEmpty) {
+      return [
+        TextSpan(
+          text: widget.reference,
+          style: _referenceTextStyle(size),
+        ),
+      ];
+    }
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(
+          TextSpan(
+            text: widget.reference.substring(cursor, match.start),
+            style: _referenceTextStyle(size),
+          ),
+        );
+      }
+
+      spans.add(
+        TextSpan(
+          text: widget.reference.substring(match.start, match.end),
+          style: _highlightTextStyle(
+            rule: match.rule,
+            size: size * 0.72,
+          ),
+        ),
+      );
+      cursor = match.end;
+    }
+
+    if (cursor < widget.reference.length) {
+      spans.add(
+        TextSpan(
+          text: widget.reference.substring(cursor),
+          style: _referenceTextStyle(size),
+        ),
+      );
+    }
+
+    return spans;
+  }
+
   TextStyle _referenceTextStyle(double size) {
     final selectedFont = fontStyleOptions[selectedFontStyleIndex];
     return TextStyle(
@@ -786,6 +960,38 @@ class _VerseShareModalState extends State<VerseShareModal> {
       fontFamily: selectedFont.fontFamily,
       fontStyle: _resolvedFontStyle(),
       height: 1.2,
+    );
+  }
+
+  TextStyle _highlightTextStyle({
+    required _HighlightRule rule,
+    required double size,
+  }) {
+    final selectedFont = fontStyleOptions[rule.fontStyleIndex];
+    final resolvedSize = size * rule.sizeScale;
+    final presetStyle = _presetVisualStyle(rule.preset);
+
+    return TextStyle(
+      fontSize: resolvedSize,
+      color: rule.textColor,
+      fontFamily: selectedFont.fontFamily,
+      fontStyle: rule.fontStyleOption == VerseFontStyleOption.italic
+          ? FontStyle.italic
+          : FontStyle.normal,
+      fontWeight: rule.fontStyleOption == VerseFontStyleOption.bold
+          ? FontWeight.w800
+          : FontWeight.w500,
+      letterSpacing: presetStyle.letterSpacing,
+      backgroundColor:
+          rule.fillColor.withValues(alpha: presetStyle.fillOpacity),
+      shadows: _buildHighlightShadows(
+        borderColor: rule.borderColor,
+        preset: rule.preset,
+      ),
+      decoration: TextDecoration.none,
+      decorationColor: rule.borderColor,
+      decorationThickness: null,
+      height: 1.28,
     );
   }
 
@@ -815,8 +1021,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
     while (adjustedSize > 10) {
       final versePainter = TextPainter(
         text: TextSpan(
-          text: widget.text,
-          style: _textStyle(adjustedSize),
+          children: _buildVerseInlineSpans(adjustedSize),
         ),
         textAlign: TextAlign.center,
         textDirection: ui.TextDirection.ltr,
@@ -825,8 +1030,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
       final referencePainter = TextPainter(
         text: TextSpan(
-          text: "- ${widget.reference}",
-          style: _referenceTextStyle(adjustedSize),
+          children: [
+            TextSpan(
+              text: '- ',
+              style: _referenceTextStyle(adjustedSize),
+            ),
+            ..._buildReferenceInlineSpans(adjustedSize),
+          ],
         ),
         textAlign: TextAlign.center,
         textDirection: ui.TextDirection.ltr,
@@ -873,6 +1083,535 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   String _todayDateLabel() {
     return DateFormat('dd/MM/yyyy').format(DateTime.now());
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required String description,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorPaletteSection({
+    required String title,
+    required Color selectedColor,
+    required List<Color> colors,
+    required ValueChanged<Color> onSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: colors.map((color) {
+            return GestureDetector(
+              onTap: () => onSelected(color),
+              child: _buildColorDot(
+                color: color,
+                isSelected: selectedColor == color,
+                isClear: color == Colors.transparent,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  void _addHighlightRule() {
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    setState(() {
+      _highlightRules.add(
+        _HighlightRule(
+          id: id,
+          phrase: '',
+          target: HighlightTarget.verse,
+          preset: HighlightPreset.emphasis,
+          fontStyleOption: VerseFontStyleOption.bold,
+          textColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.primary,
+          borderColor: Theme.of(context).colorScheme.primaryContainer,
+          fontStyleIndex: selectedFontStyleIndex,
+          sizeScale: 1.0,
+          matchMode: HighlightMatchMode.all,
+          occurrenceIndex: 0,
+        ),
+      );
+      _highlightControllers[id] = TextEditingController();
+    });
+  }
+
+  void _removeHighlightRule(_HighlightRule rule) {
+    _highlightControllers.remove(rule.id)?.dispose();
+    setState(() {
+      _highlightRules.removeWhere((item) => item.id == rule.id);
+    });
+  }
+
+  Widget _buildHighlightRuleCard(_HighlightRule rule) {
+    final controller = _highlightControllers.putIfAbsent(
+      rule.id,
+      () => TextEditingController(text: rule.phrase),
+    );
+    final title = rule.phrase.trim().isEmpty
+        ? context.t(
+            'verse_share.highlight_rule_title',
+            fallback: 'New Highlight',
+          )
+        : rule.phrase.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              IconButton(
+                tooltip: context.t(
+                  'common.delete',
+                  fallback: 'Delete',
+                ),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _removeHighlightRule(rule),
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ],
+          ),
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: context.t(
+                'verse_share.phrase',
+                fallback: 'Word or Phrase',
+              ),
+              hintText: context.t(
+                'verse_share.phrase_hint',
+                fallback: 'Type the exact word or phrase to style',
+              ),
+            ),
+            onChanged: (value) {
+              _updateRule(rule, (current) => current.copyWith(phrase: value));
+            },
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.t('verse_share.preset', fallback: 'Preset'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: HighlightTarget.values.map((target) {
+              final selected = rule.target == target;
+              return ChoiceChip(
+                label: Text(
+                  target == HighlightTarget.verse
+                      ? context.t('verse_share.target_verse', fallback: 'Verse')
+                      : context.t(
+                          'verse_share.target_reference',
+                          fallback: 'Reference',
+                        ),
+                ),
+                selected: selected,
+                onSelected: (_) {
+                  _updateRule(
+                    rule,
+                    (current) => current.copyWith(target: target),
+                  );
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.t('verse_share.target', fallback: 'Target'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: HighlightPreset.values.map((preset) {
+              final selected = rule.preset == preset;
+              return ChoiceChip(
+                label: Text(_presetLabel(preset)),
+                selected: selected,
+                onSelected: (_) {
+                  _updateRule(
+                    rule,
+                    (current) => current.copyWith(preset: preset),
+                  );
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.t('verse_share.match_mode', fallback: 'Match Mode'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: HighlightMatchMode.values.map((mode) {
+              final selected = rule.matchMode == mode;
+              return ChoiceChip(
+                label: Text(
+                  mode == HighlightMatchMode.all
+                      ? context.t('verse_share.all_matches', fallback: 'All')
+                      : mode == HighlightMatchMode.firstOnly
+                          ? context.t(
+                              'verse_share.first_match',
+                              fallback: 'First Only',
+                            )
+                          : context.t(
+                              'verse_share.next_match',
+                              fallback: 'Next',
+                            ),
+                ),
+                selected: selected,
+                onSelected: (_) {
+                  _updateRule(
+                    rule,
+                    (current) {
+                      if (mode == HighlightMatchMode.next &&
+                          current.matchMode == HighlightMatchMode.next) {
+                        return current.copyWith(
+                          occurrenceIndex: current.occurrenceIndex + 1,
+                        );
+                      }
+
+                      return current.copyWith(
+                        matchMode: mode,
+                        occurrenceIndex: 0,
+                      );
+                    },
+                  );
+                },
+              );
+            }).toList(),
+          ),
+          if (rule.matchMode == HighlightMatchMode.next) ...[
+            const SizedBox(height: 8),
+            Text(
+              context.t(
+                'verse_share.next_match_hint',
+                fallback:
+                    'Tap Next again to move the highlight to the next occurrence.',
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 12),
+          DropdownButtonFormField<int>(
+            value: rule.fontStyleIndex,
+            decoration: InputDecoration(
+              labelText: context.t(
+                'verse_share.highlight_font',
+                fallback: 'Highlight Font',
+              ),
+            ),
+            items: List.generate(fontStyleOptions.length, (index) {
+              final option = fontStyleOptions[index];
+              return DropdownMenuItem(
+                value: index,
+                child: Text(
+                  context.t(option.labelKey, fallback: option.fallback),
+                ),
+              );
+            }),
+            onChanged: (value) {
+              if (value == null) return;
+              _updateRule(
+                rule,
+                (current) => current.copyWith(fontStyleIndex: value),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Text(
+            context.t('verse_share.highlight_weight', fallback: 'Font Style'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          ToggleButtons(
+            borderRadius: BorderRadius.circular(cornerRadius),
+            isSelected: [
+              rule.fontStyleOption == VerseFontStyleOption.bold,
+              rule.fontStyleOption == VerseFontStyleOption.normal,
+              rule.fontStyleOption == VerseFontStyleOption.italic,
+            ],
+            onPressed: (index) {
+              _updateRule(
+                rule,
+                (current) => current.copyWith(
+                  fontStyleOption: VerseFontStyleOption.values[index],
+                ),
+              );
+            },
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(context.t('verse_share.bold', fallback: 'Bold')),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  context.t('verse_share.normal', fallback: 'Normal'),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  context.t('verse_share.italic', fallback: 'Italic'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${context.t('verse_share.scale', fallback: 'Scale')}: '
+            '${rule.sizeScale.toStringAsFixed(2)}x',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          Slider(
+            value: rule.sizeScale,
+            min: 0.85,
+            max: 1.35,
+            divisions: 10,
+            label: rule.sizeScale.toStringAsFixed(2),
+            onChanged: (value) {
+              _updateRule(
+                rule,
+                (current) => current.copyWith(sizeScale: value),
+              );
+            },
+          ),
+          _buildColorPaletteSection(
+            title: context.t(
+              'verse_share.highlight_text_color',
+              fallback: 'Text Color',
+            ),
+            selectedColor: rule.textColor,
+            colors: fillPalette,
+            onSelected: (color) {
+              _updateRule(
+                rule,
+                (current) => current.copyWith(textColor: color),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildColorPaletteSection(
+            title: context.t(
+              'verse_share.highlight_fill_color',
+              fallback: 'Fill Color',
+            ),
+            selectedColor: rule.fillColor,
+            colors: fillPalette,
+            onSelected: (color) {
+              _updateRule(
+                rule,
+                (current) => current.copyWith(fillColor: color),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildColorPaletteSection(
+            title: context.t(
+              'verse_share.highlight_border_color',
+              fallback: 'Border Color',
+            ),
+            selectedColor: rule.borderColor,
+            colors: fillPalette,
+            onSelected: (color) {
+              _updateRule(
+                rule,
+                (current) => current.copyWith(borderColor: color),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateRule(
+    _HighlightRule original,
+    _HighlightRule Function(_HighlightRule current) update,
+  ) {
+    setState(() {
+      final index =
+          _highlightRules.indexWhere((item) => item.id == original.id);
+      if (index == -1) return;
+      _highlightRules[index] = update(_highlightRules[index]);
+    });
+  }
+
+  List<_ResolvedHighlightMatch> _resolvedHighlightMatches({
+    required String source,
+    required HighlightTarget target,
+  }) {
+    final lowerSource = source.toLowerCase();
+    final rawMatches = <_ResolvedHighlightMatch>[];
+
+    for (var ruleIndex = 0; ruleIndex < _highlightRules.length; ruleIndex++) {
+      final rule = _highlightRules[ruleIndex];
+      if (rule.target != target) continue;
+      final phrase = rule.phrase.trim();
+      if (phrase.isEmpty) continue;
+
+      final lowerPhrase = phrase.toLowerCase();
+      var searchFrom = 0;
+      final ruleMatches = <_ResolvedHighlightMatch>[];
+      while (true) {
+        final matchIndex = lowerSource.indexOf(lowerPhrase, searchFrom);
+        if (matchIndex == -1) break;
+
+        ruleMatches.add(
+          _ResolvedHighlightMatch(
+            start: matchIndex,
+            end: matchIndex + phrase.length,
+            ruleIndex: ruleIndex,
+            rule: rule,
+          ),
+        );
+
+        if (rule.matchMode == HighlightMatchMode.firstOnly) {
+          break;
+        }
+
+        searchFrom = matchIndex + phrase.length;
+      }
+
+      if (rule.matchMode == HighlightMatchMode.next) {
+        if (ruleMatches.isNotEmpty) {
+          final selectedIndex = rule.occurrenceIndex % ruleMatches.length;
+          rawMatches.add(ruleMatches[selectedIndex]);
+        }
+      } else {
+        rawMatches.addAll(ruleMatches);
+      }
+    }
+
+    rawMatches.sort((a, b) {
+      final byStart = a.start.compareTo(b.start);
+      if (byStart != 0) return byStart;
+
+      final aLength = a.end - a.start;
+      final bLength = b.end - b.start;
+      final byLength = bLength.compareTo(aLength);
+      if (byLength != 0) return byLength;
+
+      return a.ruleIndex.compareTo(b.ruleIndex);
+    });
+
+    final resolved = <_ResolvedHighlightMatch>[];
+    var cursor = 0;
+    for (final match in rawMatches) {
+      if (match.start < cursor) continue;
+      resolved.add(match);
+      cursor = match.end;
+    }
+
+    return resolved;
+  }
+
+  String _presetLabel(HighlightPreset preset) {
+    switch (preset) {
+      case HighlightPreset.emphasis:
+        return context.t('verse_share.preset_emphasis', fallback: 'Emphasis');
+      case HighlightPreset.outline:
+        return context.t('verse_share.preset_outline', fallback: 'Outline');
+    }
+  }
+
+  List<Shadow> _buildHighlightShadows({
+    required Color borderColor,
+    required HighlightPreset preset,
+  }) {
+    switch (preset) {
+      case HighlightPreset.emphasis:
+        return [
+          Shadow(
+            color: borderColor.withValues(alpha: 0.35),
+            offset: const Offset(0, 1),
+            blurRadius: 2,
+          ),
+        ];
+      case HighlightPreset.outline:
+        return [
+          Shadow(color: borderColor, offset: const Offset(-1.2, 0)),
+          Shadow(color: borderColor, offset: const Offset(1.2, 0)),
+          Shadow(color: borderColor, offset: const Offset(0, -1.2)),
+          Shadow(color: borderColor, offset: const Offset(0, 1.2)),
+        ];
+    }
+  }
+
+  _PresetVisualStyle _presetVisualStyle(HighlightPreset preset) {
+    switch (preset) {
+      case HighlightPreset.emphasis:
+        return const _PresetVisualStyle(
+          fillOpacity: 0.30,
+          letterSpacing: 0.2,
+        );
+      case HighlightPreset.outline:
+        return const _PresetVisualStyle(
+          fillOpacity: 0.20,
+          letterSpacing: 0.1,
+        );
+    }
   }
 }
 
@@ -954,4 +1693,136 @@ class _FontStyleOption {
     required this.fallback,
     required this.fontFamily,
   });
+}
+
+class _HighlightRule {
+  const _HighlightRule({
+    required this.id,
+    required this.phrase,
+    required this.target,
+    required this.preset,
+    required this.fontStyleOption,
+    required this.textColor,
+    required this.fillColor,
+    required this.borderColor,
+    required this.fontStyleIndex,
+    required this.sizeScale,
+    required this.matchMode,
+    required this.occurrenceIndex,
+  });
+
+  final String id;
+  final String phrase;
+  final HighlightTarget target;
+  final HighlightPreset preset;
+  final VerseFontStyleOption fontStyleOption;
+  final Color textColor;
+  final Color fillColor;
+  final Color borderColor;
+  final int fontStyleIndex;
+  final double sizeScale;
+  final HighlightMatchMode matchMode;
+  final int occurrenceIndex;
+
+  _HighlightRule copyWith({
+    String? phrase,
+    HighlightTarget? target,
+    HighlightPreset? preset,
+    VerseFontStyleOption? fontStyleOption,
+    Color? textColor,
+    Color? fillColor,
+    Color? borderColor,
+    int? fontStyleIndex,
+    double? sizeScale,
+    HighlightMatchMode? matchMode,
+    int? occurrenceIndex,
+  }) {
+    return _HighlightRule(
+      id: id,
+      phrase: phrase ?? this.phrase,
+      target: target ?? this.target,
+      preset: preset ?? this.preset,
+      fontStyleOption: fontStyleOption ?? this.fontStyleOption,
+      textColor: textColor ?? this.textColor,
+      fillColor: fillColor ?? this.fillColor,
+      borderColor: borderColor ?? this.borderColor,
+      fontStyleIndex: fontStyleIndex ?? this.fontStyleIndex,
+      sizeScale: sizeScale ?? this.sizeScale,
+      matchMode: matchMode ?? this.matchMode,
+      occurrenceIndex: occurrenceIndex ?? this.occurrenceIndex,
+    );
+  }
+}
+
+class _ResolvedHighlightMatch {
+  const _ResolvedHighlightMatch({
+    required this.start,
+    required this.end,
+    required this.ruleIndex,
+    required this.rule,
+  });
+
+  final int start;
+  final int end;
+  final int ruleIndex;
+  final _HighlightRule rule;
+}
+
+class _PresetVisualStyle {
+  const _PresetVisualStyle({
+    required this.fillOpacity,
+    required this.letterSpacing,
+  });
+
+  final double fillOpacity;
+  final double letterSpacing;
+}
+
+Widget _buildColorDot({
+  required Color color,
+  required bool isSelected,
+  bool isClear = false,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(3),
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: isSelected ? Colors.black : Colors.grey.shade400,
+        width: isSelected ? 2 : 1,
+      ),
+    ),
+    child: Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isClear ? Colors.transparent : color,
+        border: Border.all(
+          color: Colors.grey.shade400,
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (isClear)
+            Icon(
+              Icons.block,
+              size: 20,
+              color: Colors.grey.shade700,
+            ),
+          if (isSelected)
+            Icon(
+              Icons.check,
+              size: 18,
+              color: isClear
+                  ? Colors.black
+                  : color.computeLuminance() > 0.5
+                      ? Colors.black
+                      : Colors.white,
+            ),
+        ],
+      ),
+    ),
+  );
 }
