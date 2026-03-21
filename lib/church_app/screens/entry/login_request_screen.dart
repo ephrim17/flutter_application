@@ -276,12 +276,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         }
         return null;
       case 3:
-        if (_locationController.text.trim().isEmpty) {
-          return context.t(
-            'auth.location_required',
-            fallback: 'Please enter your location',
-          );
-        }
         if (_addressController.text.trim().isEmpty) {
           return context.t(
             'auth.address_required',
@@ -691,7 +685,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                       _StepShell(
                         title: 'Where are you located?',
                         subtitle:
-                            'Use current location or paste your Google Maps link, then add your address.',
+                            'Add your address. Google Maps location is optional.',
                         child: Column(
                           children: [
                             TextField(
@@ -700,12 +694,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               decoration: InputDecoration(
                                 labelText: context.t(
                                   'auth.location_label',
-                                  fallback: 'Google Maps Location',
+                                  fallback: 'Google Maps Location (Optional)',
                                 ),
                                 helperText: context.t(
                                   'auth.location_helper',
                                   fallback:
-                                      'Use current location or paste your Google Maps link',
+                                      'Use current location or paste your Google Maps link if you want',
                                 ),
                                 suffixIcon: _isFetchingLocation
                                     ? const Padding(
