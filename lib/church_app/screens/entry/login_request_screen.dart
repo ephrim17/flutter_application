@@ -2,28 +2,45 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
+import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart'
+    show selectedChurchProvider;
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
+import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'dart:async';
 
 class LoginRequestScreen extends ConsumerStatefulWidget {
   final String churchId;
   final String churchName;
   final String churchLogo;
+  final bool adminCreateMode;
+  final String? targetUid;
+  final String? initialEmail;
+  final AppUser? existingMember;
 
   const LoginRequestScreen({
     super.key,
     required this.churchId,
     required this.churchName,
     this.churchLogo = '',
+    this.adminCreateMode = false,
+    this.targetUid,
+    this.initialEmail,
+    this.existingMember,
   });
 
   @override
@@ -31,17 +48,14 @@ class LoginRequestScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
-  static const int _stepCount = 6;
+  static const int _stepCount = 5;
 
   final _pageController = PageController();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
   final _addressController = TextEditingController();
   final _familyNameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   int _stepIndex = 0;
   DateTime? _dob;
@@ -52,24 +66,42 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   String? _selectedExistingFamilyId;
   late final Future<List<String>> _familyIdsFuture;
 
+  bool get _isEditMode => widget.existingMember != null;
+
   @override
   void initState() {
     super.initState();
     _familyIdsFuture =
         ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
+    final existingMember = widget.existingMember;
+    if (existingMember != null) {
+      _nameController.text = existingMember.name;
+      _phoneController.text = existingMember.phone;
+      _locationController.text = existingMember.location;
+      _addressController.text = existingMember.address;
+      _dob = existingMember.dob;
+      _gender = existingMember.gender.trim().toLowerCase();
+      _category = existingMember.category.trim().toLowerCase();
+
+      if (_category == 'family') {
+        _selectedExistingFamilyId = existingMember.familyId.trim().isEmpty
+            ? null
+            : existingMember.familyId.trim();
+        _useExistingFamilyId = _selectedExistingFamilyId != null;
+        _familyNameController.text =
+            _familySeedFromId(existingMember.familyId.trim());
+      }
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
     _addressController.dispose();
     _familyNameController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -201,11 +233,29 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     return '$displayName$suffix family';
   }
 
+  String _familySeedFromId(String familyId) {
+    final normalized = familyId.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    final cleaned = normalized
+        .replaceFirst(RegExp(r'^family_'), '')
+        .replaceFirst(RegExp('_${widget.churchId.toLowerCase()}\$'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+
+    return cleaned
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1))
+        .join(' ');
+  }
+
   String? _validateCurrentStep() {
     switch (_stepIndex) {
       case 0:
         final name = _nameController.text.trim();
-        final email = _emailController.text.trim();
         final phone = _phoneController.text.trim();
         if (name.isEmpty) {
           return context.t('auth.name_required',
@@ -215,17 +265,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           return context.t(
             'auth.name_min_length',
             fallback: 'Name must be at least 3 characters',
-          );
-        }
-        if (email.isEmpty) {
-          return context.t('auth.email_required',
-              fallback: 'Please enter your email');
-        }
-        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-        if (!emailRegex.hasMatch(email)) {
-          return context.t(
-            'auth.email_address_invalid',
-            fallback: 'Please enter a valid email address',
           );
         }
         final phoneRegex = RegExp(r'^[6-9]\d{9}$');
@@ -283,40 +322,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           );
         }
         return null;
-      case 4:
-        final password = _passwordController.text;
-        final confirmPassword = _confirmPasswordController.text;
-        if (password.isEmpty) {
-          return context.t(
-            'auth.password_required',
-            fallback: 'Please enter a password',
-          );
-        }
-        if (password.length < 8) {
-          return context.t(
-            'auth.password_min_length',
-            fallback: 'Password must be at least 8 characters',
-          );
-        }
-        if (!RegExp(r'[A-Z]').hasMatch(password)) {
-          return context.t(
-            'auth.password_uppercase_required',
-            fallback: 'Include at least one uppercase letter',
-          );
-        }
-        if (!RegExp(r'\d').hasMatch(password)) {
-          return context.t(
-            'auth.password_number_required',
-            fallback: 'Include at least one number',
-          );
-        }
-        if (confirmPassword != password) {
-          return context.t(
-            'auth.passwords_mismatch',
-            fallback: 'Passwords do not match',
-          );
-        }
-        return null;
       default:
         return null;
     }
@@ -350,6 +355,16 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   }
 
   Future<void> _submit() async {
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    if (firebaseUser == null && !widget.adminCreateMode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create your account first before requesting access.'),
+        ),
+      );
+      return;
+    }
+
     final familyId = _resolveFamilyId();
     if (familyId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -365,8 +380,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       return;
     }
 
-    final enableNotifications =
-        kIsWeb ? false : await showNotificationPermissionSheet(context);
+    final enableNotifications = widget.adminCreateMode
+        ? false
+        : kIsWeb
+            ? false
+            : await showNotificationPermissionSheet(context);
     if (!context.mounted) return;
 
     var authToken = '';
@@ -378,10 +396,75 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
     ref.read(requestAccessLoadingProvider.notifier).state = true;
     try {
+      if (_isEditMode) {
+        final repo = MembersRepository(
+          firestore: ref.read(firestoreProvider),
+          churchId: widget.churchId,
+        );
+        await repo.updateMemberDetails(
+          widget.existingMember!.uid,
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          location: _locationController.text.trim(),
+          address: _addressController.text.trim(),
+          gender: _gender,
+          category: _category,
+          familyId: familyId,
+          dob: _dob!,
+          familyLabel: _category == 'family' && !_useExistingFamilyId
+              ? _familyNameController.text.trim()
+              : null,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Member updated successfully.'),
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+
+      if (!widget.adminCreateMode) {
+        final existingDoc = await ref.read(authRepositoryProvider).getChurchUserDoc(
+              churchId: widget.churchId,
+              uid: firebaseUser!.uid,
+            );
+
+        if (existingDoc.exists) {
+          final appUser = AppUser.fromFirestore(
+            existingDoc.id,
+            existingDoc.data() as Map<String, dynamic>,
+          );
+          ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
+
+          ref.read(selectedChurchProvider.notifier).state = Church(
+            id: widget.churchId,
+            name: widget.churchName,
+            address: '',
+            contact: '',
+            email: '',
+            pastorName: '',
+            logo: widget.churchLogo,
+            enabled: true,
+          );
+          ref.invalidate(currentChurchIdProvider);
+          unawaited(syncNotificationTopicIfAuthorized(ref));
+
+          if (!mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => AppEntry(initialUser: appUser),
+            ),
+            (route) => false,
+          );
+          return;
+        }
+      }
+
       await ref.read(authRepositoryProvider).requestAccess(
             name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
             phone: _phoneController.text.trim(),
             location: _locationController.text.trim(),
             address: _addressController.text.trim(),
@@ -394,7 +477,36 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             familyLabel: _category == 'family' && !_useExistingFamilyId
                 ? _familyNameController.text.trim()
                 : null,
+            targetUid: widget.targetUid,
+            targetEmail: widget.initialEmail,
+            approved: widget.adminCreateMode,
+            createChurchMemberWithoutAuth:
+                widget.adminCreateMode && widget.targetUid == null,
           );
+
+      if (widget.adminCreateMode) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Member created successfully.'),
+          ),
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+
+      ref.read(selectedChurchProvider.notifier).state = Church(
+        id: widget.churchId,
+        name: widget.churchName,
+        address: '',
+        contact: '',
+        email: '',
+        pastorName: '',
+        logo: widget.churchLogo,
+        enabled: true,
+      );
+      ref.invalidate(currentChurchIdProvider);
+      unawaited(syncNotificationTopicIfAuthorized(ref));
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
@@ -414,15 +526,17 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(requestAccessLoadingProvider);
-    final isPasswordVisible = ref.watch(passwordVisibleProvider);
-    final isConfirmPasswordVisible = ref.watch(confirmPasswordVisibleProvider);
     final progress = (_stepIndex + 1) / _stepCount;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('auth.request_access', fallback: 'Request Access'),
+          text: _isEditMode
+              ? context.t('members.edit_member', fallback: 'Edit Member')
+              : widget.adminCreateMode
+              ? context.t('members.create_member', fallback: 'Create Member')
+              : context.t('auth.request_access', fallback: 'Request Access'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -446,8 +560,16 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                         stepCount: _stepCount,
                         progress: progress,
                         child: _StepShell(
-                          title: 'Tell us about you',
-                          subtitle: 'Start with your basic details.',
+                          title: _isEditMode
+                              ? 'Edit member details'
+                              : widget.adminCreateMode
+                              ? 'Enter member details'
+                              : 'Tell us about you',
+                          subtitle: _isEditMode
+                              ? 'Update the member details below.'
+                              : widget.adminCreateMode
+                              ? 'Tell us about your member.'
+                              : 'Start with your basic details.',
                           child: Column(
                             children: [
                               TextField(
@@ -455,23 +577,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 textInputAction: TextInputAction.next,
                                 decoration: InputDecoration(
                                   labelText: context.t('auth.name_label',
-                                      fallback: 'Your Name'),
+                                      fallback: widget.adminCreateMode
+                                          ? 'Member Name'
+                                          : 'Your Name'),
                                   helperText: context.t(
                                     'auth.name_helper',
-                                    fallback:
-                                        'Name should have only characters, not numbers',
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.email_address_label',
-                                    fallback: 'Email Address',
+                                    fallback: widget.adminCreateMode
+                                        ? 'Enter your member name using letters only'
+                                        : 'Name should have only characters, not numbers',
                                   ),
                                 ),
                               ),
@@ -483,7 +596,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 decoration: InputDecoration(
                                   labelText: context.t(
                                     'auth.phone_label',
-                                    fallback: 'Phone Number',
+                                    fallback: widget.adminCreateMode
+                                        ? "Member's Phone Number"
+                                        : 'Phone Number',
                                   ),
                                 ),
                               ),
@@ -498,15 +613,21 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                         stepCount: _stepCount,
                         progress: progress,
                         child: _StepShell(
-                          title: 'Identity',
-                          subtitle: 'A couple of personal details.',
+                          title: widget.adminCreateMode
+                              ? 'Member identity'
+                              : 'Identity',
+                          subtitle: widget.adminCreateMode
+                              ? "What is your member's birthday?"
+                              : 'A couple of personal details.',
                           child: Column(
                             children: [
                               DropdownButtonFormField<String>(
                                 value: _gender.isEmpty ? null : _gender,
                                 decoration: InputDecoration(
                                   labelText: context.t('auth.gender_label',
-                                      fallback: 'Gender'),
+                                      fallback: widget.adminCreateMode
+                                          ? "Member's Gender"
+                                          : 'Gender'),
                                 ),
                                 items: const [
                                   DropdownMenuItem(
@@ -549,8 +670,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     _dob == null
                                         ? context.t(
                                             'auth.dob_hint',
-                                            fallback:
-                                                'Select your date of birth',
+                                            fallback: widget.adminCreateMode
+                                                ? "What is your member's birthday?"
+                                                : 'Select your date of birth',
                                           )
                                         : '${_dob!.day.toString().padLeft(2, '0')}/'
                                             '${_dob!.month.toString().padLeft(2, '0')}/'
@@ -570,13 +692,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                         progress: progress,
                         child: _StepShell(
                           title: 'Household',
-                          subtitle:
-                              'Choose whether this request is for a family or an individual.',
+                          subtitle: widget.adminCreateMode
+                              ? 'Choose whether your member belongs to a family or is an individual.'
+                              : 'Choose whether this request is for a family or an individual.',
                           child: FutureBuilder<List<String>>(
                             future: _familyIdsFuture,
                             builder: (context, snapshot) {
                               final familyIds =
                                   snapshot.data ?? const <String>[];
+                              final selectedFamilyValue =
+                                  familyIds.contains(_selectedExistingFamilyId)
+                                      ? _selectedExistingFamilyId
+                                      : null;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,7 +761,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     if (familyIds.isNotEmpty &&
                                         _useExistingFamilyId)
                                       DropdownButtonFormField<String>(
-                                        value: _selectedExistingFamilyId,
+                                        value: selectedFamilyValue,
                                         decoration: InputDecoration(
                                           labelText: context.t(
                                             'auth.family_id_label',
@@ -705,8 +832,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                         progress: progress,
                         child: _StepShell(
                           title: 'Where are you located?',
-                          subtitle:
-                              'Add your address. Google Maps location is optional.',
+                          subtitle: widget.adminCreateMode
+                              ? "Add your member's address. Google Maps location is optional."
+                              : 'Add your address. Google Maps location is optional.',
                           child: Column(
                             children: [
                               TextField(
@@ -715,12 +843,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 decoration: InputDecoration(
                                   labelText: context.t(
                                     'auth.location_label',
-                                    fallback: 'Google Maps Location (Optional)',
+                                    fallback: widget.adminCreateMode
+                                        ? "Member's Google Maps Location (Optional)"
+                                        : 'Google Maps Location (Optional)',
                                   ),
                                   helperText: context.t(
                                     'auth.location_helper',
-                                    fallback:
-                                        'Use current location or paste your Google Maps link if you want',
+                                    fallback: widget.adminCreateMode
+                                        ? "Use your member's current location or paste their Google Maps link if you want"
+                                        : 'Use current location or paste your Google Maps link if you want',
                                   ),
                                   suffixIcon: _isFetchingLocation
                                       ? const Padding(
@@ -750,7 +881,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                   label: Text(
                                     context.t(
                                       'auth.location_use_current',
-                                      fallback: 'Use Current Location',
+                                      fallback: widget.adminCreateMode
+                                          ? 'Use Member Current Location'
+                                          : 'Use Current Location',
                                     ),
                                   ),
                                 ),
@@ -763,84 +896,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 decoration: InputDecoration(
                                   labelText: context.t(
                                     'auth.address_label',
-                                    fallback: 'Address',
+                                    fallback: widget.adminCreateMode
+                                        ? "Member's Address"
+                                        : 'Address',
                                   ),
                                   helperText: context.t(
                                     'auth.address_helper',
-                                    fallback: 'Enter your address manually',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: 'Secure your account',
-                          subtitle:
-                              'Create your password to complete access request.',
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _passwordController,
-                                obscureText: !isPasswordVisible,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.password_label',
-                                    fallback: 'Password',
-                                  ),
-                                  helperText: context.t(
-                                    'auth.password_helper',
-                                    fallback:
-                                        'Min 8 chars, 1 uppercase, 1 number',
-                                  ),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      isPasswordVisible
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                    ),
-                                    onPressed: () {
-                                      ref
-                                          .read(
-                                              passwordVisibleProvider.notifier)
-                                          .state = !isPasswordVisible;
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _confirmPasswordController,
-                                obscureText: !isConfirmPasswordVisible,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.confirm_password_label',
-                                    fallback: 'Confirm Password',
-                                  ),
-                                  helperText: context.t(
-                                    'auth.confirm_password_helper',
-                                    fallback:
-                                        'Password and Confirm passwords must be same',
-                                  ),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      isConfirmPasswordVisible
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                    ),
-                                    onPressed: () {
-                                      ref
-                                          .read(confirmPasswordVisibleProvider
-                                              .notifier)
-                                          .state = !isConfirmPasswordVisible;
-                                    },
+                                    fallback: widget.adminCreateMode
+                                        ? "Enter your member's address manually"
+                                        : 'Enter your address manually',
                                   ),
                                 ),
                               ),
@@ -856,12 +920,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                         progress: progress,
                         child: _StepShell(
                           title: 'Review',
-                          subtitle:
-                              'Check the details before submitting your request.',
+                          subtitle: _isEditMode
+                              ? 'Check the member details before saving your changes.'
+                              : widget.adminCreateMode
+                              ? 'Check your member details before creating the member.'
+                              : 'Check the details before submitting your request.',
                           child: _ReviewCard(
                             rows: [
                               _ReviewRow('Name', _nameController.text.trim()),
-                              _ReviewRow('Email', _emailController.text.trim()),
                               _ReviewRow('Phone', _phoneController.text.trim()),
                               _ReviewRow('Gender', _gender),
                               _ReviewRow(
@@ -901,7 +967,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     Expanded(
                       child: SolidButton(
                         label: _stepIndex == _stepCount - 1
-                            ? context.t('common.submit', fallback: 'Submit')
+                            ? _isEditMode
+                                ? context.t('common.save', fallback: 'Save')
+                                : context.t('common.submit', fallback: 'Submit')
                             : context.t('onboarding.next', fallback: 'Next'),
                         isLoading: isLoading,
                         onPressed: isLoading
@@ -1005,7 +1073,7 @@ class _StepShell extends StatelessWidget {
   }
 }
 
-class _StepViewport extends StatelessWidget {
+class _StepViewport extends StatefulWidget {
   const _StepViewport({
     required this.churchLogo,
     required this.churchName,
@@ -1023,26 +1091,48 @@ class _StepViewport extends StatelessWidget {
   final Widget child;
 
   @override
+  State<_StepViewport> createState() => _StepViewportState();
+}
+
+class _StepViewportState extends State<_StepViewport> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scrollbar(
+      controller: _scrollController,
       thumbVisibility: true,
       child: SingleChildScrollView(
+        controller: _scrollController,
+        primary: false,
         padding: const EdgeInsets.only(right: 4),
         child: Column(
           children: [
             ChurchLogoAvatar(
-              logo: churchLogo,
+              logo: widget.churchLogo,
               size: 84,
             ),
             const SizedBox(height: 14),
             _FlowHeader(
-              title: churchName,
-              stepIndex: stepIndex,
-              stepCount: stepCount,
-              progress: progress,
+              title: widget.churchName,
+              stepIndex: widget.stepIndex,
+              stepCount: widget.stepCount,
+              progress: widget.progress,
             ),
             const SizedBox(height: 16),
-            child,
+            widget.child,
           ],
         ),
       ),
@@ -1051,40 +1141,43 @@ class _StepViewport extends StatelessWidget {
 }
 
 class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.rows});
+  const _ReviewCard({
+    required this.rows,
+  });
 
   final List<_ReviewRow> rows;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: rows
-          .where((row) => row.value.trim().isNotEmpty)
-          .map(
-            (row) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 110,
-                    child: Text(
-                      row.label,
-                      style: Theme.of(context).textTheme.bodyMedium,
+      children: [
+        ...rows
+            .where((row) => row.value.trim().isNotEmpty)
+            .map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        row.label,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      row.value,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        row.value,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          )
-          .toList(),
+      ],
     );
   }
 }

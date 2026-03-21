@@ -1,6 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/firebase_options.dart';
+
+class CreatedAuthAccount {
+  const CreatedAuthAccount({
+    required this.uid,
+    required this.email,
+  });
+
+  final String uid;
+  final String email;
+}
 
 class AuthRepository {
   final FirebaseAuth _auth;
@@ -8,13 +20,60 @@ class AuthRepository {
 
   AuthRepository(this._auth, this._firestore);
 
+  Future<void> createFirebaseAccount({
+    required String email,
+    required String password,
+  }) async {
+    await _auth.createUserWithEmailAndPassword(
+      email: email.trim().toLowerCase(),
+      password: password,
+    );
+  }
+
+  Future<CreatedAuthAccount> createFirebaseAccountForAdmin({
+    required String email,
+    required String password,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    final secondaryAppName =
+        'admin-member-${DateTime.now().microsecondsSinceEpoch}';
+    final secondaryApp = await Firebase.initializeApp(
+      name: secondaryAppName,
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+      final credential = await secondaryAuth.createUserWithEmailAndPassword(
+        email: normalizedEmail,
+        password: password,
+      );
+      final createdUser = credential.user;
+      if (createdUser == null) {
+        throw FirebaseAuthException(
+          code: 'user-creation-failed',
+          message: 'Unable to create the member account.',
+        );
+      }
+
+      await secondaryAuth.signOut();
+
+      return CreatedAuthAccount(
+        uid: createdUser.uid,
+        email: normalizedEmail,
+      );
+    } finally {
+      await secondaryApp.delete();
+    }
+  }
+
   Future<void> signIn({
     required String email,
     required String password,
   }) async {
     try {
       await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim().toLowerCase(),
         password: password,
       );
     } on FirebaseAuthException {
@@ -84,8 +143,6 @@ class AuthRepository {
 
   Future<void> requestAccess(
       {required String name,
-      required String email,
-      required String password,
       required String phone,
       required String location,
       required String address,
@@ -95,21 +152,35 @@ class AuthRepository {
       required DateTime dob,
       required String authToken,
       required String churchId,
-      String? familyLabel}) async {
-    final cred = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+      String? familyLabel,
+      String? targetUid,
+      String? targetEmail,
+      bool approved = false,
+      bool createChurchMemberWithoutAuth = false}) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null &&
+        targetUid == null &&
+        targetEmail == null &&
+        !createChurchMemberWithoutAuth) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed in user found.',
+      );
+    }
 
-    final uid = cred.user!.uid;
+    final usersRef = FirestorePaths.churchUsers(_firestore, churchId);
+    final generatedDocId =
+        createChurchMemberWithoutAuth ? usersRef.doc().id : null;
+    final uid = targetUid ?? generatedDocId ?? currentUser!.uid;
+    final email = createChurchMemberWithoutAuth
+        ? (targetEmail ?? '').trim().toLowerCase()
+        : (targetEmail ?? currentUser?.email ?? '').trim().toLowerCase();
+    final docRef = usersRef.doc(uid);
 
-    await FirestorePaths.churchUserDoc(
-      _firestore,
-      churchId,
-      uid,
-    ).set({
+    await docRef.set({
+      'uid': uid,
       'name': name.trim(),
-      'email': email.trim(),
+      'email': email,
       'phone': phone.trim(),
       'location': location.trim(),
       'address': address.trim(),
@@ -117,7 +188,7 @@ class AuthRepository {
       'category': category.trim(),
       'familyId': familyId.trim(),
       'dob': Timestamp.fromDate(dob),
-      'approved': false,
+      'approved': approved,
       'authToken': authToken,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -145,5 +216,12 @@ class AuthRepository {
         .map((doc) => (doc.data()['familyId'] ?? '').toString())
         .where((familyId) => familyId.isNotEmpty)
         .toList();
+  }
+
+  Future<DocumentSnapshot> getChurchUserDoc({
+    required String churchId,
+    required String uid,
+  }) {
+    return FirestorePaths.churchUserDoc(_firestore, churchId, uid).get();
   }
 }

@@ -1,21 +1,148 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
+    hide firestoreProvider;
 import 'package:flutter_application/church_app/providers/church_provider.dart';
+import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
-import 'package:flutter_application/church_app/screens/auth_options_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'dart:async';
 
 class SelectChurchScreen extends ConsumerWidget {
   const SelectChurchScreen({super.key});
+
+  Future<bool> _showRequestAccessPrompt(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(
+              context.t(
+                'auth.user_not_found_title',
+                fallback: 'User not found',
+              ),
+            ),
+            content: Text(
+              'No account was found for this church. Do you want to request access?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  context.t('settings.cancel', fallback: 'Cancel'),
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(
+                  context.t('auth.request_access', fallback: 'Request Access'),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _handleContinue(
+    BuildContext context,
+    WidgetRef ref,
+    Church selectedChurch,
+  ) async {
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    if (firebaseUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to your Church Connect account first.'),
+        ),
+      );
+      return;
+    }
+    final email = firebaseUser.email?.trim().toLowerCase() ?? '';
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your Church Connect account does not have an email.'),
+        ),
+      );
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final userSnapshot = await FirestorePaths.churchUsers(
+        ref.read(firestoreProvider),
+        selectedChurch.id,
+      ).where('email', isEqualTo: email).limit(1).get();
+
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        final userDoc = userSnapshot.docs.first;
+        final appUser = AppUser.fromFirestore(
+          userDoc.id,
+          userDoc.data() as Map<String, dynamic>,
+        );
+        ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
+        ref.invalidate(currentChurchIdProvider);
+        unawaited(syncNotificationTopicIfAuthorized(ref));
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => AppEntry(initialUser: appUser),
+          ),
+        );
+        return;
+      }
+
+      final shouldRequest = await _showRequestAccessPrompt(context);
+      if (!context.mounted || !shouldRequest) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LoginRequestScreen(
+            churchId: selectedChurch.id,
+            churchName: selectedChurch.name,
+            churchLogo: selectedChurch.logo,
+          ),
+        ),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message ?? error.code)),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -185,15 +312,10 @@ class SelectChurchScreen extends ConsumerWidget {
                               fallback: 'Continue',
                             ),
                             onPressed: () {
-                              Navigator.push(
+                              _handleContinue(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => AuthOptionsScreen(
-                                    churchId: selectedChurch.id,
-                                    churchName: selectedChurch.name,
-                                    churchLogo: selectedChurch.logo,
-                                  ),
-                                ),
+                                ref,
+                                selectedChurch,
                               );
                             },
                           ),
@@ -242,6 +364,7 @@ class SelectChurchScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) {
         return churchesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -291,93 +414,102 @@ class SelectChurchScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              8,
-              20,
-              20 + MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ChurchLogoAvatar(
-                      logo: church.logo,
-                      size: 48,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            church.name,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _valueOrFallback(church.pastorName),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
+        final theme = Theme.of(context);
+        return Material(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(28),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                8,
+                20,
+                20 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ChurchLogoAvatar(
+                        logo: church.logo,
+                        size: 48,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _ChurchDetailRow(
-                  icon: Icons.person_outline,
-                  label: 'Pastor',
-                  value: _valueOrFallback(church.pastorName),
-                ),
-                _ChurchDetailRow(
-                  icon: Icons.email_outlined,
-                  label: 'Email',
-                  value: _valueOrFallback(church.email),
-                ),
-                _ChurchDetailRow(
-                  icon: Icons.phone_outlined,
-                  label: 'Contact',
-                  value: _valueOrFallback(church.contact),
-                  onActionTap: church.contact.trim().isEmpty
-                      ? null
-                      : () => launchPhoneCall(context, church.contact),
-                ),
-                _ChurchDetailRow(
-                  icon: Icons.location_on_outlined,
-                  label: 'Address',
-                  value: _valueOrFallback(church.address),
-                ),
-                const SizedBox(height: 8),
-                SolidButton(
-                  label: context.t(
-                    'church.select_action',
-                    fallback: 'Select Church',
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              church.name,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _valueOrFallback(church.pastorName),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  onPressed: () async {
-                    final storage = ChurchLocalStorage();
+                  const SizedBox(height: 20),
+                  _ChurchDetailRow(
+                    icon: Icons.person_outline,
+                    label: 'Pastor',
+                    value: _valueOrFallback(church.pastorName),
+                  ),
+                  _ChurchDetailRow(
+                    icon: Icons.email_outlined,
+                    label: 'Email',
+                    value: _valueOrFallback(church.email),
+                  ),
+                  _ChurchDetailRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Contact',
+                    value: _valueOrFallback(church.contact),
+                    onActionTap: church.contact.trim().isEmpty
+                        ? null
+                        : () => launchPhoneCall(context, church.contact),
+                  ),
+                  _ChurchDetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Address',
+                    value: _valueOrFallback(church.address),
+                  ),
+                  const SizedBox(height: 8),
+                  SolidButton(
+                    label: context.t(
+                      'church.select_action',
+                      fallback: 'Select Church',
+                    ),
+                    onPressed: () async {
+                      final storage = ChurchLocalStorage();
 
-                    await storage.saveChurch(
-                      id: church.id,
-                      name: church.name,
-                    );
+                      await storage.saveChurch(
+                        id: church.id,
+                        name: church.name,
+                      );
 
-                    ref.read(selectedChurchProvider.notifier).state = church;
-                    ref.invalidate(currentChurchIdProvider);
+                      ref.read(selectedChurchProvider.notifier).state = church;
+                      ref.invalidate(currentChurchIdProvider);
 
-                    if (!context.mounted) return;
-                    Navigator.of(context)
-                      ..pop()
-                      ..pop();
-                  },
-                ),
-              ],
+                      if (!context.mounted) return;
+                      Navigator.of(context)
+                        ..pop()
+                        ..pop();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -467,6 +599,9 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: theme.cardColor,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                         prefixIcon: const Icon(Icons.search),
                         hintText: 'Search by church, pastor, email or address',
                         suffixIcon: _query.isEmpty

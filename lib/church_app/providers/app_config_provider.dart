@@ -13,7 +13,7 @@ final appConfigProvider = StreamProvider<AppConfig>((ref) {
   return churchIdAsync.when(
     data: (churchId) {
       if (churchId == null) {
-        return const Stream.empty();
+        return Stream.value(AppConfig.fallback());
       }
 
       final repo = AppConfigRepository(
@@ -23,8 +23,8 @@ final appConfigProvider = StreamProvider<AppConfig>((ref) {
 
       return repo.watchAppConfig();
     },
-    loading: () => const Stream.empty(),
-    error: (_, __) => const Stream.empty(),
+    loading: () => Stream.value(AppConfig.fallback()),
+    error: (_, __) => Stream.value(AppConfig.fallback()),
   );
 });
 

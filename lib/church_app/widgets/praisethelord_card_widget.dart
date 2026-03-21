@@ -64,6 +64,10 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final titleColor = theme.textTheme.headlineLarge?.color ?? Colors.white;
+    final subtitleColor = theme.textTheme.bodySmall?.color ?? Colors.white70;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -86,7 +90,7 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                   fontSize: 64,
                   fontWeight: FontWeight.w700,
                   height: 1.0,
-                  color: Colors.grey[800],
+                  color: titleColor,
                 ),
               ),
 
@@ -100,7 +104,7 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                   text: TextSpan(
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.grey[600],
+                      color: subtitleColor,
                     ),
                     children: [
                       const TextSpan(text: "Developed with "),

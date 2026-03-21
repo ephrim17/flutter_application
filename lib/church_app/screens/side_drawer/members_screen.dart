@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/members_provider.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart'
+    show churchesProvider;
+import 'package:flutter_application/church_app/providers/select_church_provider.dart'
+    show selectedChurchProvider;
+import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
@@ -34,37 +41,56 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
     final membersAsync = ref.watch(membersProvider);
     final isAdmin = ref.watch(isAdminProvider);
     final currentUid = ref.watch(firebaseAuthProvider).currentUser?.uid;
+    final currentChurchIdAsync = ref.watch(currentChurchIdProvider);
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    final churchesAsync = ref.watch(churchesProvider);
+    final currentChurchId = currentChurchIdAsync.asData?.value;
+    final availableChurches = churchesAsync.asData?.value ?? const <Church>[];
+    final currentChurch = selectedChurch ??
+        (currentChurchId == null
+            ? null
+            : availableChurches.cast<Church?>().firstWhere(
+                  (church) => church?.id == currentChurchId,
+                  orElse: () => null,
+                ));
     final allMembers = membersAsync.asData?.value ?? const <AppUser>[];
     final todayBirthdays = allMembers
-        .where((member) => isBirthdayToday(member.dob))
+        .where((member) => _isBirthdayToday(member.dob))
         .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: AppBarTitle(
             text: context.t('members.title', fallback: 'Members'),
           ),
-          bottom: const TabBar(
+          actions: [
+            if (isAdmin && currentChurch != null)
+              IconButton(
+                tooltip: context.t(
+                  'members.create_member',
+                  fallback: 'Create Member',
+                ),
+                onPressed: () => _showCreateMemberOptions(currentChurch),
+                icon: const Icon(Icons.person_add_alt_1),
+              ),
+          ],
+          bottom: TabBar(
+            isScrollable: true,
             tabs: [
-              Tab(text: 'All'),
-              Tab(text: 'Families'),
-              Tab(text: 'Individuals'),
+              const Tab(text: 'All'),
+              const Tab(text: 'Families'),
+              const Tab(text: 'Individuals'),
+              Tab(
+                child: _BirthdayTabLabel(
+                  count: todayBirthdays.length,
+                ),
+              ),
             ],
           ),
         ),
-        floatingActionButton: isAdmin
-            ? FloatingActionButton.extended(
-                onPressed: () => showTodayBirthdaysModal(
-                  context,
-                  members: todayBirthdays,
-                ),
-                icon: const Icon(Icons.cake_outlined),
-                label: Text('Birthdays (${todayBirthdays.length})'),
-              )
-            : null,
         body: membersAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -159,6 +185,13 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         isAdmin: isAdmin,
                         currentUid: currentUid,
                       ),
+                      _MembersListView(
+                        members: todayBirthdays,
+                        isAdmin: isAdmin,
+                        currentUid: currentUid,
+                        emptyMessage: 'No birthdays today',
+                        showBirthdayAction: true,
+                      ),
                     ],
                   ),
                 ),
@@ -169,6 +202,65 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
       ),
     );
   }
+
+  Future<void> _showCreateMemberOptions(Church selectedChurch) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.mail_outline),
+                  title: const Text('Create with email'),
+                  subtitle: const Text(
+                    'Create Church Connect account first, then complete member details.',
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(this.context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CreateAuthAccountScreen(
+                          adminCreateMode: true,
+                          churchId: selectedChurch.id,
+                          churchName: selectedChurch.name,
+                          churchLogo: selectedChurch.logo,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: const Text('Create without email'),
+                  subtitle: const Text(
+                    'Add the member directly using church details only.',
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(this.context).push(
+                      MaterialPageRoute(
+                        builder: (_) => LoginRequestScreen(
+                          churchId: selectedChurch.id,
+                          churchName: selectedChurch.name,
+                          churchLogo: selectedChurch.logo,
+                          adminCreateMode: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _MembersListView extends StatelessWidget {
@@ -176,16 +268,20 @@ class _MembersListView extends StatelessWidget {
     required this.members,
     required this.isAdmin,
     required this.currentUid,
+    this.emptyMessage = 'No matching members',
+    this.showBirthdayAction = false,
   });
 
   final List<AppUser> members;
   final bool isAdmin;
   final String? currentUid;
+  final String emptyMessage;
+  final bool showBirthdayAction;
 
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
-      return const Center(child: Text('No matching members'));
+      return Center(child: Text(emptyMessage));
     }
 
     return ListView.builder(
@@ -195,8 +291,46 @@ class _MembersListView extends StatelessWidget {
           member: members[index],
           isAdmin: isAdmin,
           currentUid: currentUid,
+          showBirthdayAction: showBirthdayAction,
         );
       },
+    );
+  }
+}
+
+class _BirthdayTabLabel extends StatelessWidget {
+  const _BirthdayTabLabel({
+    required this.count,
+  });
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Birthdays'),
+        if (count > 0) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -250,14 +384,49 @@ class _MemberTile extends ConsumerWidget {
     required this.member,
     required this.isAdmin,
     required this.currentUid,
+    this.showBirthdayAction = false,
   });
 
   final AppUser member;
   final bool isAdmin;
   final String? currentUid;
+  final bool showBirthdayAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final trailing = showBirthdayAction
+        ? TextButton(
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => FractionallySizedBox(
+                  heightFactor: 0.95,
+                  child: BirthdayPostComposerModal(member: member),
+                ),
+              );
+            },
+            child: Text(
+              context.t('common.send', fallback: 'Send'),
+            ),
+          )
+        : (isAdmin && member.uid != currentUid)
+            ? Switch(
+                value: member.approved,
+                onChanged: (val) async {
+                  final churchId = await ref.read(currentChurchIdProvider.future);
+                  if (churchId == null) return;
+
+                  final repo = MembersRepository(
+                    firestore: ref.read(firestoreProvider),
+                    churchId: churchId,
+                  );
+
+                  await repo.approveMember(member.uid, val);
+                },
+              )
+            : null;
+
     return ListTile(
       onTap: () => _showMemberDetailsSheet(
         context,
@@ -272,22 +441,7 @@ class _MemberTile extends ConsumerWidget {
         ),
       ),
       title: Text(member.name),
-      trailing: (isAdmin && member.uid != currentUid)
-          ? Switch(
-              value: member.approved,
-              onChanged: (val) async {
-                final churchId = await ref.read(currentChurchIdProvider.future);
-                if (churchId == null) return;
-
-                final repo = MembersRepository(
-                  firestore: ref.read(firestoreProvider),
-                  churchId: churchId,
-                );
-
-                await repo.approveMember(member.uid, val);
-              },
-            )
-          : null,
+      trailing: trailing,
     );
   }
 }
@@ -301,7 +455,7 @@ Future<void> _showMemberDetailsSheet(
 }) {
   final theme = Theme.of(context);
   final canDelete = isAdmin && member.uid != currentUid;
-  final canEditCategory = isAdmin && member.uid != currentUid;
+  final canEditMember = isAdmin && member.uid != currentUid;
 
   return showModalBottomSheet<void>(
     context: context,
@@ -376,202 +530,80 @@ Future<void> _showMemberDetailsSheet(
                     ? null
                     : () => launchPhoneCall(context, member.phone),
               ),
-              if (canEditCategory) ...[
+              if (canEditMember) ...[
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      final churchId =
+                      final selectedChurch = ref.read(selectedChurchProvider);
+                      final currentChurchId =
                           await ref.read(currentChurchIdProvider.future);
-                      if (churchId == null) return;
+                      final availableChurches =
+                          ref.read(churchesProvider).asData?.value ??
+                              const <Church>[];
+                      final currentChurch = selectedChurch ??
+                          (currentChurchId == null
+                              ? null
+                              : availableChurches.cast<Church?>().firstWhere(
+                                    (church) => church?.id == currentChurchId,
+                                    orElse: () => null,
+                                  ));
 
-                      final familyIds = await ref
-                          .read(authRepositoryProvider)
-                          .getFamilyIds(churchId);
-                      if (!context.mounted) return;
-
-                      final selectedValue = await showDialog<String>(
-                        context: context,
-                        builder: (dialogContext) {
-                          String category =
-                              member.category.trim().toLowerCase();
-                          String? selectedFamilyId =
-                              familyIds.contains(member.familyId.trim())
-                                  ? member.familyId.trim()
-                                  : null;
-                          if (category != 'family' &&
-                              category != 'individual') {
-                            category = 'individual';
-                          }
-
-                          return StatefulBuilder(
-                            builder: (context, setLocalState) => AlertDialog(
-                              title: Text(
-                                context.t(
-                                  'members.edit_category_title',
-                                  fallback: 'Edit category',
-                                ),
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DropdownButtonFormField<String>(
-                                    value: category,
-                                    decoration: InputDecoration(
-                                      labelText: context.t(
-                                        'auth.category_label',
-                                        fallback: 'Category',
-                                      ),
+                      if (currentChurch == null || !context.mounted) return;
+                      final shouldCreateLoginFirst = member.email.trim().isEmpty
+                          ? await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    title: const Text(
+                                      'Create Church Connect account?',
                                     ),
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: 'individual',
-                                        child: Text('Individual'),
+                                    content: const Text(
+                                      'This member does not have a Church Connect account yet. Do you want to create it first?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext)
+                                                .pop(false),
+                                        child: const Text('No'),
                                       ),
-                                      DropdownMenuItem(
-                                        value: 'family',
-                                        child: Text('Family'),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext)
+                                                .pop(true),
+                                        child: const Text('Yes'),
                                       ),
                                     ],
-                                    onChanged: (value) {
-                                      if (value == null) return;
-                                      setLocalState(() {
-                                        category = value;
-                                        if (category != 'family') {
-                                          selectedFamilyId = null;
-                                        }
-                                      });
-                                    },
                                   ),
-                                  if (category == 'family') ...[
-                                    const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      value: selectedFamilyId,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'auth.family_id_label',
-                                          fallback: 'Family ID',
-                                        ),
-                                      ),
-                                      items: familyIds
-                                          .map(
-                                            (familyId) => DropdownMenuItem(
-                                              value: familyId,
-                                              child: Text(
-                                                _formatFamilyOptionLabel(
-                                                  familyId,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
-                                      onChanged: (value) {
-                                        setLocalState(() {
-                                          selectedFamilyId = value;
-                                        });
-                                      },
-                                    ),
-                                    if (familyIds.isEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        context.t(
-                                          'members.no_families_available',
-                                          fallback:
-                                              'No families are available for this church yet.',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  ] else ...[
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      context.t(
-                                        'auth.individual_family_hint',
-                                        fallback:
-                                            'Family ID will be generated automatically',
-                                      ),
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(dialogContext).pop(),
-                                  child: Text(
-                                    context.t(
-                                      'settings.cancel',
-                                      fallback: 'Cancel',
-                                    ),
-                                  ),
-                                ),
-                                FilledButton(
-                                  onPressed: category == 'family' &&
-                                          (selectedFamilyId == null ||
-                                              selectedFamilyId!.trim().isEmpty)
-                                      ? null
-                                      : () => Navigator.of(dialogContext).pop(
-                                            category == 'family'
-                                                ? '$category|${selectedFamilyId!.trim()}'
-                                                : '$category|${_buildIndividualFamilyId(member.name, churchId)}',
-                                          ),
-                                  child: Text(
-                                    context.t(
-                                      'common.save',
-                                      fallback: 'Save',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-
-                      if (selectedValue == null) {
-                        return;
-                      }
-
-                      final parts = selectedValue.split('|');
-                      if (parts.length != 2) return;
-
-                      final selectedCategory = parts[0];
-                      final selectedFamilyId = parts[1];
-                      final currentCategory =
-                          member.category.trim().toLowerCase();
-                      final currentFamilyId = member.familyId.trim();
-
-                      if (selectedCategory == currentCategory &&
-                          selectedFamilyId == currentFamilyId) {
-                        return;
-                      }
-
-                      final repo = MembersRepository(
-                        firestore: ref.read(firestoreProvider),
-                        churchId: churchId,
-                      );
-
-                      await repo.updateMemberCategory(
-                        member.uid,
-                        category: selectedCategory,
-                        familyId: selectedFamilyId,
-                      );
-
+                                ) ??
+                              false
+                          : false;
                       if (!context.mounted) return;
                       Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            context.t(
-                              'members.edit_category_success',
-                              fallback: 'Category updated',
+                      if (shouldCreateLoginFirst) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => CreateAuthAccountScreen(
+                              adminCreateMode: true,
+                              churchId: currentChurch.id,
+                              churchName: currentChurch.name,
+                              churchLogo: currentChurch.logo,
+                              existingMember: member,
+                              continueToEditAfterCreate: true,
                             ),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => LoginRequestScreen(
+                            churchId: currentChurch.id,
+                            churchName: currentChurch.name,
+                            churchLogo: currentChurch.logo,
+                            adminCreateMode: true,
+                            existingMember: member,
                           ),
                         ),
                       );
@@ -579,8 +611,8 @@ Future<void> _showMemberDetailsSheet(
                     icon: const Icon(Icons.edit_outlined),
                     label: Text(
                       context.t(
-                        'members.edit_category_action',
-                        fallback: 'Edit Category',
+                        'members.edit_member',
+                        fallback: 'Edit Member',
                       ),
                     ),
                   ),
@@ -767,48 +799,6 @@ String _formatFamilyHeader(String familyId) {
   return '$displayName$suffix family';
 }
 
-String _formatFamilyOptionLabel(String familyId) {
-  final normalized = familyId.trim().toLowerCase();
-  if (normalized.isEmpty) {
-    return familyId;
-  }
-
-  final parts = normalized
-      .replaceFirst(RegExp(r'^family_'), '')
-      .replaceFirst(RegExp(r'^individual_'), '')
-      .split('_')
-      .where((part) => part.isNotEmpty)
-      .toList();
-
-  if (parts.length > 1) {
-    parts.removeLast();
-  }
-
-  final displayName = parts
-      .map((part) => part[0].toUpperCase() + part.substring(1))
-      .join(' ')
-      .trim();
-
-  if (displayName.isEmpty) {
-    return familyId;
-  }
-
-  final suffix = displayName.endsWith('s') ? "'" : "'s";
-  return '$displayName$suffix family';
-}
-
-String _buildIndividualFamilyId(String name, String churchId) {
-  final normalizedName = name
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-      .replaceAll(RegExp(r'_+'), '_')
-      .replaceAll(RegExp(r'^_|_$'), '');
-
-  final seed = normalizedName.isEmpty ? 'member' : normalizedName;
-  return 'individual_${seed}_${churchId.toLowerCase()}';
-}
-
 class _MemberDetailRow extends StatelessWidget {
   const _MemberDetailRow({
     required this.icon,
@@ -868,6 +858,12 @@ class _MemberDetailRow extends StatelessWidget {
 String _formatDob(DateTime? date) {
   if (date == null) return 'Not provided';
   return DateFormat('dd MMM yyyy').format(date);
+}
+
+bool _isBirthdayToday(DateTime? dob) {
+  if (dob == null) return false;
+  final now = DateTime.now();
+  return dob.day == now.day && dob.month == now.month;
 }
 
 String _formatCategory(String category) {

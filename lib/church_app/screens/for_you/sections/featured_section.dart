@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible_verse_swipe_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
@@ -29,7 +30,13 @@ class FeaturedSection implements MasterSection {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SectionHeader(text: "Plans for you ✮", padding: 0.0),
+              SectionHeader(
+                text: context.t(
+                  'for_you.featured.plans_section_title',
+                  fallback: 'Plans for you ✮',
+                ),
+                padding: 0.0,
+              ),
               const SizedBox(height: 10),
               FeaturedCard(
                 badgeText: "Challenge Yourself to do",
@@ -48,7 +55,13 @@ class FeaturedSection implements MasterSection {
                 },
               ),
               const SizedBox(height: 10),
-              SectionHeader(text: "Featured for you ✮", padding: 0.0),
+              SectionHeader(
+                text: context.t(
+                  'for_you.featured.section_title',
+                  fallback: 'Featured for you ✮',
+                ),
+                padding: 0.0,
+              ),
               const SizedBox(height: 10),
               Consumer(
                 builder: (context, ref, _) {

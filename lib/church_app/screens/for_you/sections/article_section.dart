@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/card_Link_button_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -27,8 +29,35 @@ class ArticleSection implements MasterSection {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              SectionHeader(text: "Daily Article", padding: 16.0,),
-              ArticleSectionWidget(),
+              SectionHeader(
+                text: context.t(
+                  'for_you.article.section_title',
+                  fallback: 'Article Notes',
+                ),
+                padding: 16.0,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CardLinkButtonWidget(
+                  title: 'Browse Article notes and open the full message.',
+                  buttonText: 'View Articles',
+                  iconStyle: Icon(
+                    Icons.menu_book_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ArticleListScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              //const ArticleSectionWidget(),
             ],
           ),
       ),
@@ -63,6 +92,27 @@ class ArticleSectionWidget extends ConsumerWidget {
   }
 }
 
+class ArticleListScreen extends StatelessWidget {
+  const ArticleListScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: AppBarTitle(
+          text: context.t(
+            'for_you.article.section_title',
+            fallback: 'Sermon Notes',
+          ),
+        ),
+      ),
+      body: const SingleChildScrollView(
+        child: ArticleSectionWidget(),
+      ),
+    );
+  }
+}
+
 class ArticleCard extends StatelessWidget {
   final Article article;
 
@@ -78,10 +128,7 @@ class ArticleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              article.title,
-              //style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            ColorText(badgeText: article.title),
             const Divider(height: 22),
             Text(
               article.description,
@@ -117,7 +164,7 @@ class ArticleDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: AppBarTitle(text: "Article")),
+      appBar: AppBar(title: AppBarTitle(text: "")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
@@ -146,4 +193,3 @@ class ArticleDetailPage extends StatelessWidget {
     );
   }
 }
-

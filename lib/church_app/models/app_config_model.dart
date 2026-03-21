@@ -36,6 +36,28 @@ class AppConfig {
       required this.churchLogo,
       required this.youtubeLink});
 
+  factory AppConfig.fallback() {
+    return AppConfig(
+      admins: const [],
+      membersEnabled: false,
+      eventsEnabled: false,
+      onboardingTitle: '',
+      onboardingSubtitle: '',
+      primaryColorHex: '#000000',
+      secondaryColorHex: '#000000',
+      backgroundColorHex: '#FFFFFF',
+      cardColorHex: '#FFFFFF',
+      dailyVerseRef: DailyVerseRef.empty(),
+      promptSheet: PromptSheetModel.empty(),
+      bibleSwipeFetchEnabled: false,
+      bibleSwipeFetchVersion: 0,
+      promiseVerseRef: PromiseVerseRef.empty(),
+      textContent: TextContent.fromMap(null),
+      churchLogo: '',
+      youtubeLink: '',
+    );
+  }
+
   factory AppConfig.fromFirestore(Map<String, dynamic> data) {
     final features = data['features'] as Map<String, dynamic>? ?? {};
     return AppConfig(
@@ -77,11 +99,19 @@ class DailyVerseRef {
     required this.verse,
   });
 
+  factory DailyVerseRef.empty() {
+    return DailyVerseRef(
+      book: '',
+      chapter: 0,
+      verse: 0,
+    );
+  }
+
   factory DailyVerseRef.fromMap(Map<String, dynamic> map) {
     return DailyVerseRef(
-      book: map['book'] as String,
-      chapter: map['chapter'] as int,
-      verse: map['verse'] as int,
+      book: (map['book'] ?? '') as String,
+      chapter: (map['chapter'] as num?)?.toInt() ?? 0,
+      verse: (map['verse'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -97,11 +127,19 @@ class PromiseVerseRef {
     required this.verse,
   });
 
+  factory PromiseVerseRef.empty() {
+    return PromiseVerseRef(
+      book: '',
+      chapter: 0,
+      verse: 0,
+    );
+  }
+
   factory PromiseVerseRef.fromMap(Map<String, dynamic> map) {
     return PromiseVerseRef(
-      book: map['book'] as String,
-      chapter: map['chapter'] as int,
-      verse: map['verse'] as int,
+      book: (map['book'] ?? '') as String,
+      chapter: (map['chapter'] as num?)?.toInt() ?? 0,
+      verse: (map['verse'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -117,11 +155,19 @@ class PromptSheetModel {
     required this.enabled,
   });
 
+  factory PromptSheetModel.empty() {
+    return PromptSheetModel(
+      title: '',
+      desc: '',
+      enabled: false,
+    );
+  }
+
   factory PromptSheetModel.fromMap(Map<String, dynamic> map) {
     return PromptSheetModel(
-      title: map['title'] as String,
-      desc: map['desc'] as String,
-      enabled: map['enabled'] as bool,
+      title: (map['title'] ?? '') as String,
+      desc: (map['desc'] ?? '') as String,
+      enabled: map['enabled'] as bool? ?? false,
     );
   }
 }
@@ -221,6 +267,13 @@ const Map<String, String> defaultTextContentValues = {
   'common.enabled': 'Enabled',
   'common.active': 'Active',
   'common.close': 'Close',
+
+  // Section headers
+  'for_you.article.section_title': 'Article Notes',
+  'for_you.reading_plan.section_title': 'Reading Plans',
+  'for_you.featured.plans_section_title': 'Plans for you ✮',
+  'for_you.featured.section_title': 'Featured for you ✮',
+  'promise.section_title': 'Promise Word 2026',
 
   // Auth / entry
   'auth.login': 'Login',

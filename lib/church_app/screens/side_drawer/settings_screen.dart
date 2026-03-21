@@ -10,9 +10,12 @@ import 'package:flutter_application/church_app/providers/app_config_provider.dar
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
+import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
+import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
@@ -105,8 +108,28 @@ class _LogoutSection extends ConsumerWidget {
         ref.t('drawer.logout', fallback: 'Logout'),
       ),
       onTap: () async {
-        Navigator.of(context).pop();
+        final navigator = Navigator.of(context);
+        ref.read(logginAccessLoadingProvider.notifier).state = false;
+        ref.read(forcePreflowThemeProvider.notifier).state = true;
+        await ChurchLocalStorage().clearChurch();
+        await ChurchLocalStorage().clearSubscribedChurchTopic();
+        await ref.read(favoritesProvider.notifier).clearAll();
+        ref.read(selectedChurchProvider.notifier).state = null;
+        ref.invalidate(currentChurchIdProvider);
+        ref.invalidate(appUserProvider);
+        ref.invalidate(getCurrentUserProvider);
+        navigator.pushAndRemoveUntil(
+          PageRouteBuilder(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
+              initialLoginMode: true,
+            ),
+          ),
+          (route) => false,
+        );
         await FirebaseAuth.instance.signOut();
+        if (!context.mounted) return;
       },
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/home_sections/promise_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -50,7 +51,13 @@ class PromiseVerseCard extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(text: "Promise Word 2026", padding: 0.0,),
+            SectionHeader(
+              text: context.t(
+                'promise.section_title',
+                fallback: 'Promise Word 2026',
+              ),
+              padding: 0.0,
+            ),
             const SizedBox(height: 10,),
             Container(
               //height: height,

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
@@ -73,12 +76,18 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   }
 
   Widget _buildResolvedScreen(AppUser? user) {
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    if (firebaseUser == null) {
+      return const CreateAuthAccountScreen();
+    }
     if (user == null) {
       return const SelectChurchScreen();
     }
     if (!user.approved) {
+      ref.read(forcePreflowThemeProvider.notifier).state = true;
       return const PendingApprovalWidget();
     }
+    ref.read(forcePreflowThemeProvider.notifier).state = false;
     return const ChurchTabScreen();
   }
 }

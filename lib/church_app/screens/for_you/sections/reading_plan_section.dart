@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
@@ -22,7 +23,13 @@ class ReadingPlanSection implements MasterSection {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SectionHeader(text: "Reading Plans", padding: 0.0,),
+              SectionHeader(
+                text: context.t(
+                  'for_you.reading_plan.section_title',
+                  fallback: 'Reading Plans',
+                ),
+                padding: 0.0,
+              ),
               const SizedBox(height: 8),
               PlanListScreen()
             ],

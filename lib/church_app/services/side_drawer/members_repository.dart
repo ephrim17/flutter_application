@@ -45,6 +45,87 @@ class MembersRepository extends ChurchScopedRepository {
     });
   }
 
+  Future<void> updateMemberDetails(
+    String userId, {
+    required String name,
+    required String phone,
+    required String location,
+    required String address,
+    required String gender,
+    required String category,
+    required String familyId,
+    required DateTime dob,
+    String? familyLabel,
+  }) async {
+    await collectionRef().doc(userId).update({
+      'name': name.trim(),
+      'phone': phone.trim(),
+      'location': location.trim(),
+      'address': address.trim(),
+      'gender': gender.trim(),
+      'category': category.trim(),
+      'familyId': familyId.trim(),
+      'dob': Timestamp.fromDate(dob),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (category.trim() == 'family') {
+      await FirestorePaths.churchFamilies(firestore, churchId)
+          .doc(familyId.trim())
+          .set({
+        'familyId': familyId.trim(),
+        'label': (familyLabel ?? name).trim(),
+        'category': category.trim(),
+        'churchId': churchId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+  }
+
+  Future<void> attachFirebaseAuthToMember(
+    String existingUserId, {
+    required String newUid,
+    required String email,
+  }) async {
+    final existingDoc = await FirestorePaths
+        .churchUserDoc(firestore, churchId, existingUserId)
+        .get();
+    if (!existingDoc.exists) {
+      throw StateError('Member not found.');
+    }
+
+    final existingData = existingDoc.data() as Map<String, dynamic>;
+    final newDoc = FirestorePaths.churchUserDoc(firestore, churchId, newUid);
+    final batch = firestore.batch();
+
+    batch.set(newDoc, {
+      ...existingData,
+      'uid': newUid,
+      'email': email.trim().toLowerCase(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (existingUserId != newUid) {
+      final readingPlans = await FirestorePaths
+          .churchUserReadingPlans(firestore, churchId, existingUserId)
+          .get();
+
+      for (final doc in readingPlans.docs) {
+        batch.set(
+          FirestorePaths
+              .churchUserReadingPlans(firestore, churchId, newUid)
+              .doc(doc.id),
+          doc.data(),
+        );
+        batch.delete(doc.reference);
+      }
+
+      batch.delete(existingDoc.reference);
+    }
+
+    await batch.commit();
+  }
+
   Future<void> deleteMember(String userId) {
     return _deleteChurchUserData(userId);
   }
