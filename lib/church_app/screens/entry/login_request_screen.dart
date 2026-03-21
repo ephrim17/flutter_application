@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -370,7 +371,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       return;
     }
 
-    final enableNotifications = await showNotificationPermissionSheet(context);
+    final enableNotifications =
+        kIsWeb ? false : await showNotificationPermissionSheet(context);
     if (!context.mounted) return;
 
     var authToken = '';

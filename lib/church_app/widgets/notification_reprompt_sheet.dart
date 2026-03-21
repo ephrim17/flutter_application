@@ -1,9 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 
 Future<bool?> showNotificationPermissionSheet(
   BuildContext context,
 ) {
+  if (kIsWeb) {
+    return Future.value(false);
+  }
+
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,

@@ -96,6 +96,10 @@ Future<void> handleNotificationSetup({
   required WidgetRef ref,
   bool promptIfNeeded = true,
 }) async {
+  if (kIsWeb) {
+    return;
+  }
+
   final messaging = FirebaseMessaging.instance;
 
   try {
@@ -139,6 +143,10 @@ Future<void> handleNotificationSetup({
 }
 
 Future<void> syncNotificationTopicIfAuthorized(WidgetRef ref) async {
+  if (kIsWeb) {
+    return;
+  }
+
   final messaging = FirebaseMessaging.instance;
 
   try {
