@@ -19,7 +19,6 @@ import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
-import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -105,7 +104,8 @@ class LoginScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: LinearScreenBackground(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -133,8 +133,11 @@ class LoginScreen extends ConsumerWidget {
                       /// 📧 Email
                       TextField(
                         controller: emailCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
+                        decoration: InputDecoration(
+                          labelText: context.t(
+                            'auth.email_label',
+                            fallback: 'Email',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -143,8 +146,11 @@ class LoginScreen extends ConsumerWidget {
                       TextField(
                         controller: passCtrl,
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
+                        decoration: InputDecoration(
+                          labelText: context.t(
+                            'auth.password_label',
+                            fallback: 'Password',
+                          ),
                         ),
                       ),
                     ],
@@ -165,9 +171,14 @@ class LoginScreen extends ConsumerWidget {
 
                           if (email.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Please enter your email address.'),
+                              SnackBar(
+                                content: Text(
+                                  context.t(
+                                    'auth.login_screen_email_required',
+                                    fallback:
+                                        'Please enter your email address.',
+                                  ),
+                                ),
                               ),
                             );
                             return;
@@ -175,14 +186,23 @@ class LoginScreen extends ConsumerWidget {
 
                           if (password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please enter your password.'),
+                              SnackBar(
+                                content: Text(
+                                  context.t(
+                                    'auth.login_screen_password_required',
+                                    fallback: 'Please enter your password.',
+                                  ),
+                                ),
                               ),
                             );
                             return;
                           }
                           ref.read(logginAccessLoadingProvider.notifier).state =
                               true;
+                          final loginFetchUserFailedMessage = context.t(
+                            'auth.login_fetch_user_failed',
+                            fallback: 'Unable to fetch logged in user',
+                          );
                           try {
                             await ref.read(authRepositoryProvider).signIn(
                                   email: email,
@@ -192,7 +212,7 @@ class LoginScreen extends ConsumerWidget {
                             final firebaseUser =
                                 ref.read(firebaseAuthProvider).currentUser;
                             if (firebaseUser == null) {
-                              throw Exception('Unable to fetch logged in user');
+                              throw Exception(loginFetchUserFailedMessage);
                             }
 
                             final userDoc = await FirestorePaths.churchUserDoc(

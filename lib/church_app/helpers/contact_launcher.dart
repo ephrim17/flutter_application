@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> launchPhoneCall(
@@ -16,7 +17,14 @@ Future<void> launchPhoneCall(
 
   if (!launched && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Unable to place the call')),
+      SnackBar(
+        content: Text(
+          context.t(
+            'common.phone_call_failed',
+            fallback: 'Unable to place the call',
+          ),
+        ),
+      ),
     );
   }
 }

@@ -14,7 +14,6 @@ import 'package:flutter_application/church_app/screens/select-church-screen.dart
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
-import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -90,6 +89,10 @@ class _CreateAuthAccountScreenState
       );
     }
 
+    if (widget.adminCreateMode) {
+      return null;
+    }
+
     if (password.isEmpty) {
       return context.t(
         'auth.password_required',
@@ -127,6 +130,11 @@ class _CreateAuthAccountScreenState
     return null;
   }
 
+  String _generateTemporaryPassword() {
+    final seed = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+    return 'TempA1!${seed.substring(seed.length - 8)}';
+  }
+
   AppUser _updatedExistingMember({
     required String uid,
     required String email,
@@ -139,11 +147,19 @@ class _CreateAuthAccountScreenState
       role: existingMember.role,
       approved: existingMember.approved,
       phone: existingMember.phone,
+      contact: existingMember.contact,
       location: existingMember.location,
       address: existingMember.address,
       gender: existingMember.gender,
       category: existingMember.category,
       familyId: existingMember.familyId,
+      maritalStatus: existingMember.maritalStatus,
+      weddingDay: existingMember.weddingDay,
+      financialStabilityRating: existingMember.financialStabilityRating,
+      financialSupportRequired: existingMember.financialSupportRequired,
+      educationalQualification: existingMember.educationalQualification,
+      talentsAndGifts: existingMember.talentsAndGifts,
+      churchGroupIds: existingMember.churchGroupIds,
       authToken: existingMember.authToken,
       dob: existingMember.dob,
     );
@@ -161,12 +177,31 @@ class _CreateAuthAccountScreenState
     ref.read(logginAccessLoadingProvider.notifier).state = true;
     try {
       if (widget.adminCreateMode) {
+        final temporaryPassword = _generateTemporaryPassword();
+        final passwordEmailSentMessage = context.t(
+          'members.create_member_password_email_sent',
+          fallback: ' Password setup email sent to the member.',
+        );
+        final passwordEmailFailedMessage = context.t(
+          'members.create_member_password_email_failed',
+          fallback:
+              ' Member login created, but the password setup email could not be sent.',
+        );
         final createdAccount = await ref
             .read(authRepositoryProvider)
             .createFirebaseAccountForAdmin(
               email: _emailController.text.trim(),
-              password: _passwordController.text,
+              password: temporaryPassword,
             );
+        String passwordEmailFeedback = '';
+        try {
+          await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
+                email: createdAccount.email,
+              );
+          passwordEmailFeedback = passwordEmailSentMessage;
+        } catch (_) {
+          passwordEmailFeedback = passwordEmailFailedMessage;
+        }
 
         if (widget.existingMember != null) {
           final repo = MembersRepository(
@@ -198,8 +233,10 @@ class _CreateAuthAccountScreenState
             return;
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Member login created successfully.'),
+            SnackBar(
+              content: Text(
+                '${context.t('members.create_member_login_success', fallback: 'Member login created successfully.')}$passwordEmailFeedback',
+              ),
             ),
           );
           Navigator.of(context).pop();
@@ -264,7 +301,10 @@ class _CreateAuthAccountScreenState
         title: AppBarTitle(
           text: widget.adminCreateMode
               ? widget.existingMember != null
-                  ? 'Create Member Login'
+                  ? context.t(
+                      'members.create_member_login_title',
+                      fallback: 'Create Member Login',
+                    )
                   : context.t('members.create_member', fallback: 'Create Member')
               : _isLoginMode
                   ? context.t('auth.login', fallback: 'Login')
@@ -274,7 +314,8 @@ class _CreateAuthAccountScreenState
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: LinearScreenBackground(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -290,23 +331,52 @@ class _CreateAuthAccountScreenState
                     children: [
                       Text(
                         widget.existingMember != null
-                            ? 'Create member login'
+                            ? context.t(
+                                'members.create_member_login_heading',
+                                fallback: 'Create member login',
+                              )
                             : widget.adminCreateMode
-                                ? 'Create member account'
+                                ? context.t(
+                                    'members.create_member_account_heading',
+                                    fallback: 'Create member account',
+                                  )
                             : _isLoginMode
-                                ? 'Welcome back'
-                                : 'Create your Church Connect account',
+                                ? context.t(
+                                    'auth.welcome_back_heading',
+                                    fallback: 'Welcome back',
+                                  )
+                                : context.t(
+                                    'auth.create_account_heading',
+                                    fallback:
+                                        'Create your Church Connect account',
+                                  ),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         widget.existingMember != null
-                            ? 'Create a Church Connect login for this member.'
+                            ? context.t(
+                                'members.create_member_login_subtitle',
+                                fallback:
+                                    'Create a Church Connect login for this member.',
+                              )
                             : widget.adminCreateMode
-                                ? 'Create the member Church Connect account first, then complete their church details.'
+                                ? context.t(
+                                    'members.create_member_account_subtitle',
+                                    fallback:
+                                        'Enter the member email. We will create the account and send a password setup email.',
+                                  )
                             : _isLoginMode
-                                ? 'Sign in with your Church Connect account to continue.'
-                                : 'Create your Church Connect first, then request access to your church.',
+                                ? context.t(
+                                    'auth.login_subtitle',
+                                    fallback:
+                                        'Sign in with your Church Connect account to continue.',
+                                  )
+                                : context.t(
+                                    'auth.register_subtitle',
+                                    fallback:
+                                        'Create your Church Connect first, then request access to your church.',
+                                  ),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
@@ -318,61 +388,72 @@ class _CreateAuthAccountScreenState
                             'auth.email_address_label',
                             fallback: 'Email Address',
                           ),
+                          helperText: widget.adminCreateMode
+                              ? context.t(
+                                  'members.create_member_email_helper',
+                                  fallback:
+                                      'Church Account will use this email and block duplicate accounts automatically.',
+                                )
+                              : null,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _hidePassword,
-                        decoration: InputDecoration(
-                          labelText: context.t(
-                            'auth.password_label',
-                            fallback: 'Password',
-                          ),
-                          helperText: _isLoginMode
-                              ? null
-                              : context.t(
-                                  'auth.password_helper',
-                                  fallback: 'Min 8 chars, 1 uppercase, 1 number',
-                                ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _hidePassword = !_hidePassword;
-                              });
-                            },
-                            icon: Icon(
-                              _hidePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (!_isLoginMode || widget.adminCreateMode) ...[
+                      if (!widget.adminCreateMode) ...[
                         const SizedBox(height: 16),
                         TextField(
-                          controller: _confirmPasswordController,
-                          obscureText: _hideConfirmPassword,
+                          controller: _passwordController,
+                          obscureText: _hidePassword,
                           decoration: InputDecoration(
                             labelText: context.t(
-                              'auth.confirm_password_label',
-                              fallback: 'Confirm Password',
+                              'auth.password_label',
+                              fallback: 'Password',
                             ),
+                            helperText: _isLoginMode
+                                ? null
+                                : context.t(
+                                    'auth.password_helper',
+                                    fallback:
+                                        'Min 8 chars, 1 uppercase, 1 number',
+                                  ),
                             suffixIcon: IconButton(
                               onPressed: () {
                                 setState(() {
-                                  _hideConfirmPassword = !_hideConfirmPassword;
+                                  _hidePassword = !_hidePassword;
                                 });
                               },
                               icon: Icon(
-                                _hideConfirmPassword
+                                _hidePassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
                               ),
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        if (!_isLoginMode) ...[
+                          TextField(
+                            controller: _confirmPasswordController,
+                            obscureText: _hideConfirmPassword,
+                            decoration: InputDecoration(
+                              labelText: context.t(
+                                'auth.confirm_password_label',
+                                fallback: 'Confirm Password',
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _hideConfirmPassword =
+                                        !_hideConfirmPassword;
+                                  });
+                                },
+                                icon: Icon(
+                                  _hideConfirmPassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -381,8 +462,14 @@ class _CreateAuthAccountScreenState
                 SolidButton(
                   label: widget.adminCreateMode
                       ? widget.existingMember != null
-                          ? 'Create member login'
-                          : 'Create member account'
+                          ? context.t(
+                              'members.create_member_login_action',
+                              fallback: 'Create member login',
+                            )
+                          : context.t(
+                              'members.create_member_account_action',
+                              fallback: 'Create member account',
+                            )
                       : _isLoginMode
                           ? context.t('auth.login', fallback: 'Login')
                           : context.t('auth.register', fallback: 'Register'),
@@ -403,11 +490,27 @@ class _CreateAuthAccountScreenState
                   child: Text(
                     widget.adminCreateMode
                         ? widget.existingMember != null
-                            ? 'This will let the member sign in with email and password.'
-                            : 'Member account will be created with this email.'
+                            ? context.t(
+                                'members.create_member_login_footer',
+                                fallback:
+                                    'This will create login access and send a password setup email.',
+                              )
+                            : context.t(
+                                'members.create_member_account_footer',
+                                fallback:
+                                    'Member account will be created with this email and Church Account will send a password setup email.',
+                              )
                         : _isLoginMode
-                            ? 'Need a new Church Connect account? Register'
-                            : 'Already have a Church Connect account? Login',
+                            ? context.t(
+                                'auth.login_toggle_register',
+                                fallback:
+                                    'Need a new Church Connect account? Register',
+                              )
+                            : context.t(
+                                'auth.register_toggle_login',
+                                fallback:
+                                    'Already have a Church Connect account? Login',
+                              ),
                   ),
                 ),
               ],

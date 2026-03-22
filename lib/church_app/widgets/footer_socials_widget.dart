@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/social_icon_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,9 @@ class FooterSocialIconsWidget extends ConsumerWidget {
             ),
             error: (e, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Footer error: $e'),
+              child: Text(
+                '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+              ),
             ),
             data: (social) => _buildSocialIconsRow(social, context),
           ),

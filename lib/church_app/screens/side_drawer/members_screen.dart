@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
@@ -80,9 +81,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           bottom: TabBar(
             isScrollable: true,
             tabs: [
-              const Tab(text: 'All'),
-              const Tab(text: 'Families'),
-              const Tab(text: 'Individuals'),
+              Tab(text: context.t('members.all_tab', fallback: 'All')),
+              Tab(
+                text: context.t('members.families_tab', fallback: 'Families'),
+              ),
+              Tab(
+                text: context.t(
+                  'members.individuals_tab',
+                  fallback: 'Individuals',
+                ),
+              ),
               Tab(
                 child: _BirthdayTabLabel(
                   count: todayBirthdays.length,
@@ -136,7 +144,11 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         },
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search members, family ID, email or phone',
+                          hintText: context.t(
+                            'members.search_hint',
+                            fallback:
+                                'Search members, family ID, email or phone',
+                          ),
                           suffixIcon: _query.isEmpty
                               ? null
                               : IconButton(
@@ -156,12 +168,26 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         runSpacing: 8,
                         children: [
                           _CountChip(
-                              label: 'All', count: filteredMembers.length),
+                            label: context.t(
+                              'members.all_tab',
+                              fallback: 'All',
+                            ),
+                            count: filteredMembers.length,
+                          ),
                           _CountChip(
-                              label: 'Families', count: groupedFamilies.length),
+                            label: context.t(
+                              'members.families_tab',
+                              fallback: 'Families',
+                            ),
+                            count: groupedFamilies.length,
+                          ),
                           _CountChip(
-                              label: 'Individuals',
-                              count: individualMembers.length),
+                            label: context.t(
+                              'members.individuals_tab',
+                              fallback: 'Individuals',
+                            ),
+                            count: individualMembers.length,
+                          ),
                         ],
                       ),
                     ],
@@ -189,7 +215,10 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         members: todayBirthdays,
                         isAdmin: isAdmin,
                         currentUid: currentUid,
-                        emptyMessage: 'No birthdays today',
+                        emptyMessage: context.t(
+                          'members.no_birthdays_today',
+                          fallback: 'No birthdays today',
+                        ),
                         showBirthdayAction: true,
                       ),
                     ],
@@ -216,9 +245,18 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.mail_outline),
-                  title: const Text('Create with email'),
-                  subtitle: const Text(
-                    'Create Church Connect account first, then complete member details.',
+                  title: Text(
+                    context.t(
+                      'members.create_with_email',
+                      fallback: 'Create with email',
+                    ),
+                  ),
+                  subtitle: Text(
+                    context.t(
+                      'members.create_with_email_subtitle',
+                      fallback:
+                          'Create Church Connect account first, then complete member details.',
+                    ),
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
@@ -236,9 +274,18 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.person_outline),
-                  title: const Text('Create without email'),
-                  subtitle: const Text(
-                    'Add the member directly using church details only.',
+                  title: Text(
+                    context.t(
+                      'members.create_without_email',
+                      fallback: 'Create without email',
+                    ),
+                  ),
+                  subtitle: Text(
+                    context.t(
+                      'members.create_without_email_subtitle',
+                      fallback:
+                          'Add the member directly using church details only.',
+                    ),
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
@@ -268,7 +315,7 @@ class _MembersListView extends StatelessWidget {
     required this.members,
     required this.isAdmin,
     required this.currentUid,
-    this.emptyMessage = 'No matching members',
+    this.emptyMessage = '',
     this.showBirthdayAction = false,
   });
 
@@ -281,7 +328,16 @@ class _MembersListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
-      return Center(child: Text(emptyMessage));
+      return Center(
+        child: Text(
+          emptyMessage.isEmpty
+              ? context.t(
+                  'members.no_matching_members',
+                  fallback: 'No matching members',
+                )
+              : emptyMessage,
+        ),
+      );
     }
 
     return ListView.builder(
@@ -312,7 +368,9 @@ class _BirthdayTabLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('Birthdays'),
+        Text(
+          context.t('members.birthdays_tab', fallback: 'Birthdays'),
+        ),
         if (count > 0) ...[
           const SizedBox(width: 6),
           Container(
@@ -349,7 +407,14 @@ class _FamilyGroupsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {
-      return const Center(child: Text('No family groups found'));
+      return Center(
+        child: Text(
+          context.t(
+            'members.no_family_groups_found',
+            fallback: 'No family groups found',
+          ),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -361,8 +426,10 @@ class _FamilyGroupsView extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: ExpansionTile(
-            title: Text(_formatFamilyHeader(entry.key)),
-            subtitle: Text('${members.length} member(s)'),
+            title: Text(_formatFamilyHeader(context, entry.key)),
+            subtitle: Text(
+              '${members.length} ${context.t('members.member_count_suffix', fallback: 'member(s)')}',
+            ),
             children: members
                 .map(
                   (member) => _MemberTile(
@@ -455,25 +522,38 @@ Future<void> _showMemberDetailsSheet(
 }) {
   final theme = Theme.of(context);
   final canDelete = isAdmin && member.uid != currentUid;
-  final canEditMember = isAdmin && member.uid != currentUid;
+  final canEditMember = isAdmin;
+  final canApproveMember = isAdmin && member.uid != currentUid;
 
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (context) {
-      return SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            20 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      final brightness = Theme.of(context).brightness;
+      final dragHandleColor =
+          brightness == Brightness.dark ? Colors.white : Colors.black;
+      var approvedValue = member.approved;
+      return Theme(
+        data: Theme.of(context).copyWith(
+          bottomSheetTheme: Theme.of(context).bottomSheetTheme.copyWith(
+                dragHandleColor: dragHandleColor,
+              ),
+        ),
+        child: FractionallySizedBox(
+          heightFactor: 0.9,
+          child: StatefulBuilder(
+            builder: (context, setModalState) => SafeArea(
+              child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              20 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 children: [
                   CircleAvatar(
@@ -490,12 +570,12 @@ Future<void> _showMemberDetailsSheet(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _valueOrFallback(member.name),
+                          _valueOrFallback(context, member.name),
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatCategory(member.category),
+                          _formatCategory(context, member.category),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -506,30 +586,227 @@ Future<void> _showMemberDetailsSheet(
                   ),
                 ],
               ),
+              if (canApproveMember)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    context.t(
+                      'members.approve_member',
+                      fallback: 'Approve member',
+                    ),
+                  ),
+                  subtitle: Text(
+                    approvedValue
+                        ? context.t('common.approved', fallback: 'Approved')
+                        : context.t(
+                            'common.pending_approval',
+                            fallback: 'Pending approval',
+                          ),
+                  ),
+                  value: approvedValue,
+                  onChanged: (val) async {
+                    final churchId =
+                        await ref.read(currentChurchIdProvider.future);
+                    if (churchId == null) return;
+
+                    final repo = MembersRepository(
+                      firestore: ref.read(firestoreProvider),
+                      churchId: churchId,
+                    );
+
+                    await repo.approveMember(member.uid, val);
+                    setModalState(() {
+                      approvedValue = val;
+                    });
+                  },
+                ),
               const SizedBox(height: 20),
-              _MemberDetailRow(
-                icon: Icons.location_on_outlined,
-                label: 'Address',
-                value: _valueOrFallback(member.address),
+              _MemberDetailSection(
+                title: context.t(
+                  'members.basic_details_title',
+                  fallback: 'Basic Details',
+                ),
+                initiallyExpanded: true,
+                child: Column(
+                  children: [
+                    _MemberDetailRow(
+                      icon: Icons.badge_outlined,
+                      label: context.t('members.name_label', fallback: 'Name'),
+                      value: _valueOrFallback(context, member.name),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.phone_outlined,
+                      label: context.t('members.phone_label', fallback: 'Phone'),
+                      value: _valueOrFallback(context, member.phone),
+                      onActionTap: member.phone.trim().isEmpty
+                          ? null
+                          : () => launchPhoneCall(context, member.phone),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.contact_phone_outlined,
+                      label: context.t(
+                        'members.contact_label',
+                        fallback: 'Contact',
+                      ),
+                      value: _valueOrFallback(context, member.contact),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.person_outline,
+                      label: context.t(
+                        'members.gender_label',
+                        fallback: 'Gender',
+                      ),
+                      value: _valueOrFallback(
+                        context,
+                        _formatCategory(context, member.gender),
+                      ),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.email_outlined,
+                      label: context.t('members.email_label', fallback: 'Email'),
+                      value: _valueOrFallback(context, member.email),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.cake_outlined,
+                      label: context.t(
+                        'members.date_of_birth_label',
+                        fallback: 'Date of Birth',
+                      ),
+                      value: _formatDob(context, member.dob),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.category_outlined,
+                      label: context.t(
+                        'members.category_label',
+                        fallback: 'Category',
+                      ),
+                      value: _valueOrFallback(
+                        context,
+                        _formatCategory(context, member.category),
+                      ),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.family_restroom_outlined,
+                      label: context.t(
+                        'members.family_id_label',
+                        fallback: 'Family ID',
+                      ),
+                      value: _valueOrFallback(context, member.familyId),
+                    ),
+                    _MemberDetailRow(
+                      icon: Icons.location_on_outlined,
+                      label: context.t(
+                        'members.address_label',
+                        fallback: 'Address',
+                      ),
+                      value: _valueOrFallback(context, member.address),
+                    ),
+                  ],
+                ),
               ),
-              _MemberDetailRow(
-                icon: Icons.cake_outlined,
-                label: 'DOB',
-                value: _formatDob(member.dob),
-              ),
-              _MemberDetailRow(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                value: _valueOrFallback(member.email),
-              ),
-              _MemberDetailRow(
-                icon: Icons.phone_outlined,
-                label: 'Phone',
-                value: _valueOrFallback(member.phone),
-                onActionTap: member.phone.trim().isEmpty
-                    ? null
-                    : () => launchPhoneCall(context, member.phone),
-              ),
+              if (isAdmin)
+                _MemberDetailSection(
+                  title: context.t(
+                    'members.extended_information_title',
+                    fallback: 'Extended Information',
+                  ),
+                  child: Column(
+                    children: [
+                      _MemberDetailRow(
+                        icon: Icons.favorite_border,
+                        label: context.t(
+                          'members.marital_status_label',
+                          fallback: 'Marital Status',
+                        ),
+                        value: _valueOrFallback(
+                          context,
+                          _formatCategory(context, member.maritalStatus),
+                        ),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.celebration_outlined,
+                        label: context.t(
+                          'members.wedding_day_label',
+                          fallback: 'Wedding Day',
+                        ),
+                        value: _formatDob(context, member.weddingDay),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: context.t(
+                          'members.financial_stability_label',
+                          fallback: 'Financial Stability',
+                        ),
+                        value: member.financialStabilityRating == 0
+                            ? context.t(
+                                'members.financial_not_rated',
+                                fallback: 'Not rated',
+                              )
+                            : '${member.financialStabilityRating}/5',
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.volunteer_activism_outlined,
+                        label: context.t(
+                          'members.financial_support_required',
+                          fallback: 'Financial Support Required',
+                        ),
+                        value: member.financialSupportRequired
+                            ? context.t('common.yes', fallback: 'Yes')
+                            : context.t('common.no', fallback: 'No'),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.school_outlined,
+                        label: context.t(
+                          'members.educational_qualification',
+                          fallback: 'Educational Qualification',
+                        ),
+                        value: _valueOrFallback(
+                          context,
+                          member.educationalQualification,
+                        ),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.auto_awesome_outlined,
+                        label: context.t(
+                          'members.talents_and_gifts',
+                          fallback: 'Talents & Gifts',
+                        ),
+                        value: member.talentsAndGifts.isEmpty
+                            ? context.t(
+                                'common.not_provided',
+                                fallback: 'Not provided',
+                              )
+                            : member.talentsAndGifts.join(', '),
+                      ),
+                    ],
+                  ),
+                ),
+              if (isAdmin)
+                _MemberDetailSection(
+                  title: context.t(
+                    'members.church_groups_title',
+                    fallback: 'Church Groups',
+                  ),
+                  child: member.churchGroupIds.isEmpty
+                      ? Text(
+                          context.t(
+                            'members.no_church_groups_assigned',
+                            fallback: 'No church groups assigned',
+                          ),
+                          style: theme.textTheme.bodyMedium,
+                        )
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: member.churchGroupIds
+                              .map(
+                                (groupId) => Chip(
+                                  label: Text(churchGroupLabel(groupId)),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                ),
               if (canEditMember) ...[
                 const SizedBox(height: 8),
                 SizedBox(
@@ -555,24 +832,42 @@ Future<void> _showMemberDetailsSheet(
                           ? await showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) => AlertDialog(
-                                    title: const Text(
-                                      'Create Church Connect account?',
+                                    title: Text(
+                                      context.t(
+                                        'members.create_church_connect_account',
+                                        fallback:
+                                            'Create Church Connect account?',
+                                      ),
                                     ),
-                                    content: const Text(
-                                      'This member does not have a Church Connect account yet. Do you want to create it first?',
+                                    content: Text(
+                                      context.t(
+                                        'members.create_church_connect_account_message',
+                                        fallback:
+                                            'This member does not have a Church Connect account yet. Do you want to create it first?',
+                                      ),
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.of(dialogContext)
                                                 .pop(false),
-                                        child: const Text('No'),
+                                        child: Text(
+                                          context.t(
+                                            'common.no',
+                                            fallback: 'No',
+                                          ),
+                                        ),
                                       ),
                                       FilledButton(
                                         onPressed: () =>
                                             Navigator.of(dialogContext)
                                                 .pop(true),
-                                        child: const Text('Yes'),
+                                        child: Text(
+                                          context.t(
+                                            'common.yes',
+                                            fallback: 'Yes',
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -709,7 +1004,10 @@ Future<void> _showMemberDetailsSheet(
                   ),
                 ),
               ],
-            ],
+              ],
+                ),
+              ),
+            ),
           ),
         ),
       );
@@ -742,8 +1040,13 @@ List<AppUser> _filterMembers(List<AppUser> members, String query) {
       member.name,
       member.email,
       member.phone,
+      member.contact,
       member.familyId,
       member.category,
+      member.maritalStatus,
+      member.educationalQualification,
+      member.talentsAndGifts.join(' '),
+      member.churchGroupIds.map(churchGroupLabel).join(' '),
     ].map((value) => value.toLowerCase());
 
     return haystacks.any((value) => value.contains(query));
@@ -771,10 +1074,10 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
   return entries;
 }
 
-String _formatFamilyHeader(String familyId) {
+String _formatFamilyHeader(BuildContext context, String familyId) {
   final normalized = familyId.trim().toLowerCase();
   if (normalized.isEmpty || normalized == 'no family id') {
-    return 'Unknown family';
+    return context.t('members.unknown_family', fallback: 'Unknown family');
   }
 
   var cleaned = normalized
@@ -792,11 +1095,57 @@ String _formatFamilyHeader(String familyId) {
       .trim();
 
   if (displayName.isEmpty) {
-    return 'Unknown family';
+    return context.t('members.unknown_family', fallback: 'Unknown family');
   }
 
   final suffix = displayName.endsWith('s') ? "'" : "'s";
   return '$displayName$suffix family';
+}
+
+class _MemberDetailSection extends StatelessWidget {
+  const _MemberDetailSection({
+    required this.title,
+    required this.child,
+    this.initiallyExpanded = false,
+  });
+
+  final String title;
+  final Widget child;
+  final bool initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Theme(
+          data: theme.copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: initiallyExpanded,
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            iconColor: theme.colorScheme.primary,
+            collapsedIconColor: theme.colorScheme.primary,
+            title: Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            children: [child],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MemberDetailRow extends StatelessWidget {
@@ -855,8 +1204,10 @@ class _MemberDetailRow extends StatelessWidget {
   }
 }
 
-String _formatDob(DateTime? date) {
-  if (date == null) return 'Not provided';
+String _formatDob(BuildContext context, DateTime? date) {
+  if (date == null) {
+    return context.t('common.not_provided', fallback: 'Not provided');
+  }
   return DateFormat('dd MMM yyyy').format(date);
 }
 
@@ -866,13 +1217,29 @@ bool _isBirthdayToday(DateTime? dob) {
   return dob.day == now.day && dob.month == now.month;
 }
 
-String _formatCategory(String category) {
+String _formatCategory(BuildContext context, String category) {
   final normalized = category.trim().toLowerCase();
-  if (normalized.isEmpty) return 'Not provided';
+  if (normalized.isEmpty) {
+    return context.t('common.not_provided', fallback: 'Not provided');
+  }
+  if (normalized == 'male') {
+    return context.t('common.male', fallback: 'Male');
+  }
+  if (normalized == 'female') {
+    return context.t('common.female', fallback: 'Female');
+  }
+  if (normalized == 'individual') {
+    return context.t('common.individual', fallback: 'Individual');
+  }
+  if (normalized == 'married') {
+    return context.t('common.married', fallback: 'Married');
+  }
   return normalized[0].toUpperCase() + normalized.substring(1);
 }
 
-String _valueOrFallback(String value) {
+String _valueOrFallback(BuildContext context, String value) {
   final trimmed = value.trim();
-  return trimmed.isEmpty ? 'Not provided' : trimmed;
+  return trimmed.isEmpty
+      ? context.t('common.not_provided', fallback: 'Not provided')
+      : trimmed;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -22,18 +23,18 @@ class AppBootstrap extends ConsumerWidget {
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
-          bgColor: Colors.black,
-          cardColor: const Color(0xFF161616),
-          primaryColor: Colors.white,
-          secondaryColor: Colors.white,
+          bgColor: PreflowColors.background,
+          cardColor: PreflowColors.card,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
         ),
         darkTheme: _buildTheme(
           context: context,
           brightness: Brightness.dark,
-          bgColor: Colors.black,
-          cardColor: const Color(0xFF161616),
-          primaryColor: Colors.white,
-          secondaryColor: Colors.white,
+          bgColor: PreflowColors.background,
+          cardColor: PreflowColors.card,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
         ),
         home: const Scaffold(
           body: Center(child: CircularProgressIndicator()),
@@ -43,18 +44,18 @@ class AppBootstrap extends ConsumerWidget {
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
-          bgColor: Colors.black,
-          cardColor: const Color(0xFF161616),
-          primaryColor: Colors.white,
-          secondaryColor: Colors.white,
+          bgColor: PreflowColors.background,
+          cardColor: PreflowColors.card,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
         ),
         darkTheme: _buildTheme(
           context: context,
           brightness: Brightness.dark,
-          bgColor: Colors.black,
-          cardColor: const Color(0xFF161616),
-          primaryColor: Colors.white,
-          secondaryColor: Colors.white,
+          bgColor: PreflowColors.background,
+          cardColor: PreflowColors.card,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
         ),
         home: Scaffold(
           body: Builder(
@@ -74,16 +75,16 @@ class AppBootstrap extends ConsumerWidget {
 
         final bgColor = useChurchTheme
             ? config.backgroundColorHex.toColor()
-            : Colors.black;
+            : PreflowColors.background;
         final cardColor = useChurchTheme
             ? config.cardColorHex.toColor()
-            : const Color(0xFF161616);
+            : PreflowColors.card;
         final primaryColor = useChurchTheme
             ? config.primaryColorHex.toColor()
-            : Colors.white;
+            : PreflowColors.accent;
         final secondaryColor = useChurchTheme
             ? config.secondaryColorHex.toColor()
-            : Colors.white;
+            : PreflowColors.accent;
 
         return MaterialApp(
           themeMode: themeMode,
@@ -100,8 +101,8 @@ class AppBootstrap extends ConsumerWidget {
           darkTheme: _buildTheme(
             context: context,
             brightness: Brightness.dark,
-            bgColor: Colors.black,
-            cardColor: const Color(0xFF1E1E1E),
+            bgColor: useChurchTheme ? Colors.black : PreflowColors.background,
+            cardColor: useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.card,
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
@@ -123,9 +124,13 @@ ThemeData _buildTheme({
   final usesDarkSurface = bgColor.computeLuminance() < 0.2;
   final buttonForegroundColor =
       primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-  final textColor = usesDarkSurface ? Colors.white : Colors.black;
-  final mutedTextColor = usesDarkSurface ? Colors.white70 : Colors.black87;
-  final inputColor = usesDarkSurface ? Colors.white70 : Colors.black54;
+  final textColor =
+      usesDarkSurface ? PreflowColors.darkText : PreflowColors.lightText;
+  final mutedTextColor = usesDarkSurface
+      ? PreflowColors.darkMutedText
+      : PreflowColors.lightMutedText;
+  final inputColor =
+      usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
 
   return ThemeData(
     brightness: brightness,

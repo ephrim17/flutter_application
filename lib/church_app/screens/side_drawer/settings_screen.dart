@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
@@ -16,11 +15,8 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
-import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
-import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
@@ -50,7 +46,6 @@ class SettingsScreen extends ConsumerWidget {
             _PushNotificationSection(),
             _PrayerReminderSection(),
             _StorageSection(),
-            _DeleteAccountSection(),
             _LogoutSection(),
             SizedBox(height: 12),
             PraiseTheLordCard(),
@@ -70,13 +65,19 @@ class _EditProfileSection extends ConsumerWidget {
     final userAsync = ref.watch(appUserProvider);
 
     return userAsync.when(
-      loading: () => const ListTile(
-        leading: Icon(Icons.person_outline),
-        title: Text('Loading...'),
+      loading: () => ListTile(
+        leading: const Icon(Icons.person_outline),
+        title: Text(
+          ref.t('settings.loading_profile', fallback: 'Loading...'),
+        ),
       ),
       error: (error, _) => ListTile(
         leading: const Icon(Icons.person_outline),
-        title: Text('Error: $error'),
+        title: Text(
+          ref
+              .t('settings.error_loading_profile', fallback: 'Error: {error}')
+              .replaceAll('{error}', '$error'),
+        ),
       ),
       data: (user) {
         if (user == null) return const SizedBox.shrink();
@@ -84,7 +85,7 @@ class _EditProfileSection extends ConsumerWidget {
         return ListTile(
           leading: const Icon(Icons.person_outline),
           title: Text(
-            ref.t('settings.edit_profile', fallback: 'Edit Profile'),
+            ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
           ),
           onTap: () => showModalBottomSheet<void>(
             context: context,
@@ -131,32 +132,6 @@ class _LogoutSection extends ConsumerWidget {
         await FirebaseAuth.instance.signOut();
         if (!context.mounted) return;
       },
-    );
-  }
-}
-
-class _DeleteAccountSection extends ConsumerWidget {
-  const _DeleteAccountSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-      title: Text(
-        ref.t('settings.delete_account', fallback: 'Delete Account'),
-        style: const TextStyle(color: Colors.red),
-      ),
-      subtitle: Text(
-        ref.t(
-          'settings.delete_account_subtitle',
-          fallback: 'Permanently remove your account and user data',
-        ),
-      ),
-      onTap: () => showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => const _DeleteAccountSheet(),
-      ),
     );
   }
 }
@@ -542,7 +517,16 @@ class _StorageSection extends ConsumerWidget {
 
         if (confirm == true) {
           final prefs = await SharedPreferences.getInstance();
+          final hasOnboardingFlag = prefs.containsKey('onboarding_completed');
+          final onboardingCompleted =
+              prefs.getBool('onboarding_completed') ?? false;
           await prefs.clear();
+          if (hasOnboardingFlag) {
+            await prefs.setBool(
+              'onboarding_completed',
+              onboardingCompleted,
+            );
+          }
 
           // 🔥 Clear favorites provider
           await ref.read(favoritesProvider.notifier).clearAll();
@@ -560,159 +544,6 @@ class _StorageSection extends ConsumerWidget {
           );
         }
       },
-    );
-  }
-}
-
-class _DeleteAccountSheet extends ConsumerStatefulWidget {
-  const _DeleteAccountSheet();
-
-  @override
-  ConsumerState<_DeleteAccountSheet> createState() =>
-      _DeleteAccountSheetState();
-}
-
-class _DeleteAccountSheetState extends ConsumerState<_DeleteAccountSheet> {
-  bool _isDeleting = false;
-
-  Future<void> _deleteAccount() async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.t('settings.delete_account_no_church',
-                fallback: 'No church selected.'),
-          ),
-        ),
-      );
-      return;
-    }
-
-    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
-    if (firebaseUser == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.t('settings.push_not_signed_in',
-                fallback: 'Sign in to manage push notifications'),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isDeleting = true;
-    });
-
-    try {
-      final repository = MembersRepository(
-        firestore: ref.read(firestoreProvider),
-        churchId: churchId,
-      );
-      await repository.deleteMember(firebaseUser.uid);
-
-      await ChurchLocalStorage().clearChurch();
-      await ref.read(favoritesProvider.notifier).clearAll();
-      ref.read(selectedChurchProvider.notifier).state = null;
-      ref.invalidate(currentChurchIdProvider);
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
-
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => const SelectChurchScreen(),
-        ),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFirebaseAuthError(e))),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isDeleting = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.t(
-              'settings.delete_account',
-              fallback: 'Delete Account',
-            ),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.t(
-              'settings.delete_account_message',
-              fallback:
-                  'This removes your profile from the currently selected church and takes you back to church selection.',
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed:
-                      _isDeleting ? null : () => Navigator.of(context).pop(),
-                  child: Text(
-                    context.t('settings.cancel', fallback: 'Cancel'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red,
-                  ),
-                  onPressed: _isDeleting ? null : _deleteAccount,
-                  child: _isDeleting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          context.t('common.delete', fallback: 'Delete'),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
@@ -831,20 +662,41 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     final phone = _phoneController.text.trim();
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid 10-digit phone number')),
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.profile_phone_invalid',
+              fallback: 'Enter a valid 10-digit phone number',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (_locationController.text.trim().isEmpty ||
         _addressController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Address and maps location are required')),
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.profile_address_location_required',
+              fallback: 'Address and maps location are required',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (_dob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birthday')),
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.profile_birthday_required',
+              fallback: 'Please select your birthday',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -902,23 +754,32 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ref.t('settings.edit_profile', fallback: 'Edit Profile'),
+              ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             _SettingsReviewCard(
               rows: [
-                _SettingsReviewRow('Name', widget.user.name),
-                _SettingsReviewRow('Email', widget.user.email),
-                _SettingsReviewRow('Category', widget.user.category),
+                _SettingsReviewRow(
+                  ref.t('members.name_label', fallback: 'Name'),
+                  widget.user.name,
+                ),
+                _SettingsReviewRow(
+                  ref.t('members.email_label', fallback: 'Email'),
+                  widget.user.email,
+                ),
+                _SettingsReviewRow(
+                  ref.t('members.category_label', fallback: 'Category'),
+                  widget.user.category,
+                ),
               ],
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
+              decoration: InputDecoration(
+                labelText: ref.t('auth.phone_label', fallback: 'Phone Number'),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -938,14 +799,17 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 });
               },
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Birthday',
+                decoration: InputDecoration(
+                  labelText: ref.t('auth.birthday_label', fallback: 'Birthday'),
                   border: OutlineInputBorder(),
                   suffixIcon: Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(
                   _formatDob(_dob).isEmpty
-                      ? 'Select your birthday'
+                      ? ref.t(
+                          'auth.birthday_hint',
+                          fallback: 'Select your birthday',
+                        )
                       : _formatDob(_dob),
                 ),
               ),

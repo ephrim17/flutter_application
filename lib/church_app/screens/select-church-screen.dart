@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
-import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
@@ -11,20 +10,82 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
 
-class SelectChurchScreen extends ConsumerWidget {
+final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
+  final firebaseUser = ref.watch(authStateProvider).value;
+  final churches = await ref.watch(churchesProvider.future);
+  final uid = firebaseUser?.uid.trim() ?? '';
+  if (uid.isEmpty || churches.isEmpty) return const <Church>[];
+
+  final firestore = ref.read(firestoreProvider);
+  final membershipChecks = await Future.wait(
+    churches.map((church) async {
+      final userDoc = await FirestorePaths.churchUserDoc(
+        firestore,
+        church.id,
+        uid,
+      ).get();
+      return MapEntry(church, userDoc.exists);
+    }),
+  );
+
+  final userChurches = membershipChecks
+      .where((entry) => entry.value)
+      .map((entry) => entry.key)
+      .toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+  return userChurches;
+});
+
+class SelectChurchScreen extends ConsumerStatefulWidget {
   const SelectChurchScreen({super.key});
+
+  @override
+  ConsumerState<SelectChurchScreen> createState() => _SelectChurchScreenState();
+}
+
+class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
+  bool _showYourChurches = true;
+  bool _showOtherChurches = false;
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    ref.read(forcePreflowThemeProvider.notifier).state = true;
+    await ChurchLocalStorage().clearChurch();
+    await ChurchLocalStorage().clearSubscribedChurchTopic();
+    await ref.read(favoritesProvider.notifier).clearAll();
+    ref.read(selectedChurchProvider.notifier).state = null;
+    ref.invalidate(currentChurchIdProvider);
+    ref.invalidate(appUserProvider);
+    ref.invalidate(getCurrentUserProvider);
+    navigator.pushAndRemoveUntil(
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
+          initialLoginMode: true,
+        ),
+      ),
+      (route) => false,
+    );
+    await FirebaseAuth.instance.signOut();
+  }
 
   Future<bool> _showRequestAccessPrompt(BuildContext context) async {
     return await showDialog<bool>(
@@ -37,7 +98,11 @@ class SelectChurchScreen extends ConsumerWidget {
               ),
             ),
             content: Text(
-              'No account was found for this church. Do you want to request access?',
+              context.t(
+                'auth.no_account_found_request_access',
+                fallback:
+                    'No account was found for this church. Do you want to request access?',
+              ),
             ),
             actions: [
               TextButton(
@@ -60,28 +125,22 @@ class SelectChurchScreen extends ConsumerWidget {
 
   Future<void> _handleContinue(
     BuildContext context,
-    WidgetRef ref,
     Church selectedChurch,
   ) async {
     final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
     if (firebaseUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to your Church Connect account first.'),
+        SnackBar(
+          content: Text(
+            context.t(
+              'auth.login_subtitle',
+              fallback: 'Sign in with your Church Connect account to continue.',
+            ),
+          ),
         ),
       );
       return;
     }
-    final email = firebaseUser.email?.trim().toLowerCase() ?? '';
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your Church Connect account does not have an email.'),
-        ),
-      );
-      return;
-    }
-
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -91,20 +150,23 @@ class SelectChurchScreen extends ConsumerWidget {
     );
 
     try {
-      final userSnapshot = await FirestorePaths.churchUsers(
+      final userDoc = await FirestorePaths.churchUserDoc(
         ref.read(firestoreProvider),
         selectedChurch.id,
-      ).where('email', isEqualTo: email).limit(1).get();
+        firebaseUser.uid,
+      ).get();
 
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      if (userSnapshot.docs.isNotEmpty) {
-        final userDoc = userSnapshot.docs.first;
+      if (userDoc.exists) {
         final appUser = AppUser.fromFirestore(
           userDoc.id,
-          userDoc.data() as Map<String, dynamic>,
+          userDoc.data() as Map<String, dynamic>? ?? <String, dynamic>{},
         );
+        if (!context.mounted) return;
+
+        ref.read(selectedChurchProvider.notifier).state = selectedChurch;
         ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
         ref.invalidate(currentChurchIdProvider);
         unawaited(syncNotificationTopicIfAuthorized(ref));
@@ -145,22 +207,28 @@ class SelectChurchScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedChurch = ref.watch(selectedChurchProvider);
-
-    /// ✅ PRELOAD churches here
+  Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
+    final userChurchesAsync = ref.watch(userChurchesProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(text: ''),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: context.t('drawer.logout', fallback: 'Logout'),
+            onPressed: () => _handleLogout(context),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
       body: LinearScreenBackground(
+        solidBackground: true,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -204,7 +272,10 @@ class SelectChurchScreen extends ConsumerWidget {
                           child: Column(
                             children: [
                               Text(
-                                'Welcome Home',
+                                context.t(
+                                  'church.welcome_home',
+                                  fallback: 'Welcome Home',
+                                ),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -226,7 +297,11 @@ class SelectChurchScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                "We'll help you find a local congregation to stay connected with services, events, and news.",
+                                context.t(
+                                  'church.select_helper',
+                                  fallback:
+                                      "We'll help you find a local congregation to stay connected with services, events, and news.",
+                                ),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -237,89 +312,11 @@ class SelectChurchScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 22),
-                        if (selectedChurch == null)
-                          SolidButton(
-                            label: context.t(
-                              'church.select_button',
-                              fallback: 'Select Church',
-                            ),
-                            onPressed: () {
-                              _showChurchBottomSheet(
-                                context,
-                                ref,
-                                churchesAsync,
-                              );
-                            },
-                          ),
-                        if (selectedChurch != null) ...[
-                          Container(
-                            decoration: carouselBoxDecoration(context),
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Selected Church',
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    ChurchLogoAvatar(
-                                      logo: selectedChurch.logo,
-                                      size: 48,
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            selectedChurch.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () {
-                                        ref
-                                            .read(
-                                                selectedChurchProvider.notifier)
-                                            .state = null;
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          SolidButton(
-                            label: context.t(
-                              'auth_entry.continue',
-                              fallback: 'Continue',
-                            ),
-                            onPressed: () {
-                              _handleContinue(
-                                context,
-                                ref,
-                                selectedChurch,
-                              );
-                            },
-                          ),
-                        ],
+                        _buildChurchSections(
+                          context,
+                          churchesAsync: churchesAsync,
+                          userChurchesAsync: userChurchesAsync,
+                        ),
                         const Spacer(),
                         const SizedBox(height: 16),
                         Center(
@@ -327,9 +324,13 @@ class SelectChurchScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(24),
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                    'Register your church coming soon',
+                                    context.t(
+                                      'church.register_coming_soon',
+                                      fallback:
+                                          'Register your church coming soon',
+                                    ),
                                   ),
                                 ),
                               );
@@ -355,53 +356,173 @@ class SelectChurchScreen extends ConsumerWidget {
     );
   }
 
-  void _showChurchBottomSheet(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue churchesAsync,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return churchesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => Center(
-            child: Text(
+  Widget _buildChurchSections(
+    BuildContext context, {
+    required AsyncValue<List<Church>> churchesAsync,
+    required AsyncValue<List<Church>> userChurchesAsync,
+  }) {
+    if (churchesAsync.isLoading || userChurchesAsync.isLoading) {
+      return Container(
+        decoration: carouselBoxDecoration(context),
+        padding: const EdgeInsets.all(24),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (churchesAsync.hasError || userChurchesAsync.hasError) {
+      return Container(
+        decoration: carouselBoxDecoration(context),
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
               context.t(
-                'church.error_loading',
-                fallback: 'Error loading churches',
+                'church.directory_title',
+                fallback: 'Churches',
               ),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
+            const SizedBox(height: 10),
+            Text(
+              context.t(
+                'church.directory_load_error',
+                fallback: 'We could not load the church list right now.',
+              ),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final allChurches = churchesAsync.asData?.value ?? const <Church>[];
+    final userChurches = userChurchesAsync.asData?.value ?? const <Church>[];
+    final memberChurchIds = userChurches.map((church) => church.id).toSet();
+    final otherChurches = allChurches
+        .where((church) => !memberChurchIds.contains(church.id))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ChurchSectionCard(
+          title: context.t(
+            'church.your_churches_title',
+            fallback: 'Your Churches',
           ),
-          data: (churches) {
-            if (churches.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    context.t(
-                      'church.none_available',
-                      fallback: 'No churches available',
+          subtitle: userChurches.isEmpty
+              ? context.t(
+                  'church.your_churches_empty_subtitle',
+                  fallback:
+                      "Churches you follow and you're part of will show here.",
+                )
+              : context.t(
+                  'church.your_churches_subtitle',
+                  fallback: "Churches you follow and you're part of.",
+                ),
+          count: userChurches.length,
+          isExpanded: _showYourChurches,
+          onToggle: () {
+            setState(() {
+              _showYourChurches = !_showYourChurches;
+            });
+          },
+          onOpen: userChurches.isEmpty
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _ChurchDirectoryScreen(
+                        title: context.t(
+                          'church.your_churches_title',
+                          fallback: 'Your Churches',
+                        ),
+                        churches: userChurches,
+                        emptyMessage: context.t(
+                          'church.your_churches_empty_state',
+                          fallback:
+                              'You are not part of any church yet. Use the section below to explore other churches.',
+                        ),
+                        onChurchTap: (directoryContext, church) =>
+                            _showChurchDetailsSheet(
+                          directoryContext,
+                          ref,
+                          church,
+                          isMemberChurch: true,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }
-
-            return _ChurchPickerSheet(
-              churches: churches,
-              onChurchTap: (church) => _showChurchDetailsSheet(
-                context,
-                ref,
-                church,
-              ),
-            );
+          child: userChurches.isEmpty
+              ? _EmptyChurchState(
+                  message: context.t(
+                    'church.your_churches_empty_state',
+                    fallback:
+                        'You are not part of any church yet. Use the section below to explore other churches.',
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 14),
+        _ChurchSectionCard(
+          title: context.t(
+            'church.other_churches_title',
+            fallback: 'Other Churches',
+          ),
+          subtitle: context.t(
+            'church.other_churches_subtitle',
+            fallback:
+                'Explore other churches. Tapping one lets you submit a request form, and once an admin approves it, enrollment will be smoother.',
+          ),
+          count: otherChurches.length,
+          isExpanded: _showOtherChurches,
+          onToggle: () {
+            setState(() {
+              _showOtherChurches = !_showOtherChurches;
+            });
           },
-        );
-      },
+          onOpen: otherChurches.isEmpty
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _ChurchDirectoryScreen(
+                        title: context.t(
+                          'church.other_churches_title',
+                          fallback: 'Other Churches',
+                        ),
+                        churches: otherChurches,
+                        emptyMessage: context.t(
+                          'church.other_churches_empty_state',
+                          fallback:
+                              'You already belong to every available church in the directory.',
+                        ),
+                        onChurchTap: (directoryContext, church) =>
+                            _showChurchDetailsSheet(
+                          directoryContext,
+                          ref,
+                          church,
+                          isMemberChurch: false,
+                        ),
+                      ),
+                    ),
+                  ),
+          child: otherChurches.isEmpty
+              ? _EmptyChurchState(
+                  message: context.t(
+                    'church.other_churches_empty_state',
+                    fallback:
+                        'You already belong to every available church in the directory.',
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
@@ -409,7 +530,11 @@ class SelectChurchScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Church church,
+    {
+    required bool isMemberChurch,
+  }
   ) {
+    final parentContext = context;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -464,17 +589,26 @@ class SelectChurchScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   _ChurchDetailRow(
                     icon: Icons.person_outline,
-                    label: 'Pastor',
+                    label: context.t(
+                      'church.detail_pastor',
+                      fallback: 'Pastor',
+                    ),
                     value: _valueOrFallback(church.pastorName),
                   ),
                   _ChurchDetailRow(
                     icon: Icons.email_outlined,
-                    label: 'Email',
+                    label: context.t(
+                      'church.detail_email',
+                      fallback: 'Email',
+                    ),
                     value: _valueOrFallback(church.email),
                   ),
                   _ChurchDetailRow(
                     icon: Icons.phone_outlined,
-                    label: 'Contact',
+                    label: context.t(
+                      'church.detail_contact',
+                      fallback: 'Contact',
+                    ),
                     value: _valueOrFallback(church.contact),
                     onActionTap: church.contact.trim().isEmpty
                         ? null
@@ -482,30 +616,40 @@ class SelectChurchScreen extends ConsumerWidget {
                   ),
                   _ChurchDetailRow(
                     icon: Icons.location_on_outlined,
-                    label: 'Address',
+                    label: context.t(
+                      'church.detail_address',
+                      fallback: 'Address',
+                    ),
                     value: _valueOrFallback(church.address),
                   ),
                   const SizedBox(height: 8),
                   SolidButton(
-                    label: context.t(
-                      'church.select_action',
-                      fallback: 'Select Church',
-                    ),
-                    onPressed: () async {
-                      final storage = ChurchLocalStorage();
+                    label: isMemberChurch
+                        ? context.t(
+                            'church.select_action',
+                            fallback: 'Select Church',
+                          )
+                        : context.t(
+                            'auth.request_access',
+                            fallback: 'Request Access',
+                          ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (!parentContext.mounted) return;
+                      if (isMemberChurch) {
+                        _handleContinue(parentContext, church);
+                        return;
+                      }
 
-                      await storage.saveChurch(
-                        id: church.id,
-                        name: church.name,
+                      Navigator.of(parentContext).push(
+                        MaterialPageRoute(
+                          builder: (_) => LoginRequestScreen(
+                            churchId: church.id,
+                            churchName: church.name,
+                            churchLogo: church.logo,
+                          ),
+                        ),
                       );
-
-                      ref.read(selectedChurchProvider.notifier).state = church;
-                      ref.invalidate(currentChurchIdProvider);
-
-                      if (!context.mounted) return;
-                      Navigator.of(context)
-                        ..pop()
-                        ..pop();
                     },
                   ),
                 ],
@@ -518,21 +662,105 @@ class SelectChurchScreen extends ConsumerWidget {
   }
 }
 
-class _ChurchPickerSheet extends StatefulWidget {
-  const _ChurchPickerSheet({
+class _ChurchSectionCard extends StatelessWidget {
+  const _ChurchSectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.count,
+    required this.isExpanded,
+    required this.onToggle,
+    this.onOpen,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final int count;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final VoidCallback? onOpen;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(cornerRadius),
+            onTap: onOpen ?? onToggle,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$title ',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          subtitle,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '$count church${count == 1 ? '' : 'es'}',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded && onOpen == null) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+              child: child,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChurchDirectoryScreen extends StatefulWidget {
+  const _ChurchDirectoryScreen({
+    required this.title,
     required this.churches,
+    required this.emptyMessage,
     required this.onChurchTap,
   });
 
+  final String title;
   final List<Church> churches;
-  final ValueChanged<Church> onChurchTap;
+  final String emptyMessage;
+  final void Function(BuildContext context, Church church) onChurchTap;
 
   @override
-  State<_ChurchPickerSheet> createState() => _ChurchPickerSheetState();
+  State<_ChurchDirectoryScreen> createState() => _ChurchDirectoryScreenState();
 }
 
-class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
-  final _searchController = TextEditingController();
+class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
+  final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
   @override
@@ -541,156 +769,198 @@ class _ChurchPickerSheetState extends State<_ChurchPickerSheet> {
     super.dispose();
   }
 
+  List<Church> get _filteredChurches {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return widget.churches;
+
+    return widget.churches.where((church) {
+      return church.name.toLowerCase().contains(query) ||
+          church.pastorName.toLowerCase().contains(query) ||
+          church.address.toLowerCase().contains(query) ||
+          church.email.toLowerCase().contains(query) ||
+          church.contact.toLowerCase().contains(query);
+    }).toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredChurches = _filterChurches(widget.churches, _query);
-    final theme = Theme.of(context);
+    final filteredChurches = _filteredChurches;
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.96,
-      minChildSize: 0.85,
-      maxChildSize: 0.96,
-      builder: (context, scrollController) {
-        return Material(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                color: theme.cardColor,
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Choose a church',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${filteredChurches.length} of ${widget.churches.length} churches',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x12000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _query = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: context.t(
+                    'common.search',
+                    fallback: 'Search',
+                  ),
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _query = '';
+                            });
+                          },
+                          icon: const Icon(Icons.close_rounded),
                         ),
-                      ],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.4,
                     ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _query = value.trim().toLowerCase();
-                        });
-                      },
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: theme.cardColor,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        prefixIcon: const Icon(Icons.search),
-                        hintText: 'Search by church, pastor, email or address',
-                        suffixIcon: _query.isEmpty
-                            ? null
-                            : IconButton(
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _query = '';
-                                  });
-                                },
-                                icon: const Icon(Icons.clear),
-                              ),
-                      ),
-                    ),
-                  ],
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
                 ),
               ),
-              const Divider(height: 1),
-              Expanded(
-                child: filteredChurches.isEmpty
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Text('No churches match your search'),
-                        ),
-                      )
-                    : ListView.separated(
-                        controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        itemCount: filteredChurches.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final church = filteredChurches[index];
-
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(cornerRadius),
-                            onTap: () => widget.onChurchTap(church),
-                            child: Ink(
-                              decoration: carouselBoxDecoration(context),
-                              child: Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ChurchLogoAvatar(
-                                      logo: church.logo,
-                                      size: 46,
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            church.name,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
+            ),
+          ),
+          Expanded(
+            child: filteredChurches.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        widget.emptyMessage,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    itemCount: filteredChurches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final church = filteredChurches[index];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(cornerRadius),
+                        onTap: () => widget.onChurchTap(context, church),
+                        child: Ink(
+                          decoration: carouselBoxDecoration(context),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                ChurchLogoAvatar(
+                                  logo: church.logo,
+                                  size: 44,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        church.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
                                               fontWeight: FontWeight.w700,
                                             ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          _ChurchPreviewLine(
-                                            icon: Icons.person_outline,
-                                            text: _valueOrFallback(
-                                              church.pastorName,
-                                            ),
-                                          ),
-                                        ],
                                       ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ],
+                                      const SizedBox(height: 6),
+                                      _ChurchPreviewLine(
+                                        icon: Icons.person_outline,
+                                        text: _valueOrFallback(
+                                          church.pastorName,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 10),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 18,
+                                  color:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyChurchState extends StatelessWidget {
+  const _EmptyChurchState({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: carouselBoxDecoration(context),
+      padding: const EdgeInsets.all(18),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
     );
   }
 }
@@ -796,20 +1066,4 @@ class _ChurchPreviewLine extends StatelessWidget {
 String _valueOrFallback(String value) {
   final trimmed = value.trim();
   return trimmed.isEmpty ? 'Not provided' : trimmed;
-}
-
-List<Church> _filterChurches(List<Church> churches, String query) {
-  if (query.isEmpty) return churches;
-
-  return churches.where((church) {
-    final haystacks = [
-      church.name,
-      church.pastorName,
-      church.email,
-      church.contact,
-      church.address,
-    ].map((value) => value.toLowerCase());
-
-    return haystacks.any((value) => value.contains(query));
-  }).toList();
 }

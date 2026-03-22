@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,7 +64,14 @@ Future<void> onContactTap(BuildContext context, ContactItem contact) async {
   final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!launched && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Unable to open contact action')),
+      SnackBar(
+        content: Text(
+          context.t(
+            'common.open_contact_failed',
+            fallback: 'Unable to open contact action',
+          ),
+        ),
+      ),
     );
   }
 }
@@ -106,7 +114,11 @@ class FooterContactsWidget extends ConsumerWidget {
         Row(
           children: contactsAsync.when(
             loading: () => const [CircularProgressIndicator()],
-            error: (e, _) => [Text('Error: $e')],
+            error: (e, _) => [
+              Text(
+                '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+              ),
+            ],
             data: (contacts) {
               return buildContacts(contacts, context);
             },

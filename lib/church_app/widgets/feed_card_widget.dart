@@ -178,9 +178,15 @@ class FeedCard extends ConsumerWidget {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Delete post?', style: Theme.of(context).textTheme.bodyMedium),
-        content: const Text(
-          'This will permanently delete the post and its image.',
+        title: Text(
+          ref.t('feed.delete_confirm_title', fallback: 'Delete post?'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        content: Text(
+          ref.t(
+            'feed.delete_confirm_message',
+            fallback: 'This will permanently delete the post and its image.',
+          ),
         ),
         actions: [
           TextButton(
@@ -214,7 +220,11 @@ class FeedCard extends ConsumerWidget {
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Post deleted')),
+      SnackBar(
+        content: Text(
+          ref.t('feed.post_deleted', fallback: 'Post deleted'),
+        ),
+      ),
     );
 
     await _refreshFeed(ref);
@@ -271,11 +281,19 @@ class FeedCard extends ConsumerWidget {
           role: 'user',
           approved: true,
           phone: '',
+          contact: '',
           location: '',
           address: '',
           gender: '',
           category: '',
           familyId: '',
+          maritalStatus: '',
+          weddingDay: null,
+          financialStabilityRating: 0,
+          financialSupportRequired: false,
+          educationalQualification: '',
+          talentsAndGifts: const [],
+          churchGroupIds: const [],
           authToken: '',
           dob: null,
         ),
@@ -305,11 +323,19 @@ class FeedCard extends ConsumerWidget {
             role: 'user',
             approved: true,
             phone: post.userPhone ?? '',
+            contact: '',
             location: '',
             address: post.userAddress ?? '',
             gender: '',
             category: post.userCategory ?? '',
             familyId: '',
+            maritalStatus: '',
+            weddingDay: null,
+            financialStabilityRating: 0,
+            financialSupportRequired: false,
+            educationalQualification: '',
+            talentsAndGifts: const [],
+            churchGroupIds: const [],
             authToken: '',
             dob: post.userDob,
           )

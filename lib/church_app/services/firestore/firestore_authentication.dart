@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/firebase_options.dart';
 
@@ -81,6 +82,14 @@ class AuthRepository {
     }
   }
 
+  Future<void> sendPasswordSetupEmail({
+    required String email,
+  }) async {
+    await _auth.sendPasswordResetEmail(
+      email: email.trim().toLowerCase(),
+    );
+  }
+
   Future<void> deleteAccount({
     required String churchId,
     required String password,
@@ -144,6 +153,7 @@ class AuthRepository {
   Future<void> requestAccess(
       {required String name,
       required String phone,
+      required String contact,
       required String location,
       required String address,
       required String gender,
@@ -152,6 +162,13 @@ class AuthRepository {
       required DateTime dob,
       required String authToken,
       required String churchId,
+      String maritalStatus = '',
+      DateTime? weddingDay,
+      int financialStabilityRating = 0,
+      bool financialSupportRequired = false,
+      String educationalQualification = '',
+      List<String> talentsAndGifts = const [],
+      List<String> churchGroupIds = const [],
       String? familyLabel,
       String? targetUid,
       String? targetEmail,
@@ -182,23 +199,49 @@ class AuthRepository {
       'name': name.trim(),
       'email': email,
       'phone': phone.trim(),
+      'contact': contact.trim(),
       'location': location.trim(),
       'address': address.trim(),
       'gender': gender.trim(),
       'category': category.trim(),
       'familyId': familyId.trim(),
       'dob': Timestamp.fromDate(dob),
+      'maritalStatus': maritalStatus.trim(),
+      'weddingDay':
+          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'financialStabilityRating': financialStabilityRating,
+      'financialSupportRequired': financialSupportRequired,
+      'educationalQualification': educationalQualification.trim(),
+      'talentsAndGifts': talentsAndGifts
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+      'churchGroupIds': churchGroupIds
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
       'approved': approved,
       'authToken': authToken,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    await _syncChurchGroupMemberships(
+      churchId: churchId,
+      userId: uid,
+      name: name.trim(),
+      email: email,
+      phone: phone.trim(),
+      category: category.trim(),
+      churchGroupIds: churchGroupIds,
+    );
 
     if (category.trim() == 'family') {
       await FirestorePaths.churchFamilies(_firestore, churchId)
           .doc(familyId.trim())
           .set({
         'familyId': familyId.trim(),
-        'label': (familyLabel ?? name).trim(),
+        'familyHead': name.trim(),
+        'familyHeadUid': uid,
         'category': category.trim(),
         'churchId': churchId,
         'createdAt': FieldValue.serverTimestamp(),
@@ -223,5 +266,51 @@ class AuthRepository {
     required String uid,
   }) {
     return FirestorePaths.churchUserDoc(_firestore, churchId, uid).get();
+  }
+
+  Future<void> _syncChurchGroupMemberships({
+    required String churchId,
+    required String userId,
+    required String name,
+    required String email,
+    required String phone,
+    required String category,
+    required List<String> churchGroupIds,
+  }) async {
+    final batch = _firestore.batch();
+
+    for (final group in churchGroupDefinitions) {
+      final groupDoc = FirestorePaths.churchGroupDoc(
+        _firestore,
+        churchId,
+        group.id,
+      );
+      final memberDoc = FirestorePaths
+          .churchGroupMembers(_firestore, churchId, group.id)
+          .doc(userId);
+
+      batch.set(groupDoc, {
+        'id': group.id,
+        'label': group.label,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (churchGroupIds.contains(group.id)) {
+        batch.set(memberDoc, {
+          'uid': userId,
+          'email': email.trim().toLowerCase(),
+          'name': name,
+          'phone': phone,
+          'category': category,
+          'groupId': group.id,
+          'groupLabel': group.label,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      } else {
+        batch.delete(memberDoc);
+      }
+    }
+
+    await batch.commit();
   }
 }

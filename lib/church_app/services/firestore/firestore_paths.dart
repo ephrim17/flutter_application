@@ -45,6 +45,7 @@ class FirestorePaths {
   static const events = 'events';
   static const pastor = 'pastor';
   static const families = 'families';
+  static const groups = 'groups';
   static const notificationRequests = 'notification_requests';
 
   /// Church document
@@ -81,6 +82,27 @@ class FirestorePaths {
   static CollectionReference<Map<String, dynamic>> churchFamilies(
       FirebaseFirestore firestore, String churchId) {
     return churchDoc(firestore, churchId).collection(families);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchGroups(
+      FirebaseFirestore firestore, String churchId) {
+    return churchDoc(firestore, churchId).collection(groups);
+  }
+
+  static DocumentReference<Map<String, dynamic>> churchGroupDoc(
+    FirebaseFirestore firestore,
+    String churchId,
+    String groupId,
+  ) {
+    return churchGroups(firestore, churchId).doc(groupId);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchGroupMembers(
+    FirebaseFirestore firestore,
+    String churchId,
+    String groupId,
+  ) {
+    return churchGroupDoc(firestore, churchId, groupId).collection(users);
   }
 
   static CollectionReference<Map<String, dynamic>> churchNotificationRequests(

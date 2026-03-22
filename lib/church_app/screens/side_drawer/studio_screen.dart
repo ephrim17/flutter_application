@@ -1915,7 +1915,9 @@ class _VerseEditorSheetState extends State<_VerseEditorSheet> {
             itemBuilder: (context, index) {
               final chapter = index + 1;
               return ListTile(
-                title: Text('Chapter $chapter'),
+                title: Text(
+                  '${context.t('studio.chapter_prefix', fallback: 'Chapter')} $chapter',
+                ),
                 trailing: chapter == _selectedChapter
                     ? Icon(
                         Icons.check_circle,
@@ -1953,7 +1955,9 @@ class _VerseEditorSheetState extends State<_VerseEditorSheet> {
             itemBuilder: (context, index) {
               final verse = index + 1;
               return ListTile(
-                title: Text('Verse $verse'),
+                title: Text(
+                  '${context.t('studio.verse_prefix', fallback: 'Verse')} $verse',
+                ),
                 trailing: verse == _selectedVerse
                     ? Icon(
                         Icons.check_circle,

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
@@ -69,10 +70,15 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
         final verse = verses.isEmpty ? null : verses[Random().nextInt(verses.length)];
 
         if (verse == null) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(20),
             child: Center(
-              child: Text('No verse available right now.'),
+              child: Text(
+                context.t(
+                  'birthday.card_no_verse',
+                  fallback: 'No verse available right now.',
+                ),
+              ),
             ),
           );
         }
@@ -103,7 +109,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
               const SizedBox(height: 16),
 
               // 🎁 Title
-              Text('BIRTHDAY WISHES',
+              Text(context.t('birthday.card_title', fallback: 'BIRTHDAY WISHES'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineLarge!.copyWith(
                       fontWeight: FontWeight.bold,
@@ -147,8 +153,11 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                         ),
                       ),
                       onPressed: _saveAsImage,
-                      child: const Text(
-                        "Save as Image",
+                      child: Text(
+                        context.t(
+                          'birthday.save_image',
+                          fallback: 'Save as Image',
+                        ),
                         style: TextStyle(fontSize: 16),
                       ),
                     ),

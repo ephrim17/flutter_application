@@ -5,22 +5,22 @@ class LinearScreenBackground extends StatelessWidget {
     super.key,
     required this.child,
     this.topOpacity = 28,
+    this.solidBackground = false,
   });
 
   final Widget child;
   final int topOpacity;
+  final bool solidBackground;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isBlackWhitePreflow =
-        theme.scaffoldBackgroundColor == Colors.black &&
-        theme.colorScheme.primary == Colors.white;
+    final useSolidBackground = solidBackground;
 
     return Container(
       decoration: BoxDecoration(
-        color: isBlackWhitePreflow ? theme.scaffoldBackgroundColor : null,
-        gradient: isBlackWhitePreflow
+        color: useSolidBackground ? theme.scaffoldBackgroundColor : null,
+        gradient: useSolidBackground
             ? null
             : LinearGradient(
                 begin: Alignment.topCenter,

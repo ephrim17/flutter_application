@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LinkifiedText extends StatefulWidget {
@@ -112,7 +113,14 @@ class _LinkifiedTextState extends State<LinkifiedText> {
 
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open link')),
+        SnackBar(
+          content: Text(
+            context.t(
+              'common.open_link_failed',
+              fallback: 'Unable to open link',
+            ),
+          ),
+        ),
       );
     }
   }

@@ -705,10 +705,18 @@ class _VerseShareModalState extends State<VerseShareModal> {
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text('The current date is always shown on the card.'),
+          Text(
+            context.t(
+              'verse_share.footer_date_note',
+              fallback: 'The current date is always shown on the card.',
+            ),
+          ),
           const SizedBox(height: 20),
-          const Text(
-            'Footer Color',
+          Text(
+            context.t(
+              'verse_share.footer_color',
+              fallback: 'Footer Color',
+            ),
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -754,17 +762,27 @@ class _VerseShareModalState extends State<VerseShareModal> {
             TextField(
               controller: _storyCaptionController,
               maxLength: 30,
-              decoration: const InputDecoration(
-                labelText: 'Bottom-left text (optional)',
-                helperText: 'Only shown in story mode',
+              decoration: InputDecoration(
+                labelText: context.t(
+                  'verse_share.bottom_left_text_optional',
+                  fallback: 'Bottom-left text (optional)',
+                ),
+                helperText: context.t(
+                  'verse_share.story_footer_helper',
+                  fallback: 'Only shown in story mode',
+                ),
               ),
               onChanged: (_) {
                 setState(() {});
               },
             )
           else
-            const Text(
-              'Switch to story mode if you want to add an optional footer note.',
+            Text(
+              context.t(
+                'verse_share.story_footer_note',
+                fallback:
+                    'Switch to story mode if you want to add an optional footer note.',
+              ),
             ),
         ],
       ),

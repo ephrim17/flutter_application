@@ -119,7 +119,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  labelText: "Title",
+                  labelText: ref.t('feed.title_label', fallback: 'Title'),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -146,7 +146,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 minLines: 3,
                 maxLines: null, // 👈 This makes it grow infinitely
                 decoration: InputDecoration(
-                  labelText: "Description",
+                  labelText:
+                      ref.t('feed.description_label', fallback: 'Description'),
                   alignLabelWithHint: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -176,11 +177,24 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                       _sharePersonalDetails = value;
                     });
                   },
-                  title: const Text('Share personal details'),
+                  title: Text(
+                    ref.t(
+                      'feed.global_share_details_title',
+                      fallback: 'Share personal details',
+                    ),
+                  ),
                   subtitle: Text(
                     _sharePersonalDetails
-                        ? 'Name, category, address, DOB, email, and phone will be available from this global post.'
-                        : 'Only name, church, and church pastor will be shown from this global post.',
+                        ? ref.t(
+                            'feed.global_share_details_enabled',
+                            fallback:
+                                'Name, category, address, DOB, email, and phone will be available from this global post.',
+                          )
+                        : ref.t(
+                            'feed.global_share_details_disabled',
+                            fallback:
+                                'Only name, church, and church pastor will be shown from this global post.',
+                          ),
                   ),
                 ),
               ],
@@ -192,7 +206,10 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                         icon: const Icon(Icons.image),
                         label: Text(
                           widget.requireImage
-                              ? 'Change Image'
+                              ? ref.t(
+                                  'feed.change_image',
+                                  fallback: 'Change Image',
+                                )
                               : ref.t(
                                   'feed.add_image_optional',
                                   fallback: 'Add Image (Optional)',
@@ -247,9 +264,14 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
 
                           if (widget.requireImage && selectedImage == null) {
                             messenger.showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('An image is required for this post'),
+                              SnackBar(
+                                content: Text(
+                                  ref.t(
+                                    'feed.image_required',
+                                    fallback:
+                                        'An image is required for this post',
+                                  ),
+                                ),
                               ),
                             );
                             return;

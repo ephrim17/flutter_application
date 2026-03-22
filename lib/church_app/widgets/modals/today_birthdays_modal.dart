@@ -89,7 +89,7 @@ class _TodayBirthdaysModal extends StatelessWidget {
                             ),
                           ),
                           title: Text(member.name),
-                          subtitle: Text(_formatDob(member.dob)),
+                          subtitle: Text(_formatDob(context, member.dob)),
                           trailing: FilledButton(
                             onPressed: () {
                               showModalBottomSheet<void>(
@@ -192,14 +192,28 @@ class _BirthdayPostComposerModalState
 
     if (title.isEmpty || description.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Title and description are required')),
+        SnackBar(
+          content: Text(
+            context.t(
+              'birthday.title_required',
+              fallback: 'Title and description are required',
+            ),
+          ),
+        ),
       );
       return;
     }
 
     if (_generatedImage == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Birthday image is still being prepared')),
+        SnackBar(
+          content: Text(
+            context.t(
+              'birthday.image_pending',
+              fallback: 'Birthday image is still being prepared',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -258,8 +272,11 @@ class _BirthdayPostComposerModalState
             TextField(
               controller: _titleController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Title',
+              decoration: InputDecoration(
+                labelText: context.t(
+                  'birthday.title_label',
+                  fallback: 'Title',
+                ),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -268,8 +285,11 @@ class _BirthdayPostComposerModalState
               controller: _descriptionController,
               minLines: 3,
               maxLines: null,
-              decoration: const InputDecoration(
-                labelText: 'Description',
+              decoration: InputDecoration(
+                labelText: context.t(
+                  'birthday.description_label',
+                  fallback: 'Description',
+                ),
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -373,7 +393,12 @@ bool isBirthdayToday(DateTime? dob) {
   return dob.month == now.month && dob.day == now.day;
 }
 
-String _formatDob(DateTime? dob) {
-  if (dob == null) return 'Birthday date unavailable';
-  return 'Birthday: ${dob.day}/${dob.month}';
+String _formatDob(BuildContext context, DateTime? dob) {
+  if (dob == null) {
+    return context.t(
+      'birthday.date_unavailable',
+      fallback: 'Birthday date unavailable',
+    );
+  }
+  return '${context.t('birthday.date_prefix', fallback: 'Birthday')}: ${dob.day}/${dob.month}';
 }

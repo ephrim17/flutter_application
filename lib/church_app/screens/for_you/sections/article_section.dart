@@ -77,7 +77,9 @@ class ArticleSectionWidget extends ConsumerWidget {
         padding: EdgeInsets.all(16),
         child: CircularProgressIndicator(),
       ),
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) => Text(
+        '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+      ),
       data: (articles) {
         return ListView.builder(
           shrinkWrap: true,

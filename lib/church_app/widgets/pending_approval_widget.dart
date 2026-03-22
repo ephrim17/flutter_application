@@ -18,12 +18,18 @@ class PendingApprovalWidget extends ConsumerWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const AppBarTitle(text: "Approval Pending"),
+        title: AppBarTitle(
+          text: context.t(
+            'approval.pending_title',
+            fallback: 'Approval Pending',
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
       body: LinearScreenBackground(
+        solidBackground: true,
         child: SafeArea(
           child: Center(
             child: Padding(
@@ -56,7 +62,10 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Your access is waiting for approval',
+                      context.t(
+                        'approval.waiting_title',
+                        fallback: 'Your access is waiting for approval',
+                      ),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
@@ -64,7 +73,11 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'If an admin turned access off for this church, you can refresh your status here or go back and choose another church so you are not blocked.',
+                      context.t(
+                        'approval.waiting_message',
+                        fallback:
+                            'If an admin turned access off for this church, you can refresh your status here or go back and choose another church so you are not blocked.',
+                      ),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             height: 1.45,

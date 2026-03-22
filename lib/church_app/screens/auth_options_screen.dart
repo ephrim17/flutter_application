@@ -6,7 +6,6 @@ import 'package:flutter_application/church_app/screens/entry/login_entry_screen.
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
-import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 
 class AuthOptionsScreen extends StatelessWidget {
@@ -31,7 +30,8 @@ class AuthOptionsScreen extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: LinearScreenBackground(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),

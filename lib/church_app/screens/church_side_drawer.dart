@@ -68,7 +68,7 @@ class AppDrawer extends ConsumerWidget {
     final userAsync = ref.watch(appUserProvider);
     final isAdmin = ref.watch(isAdminProvider);
     final items = DrawerMenuItem.values
-        .where((item) => isAdmin || item != DrawerMenuItem.studio)
+        .where((item) => isAdmin || !item.adminOnly)
         .toList();
 
     return Drawer(

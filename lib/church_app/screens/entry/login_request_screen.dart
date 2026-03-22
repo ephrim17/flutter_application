@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -48,40 +48,60 @@ class LoginRequestScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
-  static const int _stepCount = 5;
-
   final _pageController = PageController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _emailController = TextEditingController();
   final _locationController = TextEditingController();
   final _addressController = TextEditingController();
   final _familyNameController = TextEditingController();
+  final _educationalQualificationController = TextEditingController();
+  final _talentsAndGiftsController = TextEditingController();
 
   int _stepIndex = 0;
   DateTime? _dob;
+  DateTime? _weddingDay;
   String _gender = '';
   String _category = '';
-  bool _isFetchingLocation = false;
+  String _maritalStatus = '';
   bool _useExistingFamilyId = false;
+  bool _financialSupportRequired = false;
   String? _selectedExistingFamilyId;
+  int _financialStabilityRating = 0;
+  Set<String> _selectedChurchGroupIds = <String>{};
   late final Future<List<String>> _familyIdsFuture;
 
   bool get _isEditMode => widget.existingMember != null;
+  bool get _showAdminSections => widget.adminCreateMode || _isEditMode;
+  int get _stepCount => _showAdminSections ? 3 : 2;
 
   @override
   void initState() {
     super.initState();
+    _syncCategoryWithMaritalStatus();
     _familyIdsFuture =
         ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
     final existingMember = widget.existingMember;
     if (existingMember != null) {
       _nameController.text = existingMember.name;
       _phoneController.text = existingMember.phone;
+      _contactController.text = existingMember.contact;
+      _emailController.text = existingMember.email;
       _locationController.text = existingMember.location;
       _addressController.text = existingMember.address;
       _dob = existingMember.dob;
+      _weddingDay = existingMember.weddingDay;
       _gender = existingMember.gender.trim().toLowerCase();
       _category = existingMember.category.trim().toLowerCase();
+      _maritalStatus = existingMember.maritalStatus.trim().toLowerCase();
+      _financialStabilityRating = existingMember.financialStabilityRating;
+      _financialSupportRequired = existingMember.financialSupportRequired;
+      _educationalQualificationController.text =
+          existingMember.educationalQualification;
+      _talentsAndGiftsController.text =
+          existingMember.talentsAndGifts.join(', ');
+      _selectedChurchGroupIds = existingMember.churchGroupIds.toSet();
 
       if (_category == 'family') {
         _selectedExistingFamilyId = existingMember.familyId.trim().isEmpty
@@ -91,6 +111,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         _familyNameController.text =
             _familySeedFromId(existingMember.familyId.trim());
       }
+      _syncCategoryWithMaritalStatus();
+    } else if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
+      _emailController.text = widget.initialEmail!;
     }
   }
 
@@ -99,78 +122,25 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     _pageController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _contactController.dispose();
+    _emailController.dispose();
     _locationController.dispose();
     _addressController.dispose();
     _familyNameController.dispose();
+    _educationalQualificationController.dispose();
+    _talentsAndGiftsController.dispose();
     super.dispose();
   }
 
-  Future<void> _fillCurrentLocation() async {
-    final serviceDisabledMessage = context.t(
-      'auth.location_service_disabled',
-      fallback: 'Location services are disabled',
-    );
-    final permissionDeniedMessage = context.t(
-      'auth.location_permission_denied',
-      fallback: 'Location permission denied',
-    );
-    final permissionDeniedForeverMessage = context.t(
-      'auth.location_permission_denied_forever',
-      fallback:
-          'Location permission denied permanently. Enable it from settings.',
-    );
-    final fetchFailedMessage = context.t(
-      'auth.location_fetch_failed',
-      fallback: 'Unable to fetch current location',
-    );
-
-    setState(() {
-      _isFetchingLocation = true;
-    });
-
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) throw serviceDisabledMessage;
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied) {
-        throw permissionDeniedMessage;
-      }
-      if (permission == LocationPermission.deniedForever) {
-        throw permissionDeniedForeverMessage;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _locationController.text =
-            'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
-      });
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error is String ? error : fetchFailedMessage),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingLocation = false;
-        });
-      }
-    }
-  }
-
   String _resolveFamilyId() {
+    if (!_showAdminSections) {
+      final seed = _nameController.text.trim();
+      if (seed.isEmpty) return '';
+      final normalizedSeed = _normalizeCategorySeed(seed);
+      if (normalizedSeed.isEmpty) return '';
+      return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
+    }
+
     if (_category == 'family' &&
         _useExistingFamilyId &&
         _selectedExistingFamilyId != null &&
@@ -233,6 +203,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     return '$displayName$suffix family';
   }
 
+  void _syncCategoryWithMaritalStatus() {
+    _category = _maritalStatus == 'married' ? 'family' : 'individual';
+    if (_category != 'family') {
+      _useExistingFamilyId = false;
+      _selectedExistingFamilyId = null;
+      _familyNameController.clear();
+    }
+  }
+
   String _familySeedFromId(String familyId) {
     final normalized = familyId.trim().toLowerCase();
     if (normalized.isEmpty) {
@@ -252,7 +231,126 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         .join(' ');
   }
 
+  int? _calculatedAge() {
+    if (_dob == null) return null;
+    final now = DateTime.now();
+    var age = now.year - _dob!.year;
+    final hasHadBirthdayThisYear =
+        now.month > _dob!.month ||
+            (now.month == _dob!.month && now.day >= _dob!.day);
+    if (!hasHadBirthdayThisYear) {
+      age -= 1;
+    }
+    return age < 0 ? null : age;
+  }
+
+  List<String> _parsedTalentsAndGifts() {
+    return _talentsAndGiftsController.text
+        .split(RegExp(r'[,\\n]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> _pickDob() async {
+    FocusScope.of(context).unfocus();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate:
+          _dob ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _dob = pickedDate;
+      });
+    }
+  }
+
+  Future<void> _pickWeddingDay() async {
+    FocusScope.of(context).unfocus();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _weddingDay ?? _dob ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _weddingDay = pickedDate;
+      });
+    }
+  }
+
   String? _validateCurrentStep() {
+    if (_showAdminSections) {
+      switch (_stepIndex) {
+        case 0:
+          final name = _nameController.text.trim();
+          final contact = _phoneController.text.trim();
+          if (name.isEmpty) {
+            return context.t(
+              'members.member_name_required',
+              fallback: 'Please enter the member name',
+            );
+          }
+          if (name.length < 3) {
+            return context.t(
+              'auth.name_min_length',
+              fallback: 'Name must be at least 3 characters',
+            );
+          }
+          final phoneRegex = RegExp(r'^[6-9]\d{9}$');
+          if (!phoneRegex.hasMatch(contact)) {
+            return context.t(
+              'auth.phone_invalid',
+              fallback: 'Enter a valid 10-digit phone number',
+            );
+          }
+          if (_addressController.text.trim().isEmpty) {
+            return context.t(
+              'members.member_address_required',
+              fallback: 'Please enter the member address',
+            );
+          }
+          return null;
+        case 1:
+          if (_maritalStatus == 'married' && _weddingDay == null) {
+            return context.t(
+              'members.member_wedding_day_required',
+              fallback: 'Please select the wedding day',
+            );
+          }
+          if (_gender.isEmpty) {
+            return context.t(
+              'members.member_gender_required',
+              fallback: 'Please select the member gender',
+            );
+          }
+          if (_dob == null) {
+            return context.t(
+              'members.member_dob_required',
+              fallback: 'Please select the member date of birth',
+            );
+          }
+          if (_category == 'family') {
+            if (_useExistingFamilyId &&
+                (_selectedExistingFamilyId == null ||
+                    _selectedExistingFamilyId!.trim().isEmpty)) {
+              return 'Please select or create a family ID';
+            }
+            if (!_useExistingFamilyId &&
+                _familyNameController.text.trim().isEmpty) {
+              return 'Please enter a family name';
+            }
+          }
+          return null;
+        default:
+          return null;
+      }
+    }
+
     switch (_stepIndex) {
       case 0:
         final name = _nameController.text.trim();
@@ -274,8 +372,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             fallback: 'Enter a valid 10-digit phone number',
           );
         }
-        return null;
-      case 1:
         if (_gender.isEmpty) {
           return context.t(
             'auth.gender_required',
@@ -288,37 +384,22 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             fallback: 'Please select your date of birth',
           );
         }
-        return null;
-      case 2:
-        if (_category.isEmpty) {
-          return context.t(
-            'auth.category_required',
-            fallback: 'Please select your category',
-          );
-        }
-        if (_category == 'family') {
-          if (_useExistingFamilyId &&
-              (_selectedExistingFamilyId == null ||
-                  _selectedExistingFamilyId!.trim().isEmpty)) {
-            return context.t(
-              'auth.family_id_required',
-              fallback: 'Please select or create a family ID',
-            );
-          }
-          if (!_useExistingFamilyId &&
-              _familyNameController.text.trim().isEmpty) {
-            return context.t(
-              'auth.family_name_required',
-              fallback: 'Please enter a family name',
-            );
-          }
-        }
-        return null;
-      case 3:
         if (_addressController.text.trim().isEmpty) {
           return context.t(
             'auth.address_required',
             fallback: 'Please enter your address',
+          );
+        }
+        if (_maritalStatus.isEmpty) {
+          return context.t(
+            'members.marital_status_required',
+            fallback: 'Please select your marital status',
+          );
+        }
+        if (_maritalStatus == 'married' && _weddingDay == null) {
+          return context.t(
+            'members.wedding_day_required',
+            fallback: 'Please select your wedding day',
           );
         }
         return null;
@@ -358,8 +439,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
     if (firebaseUser == null && !widget.adminCreateMode) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Create your account first before requesting access.'),
+        SnackBar(
+          content: Text(
+            context.t(
+              'members.account_required_before_request',
+              fallback: 'Create your account first before requesting access.',
+            ),
+          ),
         ),
       );
       return;
@@ -405,12 +491,23 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           widget.existingMember!.uid,
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
+          contact: _showAdminSections
+              ? _phoneController.text.trim()
+              : _contactController.text.trim(),
           location: _locationController.text.trim(),
           address: _addressController.text.trim(),
           gender: _gender,
           category: _category,
           familyId: familyId,
           dob: _dob!,
+          maritalStatus: _maritalStatus,
+          weddingDay: _weddingDay,
+          financialStabilityRating: _financialStabilityRating,
+          financialSupportRequired: _financialSupportRequired,
+          educationalQualification:
+              _educationalQualificationController.text.trim(),
+          talentsAndGifts: _parsedTalentsAndGifts(),
+          churchGroupIds: _selectedChurchGroupIds.toList(),
           familyLabel: _category == 'family' && !_useExistingFamilyId
               ? _familyNameController.text.trim()
               : null,
@@ -418,8 +515,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Member updated successfully.'),
+          SnackBar(
+            content: Text(
+              context.t(
+                'members.member_updated_success',
+                fallback: 'Member updated successfully.',
+              ),
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -466,6 +568,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       await ref.read(authRepositoryProvider).requestAccess(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
+            contact: _showAdminSections
+                ? _phoneController.text.trim()
+                : _contactController.text.trim(),
             location: _locationController.text.trim(),
             address: _addressController.text.trim(),
             gender: _gender,
@@ -474,6 +579,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             dob: _dob!,
             authToken: authToken,
             churchId: widget.churchId,
+            maritalStatus: _maritalStatus,
+            weddingDay: _weddingDay,
+            financialStabilityRating: _financialStabilityRating,
+            financialSupportRequired: _financialSupportRequired,
+            educationalQualification:
+                _educationalQualificationController.text.trim(),
+            talentsAndGifts: _parsedTalentsAndGifts(),
+            churchGroupIds: _selectedChurchGroupIds.toList(),
             familyLabel: _category == 'family' && !_useExistingFamilyId
                 ? _familyNameController.text.trim()
                 : null,
@@ -487,8 +600,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       if (widget.adminCreateMode) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Member created successfully.'),
+          SnackBar(
+            content: Text(
+              context.t(
+                'members.member_created_success',
+                fallback: 'Member created successfully.',
+              ),
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -543,6 +661,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         scrolledUnderElevation: 0,
       ),
       body: LinearScreenBackground(
+        solidBackground: true,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -552,403 +671,726 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                   child: PageView(
                     controller: _pageController,
                     physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: _isEditMode
-                              ? 'Edit member details'
-                              : widget.adminCreateMode
-                              ? 'Enter member details'
-                              : 'Tell us about you',
-                          subtitle: _isEditMode
-                              ? 'Update the member details below.'
-                              : widget.adminCreateMode
-                              ? 'Tell us about your member.'
-                              : 'Start with your basic details.',
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _nameController,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: context.t('auth.name_label',
-                                      fallback: widget.adminCreateMode
-                                          ? 'Member Name'
-                                          : 'Your Name'),
-                                  helperText: context.t(
-                                    'auth.name_helper',
-                                    fallback: widget.adminCreateMode
-                                        ? 'Enter your member name using letters only'
-                                        : 'Name should have only characters, not numbers',
-                                  ),
+                    children: _showAdminSections
+                        ? [
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.basic_details_title',
+                                  fallback: 'Basic Details',
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                textInputAction: TextInputAction.done,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.phone_label',
-                                    fallback: widget.adminCreateMode
-                                        ? "Member's Phone Number"
-                                        : 'Phone Number',
-                                  ),
+                                subtitle: context.t(
+                                  'members.basic_details_subtitle',
+                                  fallback:
+                                      'Capture the member information in one place.',
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: widget.adminCreateMode
-                              ? 'Member identity'
-                              : 'Identity',
-                          subtitle: widget.adminCreateMode
-                              ? "What is your member's birthday?"
-                              : 'A couple of personal details.',
-                          child: Column(
-                            children: [
-                              DropdownButtonFormField<String>(
-                                value: _gender.isEmpty ? null : _gender,
-                                decoration: InputDecoration(
-                                  labelText: context.t('auth.gender_label',
-                                      fallback: widget.adminCreateMode
-                                          ? "Member's Gender"
-                                          : 'Gender'),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'male', child: Text('Male')),
-                                  DropdownMenuItem(
-                                      value: 'female', child: Text('Female')),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _gender = value ?? '';
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              InkWell(
-                                onTap: () async {
-                                  FocusScope.of(context).unfocus();
-                                  final pickedDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime.now().subtract(
-                                      const Duration(days: 365 * 18),
-                                    ),
-                                    firstDate: DateTime(1900),
-                                    lastDate: DateTime.now(),
-                                  );
-                                  if (pickedDate != null) {
-                                    setState(() {
-                                      _dob = pickedDate;
-                                    });
-                                  }
-                                },
-                                child: InputDecorator(
-                                  decoration: InputDecoration(
-                                    labelText: context.t('auth.dob_label',
-                                        fallback: 'Date of Birth'),
-                                    suffixIcon:
-                                        const Icon(Icons.calendar_today),
-                                  ),
-                                  child: Text(
-                                    _dob == null
-                                        ? context.t(
-                                            'auth.dob_hint',
-                                            fallback: widget.adminCreateMode
-                                                ? "What is your member's birthday?"
-                                                : 'Select your date of birth',
-                                          )
-                                        : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                            '${_dob!.month.toString().padLeft(2, '0')}/'
-                                            '${_dob!.year}',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: 'Household',
-                          subtitle: widget.adminCreateMode
-                              ? 'Choose whether your member belongs to a family or is an individual.'
-                              : 'Choose whether this request is for a family or an individual.',
-                          child: FutureBuilder<List<String>>(
-                            future: _familyIdsFuture,
-                            builder: (context, snapshot) {
-                              final familyIds =
-                                  snapshot.data ?? const <String>[];
-                              final selectedFamilyValue =
-                                  familyIds.contains(_selectedExistingFamilyId)
-                                      ? _selectedExistingFamilyId
-                                      : null;
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  DropdownButtonFormField<String>(
-                                    value: _category.isEmpty ? null : _category,
-                                    decoration: InputDecoration(
-                                      labelText: context.t(
-                                        'auth.category_label',
-                                        fallback: 'Category',
+                                child: Column(
+                                  children: [
+                                    TextField(
+                                      controller: _nameController,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.name_label',
+                                          fallback: 'Name',
+                                        ),
                                       ),
                                     ),
-                                    items: const [
-                                      DropdownMenuItem(
-                                          value: 'family',
-                                          child: Text('Family')),
-                                      DropdownMenuItem(
-                                        value: 'individual',
-                                        child: Text('Individual'),
-                                      ),
-                                    ],
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _category = value ?? '';
-                                        if (_category != 'family') {
-                                          _useExistingFamilyId = false;
-                                          _selectedExistingFamilyId = null;
-                                          _familyNameController.clear();
-                                        }
-                                      });
-                                    },
-                                  ),
-                                  if (_category == 'family') ...[
                                     const SizedBox(height: 16),
-                                    if (familyIds.isNotEmpty)
-                                      SwitchListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(
-                                          context.t(
-                                            'auth.family_existing_toggle',
-                                            fallback: 'Use existing family ID',
+                                    InkWell(
+                                      onTap: _pickDob,
+                                      child: InputDecorator(
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'auth.dob_label',
+                                            fallback: 'Date of Birth',
+                                          ),
+                                          suffixIcon: Icon(Icons.calendar_today),
+                                        ),
+                                        child: Text(
+                                          _dob == null
+                                              ? context.t(
+                                                  'auth.dob_select',
+                                                  fallback:
+                                                      'Select date of birth',
+                                                )
+                                              : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                                  '${_dob!.month.toString().padLeft(2, '0')}/'
+                                                  '${_dob!.year}',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.age_label',
+                                          fallback: 'Age',
+                                        ),
+                                      ),
+                                      child: Text(
+                                        _calculatedAge()?.toString() ??
+                                            context.t(
+                                              'auth.age_hint',
+                                              fallback:
+                                                  'Select DOB to calculate age',
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      value: _gender.isEmpty ? null : _gender,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.gender_label',
+                                          fallback: 'Gender',
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'male',
+                                          child: Text(
+                                            context.t(
+                                              'common.male',
+                                              fallback: 'Male',
+                                            ),
                                           ),
                                         ),
-                                        value: _useExistingFamilyId,
+                                        DropdownMenuItem(
+                                          value: 'female',
+                                          child: Text(
+                                            context.t(
+                                              'common.female',
+                                              fallback: 'Female',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _gender = value ?? '';
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _phoneController,
+                                      keyboardType: TextInputType.phone,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.contact_label',
+                                          fallback: 'Contact',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _addressController,
+                                      keyboardType:
+                                          TextInputType.streetAddress,
+                                      maxLines: 3,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.address_label',
+                                          fallback: 'Address',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      value: _maritalStatus.isEmpty
+                                          ? null
+                                          : _maritalStatus,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.marital_status_label',
+                                          fallback: 'Marital Status',
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'individual',
+                                          child: Text(
+                                            context.t(
+                                              'common.individual',
+                                              fallback: 'Individual',
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'married',
+                                          child: Text(
+                                            context.t(
+                                              'common.married',
+                                              fallback: 'Married',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _maritalStatus = value ?? '';
+                                          _syncCategoryWithMaritalStatus();
+                                          if (_maritalStatus != 'married') {
+                                            _weddingDay = null;
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    if (_maritalStatus == 'married') ...[
+                                      const SizedBox(height: 16),
+                                      InkWell(
+                                        onTap: _pickWeddingDay,
+                                        child: InputDecorator(
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                              'members.wedding_day_label',
+                                              fallback: 'Wedding Day',
+                                            ),
+                                            suffixIcon:
+                                                Icon(Icons.calendar_today),
+                                          ),
+                                          child: Text(
+                                            _weddingDay == null
+                                                ? context.t(
+                                                    'members.wedding_day_hint',
+                                                    fallback:
+                                                        'Select wedding day',
+                                                  )
+                                                : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                                                    '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                                                    '${_weddingDay!.year}',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    if (_category == 'family') ...[
+                                      const SizedBox(height: 16),
+                                      FutureBuilder<List<String>>(
+                                        future: _familyIdsFuture,
+                                        builder: (context, snapshot) {
+                                          final familyIds =
+                                              snapshot.data ?? const <String>[];
+                                          final selectedFamilyValue =
+                                              familyIds.contains(
+                                                      _selectedExistingFamilyId)
+                                                  ? _selectedExistingFamilyId
+                                                  : null;
+
+                                          return Column(
+                                            children: [
+                                              if (familyIds.isNotEmpty)
+                                                SwitchListTile(
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                  title: Text(
+                                                    context.t(
+                                                      'auth.family_existing_toggle',
+                                                      fallback:
+                                                          'Use existing family ID',
+                                                    ),
+                                                  ),
+                                                  value: _useExistingFamilyId,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _useExistingFamilyId =
+                                                          value;
+                                                      if (!value) {
+                                                        _selectedExistingFamilyId =
+                                                            null;
+                                                      }
+                                                    });
+                                                  },
+                                                ),
+                                              const SizedBox(height: 8),
+                                              if (familyIds.isNotEmpty &&
+                                                  _useExistingFamilyId)
+                                                DropdownButtonFormField<String>(
+                                                  value: selectedFamilyValue,
+                                                  decoration: InputDecoration(
+                                                    labelText: context.t(
+                                                      'members.family_id_label',
+                                                      fallback: 'Family ID',
+                                                    ),
+                                                  ),
+                                                  items: familyIds
+                                                      .map(
+                                                        (familyId) =>
+                                                            DropdownMenuItem(
+                                                          value: familyId,
+                                                          child: Text(
+                                                            _formatFamilyOptionLabel(
+                                                              familyId,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      )
+                                                      .toList(),
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _selectedExistingFamilyId =
+                                                          value;
+                                                    });
+                                                  },
+                                                )
+                                              else
+                                                TextField(
+                                                  controller:
+                                                      _familyNameController,
+                                                  decoration: InputDecoration(
+                                                    labelText: context.t(
+                                                      'members.family_name_label',
+                                                      fallback: 'Family Name',
+                                                    ),
+                                                    helperText: context.t(
+                                                      'auth.family_name_helper',
+                                                      fallback:
+                                                          'Used to generate a family ID',
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.extended_information_title',
+                                  fallback: 'Extended Information',
+                                ),
+                                subtitle: context.t(
+                                  'members.extended_information_subtitle',
+                                  fallback:
+                                      'Capture financial, educational and gifting details.',
+                                ),
+                                child: Column(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        context.t(
+                                          'members.financial_stability_rating',
+                                          fallback:
+                                              'Financial Stability Rating: {rating}/5',
+                                        ).replaceAll(
+                                          '{rating}',
+                                          _financialStabilityRating.toString(),
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
+                                      ),
+                                    ),
+                                    Slider(
+                                      value: _financialStabilityRating
+                                          .toDouble(),
+                                      min: 0,
+                                      max: 5,
+                                      divisions: 5,
+                                      label: '$_financialStabilityRating',
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _financialStabilityRating =
+                                              value.round();
+                                        });
+                                      },
+                                    ),
+                                    SwitchListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(
+                                        context.t(
+                                          'members.financial_support_required',
+                                          fallback:
+                                              'Financial Support Required',
+                                        ),
+                                      ),
+                                      value: _financialSupportRequired,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _financialSupportRequired = value;
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller:
+                                          _educationalQualificationController,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.educational_qualification',
+                                          fallback:
+                                              'Educational Qualification',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _talentsAndGiftsController,
+                                      minLines: 2,
+                                      maxLines: 4,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.talents_and_gifts',
+                                          fallback: 'Talents & Gifts',
+                                        ),
+                                        helperText: context.t(
+                                          'members.talents_and_gifts_helper',
+                                          fallback:
+                                              'Add comma-separated talents or gifts',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.church_groups_title',
+                                  fallback: 'Church Groups',
+                                ),
+                                subtitle: context.t(
+                                  'members.church_groups_subtitle',
+                                  fallback:
+                                      'Select the ministries and teams this member belongs to.',
+                                ),
+                                child: Column(
+                                  children: [
+                                    ...churchGroupDefinitions.map(
+                                      (group) => CheckboxListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(group.label),
+                                        value: _selectedChurchGroupIds
+                                            .contains(group.id),
                                         onChanged: (value) {
                                           setState(() {
-                                            _useExistingFamilyId = value;
-                                            if (!value) {
-                                              _selectedExistingFamilyId = null;
+                                            if (value == true) {
+                                              _selectedChurchGroupIds
+                                                  .add(group.id);
+                                            } else {
+                                              _selectedChurchGroupIds
+                                                  .remove(group.id);
                                             }
                                           });
                                         },
                                       ),
-                                    const SizedBox(height: 8),
-                                    if (familyIds.isNotEmpty &&
-                                        _useExistingFamilyId)
-                                      DropdownButtonFormField<String>(
-                                        value: selectedFamilyValue,
-                                        decoration: InputDecoration(
-                                          labelText: context.t(
-                                            'auth.family_id_label',
-                                            fallback: 'Family ID',
-                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ]
+                        : [
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.basic_details_title',
+                                  fallback: 'Basic Details',
+                                ),
+                                subtitle: context.t(
+                                  'members.request_basic_details_subtitle',
+                                  fallback:
+                                      'Capture your basic details before submitting your request.',
+                                ),
+                                child: Column(
+                                  children: [
+                                    TextField(
+                                      controller: _nameController,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.name_label',
+                                          fallback: 'Your Name',
                                         ),
-                                        items: familyIds
-                                            .map(
-                                              (familyId) => DropdownMenuItem(
-                                                value: familyId,
-                                                child: Text(
-                                                  _formatFamilyOptionLabel(
-                                                      familyId),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _selectedExistingFamilyId = value;
-                                          });
-                                        },
-                                      )
-                                    else
-                                      TextField(
-                                        controller: _familyNameController,
-                                        decoration: InputDecoration(
-                                          labelText: context.t(
-                                            'auth.family_name_label',
-                                            fallback: 'Family Name',
-                                          ),
-                                          helperText: context.t(
-                                            'auth.family_name_helper',
-                                            fallback:
-                                                'Used to generate a new family ID',
-                                          ),
+                                        helperText: context.t(
+                                          'auth.name_helper',
+                                          fallback:
+                                              'Name should have only characters, not numbers',
                                         ),
                                       ),
-                                  ],
-                                  if (_category == 'individual') ...[
+                                    ),
                                     const SizedBox(height: 16),
-                                    Text(
-                                      context.t(
-                                        'auth.individual_family_hint',
-                                        fallback:
-                                            'Family ID will be generated automatically',
+                                    InkWell(
+                                      onTap: _pickDob,
+                                      child: InputDecorator(
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'auth.dob_label',
+                                            fallback: 'Date of Birth',
+                                          ),
+                                          suffixIcon:
+                                              const Icon(Icons.calendar_today),
+                                        ),
+                                        child: Text(
+                                          _dob == null
+                                              ? context.t(
+                                                  'auth.dob_hint',
+                                                  fallback:
+                                                      'Select your date of birth',
+                                                )
+                                              : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                                  '${_dob!.month.toString().padLeft(2, '0')}/'
+                                                  '${_dob!.year}',
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      _resolveFamilyId(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
+                                    const SizedBox(height: 16),
+                                    InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.age_label',
+                                          fallback: 'Age',
+                                        ),
+                                      ),
+                                      child: Text(
+                                        _calculatedAge()?.toString() ??
+                                            context.t(
+                                              'auth.age_hint',
+                                              fallback:
+                                                  'Select DOB to calculate age',
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      value: _gender.isEmpty ? null : _gender,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.gender_label',
+                                          fallback: 'Gender',
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'male',
+                                          child: Text(
+                                            context.t(
+                                              'common.male',
+                                              fallback: 'Male',
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'female',
+                                          child: Text(
+                                            context.t(
+                                              'common.female',
+                                              fallback: 'Female',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _gender = value ?? '';
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _phoneController,
+                                      keyboardType: TextInputType.phone,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText:
+                                            context.t('auth.phone_label',
+                                                fallback: 'Contact'),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _addressController,
+                                      keyboardType:
+                                          TextInputType.streetAddress,
+                                      maxLines: 3,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'auth.address_label',
+                                          fallback: 'Address',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      value: _maritalStatus.isEmpty
+                                          ? null
+                                          : _maritalStatus,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.marital_status_label',
+                                          fallback: 'Marital Status',
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'individual',
+                                          child: Text(
+                                            context.t(
+                                              'common.individual',
+                                              fallback: 'Individual',
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'married',
+                                          child: Text(
+                                            context.t(
+                                              'common.married',
+                                              fallback: 'Married',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _maritalStatus = value ?? '';
+                                          _syncCategoryWithMaritalStatus();
+                                          if (_maritalStatus != 'married') {
+                                            _weddingDay = null;
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    if (_maritalStatus == 'married') ...[
+                                      const SizedBox(height: 16),
+                                      InkWell(
+                                        onTap: _pickWeddingDay,
+                                        child: InputDecorator(
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                              'members.wedding_day_label',
+                                              fallback: 'Wedding Day',
+                                            ),
+                                            suffixIcon:
+                                                Icon(Icons.calendar_today),
+                                          ),
+                                          child: Text(
+                                            _weddingDay == null
+                                                ? context.t(
+                                                    'members.wedding_day_hint',
+                                                    fallback:
+                                                        'Select wedding day',
+                                                  )
+                                                : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                                                    '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                                                    '${_weddingDay!.year}',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.review_title',
+                                  fallback: 'Review',
+                                ),
+                                subtitle: context.t(
+                                  'members.review_subtitle',
+                                  fallback:
+                                      'Check the details before submitting your request.',
+                                ),
+                                child: _ReviewCard(
+                                  rows: [
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.name_label',
+                                        fallback: 'Name',
+                                      ),
+                                      _nameController.text.trim(),
+                                    ),
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.contact_label',
+                                        fallback: 'Contact',
+                                      ),
+                                      _phoneController.text.trim(),
+                                    ),
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.gender_label',
+                                        fallback: 'Gender',
+                                      ),
+                                      _gender,
+                                    ),
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.date_of_birth_label',
+                                        fallback: 'Date of Birth',
+                                      ),
+                                      _dob == null
+                                          ? ''
+                                          : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                              '${_dob!.month.toString().padLeft(2, '0')}/'
+                                              '${_dob!.year}',
+                                    ),
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.marital_status_label',
+                                        fallback: 'Marital Status',
+                                      ),
+                                      _maritalStatus,
+                                    ),
+                                    if (_maritalStatus == 'married')
+                                      _ReviewRow(
+                                        context.t(
+                                          'members.wedding_day_label',
+                                          fallback: 'Wedding Day',
+                                        ),
+                                        _weddingDay == null
+                                            ? ''
+                                            : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                                                '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                                                '${_weddingDay!.year}',
+                                      ),
+                                    _ReviewRow(
+                                      context.t(
+                                        'members.address_label',
+                                        fallback: 'Address',
+                                      ),
+                                      _addressController.text.trim(),
                                     ),
                                   ],
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: 'Where are you located?',
-                          subtitle: widget.adminCreateMode
-                              ? "Add your member's address. Google Maps location is optional."
-                              : 'Add your address. Google Maps location is optional.',
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _locationController,
-                                keyboardType: TextInputType.url,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.location_label',
-                                    fallback: widget.adminCreateMode
-                                        ? "Member's Google Maps Location (Optional)"
-                                        : 'Google Maps Location (Optional)',
-                                  ),
-                                  helperText: context.t(
-                                    'auth.location_helper',
-                                    fallback: widget.adminCreateMode
-                                        ? "Use your member's current location or paste their Google Maps link if you want"
-                                        : 'Use current location or paste your Google Maps link if you want',
-                                  ),
-                                  suffixIcon: _isFetchingLocation
-                                      ? const Padding(
-                                          padding: EdgeInsets.all(12),
-                                          child: SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2),
-                                          ),
-                                        )
-                                      : IconButton(
-                                          onPressed: _fillCurrentLocation,
-                                          icon: const Icon(Icons.my_location),
-                                        ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: _isFetchingLocation
-                                      ? null
-                                      : _fillCurrentLocation,
-                                  icon: const Icon(
-                                      Icons.location_searching_outlined),
-                                  label: Text(
-                                    context.t(
-                                      'auth.location_use_current',
-                                      fallback: widget.adminCreateMode
-                                          ? 'Use Member Current Location'
-                                          : 'Use Current Location',
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _addressController,
-                                keyboardType: TextInputType.streetAddress,
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: context.t(
-                                    'auth.address_label',
-                                    fallback: widget.adminCreateMode
-                                        ? "Member's Address"
-                                        : 'Address',
-                                  ),
-                                  helperText: context.t(
-                                    'auth.address_helper',
-                                    fallback: widget.adminCreateMode
-                                        ? "Enter your member's address manually"
-                                        : 'Enter your address manually',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _StepViewport(
-                        churchLogo: widget.churchLogo,
-                        churchName: widget.churchName,
-                        stepIndex: _stepIndex,
-                        stepCount: _stepCount,
-                        progress: progress,
-                        child: _StepShell(
-                          title: 'Review',
-                          subtitle: _isEditMode
-                              ? 'Check the member details before saving your changes.'
-                              : widget.adminCreateMode
-                              ? 'Check your member details before creating the member.'
-                              : 'Check the details before submitting your request.',
-                          child: _ReviewCard(
-                            rows: [
-                              _ReviewRow('Name', _nameController.text.trim()),
-                              _ReviewRow('Phone', _phoneController.text.trim()),
-                              _ReviewRow('Gender', _gender),
-                              _ReviewRow(
-                                'Date of Birth',
-                                _dob == null
-                                    ? ''
-                                    : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                        '${_dob!.month.toString().padLeft(2, '0')}/'
-                                        '${_dob!.year}',
-                              ),
-                              _ReviewRow('Category', _category),
-                              _ReviewRow('Family ID', _resolveFamilyId()),
-                              _ReviewRow(
-                                  'Location', _locationController.text.trim()),
-                              _ReviewRow(
-                                  'Address', _addressController.text.trim()),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                            ),
+                          ],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1021,7 +1463,9 @@ class _FlowHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
-          Text('Step ${stepIndex + 1} of $stepCount'),
+          Text(
+            '${context.t('common.step', fallback: 'Step')} ${stepIndex + 1} ${context.t('common.of', fallback: 'of')} $stepCount',
+          ),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
