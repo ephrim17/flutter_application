@@ -3,7 +3,6 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
-import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,7 +14,6 @@ class AppBootstrap extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final configAsync = ref.watch(appConfigProvider);
-    final appUserAsync = ref.watch(appUserProvider);
     final forcePreflowTheme = ref.watch(forcePreflowThemeProvider);
     final themeMode = ref.watch(themeProvider);
 
@@ -72,10 +70,7 @@ class AppBootstrap extends ConsumerWidget {
         ),
       ),
       data: (config) {
-        final useChurchTheme = appUserAsync.maybeWhen(
-          data: (user) => !forcePreflowTheme && user?.approved == true,
-          orElse: () => false,
-        );
+        final useChurchTheme = !forcePreflowTheme;
 
         final bgColor = useChurchTheme
             ? config.backgroundColorHex.toColor()

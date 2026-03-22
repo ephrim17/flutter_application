@@ -103,14 +103,18 @@ class DailyVerseCard extends ConsumerWidget {
               /// 🔹 Verse text
               Text(
                 verseText!,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 18.0
+                ),
               ),
               const SizedBox(height: 6),
 
               /// 🔹 Reference
               Text(
                 verse['reference']!,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 16.0
+                ),
               ),
             ],
           ),
