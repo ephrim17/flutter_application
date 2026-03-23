@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
@@ -28,6 +27,13 @@ class AppEntry extends ConsumerStatefulWidget {
 
 class _AppEntryState extends ConsumerState<AppEntry> {
   bool? _showOnboarding;
+
+  void _syncSuperAdminSessionForUser(String uid) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(superAdminEntryModeProvider.notifier).syncForUser(uid);
+    });
+  }
 
   void _syncPreflowTheme(bool enabled) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,12 +86,12 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       orElse: () => widget.initialUser,
     );
     final superAdminSession = ref.watch(superAdminEntryModeProvider);
-
-    final isSuperAdmin = isSuperAdminAsync.maybeWhen(
-      data: (value) => value,
-      orElse: () => false,
-    );
-    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    final firebaseUser = ref.watch(authStateProvider).value;
+    final isSuperAdmin = firebaseUser != null &&
+        isSuperAdminAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => false,
+        );
 
     if (firebaseUser != null && isSuperAdminAsync.isLoading) {
       return const Scaffold(
@@ -95,6 +101,12 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
     if (isSuperAdmin) {
       if (superAdminSession.isLoading) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (superAdminSession.uid != firebaseUser.uid) {
+        _syncSuperAdminSessionForUser(firebaseUser.uid);
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );
@@ -120,7 +132,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   }
 
   Widget _buildResolvedScreen(AppUser? user) {
-    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    final firebaseUser = ref.watch(authStateProvider).value;
     if (firebaseUser == null) {
       _syncPreflowTheme(true);
       return const CreateAuthAccountScreen();

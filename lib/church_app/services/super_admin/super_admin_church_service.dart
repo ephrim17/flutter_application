@@ -242,7 +242,7 @@ class SuperAdminChurchService {
         FirestorePaths.churchHomeSections(_firestore, churchId)
             .doc(_homeSectionIds[i]),
         {
-          'enabled': true,
+          'enabled': false,
           'order': i + 1,
         },
       );
@@ -253,7 +253,7 @@ class SuperAdminChurchService {
         FirestorePaths.churchForYouSections(_firestore, churchId)
             .doc(_forYouSectionIds[i]),
         {
-          'enabled': true,
+          'enabled': false,
           'order': i + 1,
         },
       );

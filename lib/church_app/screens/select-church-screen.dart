@@ -218,7 +218,11 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
     final userChurchesAsync = ref.watch(userChurchesProvider);
-    final isSuperAdmin = ref.watch(isSuperAdminProvider).asData?.value ?? false;
+    final firebaseUser = ref.watch(authStateProvider).value;
+    final isSuperAdmin = ref.watch(isSuperAdminProvider).maybeWhen(
+          data: (value) => value && firebaseUser != null,
+          orElse: () => false,
+        );
 
     return Scaffold(
       extendBodyBehindAppBar: true,

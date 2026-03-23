@@ -776,7 +776,7 @@ class _ThemeColorField extends StatelessWidget {
   }
 }
 
-class _AboutEditor extends StatelessWidget {
+class _AboutEditor extends ConsumerWidget {
   const _AboutEditor({
     required this.repository,
   });
@@ -784,83 +784,106 @@ class _AboutEditor extends StatelessWidget {
   final StudioRepository repository;
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<Map<String, dynamic>?>(
-      stream: repository.watchAbout(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
-            ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    return configAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+        ),
+      ),
+      data: (config) => StreamBuilder<Map<String, dynamic>?>(
+        stream: repository.watchAbout(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+              ),
+            );
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final about = snapshot.data ?? <String, dynamic>{};
+          final churchAppTitle = config.textContent.get(
+            'church_tab.app_title',
+            fallback: '',
           );
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
 
-        final about = snapshot.data ?? <String, dynamic>{};
-
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              decoration: carouselBoxDecoration(context),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.t('studio.tab_about', fallback: 'About'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.t(
-                        'studio.about_hint',
-                        fallback:
-                            'Update the main about section shown for this church.',
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
+                decoration: carouselBoxDecoration(context),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.t('studio.tab_about', fallback: 'About'),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _DetailLine(
-                      label: context.t('common.title', fallback: 'Title'),
-                      value: (about['title'] ?? '') as String,
-                    ),
-                    _DetailLine(
-                      label: context.t(
-                        'studio.about_tagline',
-                        fallback: 'Tagline',
+                      const SizedBox(height: 8),
+                      Text(
+                        context.t(
+                          'studio.about_hint',
+                          fallback:
+                              'Update the main about section shown for this church.',
+                        ),
                       ),
-                      value: (about['tagline'] ?? '') as String,
-                    ),
-                    _DetailLine(
-                      label: context.t(
-                        'common.description',
-                        fallback: 'Description',
+                      const SizedBox(height: 16),
+                      _DetailLine(
+                        label: context.t(
+                          'studio.about_church_name',
+                          fallback: 'Church Name',
+                        ),
+                        value: churchAppTitle,
                       ),
-                      value: (about['description'] ?? '') as String,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => _showAboutEditor(
-                        context,
-                        repository,
-                        initialData: about,
+                      _DetailLine(
+                        label: context.t('common.title', fallback: 'Title'),
+                        value: (about['title'] ?? '') as String,
                       ),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(
-                        context.t('studio.about_edit', fallback: 'Edit About'),
+                      _DetailLine(
+                        label: context.t(
+                          'studio.about_tagline',
+                          fallback: 'Tagline',
+                        ),
+                        value: (about['tagline'] ?? '') as String,
                       ),
-                    ),
-                  ],
+                      _DetailLine(
+                        label: context.t(
+                          'common.description',
+                          fallback: 'Description',
+                        ),
+                        value: (about['description'] ?? '') as String,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () => _showAboutEditor(
+                          context,
+                          repository,
+                          initialData: about,
+                          initialChurchAppTitle: churchAppTitle,
+                        ),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(
+                          context.t('studio.about_edit',
+                              fallback: 'Edit About'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -2020,7 +2043,10 @@ Future<void> _showAboutEditor(
   BuildContext context,
   StudioRepository repository, {
   required Map<String, dynamic> initialData,
+  required String initialChurchAppTitle,
 }) {
+  final churchAppTitleController =
+      TextEditingController(text: initialChurchAppTitle);
   final titleController =
       TextEditingController(text: (initialData['title'] ?? '') as String);
   final taglineController =
@@ -2059,6 +2085,16 @@ Future<void> _showAboutEditor(
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
+                  TextField(
+                    controller: churchAppTitleController,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.about_church_name',
+                        fallback: 'Church Name',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
@@ -2129,6 +2165,8 @@ Future<void> _showAboutEditor(
                               setState(() => isSaving = true);
                               try {
                                 await repository.updateAbout(
+                                  churchAppTitle:
+                                      churchAppTitleController.text.trim(),
                                   title: titleController.text.trim(),
                                   tagline: taglineController.text.trim(),
                                   description:

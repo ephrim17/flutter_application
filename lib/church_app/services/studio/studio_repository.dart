@@ -239,6 +239,7 @@ class StudioRepository {
   }
 
   Future<void> updateAbout({
+    required String churchAppTitle,
     required String title,
     required String tagline,
     required String description,
@@ -246,15 +247,31 @@ class StudioRepository {
     required String community,
     required String values,
   }) async {
-    await aboutRef.set({
-      'title': title,
-      'tagline': tagline,
-      'description': description,
-      'mission': mission,
-      'community': community,
-      'values': values,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    final batch = firestore.batch();
+
+    batch.set(
+        aboutRef,
+        {
+          'title': title,
+          'tagline': tagline,
+          'description': description,
+          'mission': mission,
+          'community': community,
+          'values': values,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true));
+
+    batch.set(
+        appConfigRef,
+        {
+          'textContent': {
+            'church_tab.app_title': churchAppTitle,
+          },
+        },
+        SetOptions(merge: true));
+
+    await batch.commit();
   }
 
   Future<void> createPastor(Map<String, dynamic> data) async {

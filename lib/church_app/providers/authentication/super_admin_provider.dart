@@ -128,20 +128,24 @@ class SuperAdminEntrySessionController
 }
 
 final isSuperAdminProvider = StreamProvider<bool>((ref) {
-  final auth = ref.watch(firebaseAuthProvider);
   final firestore = ref.watch(firestoreProvider);
+  final authState = ref.watch(authStateProvider);
 
-  return auth.authStateChanges().asyncExpand((firebaseUser) {
-    if (firebaseUser == null) {
-      return Stream.value(false);
-    }
+  return authState.when(
+    data: (firebaseUser) {
+      if (firebaseUser == null) {
+        return Stream.value(false);
+      }
 
-    return firestore
-        .collection('superAdmins')
-        .doc(firebaseUser.uid)
-        .snapshots()
-        .map((doc) => doc.exists);
-  });
+      return firestore
+          .collection('superAdmins')
+          .doc(firebaseUser.uid)
+          .snapshots()
+          .map((doc) => doc.exists);
+    },
+    loading: () => Stream.value(false),
+    error: (_, __) => Stream.value(false),
+  );
 });
 
 final superAdminEntryModeProvider = StateNotifierProvider<

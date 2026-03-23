@@ -3,11 +3,17 @@ import 'package:flutter/material.dart';
 class LightningGradientText extends StatelessWidget {
   final String text;
   final TextStyle style;
+  final int maxLines;
+  final TextOverflow overflow;
+  final TextAlign textAlign;
 
   const LightningGradientText({
     super.key,
     required this.text,
     required this.style,
+    this.maxLines = 1,
+    this.overflow = TextOverflow.visible,
+    this.textAlign = TextAlign.start,
   });
 
   @override
@@ -17,16 +23,13 @@ class LightningGradientText extends StatelessWidget {
       shaderCallback: (Rect bounds) {
         return _lightningShader(bounds, context);
       },
-      child: Column(
-        children: [
-          Text(
-            text,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.visible,
-            style: style,
-          ),
-        ],
+      child: Text(
+        text,
+        maxLines: maxLines,
+        softWrap: true,
+        overflow: overflow,
+        textAlign: textAlign,
+        style: style,
       ),
     );
   }

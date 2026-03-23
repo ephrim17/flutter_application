@@ -587,6 +587,7 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.about_hint': 'Update the main about section shown for this church.',
   'studio.about_edit': 'Edit About',
   'studio.about_updated': 'About updated',
+  'studio.about_church_name': 'Church Name',
   'studio.about_tagline': 'Tagline',
   'studio.about_mission': 'Mission',
   'studio.about_community': 'Community',

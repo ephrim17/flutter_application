@@ -61,14 +61,23 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true, // 👈 REQUIRED
-        toolbarHeight: 72,
-        title: LightningGradientText(
-          text: ref.t('church_tab.app_title', fallback: 'TNBM'),
-          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-              ),
+        centerTitle: true,
+        toolbarHeight: 88,
+        title: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.62,
+          ),
+          child: LightningGradientText(
+            text: ref.t('church_tab.app_title', fallback: 'TNBM'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  height: 1.05,
+                ),
+          ),
         ),
       ),
       body: _activeScreen,

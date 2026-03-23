@@ -9,8 +9,9 @@ import 'package:flutter_application/church_app/providers/loading_access_provider
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
+import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
-import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -78,7 +79,8 @@ class _CreateAuthAccountScreenState
     final confirmPassword = _confirmPasswordController.text;
 
     if (email.isEmpty) {
-      return context.t('auth.email_required', fallback: 'Please enter your email');
+      return context.t('auth.email_required',
+          fallback: 'Please enter your email');
     }
 
     final emailRegex = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
@@ -275,10 +277,12 @@ class _CreateAuthAccountScreenState
       await ChurchLocalStorage().clearSubscribedChurchTopic();
       ref.read(selectedChurchProvider.notifier).state = null;
       ref.invalidate(currentChurchIdProvider);
+      ref.invalidate(appUserProvider);
+      ref.invalidate(getCurrentUserProvider);
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SelectChurchScreen()),
+        MaterialPageRoute(builder: (_) => const AppEntry()),
         (route) => false,
       );
     } catch (error) {
@@ -305,7 +309,8 @@ class _CreateAuthAccountScreenState
                       'members.create_member_login_title',
                       fallback: 'Create Member Login',
                     )
-                  : context.t('members.create_member', fallback: 'Create Member')
+                  : context.t('members.create_member',
+                      fallback: 'Create Member')
               : _isLoginMode
                   ? context.t('auth.login', fallback: 'Login')
                   : context.t('auth.register', fallback: 'Register'),
@@ -340,16 +345,16 @@ class _CreateAuthAccountScreenState
                                     'members.create_member_account_heading',
                                     fallback: 'Create member account',
                                   )
-                            : _isLoginMode
-                                ? context.t(
-                                    'auth.welcome_back_heading',
-                                    fallback: 'Welcome back',
-                                  )
-                                : context.t(
-                                    'auth.create_account_heading',
-                                    fallback:
-                                        'Create your Church Connect account',
-                                  ),
+                                : _isLoginMode
+                                    ? context.t(
+                                        'auth.welcome_back_heading',
+                                        fallback: 'Welcome back',
+                                      )
+                                    : context.t(
+                                        'auth.create_account_heading',
+                                        fallback:
+                                            'Create your Church Connect account',
+                                      ),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 10),
@@ -366,17 +371,17 @@ class _CreateAuthAccountScreenState
                                     fallback:
                                         'Enter the member email. We will create the account and send a password setup email.',
                                   )
-                            : _isLoginMode
-                                ? context.t(
-                                    'auth.login_subtitle',
-                                    fallback:
-                                        'Sign in with your Church Connect account to continue.',
-                                  )
-                                : context.t(
-                                    'auth.register_subtitle',
-                                    fallback:
-                                        'Create your Church Connect first, then request access to your church.',
-                                  ),
+                                : _isLoginMode
+                                    ? context.t(
+                                        'auth.login_subtitle',
+                                        fallback:
+                                            'Sign in with your Church Connect account to continue.',
+                                      )
+                                    : context.t(
+                                        'auth.register_subtitle',
+                                        fallback:
+                                            'Create your Church Connect first, then request access to your church.',
+                                      ),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
