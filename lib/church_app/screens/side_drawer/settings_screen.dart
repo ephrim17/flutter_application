@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/helpers/prayer_notification_servi
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
@@ -14,7 +15,7 @@ import 'package:flutter_application/church_app/providers/preflow_theme_provider.
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
-import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
+import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -116,6 +117,9 @@ class _LogoutSection extends ConsumerWidget {
         await ChurchLocalStorage().clearSubscribedChurchTopic();
         await ref.read(favoritesProvider.notifier).clearAll();
         ref.read(selectedChurchProvider.notifier).state = null;
+        await ref.read(superAdminEntryModeProvider.notifier).setMode(
+              SuperAdminEntryMode.normal,
+            );
         ref.invalidate(currentChurchIdProvider);
         ref.invalidate(appUserProvider);
         ref.invalidate(getCurrentUserProvider);
@@ -123,14 +127,10 @@ class _LogoutSection extends ConsumerWidget {
           PageRouteBuilder(
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
-              initialLoginMode: true,
-            ),
+            pageBuilder: (_, __, ___) => const SelectChurchScreen(),
           ),
           (route) => false,
         );
-        await FirebaseAuth.instance.signOut();
-        if (!context.mounted) return;
       },
     );
   }

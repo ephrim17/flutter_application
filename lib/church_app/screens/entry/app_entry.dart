@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/super_admin_mode_screen.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,11 +73,42 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     }
 
     // Existing logic (do not change)
+    final isSuperAdminAsync = ref.watch(isSuperAdminProvider);
     final userAsync = ref.watch(appUserProvider);
     final resolvedUser = userAsync.maybeWhen(
       data: (user) => user,
       orElse: () => widget.initialUser,
     );
+    final superAdminSession = ref.watch(superAdminEntryModeProvider);
+
+    final isSuperAdmin = isSuperAdminAsync.maybeWhen(
+      data: (value) => value,
+      orElse: () => false,
+    );
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+
+    if (firebaseUser != null && isSuperAdminAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (isSuperAdmin) {
+      if (superAdminSession.isLoading) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (superAdminSession.mode == null) {
+        _syncPreflowTheme(true);
+        return const SuperAdminModeScreen();
+      }
+      if (superAdminSession.mode == SuperAdminEntryMode.superAdmin) {
+        _syncPreflowTheme(true);
+        return const SuperAdminHomeScreen();
+      }
+      _syncPreflowTheme(true);
+    }
 
     return userAsync.when(
       loading: () => _buildResolvedScreen(resolvedUser),

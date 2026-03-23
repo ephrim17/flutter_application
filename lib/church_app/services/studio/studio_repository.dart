@@ -38,8 +38,30 @@ class StudioRepository {
 
   DocumentReference<Map<String, dynamic>> get appConfigRef =>
       FirestorePaths.churchAppConfig(firestore, churchId);
+  DocumentReference<Map<String, dynamic>> get aboutRef =>
+      FirestorePaths.churchAboutDoc(firestore, churchId);
+  DocumentReference<Map<String, dynamic>> get bibleSwipeRef =>
+      FirestorePaths.churchBibleRandomSwipeDoc(firestore, churchId);
   CollectionReference<Map<String, dynamic>> get notificationRequestsRef =>
       FirestorePaths.churchNotificationRequests(firestore, churchId);
+  CollectionReference<Map<String, dynamic>> get pastorsRef =>
+      FirestorePaths.churchPastors(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
+        fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
+        toFirestore: (value, _) => value,
+      );
+  CollectionReference<Map<String, dynamic>> get contactItemsRef =>
+      FirestorePaths.churchContactItems(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
+        fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
+        toFirestore: (value, _) => value,
+      );
+  CollectionReference<Map<String, dynamic>> get socialItemsRef =>
+      FirestorePaths.churchSocialItems(firestore, churchId)
+          .withConverter<Map<String, dynamic>>(
+        fromFirestore: (snapshot, _) => snapshot.data() ?? <String, dynamic>{},
+        toFirestore: (value, _) => value,
+      );
   CollectionReference<HomeSectionConfigModel> get homeSectionsRef =>
       FirestorePaths.churchHomeSections(firestore, churchId)
           .withConverter<HomeSectionConfigModel>(
@@ -69,6 +91,38 @@ class StudioRepository {
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchArticles() {
     return articlesRef.snapshots().map((snapshot) => snapshot.docs);
+  }
+
+  Stream<Map<String, dynamic>?> watchAbout() {
+    return aboutRef.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchPastors() {
+    return pastorsRef.snapshots().map((snapshot) => snapshot.docs);
+  }
+
+  Stream<List<String>> watchBibleSwipeVerses() {
+    return bibleSwipeRef.snapshots().map((snapshot) {
+      final data = snapshot.data();
+      final verses = data?['verses'] as List<dynamic>? ?? const [];
+      return verses
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    });
+  }
+
+  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      watchContactItems() {
+    return contactItemsRef.orderBy('order').snapshots().map((snapshot) {
+      return snapshot.docs;
+    });
+  }
+
+  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchSocialItems() {
+    return socialItemsRef.orderBy('order').snapshots().map((snapshot) {
+      return snapshot.docs;
+    });
   }
 
   Stream<List<HomeSectionConfigModel>> watchHomeSectionConfigs() {
@@ -184,6 +238,68 @@ class StudioRepository {
     await articlesRef.doc(id).delete();
   }
 
+  Future<void> updateAbout({
+    required String title,
+    required String tagline,
+    required String description,
+    required String mission,
+    required String community,
+    required String values,
+  }) async {
+    await aboutRef.set({
+      'title': title,
+      'tagline': tagline,
+      'description': description,
+      'mission': mission,
+      'community': community,
+      'values': values,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> createPastor(Map<String, dynamic> data) async {
+    await pastorsRef.add(data);
+  }
+
+  Future<void> updatePastor(String id, Map<String, dynamic> data) async {
+    await pastorsRef.doc(id).set(data, SetOptions(merge: true));
+  }
+
+  Future<void> deletePastor(String id) async {
+    await pastorsRef.doc(id).delete();
+  }
+
+  Future<void> updateBibleSwipeVerses(List<String> verses) async {
+    await bibleSwipeRef.set({
+      'verses': verses,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> createContactItem(Map<String, dynamic> data) async {
+    await contactItemsRef.add(data);
+  }
+
+  Future<void> updateContactItem(String id, Map<String, dynamic> data) async {
+    await contactItemsRef.doc(id).set(data, SetOptions(merge: true));
+  }
+
+  Future<void> deleteContactItem(String id) async {
+    await contactItemsRef.doc(id).delete();
+  }
+
+  Future<void> createSocialItem(Map<String, dynamic> data) async {
+    await socialItemsRef.add(data);
+  }
+
+  Future<void> updateSocialItem(String id, Map<String, dynamic> data) async {
+    await socialItemsRef.doc(id).set(data, SetOptions(merge: true));
+  }
+
+  Future<void> deleteSocialItem(String id) async {
+    await socialItemsRef.doc(id).delete();
+  }
+
   Future<void> updateHomeSectionConfig({
     required String id,
     required bool enabled,
@@ -258,6 +374,18 @@ class StudioRepository {
         'title': title,
         'desc': desc,
         'enabled': enabled,
+      },
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updateThemeColors({
+    required String primaryColor,
+    required String secondaryColor,
+  }) async {
+    await appConfigRef.set({
+      'theme': {
+        'primaryColor': primaryColor,
+        'secondaryColor': secondaryColor,
       },
     }, SetOptions(merge: true));
   }

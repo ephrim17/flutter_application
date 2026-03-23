@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
     hide firestoreProvider;
+import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -71,9 +73,12 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     await ChurchLocalStorage().clearSubscribedChurchTopic();
     await ref.read(favoritesProvider.notifier).clearAll();
     ref.read(selectedChurchProvider.notifier).state = null;
+    await ref.read(superAdminEntryModeProvider.notifier).clear();
     ref.invalidate(currentChurchIdProvider);
     ref.invalidate(appUserProvider);
     ref.invalidate(getCurrentUserProvider);
+    await FirebaseAuth.instance.signOut();
+    if (!context.mounted) return;
     navigator.pushAndRemoveUntil(
       PageRouteBuilder(
         transitionDuration: Duration.zero,
@@ -84,7 +89,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       ),
       (route) => false,
     );
-    await FirebaseAuth.instance.signOut();
   }
 
   Future<bool> _showRequestAccessPrompt(BuildContext context) async {
@@ -166,6 +170,10 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         );
         if (!context.mounted) return;
 
+        await ref.read(superAdminEntryModeProvider.notifier).setMode(
+              SuperAdminEntryMode.normal,
+            );
+        if (!context.mounted) return;
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
         ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
         ref.invalidate(currentChurchIdProvider);
@@ -210,6 +218,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
     final userChurchesAsync = ref.watch(userChurchesProvider);
+    final isSuperAdmin = ref.watch(isSuperAdminProvider).asData?.value ?? false;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -217,6 +226,25 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         title: AppBarTitle(text: ''),
         centerTitle: true,
         actions: [
+          if (isSuperAdmin)
+            IconButton(
+              tooltip: context.t(
+                'super_admin.open_dashboard',
+                fallback: 'Open Super Admin',
+              ),
+              onPressed: () async {
+                await ref.read(superAdminEntryModeProvider.notifier).setMode(
+                      SuperAdminEntryMode.superAdmin,
+                    );
+                if (!context.mounted) return;
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const SuperAdminHomeScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+            ),
           IconButton(
             tooltip: context.t('drawer.logout', fallback: 'Logout'),
             onPressed: () => _handleLogout(context),
@@ -529,11 +557,9 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   void _showChurchDetailsSheet(
     BuildContext context,
     WidgetRef ref,
-    Church church,
-    {
+    Church church, {
     required bool isMemberChurch,
-  }
-  ) {
+  }) {
     final parentContext = context;
     showModalBottomSheet(
       context: context,
@@ -927,8 +953,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 18,
-                                  color:
-                                      Theme.of(context).colorScheme.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ],
                             ),

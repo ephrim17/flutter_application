@@ -119,8 +119,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.register_subtitle':
       'Create your Church Connect first, then request access to your church.',
   'auth.login_toggle_register': 'Need a new Church Connect account? Register',
-  'auth.register_toggle_login':
-      'Already have a Church Connect account? Login',
+  'auth.register_toggle_login': 'Already have a Church Connect account? Login',
 
   // Onboarding / bootstrap
   'onboarding.get_started': 'Get Started',
@@ -141,11 +140,9 @@ const Map<String, String> preAuthDefaultTextContents = {
       "We'll help you find a local congregation to stay connected with services, events, and news.",
   'church.register_coming_soon': 'Register your church coming soon',
   'church.directory_title': 'Churches',
-  'church.directory_load_error':
-      'We could not load the church list right now.',
+  'church.directory_load_error': 'We could not load the church list right now.',
   'church.your_churches_title': 'Your Churches',
-  'church.your_churches_subtitle':
-      "Churches you follow and you're part of.",
+  'church.your_churches_subtitle': "Churches you follow and you're part of.",
   'church.your_churches_empty_subtitle':
       "Churches you follow and you're part of will show here.",
   'church.your_churches_empty_state':
@@ -164,6 +161,73 @@ const Map<String, String> preAuthDefaultTextContents = {
   'drawer.title': 'Church',
   'drawer.error_loading_user': 'Error loading user',
   'drawer.logout': 'Logout',
+
+  // Super admin
+  'super_admin.title': 'Super Admin',
+  'super_admin.subtitle':
+      'Manage platform-level churches before entering the church app.',
+  'super_admin.choose_flow_title': 'Choose your flow',
+  'super_admin.choose_flow_subtitle':
+      'You have super admin access. Continue with the normal church flow or open the super admin space.',
+  'super_admin.normal_flow': 'Normal Flow',
+  'super_admin.normal_flow_desc':
+      'Go to church selection and continue like a regular signed-in user.',
+  'super_admin.super_flow': 'Super Admin Flow',
+  'super_admin.super_flow_desc':
+      'Open the platform-level church management dashboard.',
+  'super_admin.open_church_selection': 'Open Church Selection',
+  'super_admin.open_dashboard': 'Open Super Admin',
+  'super_admin.back_to_normal_flow': 'Back To Church Selection',
+  'super_admin.create_church': 'Create Church',
+  'super_admin.create_church_coming_soon': 'Create church flow coming soon',
+  'super_admin.create_church_title': 'Create Church',
+  'super_admin.create_church_subtitle':
+      'Create a new church and bootstrap the essential starter structure.',
+  'super_admin.church_name_label': 'Church Name',
+  'super_admin.church_id_label': 'Church ID',
+  'super_admin.church_id_helper':
+      'Lowercase letters, numbers, and underscores only.',
+  'super_admin.church_id_auto_hint':
+      'Church ID will be generated automatically from the church name.',
+  'super_admin.church_id_preview': 'Generated Church ID',
+  'super_admin.pastor_name_label': 'Pastor Name',
+  'super_admin.admin_name_label': 'Admin Name',
+  'super_admin.admin_email_label': 'Admin Email',
+  'super_admin.admin_phone_label': 'Admin Phone',
+  'super_admin.admin_section_title': 'Initial Admin',
+  'super_admin.address_label': 'Address',
+  'super_admin.contact_label': 'Contact',
+  'super_admin.email_label': 'Email',
+  'super_admin.logo_label': 'Church Logo',
+  'super_admin.logo_pick': 'Pick Logo',
+  'super_admin.logo_replace': 'Replace Logo',
+  'super_admin.logo_required': 'Please pick a church logo',
+  'super_admin.enabled_label': 'Enabled',
+  'super_admin.create_action': 'Create Church',
+  'super_admin.create_loading': 'Creating church...',
+  'super_admin.create_success':
+      'Church created successfully. Password setup email sent to the admin.',
+  'super_admin.create_success_email_failed':
+      'Church created successfully, but the password setup email could not be sent to the admin.',
+  'super_admin.name_required': 'Please enter the church name',
+  'super_admin.id_required': 'Please enter the church ID',
+  'super_admin.id_invalid':
+      'Church ID can contain only lowercase letters, numbers, and underscores',
+  'super_admin.duplicate_id': 'A church with this ID already exists',
+  'super_admin.address_required': 'Please enter the church address',
+  'super_admin.contact_required': 'Please enter the church contact',
+  'super_admin.email_required': 'Please enter the church email',
+  'super_admin.admin_name_required': 'Please enter the admin name',
+  'super_admin.admin_email_required': 'Please enter the admin email',
+  'super_admin.admin_phone_required': 'Please enter the admin phone',
+  'super_admin.directory_title': 'All Churches',
+  'super_admin.directory_empty': 'No churches found yet.',
+  'super_admin.search_hint': 'Search churches',
+  'super_admin.total_count': 'Total',
+  'super_admin.enabled_count': 'Enabled',
+  'super_admin.disabled_count': 'Disabled',
+  'super_admin.disabled_label': 'Disabled',
+  'super_admin.status_updated': 'Church status updated',
 };
 
 const Map<String, String> defaultChurchTextContents = {
@@ -264,8 +328,7 @@ const Map<String, String> defaultChurchTextContents = {
       'Enter the member email. We will create the account and send a password setup email.',
   'members.create_member_email_helper':
       'Church Account will use this email and block duplicate accounts automatically.',
-  'members.create_member_login_success':
-      'Member login created successfully.',
+  'members.create_member_login_success': 'Member login created successfully.',
   'members.create_member_password_email_sent':
       ' Password setup email sent to the member.',
   'members.create_member_password_email_failed':
@@ -331,8 +394,7 @@ const Map<String, String> defaultChurchTextContents = {
   'members.financial_support_required': 'Financial Support Required',
   'members.educational_qualification': 'Educational Qualification',
   'members.talents_and_gifts': 'Talents & Gifts',
-  'members.talents_and_gifts_helper':
-      'Add comma-separated talents or gifts',
+  'members.talents_and_gifts_helper': 'Add comma-separated talents or gifts',
   'members.no_church_groups_assigned': 'No church groups assigned',
   'members.create_with_email': 'Create with email',
   'members.create_with_email_subtitle':
@@ -380,7 +442,8 @@ const Map<String, String> defaultChurchTextContents = {
   'birthday.save_image': 'Save as Image',
 
   // Verse share
-  'verse_share.footer_date_note': 'The current date is always shown on the card.',
+  'verse_share.footer_date_note':
+      'The current date is always shown on the card.',
   'verse_share.footer_color': 'Footer Color',
   'verse_share.bottom_left_text_optional': 'Bottom-left text (optional)',
   'verse_share.story_footer_helper': 'Only shown in story mode',
@@ -491,6 +554,11 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.title': 'Studio',
   'studio.admin_only': 'Studio is available only for admins.',
   'studio.no_church_selected': 'No church selected.',
+  'studio.tab_theme': 'Theme',
+  'studio.tab_about': 'About',
+  'studio.tab_pastor': 'Pastor',
+  'studio.tab_bible_swipe': 'Bible Swipe',
+  'studio.tab_footer': 'Footer',
   'studio.tab_events': 'Events',
   'studio.tab_announcements': 'Announcements',
   'studio.tab_daily_verse': 'Daily Verse',
@@ -501,11 +569,59 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.tab_sections': 'Sections',
   'studio.tab_prompt': 'Important',
   'studio.add_event': 'Add event',
+  'studio.add_pastor': 'Add pastor',
   'studio.no_events': 'No events yet.',
+  'studio.no_pastors': 'No pastors yet.',
   'studio.add_announcement': 'Add announcement',
   'studio.no_announcements': 'No announcements yet.',
   'studio.add_article': 'Add article',
   'studio.no_articles': 'No articles yet.',
+  'studio.theme_hint':
+      'Update the church primary and secondary brand colors using hex values like #1E88E5.',
+  'studio.theme_palette_hint':
+      'Tap a color from the palette or enter a custom hex value.',
+  'studio.theme_primary_label': 'Primary Color',
+  'studio.theme_secondary_label': 'Secondary Color',
+  'studio.theme_invalid_hex': 'Use valid hex colors like #1E88E5.',
+  'studio.theme_updated': 'Theme colors updated',
+  'studio.about_hint': 'Update the main about section shown for this church.',
+  'studio.about_edit': 'Edit About',
+  'studio.about_updated': 'About updated',
+  'studio.about_tagline': 'Tagline',
+  'studio.about_mission': 'Mission',
+  'studio.about_community': 'Community',
+  'studio.about_values': 'Values',
+  'studio.bible_swipe_hint':
+      'Enter one verse reference per line, like John 3:16.',
+  'studio.bible_swipe_empty': 'No swipe verses added yet.',
+  'studio.bible_swipe_add': 'Add Swipe Verse',
+  'studio.bible_swipe_edit': 'Edit Swipe Verses',
+  'studio.bible_swipe_edit_single': 'Edit Swipe Verse',
+  'studio.bible_swipe_label': 'Swipe verses',
+  'studio.bible_swipe_updated': 'Bible swipe verses updated',
+  'studio.footer_contacts_title': 'Footer Contacts',
+  'studio.footer_contacts_add': 'Add contact item',
+  'studio.footer_contacts_empty': 'No footer contact items yet.',
+  'studio.footer_social_title': 'Footer Social',
+  'studio.footer_social_add': 'Add social item',
+  'studio.footer_social_empty': 'No social items yet.',
+  'studio.footer_type_prefix': 'Type',
+  'studio.footer_action_prefix': 'Action',
+  'studio.footer_order_prefix': 'Order',
+  'studio.footer_active_prefix': 'Active',
+  'studio.footer_platform_prefix': 'Platform',
+  'studio.footer_url_prefix': 'URL',
+  'studio.footer_contact_create': 'Add Contact Item',
+  'studio.footer_contact_edit': 'Edit Contact Item',
+  'studio.footer_social_create': 'Add Social Item',
+  'studio.footer_social_edit': 'Edit Social Item',
+  'studio.footer_type_label': 'Type',
+  'studio.footer_label_label': 'Label',
+  'studio.footer_action_label': 'Action',
+  'studio.footer_order_label': 'Order',
+  'studio.footer_icon_label': 'Icon Label',
+  'studio.footer_platform_label': 'Platform',
+  'studio.footer_url_label': 'URL',
   'studio.section_home': 'Home Sections',
   'studio.section_for_you': 'For You Sections',
   'studio.section_enabled': 'Enabled',
@@ -557,6 +673,8 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.event_contact': 'Contact',
   'studio.event_location': 'Location',
   'studio.event_timing': 'Timing',
+  'studio.pastor_create': 'Add Pastor',
+  'studio.pastor_edit': 'Edit Pastor',
   'studio.article_create': 'Create article',
   'studio.article_edit': 'Edit article',
   'studio.verse_book': 'Book',

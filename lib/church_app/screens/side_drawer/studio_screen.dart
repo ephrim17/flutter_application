@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
+import 'package:flutter_application/church_app/models/for_you_section_models/bible_swipe_verse_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
@@ -63,13 +64,20 @@ class StudioScreen extends ConsumerWidget {
         );
 
         return DefaultTabController(
-          length: 9,
+          length: 14,
           child: Scaffold(
             appBar: AppBar(
               title: Text(ref.t('studio.title', fallback: 'Studio')),
               bottom: TabBar(
                 isScrollable: true,
                 tabs: [
+                  Tab(text: ref.t('studio.tab_theme', fallback: 'Theme')),
+                  Tab(text: ref.t('studio.tab_about', fallback: 'About')),
+                  Tab(text: ref.t('studio.tab_pastor', fallback: 'Pastor')),
+                  Tab(
+                      text: ref.t('studio.tab_bible_swipe',
+                          fallback: 'Bible Swipe')),
+                  Tab(text: ref.t('studio.tab_footer', fallback: 'Footer')),
                   Tab(text: ref.t('studio.tab_events', fallback: 'Events')),
                   Tab(
                       text: ref.t('studio.tab_announcements',
@@ -92,6 +100,36 @@ class StudioScreen extends ConsumerWidget {
             ),
             body: TabBarView(
               children: [
+                _ThemeEditor(
+                  onSave: ({
+                    required primaryColor,
+                    required secondaryColor,
+                  }) {
+                    return repository.updateThemeColors(
+                      primaryColor: primaryColor,
+                      secondaryColor: secondaryColor,
+                    );
+                  },
+                ),
+                _AboutEditor(repository: repository),
+                _CollectionEditor(
+                  title: ref.t('studio.tab_pastor', fallback: 'Pastor'),
+                  stream: repository.watchPastors(),
+                  addLabel: ref.t('studio.add_pastor', fallback: 'Add pastor'),
+                  emptyText:
+                      ref.t('studio.no_pastors', fallback: 'No pastors yet.'),
+                  tileTitle: (data) => (data['title'] ?? '') as String,
+                  tileSubtitle: (data) => (data['contact'] ?? '') as String,
+                  onAdd: () => _showPastorEditor(context, repository),
+                  onEdit: (doc) => _showPastorEditor(
+                    context,
+                    repository,
+                    doc: doc,
+                  ),
+                  onDelete: (doc) => repository.deletePastor(doc.id),
+                ),
+                _BibleSwipeVersesEditor(repository: repository),
+                _FooterEditor(repository: repository),
                 _CollectionEditor(
                   title: ref.t('studio.tab_events', fallback: 'Events'),
                   stream: repository.watchEvents(),
@@ -406,6 +444,802 @@ class _ConfigVerseEditor extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _ThemeEditor extends ConsumerWidget {
+  const _ThemeEditor({
+    required this.onSave,
+  });
+
+  final Future<void> Function({
+    required String primaryColor,
+    required String secondaryColor,
+  }) onSave;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    return configAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+        ),
+      ),
+      data: (config) => _ThemeEditorForm(
+        initialPrimaryColor: config.primaryColorHex,
+        initialSecondaryColor: config.secondaryColorHex,
+        onSave: onSave,
+      ),
+    );
+  }
+}
+
+class _ThemeEditorForm extends StatefulWidget {
+  const _ThemeEditorForm({
+    required this.initialPrimaryColor,
+    required this.initialSecondaryColor,
+    required this.onSave,
+  });
+
+  final String initialPrimaryColor;
+  final String initialSecondaryColor;
+  final Future<void> Function({
+    required String primaryColor,
+    required String secondaryColor,
+  }) onSave;
+
+  @override
+  State<_ThemeEditorForm> createState() => _ThemeEditorFormState();
+}
+
+class _ThemeEditorFormState extends State<_ThemeEditorForm> {
+  static const List<String> _paletteHexValues = <String>[
+    '#0F172A',
+    '#1D4ED8',
+    '#1E88E5',
+    '#0EA5E9',
+    '#14B8A6',
+    '#16A34A',
+    '#65A30D',
+    '#EAB308',
+    '#F97316',
+    '#DC2626',
+    '#E11D48',
+    '#C026D3',
+  ];
+
+  late final TextEditingController _primaryController;
+  late final TextEditingController _secondaryController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _primaryController =
+        TextEditingController(text: widget.initialPrimaryColor);
+    _secondaryController =
+        TextEditingController(text: widget.initialSecondaryColor);
+  }
+
+  @override
+  void dispose() {
+    _primaryController.dispose();
+    _secondaryController.dispose();
+    super.dispose();
+  }
+
+  bool _isValidHex(String value) {
+    return RegExp(r'^#([A-Fa-f0-9]{6})$').hasMatch(value.trim());
+  }
+
+  String _normalizeHex(String value) => value.trim().toUpperCase();
+
+  Color _safeColor(String value) {
+    final normalized = _normalizeHex(value);
+    if (_isValidHex(normalized)) {
+      return normalized.toColor();
+    }
+    return Colors.grey.shade400;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          decoration: carouselBoxDecoration(context),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t('studio.tab_theme', fallback: 'Theme'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.t(
+                    'studio.theme_hint',
+                    fallback:
+                        'Update the church primary and secondary brand colors using hex values like #1E88E5.',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.t(
+                    'studio.theme_palette_hint',
+                    fallback:
+                        'Tap a color from the palette or enter a custom hex value.',
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                _ThemeColorField(
+                  label: context.t(
+                    'studio.theme_primary_label',
+                    fallback: 'Primary Color',
+                  ),
+                  controller: _primaryController,
+                  previewColor: _safeColor(_primaryController.text),
+                  paletteHexValues: _paletteHexValues,
+                  onChanged: (_) => setState(() {}),
+                  onPaletteSelected: (value) {
+                    setState(() {
+                      _primaryController.text = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                _ThemeColorField(
+                  label: context.t(
+                    'studio.theme_secondary_label',
+                    fallback: 'Secondary Color',
+                  ),
+                  controller: _secondaryController,
+                  previewColor: _safeColor(_secondaryController.text),
+                  paletteHexValues: _paletteHexValues,
+                  onChanged: (_) => setState(() {}),
+                  onPaletteSelected: (value) {
+                    setState(() {
+                      _secondaryController.text = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            final primary =
+                                _normalizeHex(_primaryController.text);
+                            final secondary =
+                                _normalizeHex(_secondaryController.text);
+                            if (!_isValidHex(primary) ||
+                                !_isValidHex(secondary)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    context.t(
+                                      'studio.theme_invalid_hex',
+                                      fallback:
+                                          'Use valid hex colors like #1E88E5.',
+                                    ),
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() => _isSaving = true);
+                            try {
+                              await widget.onSave(
+                                primaryColor: primary,
+                                secondaryColor: secondary,
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    context.t(
+                                      'studio.theme_updated',
+                                      fallback: 'Theme colors updated',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSaving = false);
+                              }
+                            }
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.t('common.save', fallback: 'Save')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeColorField extends StatelessWidget {
+  const _ThemeColorField({
+    required this.label,
+    required this.controller,
+    required this.previewColor,
+    required this.paletteHexValues,
+    required this.onChanged,
+    required this.onPaletteSelected,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final Color previewColor;
+  final List<String> paletteHexValues;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onPaletteSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: previewColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                decoration: InputDecoration(
+                  labelText: label,
+                  helperText: '#RRGGBB',
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: paletteHexValues.map((hex) {
+            final isSelected = controller.text.trim().toUpperCase() == hex;
+            return InkWell(
+              onTap: () => onPaletteSelected(hex),
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: hex.toColor(),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.outlineVariant,
+                    width: isSelected ? 2.4 : 1,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: isSelected
+                    ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: hex.toColor().computeLuminance() > 0.5
+                            ? Colors.black
+                            : Colors.white,
+                      )
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _AboutEditor extends StatelessWidget {
+  const _AboutEditor({
+    required this.repository,
+  });
+
+  final StudioRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: repository.watchAbout(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+            ),
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final about = snapshot.data ?? <String, dynamic>{};
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              decoration: carouselBoxDecoration(context),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.t('studio.tab_about', fallback: 'About'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.t(
+                        'studio.about_hint',
+                        fallback:
+                            'Update the main about section shown for this church.',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _DetailLine(
+                      label: context.t('common.title', fallback: 'Title'),
+                      value: (about['title'] ?? '') as String,
+                    ),
+                    _DetailLine(
+                      label: context.t(
+                        'studio.about_tagline',
+                        fallback: 'Tagline',
+                      ),
+                      value: (about['tagline'] ?? '') as String,
+                    ),
+                    _DetailLine(
+                      label: context.t(
+                        'common.description',
+                        fallback: 'Description',
+                      ),
+                      value: (about['description'] ?? '') as String,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => _showAboutEditor(
+                        context,
+                        repository,
+                        initialData: about,
+                      ),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: Text(
+                        context.t('studio.about_edit', fallback: 'Edit About'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BibleSwipeVersesEditor extends StatelessWidget {
+  const _BibleSwipeVersesEditor({
+    required this.repository,
+  });
+
+  final StudioRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<String>>(
+      stream: repository.watchBibleSwipeVerses(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final verses = snapshot.data!;
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              decoration: carouselBoxDecoration(context),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.t(
+                        'studio.tab_bible_swipe',
+                        fallback: 'Bible Swipe',
+                      ),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.t(
+                        'studio.bible_swipe_hint',
+                        fallback:
+                            'Enter one verse reference per line, like John 3:16.',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => _showVerseEditor(
+                        context,
+                        title: context.t(
+                          'studio.bible_swipe_add',
+                          fallback: 'Add Swipe Verse',
+                        ),
+                        initialBook: 'John',
+                        initialChapter: 3,
+                        initialVerse: 16,
+                        onSave: ({
+                          required book,
+                          required chapter,
+                          required verse,
+                        }) {
+                          final updated = [...verses, '$book $chapter:$verse'];
+                          return repository.updateBibleSwipeVerses(updated);
+                        },
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: Text(
+                        context.t(
+                          'studio.bible_swipe_add',
+                          fallback: 'Add Swipe Verse',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (verses.isEmpty)
+                      Text(
+                        context.t(
+                          'studio.bible_swipe_empty',
+                          fallback: 'No swipe verses added yet.',
+                        ),
+                      )
+                    else
+                      ...verses.asMap().entries.map(
+                        (entry) {
+                          final index = entry.key;
+                          final verse = entry.value;
+                          final parsed = BibleSwipeVerseModel.fromString(verse);
+                          return Container(
+                            decoration: carouselBoxDecoration(context),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              title: Text(verse),
+                              trailing: Wrap(
+                                spacing: 8,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () => _showVerseEditor(
+                                      context,
+                                      title: context.t(
+                                        'studio.bible_swipe_edit_single',
+                                        fallback: 'Edit Swipe Verse',
+                                      ),
+                                      initialBook: parsed.book,
+                                      initialChapter: parsed.chapter,
+                                      initialVerse: parsed.verse,
+                                      onSave: ({
+                                        required book,
+                                        required chapter,
+                                        required verse,
+                                      }) {
+                                        final updated = [...verses];
+                                        updated[index] =
+                                            '$book $chapter:$verse';
+                                        return repository
+                                            .updateBibleSwipeVerses(updated);
+                                      },
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed: () async {
+                                      final updated = [...verses]
+                                        ..removeAt(index);
+                                      await repository.updateBibleSwipeVerses(
+                                        updated,
+                                      );
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            context.t(
+                                              'studio.bible_swipe_updated',
+                                              fallback:
+                                                  'Bible swipe verses updated',
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FooterEditor extends StatelessWidget {
+  const _FooterEditor({
+    required this.repository,
+  });
+
+  final StudioRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          context.t('studio.tab_footer', fallback: 'Footer'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 12),
+        _FooterCollectionCard(
+          title: context.t(
+            'studio.footer_contacts_title',
+            fallback: 'Footer Contacts',
+          ),
+          stream: repository.watchContactItems(),
+          addLabel: context.t(
+            'studio.footer_contacts_add',
+            fallback: 'Add contact item',
+          ),
+          emptyText: context.t(
+            'studio.footer_contacts_empty',
+            fallback: 'No footer contact items yet.',
+          ),
+          tileTitle: (data) => (data['label'] ?? '') as String,
+          tileSubtitle: (data) {
+            final parts = <String>[
+              if ((data['type'] ?? '').toString().isNotEmpty)
+                '${context.t('studio.footer_type_prefix', fallback: 'Type')}: ${data['type']}',
+              if ((data['action'] ?? '').toString().isNotEmpty)
+                '${context.t('studio.footer_action_prefix', fallback: 'Action')}: ${data['action']}',
+              '${context.t('studio.footer_order_prefix', fallback: 'Order')}: ${data['order'] ?? 0}',
+              '${context.t('studio.footer_active_prefix', fallback: 'Active')}: ${data['isActive'] == true ? context.t('common.yes', fallback: 'Yes') : context.t('common.no', fallback: 'No')}',
+            ];
+            return parts.join('\n');
+          },
+          onAdd: () => _showFooterContactEditor(context, repository),
+          onEdit: (doc) => _showFooterContactEditor(
+            context,
+            repository,
+            doc: doc,
+          ),
+          onDelete: (doc) => repository.deleteContactItem(doc.id),
+        ),
+        const SizedBox(height: 16),
+        _FooterCollectionCard(
+          title: context.t(
+            'studio.footer_social_title',
+            fallback: 'Footer Social',
+          ),
+          stream: repository.watchSocialItems(),
+          addLabel: context.t(
+            'studio.footer_social_add',
+            fallback: 'Add social item',
+          ),
+          emptyText: context.t(
+            'studio.footer_social_empty',
+            fallback: 'No social items yet.',
+          ),
+          tileTitle: (data) => (data['icon'] ?? '') as String,
+          tileSubtitle: (data) {
+            final parts = <String>[
+              if ((data['platform'] ?? '').toString().isNotEmpty)
+                '${context.t('studio.footer_platform_prefix', fallback: 'Platform')}: ${data['platform']}',
+              if ((data['url'] ?? '').toString().isNotEmpty)
+                '${context.t('studio.footer_url_prefix', fallback: 'URL')}: ${data['url']}',
+              '${context.t('studio.footer_order_prefix', fallback: 'Order')}: ${data['order'] ?? 0}',
+              '${context.t('studio.footer_active_prefix', fallback: 'Active')}: ${data['isActive'] == true ? context.t('common.yes', fallback: 'Yes') : context.t('common.no', fallback: 'No')}',
+            ];
+            return parts.join('\n');
+          },
+          onAdd: () => _showFooterSocialEditor(context, repository),
+          onEdit: (doc) => _showFooterSocialEditor(
+            context,
+            repository,
+            doc: doc,
+          ),
+          onDelete: (doc) => repository.deleteSocialItem(doc.id),
+        ),
+      ],
+    );
+  }
+}
+
+class _FooterCollectionCard extends StatelessWidget {
+  const _FooterCollectionCard({
+    required this.title,
+    required this.stream,
+    required this.addLabel,
+    required this.emptyText,
+    required this.tileTitle,
+    required this.tileSubtitle,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final String title;
+  final Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> stream;
+  final String addLabel;
+  final String emptyText;
+  final String Function(Map<String, dynamic>) tileTitle;
+  final String Function(Map<String, dynamic>) tileSubtitle;
+  final Future<void> Function() onAdd;
+  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc)
+      onEdit;
+  final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc)
+      onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      padding: const EdgeInsets.all(16),
+      child: StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+        stream: stream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Text(
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(addLabel),
+              ),
+              const SizedBox(height: 16),
+              if (docs.isEmpty)
+                Text(emptyText)
+              else
+                ...docs.map(
+                  (doc) => Container(
+                    decoration: carouselBoxDecoration(context),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      title: Text(tileTitle(doc.data())),
+                      subtitle: Text(tileSubtitle(doc.data())),
+                      isThreeLine: tileSubtitle(doc.data()).contains('\n'),
+                      trailing: Wrap(
+                        spacing: 8,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => onEdit(doc),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              await onDelete(doc);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DetailLine extends StatelessWidget {
+  const _DetailLine({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(value),
+        ],
+      ),
     );
   }
 }
@@ -1180,6 +2014,554 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
       ],
     );
   }
+}
+
+Future<void> _showAboutEditor(
+  BuildContext context,
+  StudioRepository repository, {
+  required Map<String, dynamic> initialData,
+}) {
+  final titleController =
+      TextEditingController(text: (initialData['title'] ?? '') as String);
+  final taglineController =
+      TextEditingController(text: (initialData['tagline'] ?? '') as String);
+  final descriptionController = TextEditingController(
+    text: (initialData['description'] ?? '') as String,
+  );
+  final missionController =
+      TextEditingController(text: (initialData['mission'] ?? '') as String);
+  final communityController =
+      TextEditingController(text: (initialData['community'] ?? '') as String);
+  final valuesController =
+      TextEditingController(text: (initialData['values'] ?? '') as String);
+  var isSaving = false;
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.t('studio.about_edit', fallback: 'Edit About'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: context.t('common.title', fallback: 'Title'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: taglineController,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.about_tagline',
+                        fallback: 'Tagline',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descriptionController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'common.description',
+                        fallback: 'Description',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: missionController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.about_mission',
+                        fallback: 'Mission',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: communityController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.about_community',
+                        fallback: 'Community',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: valuesController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.about_values',
+                        fallback: 'Values',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setState(() => isSaving = true);
+                              try {
+                                await repository.updateAbout(
+                                  title: titleController.text.trim(),
+                                  tagline: taglineController.text.trim(),
+                                  description:
+                                      descriptionController.text.trim(),
+                                  mission: missionController.text.trim(),
+                                  community: communityController.text.trim(),
+                                  values: valuesController.text.trim(),
+                                );
+                                if (!context.mounted) return;
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.t(
+                                        'studio.about_updated',
+                                        fallback: 'About updated',
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } finally {
+                                if (context.mounted) {
+                                  setState(() => isSaving = false);
+                                }
+                              }
+                            },
+                      child: isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(context.t('common.save', fallback: 'Save')),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showPastorEditor(
+  BuildContext context,
+  StudioRepository repository, {
+  QueryDocumentSnapshot<Map<String, dynamic>>? doc,
+}) {
+  final data = doc?.data() ?? <String, dynamic>{};
+  final titleController =
+      TextEditingController(text: (data['title'] ?? '') as String);
+  final contactController =
+      TextEditingController(text: (data['contact'] ?? '') as String);
+  var isSaving = false;
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t(
+                    doc == null ? 'studio.pastor_create' : 'studio.pastor_edit',
+                    fallback: doc == null ? 'Add Pastor' : 'Edit Pastor',
+                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: context.t('common.title', fallback: 'Title'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contactController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.event_contact',
+                      fallback: 'Contact',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            setState(() => isSaving = true);
+                            final payload = {
+                              'title': titleController.text.trim(),
+                              'contact': contactController.text.trim(),
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            };
+                            try {
+                              if (doc == null) {
+                                await repository.createPastor(payload);
+                              } else {
+                                await repository.updatePastor(doc.id, payload);
+                              }
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                            } finally {
+                              if (context.mounted) {
+                                setState(() => isSaving = false);
+                              }
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.t('common.save', fallback: 'Save')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showFooterContactEditor(
+  BuildContext context,
+  StudioRepository repository, {
+  QueryDocumentSnapshot<Map<String, dynamic>>? doc,
+}) {
+  final data = doc?.data() ?? <String, dynamic>{};
+  final labelController =
+      TextEditingController(text: (data['label'] ?? '') as String);
+  final actionController =
+      TextEditingController(text: (data['action'] ?? '') as String);
+  final orderController = TextEditingController(text: '${data['order'] ?? 1}');
+  var type = (data['type'] ?? 'phone') as String;
+  var isActive = (data['isActive'] ?? true) as bool;
+  var isSaving = false;
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t(
+                    doc == null
+                        ? 'studio.footer_contact_create'
+                        : 'studio.footer_contact_edit',
+                    fallback:
+                        doc == null ? 'Add Contact Item' : 'Edit Contact Item',
+                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: type,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_type_label',
+                      fallback: 'Type',
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'phone', child: Text('phone')),
+                    DropdownMenuItem(value: 'email', child: Text('email')),
+                    DropdownMenuItem(
+                        value: 'location', child: Text('location')),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => type = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: labelController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_label_label',
+                      fallback: 'Label',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: actionController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_action_label',
+                      fallback: 'Action',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: orderController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_order_label',
+                      fallback: 'Order',
+                    ),
+                  ),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.t('common.active', fallback: 'Active')),
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            setState(() => isSaving = true);
+                            final payload = {
+                              'label': labelController.text.trim(),
+                              'type': type,
+                              'action': actionController.text.trim(),
+                              'order':
+                                  int.tryParse(orderController.text.trim()) ??
+                                      1,
+                              'isActive': isActive,
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            };
+                            try {
+                              if (doc == null) {
+                                await repository.createContactItem(payload);
+                              } else {
+                                await repository.updateContactItem(
+                                    doc.id, payload);
+                              }
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                            } finally {
+                              if (context.mounted) {
+                                setState(() => isSaving = false);
+                              }
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.t('common.save', fallback: 'Save')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showFooterSocialEditor(
+  BuildContext context,
+  StudioRepository repository, {
+  QueryDocumentSnapshot<Map<String, dynamic>>? doc,
+}) {
+  final data = doc?.data() ?? <String, dynamic>{};
+  final iconController =
+      TextEditingController(text: (data['icon'] ?? '') as String);
+  final platformController =
+      TextEditingController(text: (data['platform'] ?? '') as String);
+  final urlController =
+      TextEditingController(text: (data['url'] ?? '') as String);
+  final orderController = TextEditingController(text: '${data['order'] ?? 1}');
+  var isActive = (data['isActive'] ?? true) as bool;
+  var isSaving = false;
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t(
+                    doc == null
+                        ? 'studio.footer_social_create'
+                        : 'studio.footer_social_edit',
+                    fallback:
+                        doc == null ? 'Add Social Item' : 'Edit Social Item',
+                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: iconController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_icon_label',
+                      fallback: 'Icon Label',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: platformController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_platform_label',
+                      fallback: 'Platform',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_url_label',
+                      fallback: 'URL',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: orderController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: context.t(
+                      'studio.footer_order_label',
+                      fallback: 'Order',
+                    ),
+                  ),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.t('common.active', fallback: 'Active')),
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            setState(() => isSaving = true);
+                            final payload = {
+                              'icon': iconController.text.trim(),
+                              'platform': platformController.text.trim(),
+                              'url': urlController.text.trim(),
+                              'order':
+                                  int.tryParse(orderController.text.trim()) ??
+                                      1,
+                              'isActive': isActive,
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            };
+                            try {
+                              if (doc == null) {
+                                await repository.createSocialItem(payload);
+                              } else {
+                                await repository.updateSocialItem(
+                                    doc.id, payload);
+                              }
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                            } finally {
+                              if (context.mounted) {
+                                setState(() => isSaving = false);
+                              }
+                            }
+                          },
+                    child: isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(context.t('common.save', fallback: 'Save')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
 Future<void> _showEventEditor(

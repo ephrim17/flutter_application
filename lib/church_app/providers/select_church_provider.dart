@@ -22,3 +22,8 @@ final churchesProvider = StreamProvider<List<Church>>((ref) {
   final repository = ref.watch(churchRepositoryProvider);
   return repository.getEnabledChurches();
 });
+
+final allChurchesProvider = StreamProvider<List<Church>>((ref) {
+  final repository = ref.watch(churchRepositoryProvider);
+  return repository.getAllChurches();
+});
