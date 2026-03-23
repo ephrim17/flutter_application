@@ -548,6 +548,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             contact: '',
             email: '',
             pastorName: '',
+            pastorPhoto: '',
             logo: widget.churchLogo,
             enabled: true,
           );
@@ -620,6 +621,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         contact: '',
         email: '',
         pastorName: '',
+        pastorPhoto: '',
         logo: widget.churchLogo,
         enabled: true,
       );

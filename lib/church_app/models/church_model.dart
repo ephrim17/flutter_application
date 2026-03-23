@@ -5,6 +5,7 @@ class Church {
   final String contact;
   final String email;
   final String pastorName;
+  final String pastorPhoto;
   final String logo;
   final bool enabled;
 
@@ -15,6 +16,7 @@ class Church {
     required this.contact,
     required this.email,
     required this.pastorName,
+    required this.pastorPhoto,
     required this.logo,
     required this.enabled,
   });
@@ -27,6 +29,7 @@ class Church {
       contact: data['contact'] ?? '',
       email: data['email'] ?? '',
       pastorName: data['pastorName'] ?? '',
+      pastorPhoto: data['pastorPhoto'] ?? '',
       logo: data['logo'] ?? data['logoUrl'] ?? data['imageUrl'] ?? '',
       enabled: data['enabled'] ?? false,
     );

@@ -32,6 +32,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   bool _enabled = true;
   bool _isSubmitting = false;
   PickedImageData? _logoImage;
+  PickedImageData? _pastorPhotoImage;
 
   bool get _canSubmit => !_isSubmitting && _validate(context) == null;
 
@@ -97,6 +98,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         fallback: 'Please pick a church logo',
       );
     }
+    if (_pastorPhotoImage == null) {
+      return context.t(
+        'super_admin.pastor_photo_required',
+        fallback: 'Please pick a pastor photo',
+      );
+    }
     if (address.isEmpty) {
       return context.t(
         'super_admin.address_required',
@@ -149,12 +156,24 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   }
 
   Future<void> _pickLogo() async {
+    await _pickImage((image) {
+      _logoImage = image;
+    });
+  }
+
+  Future<void> _pickPastorPhoto() async {
+    await _pickImage((image) {
+      _pastorPhotoImage = image;
+    });
+  }
+
+  Future<void> _pickImage(void Function(PickedImageData image) assign) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     final image = await PickedImageData.fromXFile(file);
     if (image == null || !mounted) return;
     setState(() {
-      _logoImage = image;
+      assign(image);
     });
   }
 
@@ -190,6 +209,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           churchId: normalizedChurchId,
           name: _nameController.text.trim(),
           pastorName: _pastorController.text.trim(),
+          pastorPhotoImage: _pastorPhotoImage!,
           address: _addressController.text.trim(),
           contact: _contactController.text.trim(),
           email: _emailController.text.trim(),
@@ -380,8 +400,37 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                             ),
                             const SizedBox(height: 20),
                             _LogoPickerCard(
+                              label: context.t(
+                                'super_admin.logo_label',
+                                fallback: 'Church Logo',
+                              ),
+                              pickText: context.t(
+                                'super_admin.logo_pick',
+                                fallback: 'Pick Logo',
+                              ),
+                              replaceText: context.t(
+                                'super_admin.logo_replace',
+                                fallback: 'Replace Logo',
+                              ),
                               imageBytes: _logoImage?.bytes,
                               onTap: _isSubmitting ? null : _pickLogo,
+                            ),
+                            const SizedBox(height: 20),
+                            _LogoPickerCard(
+                              label: context.t(
+                                'super_admin.pastor_photo_label',
+                                fallback: 'Pastor Photo',
+                              ),
+                              pickText: context.t(
+                                'super_admin.pastor_photo_pick',
+                                fallback: 'Pick Pastor Photo',
+                              ),
+                              replaceText: context.t(
+                                'super_admin.pastor_photo_replace',
+                                fallback: 'Replace Pastor Photo',
+                              ),
+                              imageBytes: _pastorPhotoImage?.bytes,
+                              onTap: _isSubmitting ? null : _pickPastorPhoto,
                             ),
                             const SizedBox(height: 20),
                             Align(
@@ -507,10 +556,16 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
 
 class _LogoPickerCard extends StatelessWidget {
   const _LogoPickerCard({
+    required this.label,
+    required this.pickText,
+    required this.replaceText,
     required this.imageBytes,
     required this.onTap,
   });
 
+  final String label;
+  final String pickText;
+  final String replaceText;
   final Uint8List? imageBytes;
   final VoidCallback? onTap;
 
@@ -531,7 +586,15 @@ class _LogoPickerCard extends StatelessWidget {
           ),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: Container(
@@ -552,10 +615,7 @@ class _LogoPickerCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              context.t(
-                hasImage ? 'super_admin.logo_replace' : 'super_admin.logo_pick',
-                fallback: hasImage ? 'Replace Logo' : 'Pick Logo',
-              ),
+              hasImage ? replaceText : pickText,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

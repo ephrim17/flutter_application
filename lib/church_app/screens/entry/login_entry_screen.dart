@@ -260,6 +260,7 @@ class LoginScreen extends ConsumerWidget {
                               contact: '',
                               email: '',
                               pastorName: '',
+                              pastorPhoto: '',
                               logo: churchLogo,
                               enabled: true,
                             );

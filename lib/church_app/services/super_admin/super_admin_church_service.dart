@@ -9,6 +9,7 @@ class CreateChurchInput {
     required this.churchId,
     required this.name,
     required this.pastorName,
+    required this.pastorPhotoImage,
     required this.address,
     required this.contact,
     required this.email,
@@ -23,6 +24,7 @@ class CreateChurchInput {
   final String churchId;
   final String name;
   final String pastorName;
+  final PickedImageData pastorPhotoImage;
   final String address;
   final String contact;
   final String email;
@@ -80,6 +82,10 @@ class SuperAdminChurchService {
       churchId: churchId,
       imageFile: input.logoImage,
     );
+    final pastorPhotoUrl = await _uploadPastorPhoto(
+      churchId: churchId,
+      imageFile: input.pastorPhotoImage,
+    );
 
     final batch = _firestore.batch();
     final now = FieldValue.serverTimestamp();
@@ -90,6 +96,7 @@ class SuperAdminChurchService {
     batch.set(churchDoc, {
       'name': input.name.trim(),
       'pastorName': input.pastorName.trim(),
+      'pastorPhoto': pastorPhotoUrl,
       'address': input.address.trim(),
       'contact': input.contact.trim(),
       'email': normalizedChurchEmail,
@@ -198,6 +205,7 @@ class SuperAdminChurchService {
         {
           'title': input.pastorName.trim(),
           'contact': input.contact.trim(),
+          'imageUrl': pastorPhotoUrl,
           'updatedAt': now,
         },
       );
@@ -267,6 +275,18 @@ class SuperAdminChurchService {
     required PickedImageData imageFile,
   }) async {
     final storageRef = _storage.ref().child('churches/$churchId/logo');
+    await storageRef.putData(
+      imageFile.bytes,
+      _metadataFor(imageFile.name),
+    );
+    return storageRef.getDownloadURL();
+  }
+
+  Future<String> _uploadPastorPhoto({
+    required String churchId,
+    required PickedImageData imageFile,
+  }) async {
+    final storageRef = _storage.ref().child('churches/$churchId/pastor_photo');
     await storageRef.putData(
       imageFile.bytes,
       _metadataFor(imageFile.name),
