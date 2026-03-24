@@ -1315,86 +1315,105 @@ class _AboutEditor extends ConsumerWidget {
           orElse: () => '',
         );
 
-    return StreamBuilder<Map<String, dynamic>?>(
-      stream: repository.watchAbout(),
-      initialData: const <String, dynamic>{},
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: repository.fetchAboutData(),
+      builder: (context, initialSnapshot) {
+        if (initialSnapshot.hasError) {
           return Center(
             child: Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${initialSnapshot.error}',
             ),
           );
         }
+        if (!initialSnapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        final about = snapshot.data ?? <String, dynamic>{};
-
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              decoration: carouselBoxDecoration(context),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.t('studio.tab_about', fallback: 'About'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.t(
-                        'studio.about_hint',
-                        fallback:
-                            'Update the main about section shown for this church.',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _DetailLine(
-                      label: context.t(
-                        'studio.about_church_name',
-                        fallback: 'Church Name',
-                      ),
-                      value: churchAppTitle,
-                    ),
-                    _DetailLine(
-                      label: context.t('common.title', fallback: 'Title'),
-                      value: (about['title'] ?? '') as String,
-                    ),
-                    _DetailLine(
-                      label: context.t(
-                        'studio.about_tagline',
-                        fallback: 'Tagline',
-                      ),
-                      value: (about['tagline'] ?? '') as String,
-                    ),
-                    _DetailLine(
-                      label: context.t(
-                        'common.description',
-                        fallback: 'Description',
-                      ),
-                      value: (about['description'] ?? '') as String,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => _showAboutEditor(
-                        context,
-                        repository,
-                        initialData: about,
-                        initialChurchAppTitle: churchAppTitle,
-                      ),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(
-                        context.t('studio.about_edit', fallback: 'Edit About'),
-                      ),
-                    ),
-                  ],
+        return StreamBuilder<Map<String, dynamic>?>(
+          stream: repository.watchAbout(),
+          initialData: initialSnapshot.data!,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
                 ),
-              ),
-            ),
-          ],
+              );
+            }
+
+            final about = snapshot.data ?? initialSnapshot.data!;
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Container(
+                  decoration: carouselBoxDecoration(context),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.t('studio.tab_about', fallback: 'About'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.t(
+                            'studio.about_hint',
+                            fallback:
+                                'Update the main about section shown for this church.',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _DetailLine(
+                          label: context.t(
+                            'studio.about_church_name',
+                            fallback: 'Church Name',
+                          ),
+                          value: churchAppTitle,
+                        ),
+                        _DetailLine(
+                          label: context.t('common.title', fallback: 'Title'),
+                          value: (about['title'] ?? '') as String,
+                        ),
+                        _DetailLine(
+                          label: context.t(
+                            'studio.about_tagline',
+                            fallback: 'Tagline',
+                          ),
+                          value: (about['tagline'] ?? '') as String,
+                        ),
+                        _DetailLine(
+                          label: context.t(
+                            'common.description',
+                            fallback: 'Description',
+                          ),
+                          value: (about['description'] ?? '') as String,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: () => _showAboutEditor(
+                            context,
+                            repository,
+                            initialData: about,
+                            initialChurchAppTitle: churchAppTitle,
+                          ),
+                          icon: const Icon(Icons.edit_outlined),
+                          label: Text(
+                            context.t(
+                              'studio.about_edit',
+                              fallback: 'Edit About',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -1585,6 +1604,7 @@ class _FooterEditor extends StatelessWidget {
             'studio.footer_contacts_title',
             fallback: 'Footer Contacts',
           ),
+          initialFetch: repository.fetchContactItems,
           stream: repository.watchContactItems(),
           addLabel: context.t(
             'studio.footer_contacts_add',
@@ -1620,6 +1640,7 @@ class _FooterEditor extends StatelessWidget {
             'studio.footer_social_title',
             fallback: 'Footer Social',
           ),
+          initialFetch: repository.fetchSocialItems,
           stream: repository.watchSocialItems(),
           addLabel: context.t(
             'studio.footer_social_add',
@@ -1657,6 +1678,7 @@ class _FooterEditor extends StatelessWidget {
 class _FooterCollectionCard extends StatelessWidget {
   const _FooterCollectionCard({
     required this.title,
+    required this.initialFetch,
     required this.stream,
     required this.addLabel,
     required this.emptyText,
@@ -1668,6 +1690,8 @@ class _FooterCollectionCard extends StatelessWidget {
   });
 
   final String title;
+  final Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> Function()
+      initialFetch;
   final Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> stream;
   final String addLabel;
   final String emptyText;
@@ -1684,63 +1708,77 @@ class _FooterCollectionCard extends StatelessWidget {
     return Container(
       decoration: carouselBoxDecoration(context),
       padding: const EdgeInsets.all(16),
-      child: StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
-        stream: stream,
-        initialData: const <QueryDocumentSnapshot<Map<String, dynamic>>>[],
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
+      child: FutureBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+        future: initialFetch(),
+        builder: (context, initialSnapshot) {
+          if (initialSnapshot.hasError) {
             return Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${initialSnapshot.error}',
             );
           }
+          if (!initialSnapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          final docs = snapshot.data ??
-              const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+          return StreamBuilder<
+              List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+            stream: stream,
+            initialData: initialSnapshot.data!,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text(
+                  '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+                );
+              }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add),
-                label: Text(addLabel),
-              ),
-              const SizedBox(height: 16),
-              if (docs.isEmpty)
-                Text(emptyText)
-              else
-                ...docs.map(
-                  (doc) => Container(
-                    decoration: carouselBoxDecoration(context),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      title: Text(tileTitle(doc.data())),
-                      subtitle: Text(tileSubtitle(doc.data())),
-                      isThreeLine: tileSubtitle(doc.data()).contains('\n'),
-                      trailing: Wrap(
-                        spacing: 8,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () => onEdit(doc),
+              final docs = snapshot.data ?? initialSnapshot.data!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: onAdd,
+                    icon: const Icon(Icons.add),
+                    label: Text(addLabel),
+                  ),
+                  const SizedBox(height: 16),
+                  if (docs.isEmpty)
+                    Text(emptyText)
+                  else
+                    ...docs.map(
+                      (doc) => Container(
+                        decoration: carouselBoxDecoration(context),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(tileTitle(doc.data())),
+                          subtitle: Text(tileSubtitle(doc.data())),
+                          isThreeLine: tileSubtitle(doc.data()).contains('\n'),
+                          trailing: Wrap(
+                            spacing: 8,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => onEdit(doc),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () async {
+                                  await onDelete(doc);
+                                },
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
-                              await onDelete(doc);
-                            },
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           );
         },
       ),

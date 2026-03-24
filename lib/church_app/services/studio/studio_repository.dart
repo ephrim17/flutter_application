@@ -97,6 +97,11 @@ class StudioRepository {
     return aboutRef.snapshots().map((snapshot) => snapshot.data());
   }
 
+  Future<Map<String, dynamic>> fetchAboutData() async {
+    final snapshot = await aboutRef.get();
+    return snapshot.data() ?? <String, dynamic>{};
+  }
+
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchPastors() {
     return pastorsRef.snapshots().map((snapshot) => snapshot.docs);
   }
@@ -119,10 +124,22 @@ class StudioRepository {
     });
   }
 
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchContactItems() async {
+    final snapshot = await contactItemsRef.orderBy('order').get();
+    return snapshot.docs;
+  }
+
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> watchSocialItems() {
     return socialItemsRef.orderBy('order').snapshots().map((snapshot) {
       return snapshot.docs;
     });
+  }
+
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchSocialItems() async {
+    final snapshot = await socialItemsRef.orderBy('order').get();
+    return snapshot.docs;
   }
 
   Stream<List<HomeSectionConfigModel>> watchHomeSectionConfigs() {
