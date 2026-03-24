@@ -622,11 +622,31 @@ class _StudioToolScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(item.title),
+    final theme = Theme.of(context);
+    final buttonStyle = FilledButton.styleFrom(
+      minimumSize: const Size(double.infinity, 54),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
       ),
-      body: item.builder(context),
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
+      disabledBackgroundColor:
+          theme.colorScheme.primary.withValues(alpha: 0.42),
+      disabledForegroundColor:
+          theme.colorScheme.onPrimary.withValues(alpha: 0.92),
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: Text(item.title)),
+      body: Theme(
+        data: theme.copyWith(
+          filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
+        ),
+        child: SafeArea(
+          top: false,
+          child: item.builder(context),
+        ),
+      ),
     );
   }
 }
@@ -767,6 +787,7 @@ class _CollectionEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
       stream: stream,
+      initialData: const <QueryDocumentSnapshot<Map<String, dynamic>>>[],
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -774,11 +795,9 @@ class _CollectionEditor extends StatelessWidget {
                 '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}'),
           );
         }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
 
-        final docs = snapshot.data!;
+        final docs = snapshot.data ??
+            const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
         if (docs.isEmpty) {
           return ListView(
@@ -1393,6 +1412,7 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<List<String>>(
       stream: repository.watchBibleSwipeVerses(),
+      initialData: const <String>[],
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -1401,11 +1421,8 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
             ),
           );
         }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
 
-        final verses = snapshot.data!;
+        final verses = snapshot.data ?? const <String>[];
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -1669,17 +1686,16 @@ class _FooterCollectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
         stream: stream,
+        initialData: const <QueryDocumentSnapshot<Map<String, dynamic>>>[],
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Text(
               '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
             );
           }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
-          final docs = snapshot.data!;
+          final docs = snapshot.data ??
+              const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1969,6 +1985,7 @@ class _SectionGroupCard<T> extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<List<T>>(
           stream: stream,
+          initialData: const [],
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Text(
@@ -1976,12 +1993,9 @@ class _SectionGroupCard<T> extends StatelessWidget {
               );
             }
 
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
+            final items = snapshot.data ?? List<T>.empty(growable: false);
             final configById = {
-              for (final item in snapshot.data!) itemId(item): item,
+              for (final item in items) itemId(item): item,
             };
 
             return Column(
