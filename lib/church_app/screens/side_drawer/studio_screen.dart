@@ -62,45 +62,23 @@ class StudioScreen extends ConsumerWidget {
           firestore: ref.read(firestoreProvider),
           churchId: churchId,
         );
+        final configAsync = ref.watch(appConfigProvider);
+        final config = configAsync.asData?.value;
 
-        return DefaultTabController(
-          length: 14,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(ref.t('studio.title', fallback: 'Studio')),
-              bottom: TabBar(
-                isScrollable: true,
-                tabs: [
-                  Tab(text: ref.t('studio.tab_theme', fallback: 'Theme')),
-                  Tab(text: ref.t('studio.tab_about', fallback: 'About')),
-                  Tab(text: ref.t('studio.tab_pastor', fallback: 'Pastor')),
-                  Tab(
-                      text: ref.t('studio.tab_bible_swipe',
-                          fallback: 'Bible Swipe')),
-                  Tab(text: ref.t('studio.tab_footer', fallback: 'Footer')),
-                  Tab(text: ref.t('studio.tab_events', fallback: 'Events')),
-                  Tab(
-                      text: ref.t('studio.tab_announcements',
-                          fallback: 'Announcements')),
-                  Tab(
-                      text: ref.t('studio.tab_daily_verse',
-                          fallback: 'Daily Verse')),
-                  Tab(text: ref.t('studio.tab_articles', fallback: 'Articles')),
-                  Tab(text: ref.t('studio.tab_promise', fallback: 'Promise')),
-                  Tab(
-                    text: ref.t('studio.tab_sections', fallback: 'Sections'),
-                  ),
-                  Tab(
-                      text: ref.t('studio.tab_notifications',
-                          fallback: 'Notifications')),
-                  Tab(text: ref.t('studio.tab_admins', fallback: 'Admins')),
-                  Tab(text: ref.t('studio.tab_prompt', fallback: 'Prompt')),
-                ],
-              ),
-            ),
-            body: TabBarView(
-              children: [
-                _ThemeEditor(
+        final categories = <_StudioCategory>[
+          _StudioCategory(
+            title: 'Brand & Identity',
+            subtitle: 'Shape the look and core church profile.',
+            items: [
+              _StudioToolItem(
+                title: ref.t('studio.tab_theme', fallback: 'Theme'),
+                subtitle: 'Update colors and visual branding.',
+                icon: Icons.palette_outlined,
+                status: const _StudioToolStatus(
+                  label: 'Theme',
+                  tone: _StudioStatusTone.neutral,
+                ),
+                builder: (_) => _ThemeEditor(
                   onSave: ({
                     required primaryColor,
                     required secondaryColor,
@@ -111,8 +89,24 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                _AboutEditor(repository: repository),
-                _CollectionEditor(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_about', fallback: 'About'),
+                subtitle: 'Edit church name, mission, values, and story.',
+                icon: Icons.auto_stories_outlined,
+                status: const _StudioToolStatus(
+                  label: 'Profile',
+                  tone: _StudioStatusTone.neutral,
+                ),
+                builder: (_) => _AboutEditor(repository: repository),
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_pastor', fallback: 'Pastor'),
+                subtitle: 'Manage pastor entries and contact details.',
+                icon: Icons.person_outline_rounded,
+                countStream:
+                    repository.watchPastors().map((docs) => docs.length),
+                builder: (screenContext) => _CollectionEditor(
                   title: ref.t('studio.tab_pastor', fallback: 'Pastor'),
                   stream: repository.watchPastors(),
                   addLabel: ref.t('studio.add_pastor', fallback: 'Add pastor'),
@@ -120,17 +114,69 @@ class StudioScreen extends ConsumerWidget {
                       ref.t('studio.no_pastors', fallback: 'No pastors yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) => (data['contact'] ?? '') as String,
-                  onAdd: () => _showPastorEditor(context, repository),
+                  onAdd: () => _showPastorEditor(screenContext, repository),
                   onEdit: (doc) => _showPastorEditor(
-                    context,
+                    screenContext,
                     repository,
                     doc: doc,
                   ),
                   onDelete: (doc) => repository.deletePastor(doc.id),
                 ),
-                _BibleSwipeVersesEditor(repository: repository),
-                _FooterEditor(repository: repository),
-                _CollectionEditor(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_footer', fallback: 'Footer'),
+                subtitle: 'Edit footer contacts and social links.',
+                icon: Icons.view_day_outlined,
+                status: const _StudioToolStatus(
+                  label: 'Links',
+                  tone: _StudioStatusTone.neutral,
+                ),
+                builder: (_) => _FooterEditor(repository: repository),
+              ),
+            ],
+          ),
+          _StudioCategory(
+            title: 'Content & Worship',
+            subtitle: 'Manage posts, readings, and devotional content.',
+            items: [
+              _StudioToolItem(
+                title: ref.t('studio.tab_announcements',
+                    fallback: 'Announcements'),
+                subtitle: 'Publish important updates with optional images.',
+                icon: Icons.campaign_outlined,
+                countStream:
+                    repository.watchAnnouncements().map((docs) => docs.length),
+                builder: (screenContext) => _CollectionEditor(
+                  title: ref.t('studio.tab_announcements',
+                      fallback: 'Announcements'),
+                  stream: repository.watchAnnouncements(),
+                  addLabel: ref.t('studio.add_announcement',
+                      fallback: 'Add announcement'),
+                  emptyText: ref.t('studio.no_announcements',
+                      fallback: 'No announcements yet.'),
+                  tileTitle: (data) => (data['title'] ?? '') as String,
+                  tileSubtitle: (data) =>
+                      '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
+                  onAdd: () =>
+                      _showAnnouncementEditor(screenContext, repository),
+                  onEdit: (doc) => _showAnnouncementEditor(
+                    screenContext,
+                    repository,
+                    doc: doc,
+                  ),
+                  onDelete: (doc) => repository.deleteAnnouncement(
+                    doc.id,
+                    imageUrl: (doc.data()['imageUrl'] ?? '') as String,
+                  ),
+                ),
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_events', fallback: 'Events'),
+                subtitle: 'Create and organize church events.',
+                icon: Icons.event_outlined,
+                countStream:
+                    repository.watchEvents().map((docs) => docs.length),
+                builder: (screenContext) => _CollectionEditor(
                   title: ref.t('studio.tab_events', fallback: 'Events'),
                   stream: repository.watchEvents(),
                   addLabel: ref.t('studio.add_event', fallback: 'Add event'),
@@ -148,37 +194,54 @@ class StudioScreen extends ConsumerWidget {
                     ];
                     return parts.join('\n');
                   },
-                  onAdd: () => _showEventEditor(context, repository),
+                  onAdd: () => _showEventEditor(screenContext, repository),
                   onEdit: (doc) => _showEventEditor(
-                    context,
+                    screenContext,
                     repository,
                     doc: doc,
                   ),
                   onDelete: (doc) => repository.deleteEvent(doc.id),
                 ),
-                _CollectionEditor(
-                  title: ref.t('studio.tab_announcements',
-                      fallback: 'Announcements'),
-                  stream: repository.watchAnnouncements(),
-                  addLabel: ref.t('studio.add_announcement',
-                      fallback: 'Add announcement'),
-                  emptyText: ref.t('studio.no_announcements',
-                      fallback: 'No announcements yet.'),
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_articles', fallback: 'Articles'),
+                subtitle: 'Publish long-form inspirational content.',
+                icon: Icons.article_outlined,
+                countStream:
+                    repository.watchArticles().map((docs) => docs.length),
+                builder: (screenContext) => _CollectionEditor(
+                  title: ref.t('studio.tab_articles', fallback: 'Articles'),
+                  stream: repository.watchArticles(),
+                  addLabel:
+                      ref.t('studio.add_article', fallback: 'Add article'),
+                  emptyText:
+                      ref.t('studio.no_articles', fallback: 'No articles yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
-                  tileSubtitle: (data) =>
-                      '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
-                  onAdd: () => _showAnnouncementEditor(context, repository),
-                  onEdit: (doc) => _showAnnouncementEditor(
-                    context,
+                  tileSubtitle: (data) => (data['description'] ?? '') as String,
+                  onAdd: () => _showArticleEditor(screenContext, repository),
+                  onEdit: (doc) => _showArticleEditor(
+                    screenContext,
                     repository,
                     doc: doc,
                   ),
-                  onDelete: (doc) => repository.deleteAnnouncement(
-                    doc.id,
-                    imageUrl: (doc.data()['imageUrl'] ?? '') as String,
-                  ),
+                  onDelete: (doc) => repository.deleteArticle(doc.id),
                 ),
-                _ConfigVerseEditor(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
+                subtitle: 'Set the verse shown to members each day.',
+                icon: Icons.menu_book_outlined,
+                status: config == null
+                    ? null
+                    : _StudioToolStatus(
+                        label: config.dailyVerseRef.book.trim().isEmpty
+                            ? 'Not set'
+                            : '${config.dailyVerseRef.book} ${config.dailyVerseRef.chapter}:${config.dailyVerseRef.verse}',
+                        tone: config.dailyVerseRef.book.trim().isEmpty
+                            ? _StudioStatusTone.neutral
+                            : _StudioStatusTone.good,
+                      ),
+                builder: (_) => _ConfigVerseEditor(
                   title:
                       ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
                   configSelector: (config) => config.dailyVerseRef,
@@ -190,24 +253,22 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                _CollectionEditor(
-                  title: ref.t('studio.tab_articles', fallback: 'Articles'),
-                  stream: repository.watchArticles(),
-                  addLabel:
-                      ref.t('studio.add_article', fallback: 'Add article'),
-                  emptyText:
-                      ref.t('studio.no_articles', fallback: 'No articles yet.'),
-                  tileTitle: (data) => (data['title'] ?? '') as String,
-                  tileSubtitle: (data) => (data['description'] ?? '') as String,
-                  onAdd: () => _showArticleEditor(context, repository),
-                  onEdit: (doc) => _showArticleEditor(
-                    context,
-                    repository,
-                    doc: doc,
-                  ),
-                  onDelete: (doc) => repository.deleteArticle(doc.id),
-                ),
-                _ConfigVerseEditor(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_promise', fallback: 'Promise'),
+                subtitle: 'Manage the promise word reference.',
+                icon: Icons.wb_sunny_outlined,
+                status: config == null
+                    ? null
+                    : _StudioToolStatus(
+                        label: config.promiseVerseRef.book.trim().isEmpty
+                            ? 'Not set'
+                            : '${config.promiseVerseRef.book} ${config.promiseVerseRef.chapter}:${config.promiseVerseRef.verse}',
+                        tone: config.promiseVerseRef.book.trim().isEmpty
+                            ? _StudioStatusTone.neutral
+                            : _StudioStatusTone.good,
+                      ),
+                builder: (_) => _ConfigVerseEditor(
                   title: ref.t('studio.tab_promise', fallback: 'Promise'),
                   configSelector: (config) => config.promiseVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
@@ -218,8 +279,42 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                _SectionsEditor(repository: repository),
-                _NotificationComposer(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_bible_swipe', fallback: 'Bible Swipe'),
+                subtitle: 'Edit verse swipes used in the For You section.',
+                icon: Icons.swipe_outlined,
+                countStream: repository
+                    .watchBibleSwipeVerses()
+                    .map((items) => items.length),
+                builder: (_) => _BibleSwipeVersesEditor(repository: repository),
+              ),
+            ],
+          ),
+          _StudioCategory(
+            title: 'Engagement',
+            subtitle: 'Control prompts, notifications, and live sections.',
+            items: [
+              _StudioToolItem(
+                title: ref.t('studio.tab_sections', fallback: 'Sections'),
+                subtitle: 'Enable, disable, and reorder major app sections.',
+                icon: Icons.dashboard_customize_outlined,
+                status: const _StudioToolStatus(
+                  label: 'Layout',
+                  tone: _StudioStatusTone.neutral,
+                ),
+                builder: (_) => _SectionsEditor(repository: repository),
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_notifications',
+                    fallback: 'Notifications'),
+                subtitle: 'Queue updates to church or topic audiences.',
+                icon: Icons.notifications_active_outlined,
+                status: const _StudioToolStatus(
+                  label: 'Broadcast',
+                  tone: _StudioStatusTone.neutral,
+                ),
+                builder: (_) => _NotificationComposer(
                   churchId: churchId,
                   onSend: ({required title, required body, required topic}) {
                     return repository.queueTopicNotification(
@@ -229,10 +324,20 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                _AdminsEditor(
-                  onSave: repository.updateAdmins,
-                ),
-                _PromptSheetEditor(
+              ),
+              _StudioToolItem(
+                title: ref.t('studio.tab_prompt', fallback: 'Prompt'),
+                subtitle: 'Configure the important prompt shown to users.',
+                icon: Icons.priority_high_rounded,
+                status: config == null
+                    ? null
+                    : _StudioToolStatus(
+                        label: config.promptSheet.enabled ? 'Live' : 'Off',
+                        tone: config.promptSheet.enabled
+                            ? _StudioStatusTone.good
+                            : _StudioStatusTone.neutral,
+                      ),
+                builder: (_) => _PromptSheetEditor(
                   onSave: ({
                     required title,
                     required desc,
@@ -245,11 +350,390 @@ class StudioScreen extends ConsumerWidget {
                     );
                   },
                 ),
+              ),
+            ],
+          ),
+          _StudioCategory(
+            title: 'Admin Controls',
+            subtitle: 'Manage access and church-wide editing permissions.',
+            items: [
+              _StudioToolItem(
+                title: ref.t('studio.tab_admins', fallback: 'Admins'),
+                subtitle: 'Update the list of admin email addresses.',
+                icon: Icons.admin_panel_settings_outlined,
+                status: config == null
+                    ? null
+                    : _StudioToolStatus(
+                        label: '${config.admins.length} admins',
+                        tone: _StudioStatusTone.neutral,
+                      ),
+                builder: (_) => _AdminsEditor(
+                  onSave: repository.updateAdmins,
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(ref.t('studio.title', fallback: 'Studio')),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            children: [
+              _StudioOverviewCard(
+                title: ref.t('studio.title', fallback: 'Studio'),
+                subtitle:
+                    'Manage branding, content, engagement, and admin controls without hunting through long tabs.',
+              ),
+              const SizedBox(height: 18),
+              for (final category in categories) ...[
+                _StudioCategorySection(category: category),
+                const SizedBox(height: 18),
               ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StudioOverviewCard extends StatelessWidget {
+  const _StudioOverviewCard({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(cornerRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.94),
+            theme.colorScheme.secondary.withValues(alpha: 0.86),
+          ],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.space_dashboard_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.92),
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StudioCategorySection extends StatelessWidget {
+  const _StudioCategorySection({
+    required this.category,
+  });
+
+  final _StudioCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                category.title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                category.subtitle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...category.items.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _StudioToolCard(item: item),
+            )),
+      ],
+    );
+  }
+}
+
+class _StudioToolCard extends StatelessWidget {
+  const _StudioToolCard({
+    required this.item,
+  });
+
+  final _StudioToolItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(cornerRadius),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _StudioToolScreen(
+              item: item,
             ),
           ),
         );
       },
+      child: Ink(
+        decoration: carouselBoxDecoration(context),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  item.icon,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (item.status != null) ...[
+                          const SizedBox(width: 8),
+                          _StudioStatusPill(status: item.status!),
+                        ],
+                        if (item.countStream != null)
+                          StreamBuilder<int>(
+                            stream: item.countStream,
+                            builder: (context, snapshot) {
+                              final count = snapshot.data;
+                              if (count == null) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: _StudioCountPill(count: count),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StudioToolScreen extends StatelessWidget {
+  const _StudioToolScreen({
+    required this.item,
+  });
+
+  final _StudioToolItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(item.title),
+      ),
+      body: item.builder(context),
+    );
+  }
+}
+
+class _StudioCategory {
+  const _StudioCategory({
+    required this.title,
+    required this.subtitle,
+    required this.items,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_StudioToolItem> items;
+}
+
+class _StudioToolItem {
+  const _StudioToolItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.builder,
+    this.status,
+    this.countStream,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget Function(BuildContext context) builder;
+  final _StudioToolStatus? status;
+  final Stream<int>? countStream;
+}
+
+class _StudioToolStatus {
+  const _StudioToolStatus({
+    required this.label,
+    required this.tone,
+  });
+
+  final String label;
+  final _StudioStatusTone tone;
+}
+
+enum _StudioStatusTone {
+  neutral,
+  good,
+}
+
+class _StudioStatusPill extends StatelessWidget {
+  const _StudioStatusPill({
+    required this.status,
+  });
+
+  final _StudioToolStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = status.tone == _StudioStatusTone.good
+        ? const Color(0xFF16A34A).withValues(alpha: 0.12)
+        : theme.colorScheme.primary.withValues(alpha: 0.10);
+    final foregroundColor = status.tone == _StudioStatusTone.good
+        ? const Color(0xFF15803D)
+        : theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        status.label,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: foregroundColor,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _StudioCountPill extends StatelessWidget {
+  const _StudioCountPill({
+    required this.count,
+  });
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count',
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
@@ -296,79 +780,98 @@ class _CollectionEditor extends StatelessWidget {
 
         final docs = snapshot.data!;
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            FilledButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(addLabel),
-            ),
-            const SizedBox(height: 16),
-            if (docs.isEmpty)
+        if (docs.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              FilledButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(addLabel),
+              ),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.only(top: 32),
                 child: Center(child: Text(emptyText)),
               ),
-            ...docs.map((doc) {
-              final data = doc.data();
-              return Container(
-                decoration: carouselBoxDecoration(context),
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  title: Text(tileTitle(data)),
-                  subtitle: Text(tileSubtitle(data)),
-                  isThreeLine: tileSubtitle(data).contains('\n'),
-                  trailing: Wrap(
-                    spacing: 8,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => onEdit(doc),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: AppBarTitle(
-                                text: context.t('studio.delete_title',
-                                    fallback: 'Delete'),
-                              ),
-                              content: Text(
-                                '${context.t('studio.delete_confirm_remove_prefix', fallback: 'Remove')} "${tileTitle(data)}"?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: Text(context.t('settings.cancel',
-                                      fallback: 'Cancel')),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text(context.t('common.delete',
-                                      fallback: 'Delete')),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirmed == true) {
-                            if (!context.mounted) return;
-                            await _runWithBlockingLoader(
-                              context,
-                              () => onDelete(doc),
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
+            ],
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: FilledButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add),
+                  label: Text(addLabel),
                 ),
               );
-            }),
-          ],
+            }
+
+            final doc = docs[index - 1];
+            final data = doc.data();
+            final subtitle = tileSubtitle(data);
+
+            return Container(
+              decoration: carouselBoxDecoration(context),
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                title: Text(tileTitle(data)),
+                subtitle: Text(subtitle),
+                isThreeLine: subtitle.contains('\n'),
+                trailing: Wrap(
+                  spacing: 8,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => onEdit(doc),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: AppBarTitle(
+                              text: context.t('studio.delete_title',
+                                  fallback: 'Delete'),
+                            ),
+                            content: Text(
+                              '${context.t('studio.delete_confirm_remove_prefix', fallback: 'Remove')} "${tileTitle(data)}"?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(context.t('settings.cancel',
+                                    fallback: 'Cancel')),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(context.t('common.delete',
+                                    fallback: 'Delete')),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          if (!context.mounted) return;
+                          await _runWithBlockingLoader(
+                            context,
+                            () => onDelete(doc),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -785,105 +1288,96 @@ class _AboutEditor extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final configAsync = ref.watch(appConfigProvider);
-
-    return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(
-        child: Text(
-          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
-        ),
-      ),
-      data: (config) => StreamBuilder<Map<String, dynamic>?>(
-        stream: repository.watchAbout(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
-              ),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final about = snapshot.data ?? <String, dynamic>{};
-          final churchAppTitle = config.textContent.get(
+    final churchAppTitle = ref.watch(appConfigProvider).maybeWhen(
+          data: (config) => config.textContent.get(
             'church_tab.app_title',
             fallback: '',
-          );
+          ),
+          orElse: () => '',
+        );
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Container(
-                decoration: carouselBoxDecoration(context),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.t('studio.tab_about', fallback: 'About'),
-                        style: Theme.of(context).textTheme.titleLarge,
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: repository.watchAbout(),
+      initialData: const <String, dynamic>{},
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+            ),
+          );
+        }
+
+        final about = snapshot.data ?? <String, dynamic>{};
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              decoration: carouselBoxDecoration(context),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.t('studio.tab_about', fallback: 'About'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.t(
+                        'studio.about_hint',
+                        fallback:
+                            'Update the main about section shown for this church.',
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.t(
-                          'studio.about_hint',
-                          fallback:
-                              'Update the main about section shown for this church.',
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+                    _DetailLine(
+                      label: context.t(
+                        'studio.about_church_name',
+                        fallback: 'Church Name',
                       ),
-                      const SizedBox(height: 16),
-                      _DetailLine(
-                        label: context.t(
-                          'studio.about_church_name',
-                          fallback: 'Church Name',
-                        ),
-                        value: churchAppTitle,
+                      value: churchAppTitle,
+                    ),
+                    _DetailLine(
+                      label: context.t('common.title', fallback: 'Title'),
+                      value: (about['title'] ?? '') as String,
+                    ),
+                    _DetailLine(
+                      label: context.t(
+                        'studio.about_tagline',
+                        fallback: 'Tagline',
                       ),
-                      _DetailLine(
-                        label: context.t('common.title', fallback: 'Title'),
-                        value: (about['title'] ?? '') as String,
+                      value: (about['tagline'] ?? '') as String,
+                    ),
+                    _DetailLine(
+                      label: context.t(
+                        'common.description',
+                        fallback: 'Description',
                       ),
-                      _DetailLine(
-                        label: context.t(
-                          'studio.about_tagline',
-                          fallback: 'Tagline',
-                        ),
-                        value: (about['tagline'] ?? '') as String,
+                      value: (about['description'] ?? '') as String,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => _showAboutEditor(
+                        context,
+                        repository,
+                        initialData: about,
+                        initialChurchAppTitle: churchAppTitle,
                       ),
-                      _DetailLine(
-                        label: context.t(
-                          'common.description',
-                          fallback: 'Description',
-                        ),
-                        value: (about['description'] ?? '') as String,
+                      icon: const Icon(Icons.edit_outlined),
+                      label: Text(
+                        context.t('studio.about_edit', fallback: 'Edit About'),
                       ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () => _showAboutEditor(
-                          context,
-                          repository,
-                          initialData: about,
-                          initialChurchAppTitle: churchAppTitle,
-                        ),
-                        icon: const Icon(Icons.edit_outlined),
-                        label: Text(
-                          context.t('studio.about_edit',
-                              fallback: 'Edit About'),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

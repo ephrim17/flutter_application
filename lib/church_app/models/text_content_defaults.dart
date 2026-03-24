@@ -359,7 +359,7 @@ const Map<String, String> defaultChurchTextContents = {
   'members.extended_information_title': 'Extended Information',
   'members.extended_information_subtitle':
       'Capture financial, educational and gifting details.',
-  'members.church_groups_title': 'Church Groups',
+  'members.church_groups_title': 'Church Directory',
   'members.church_groups_subtitle':
       'Select the ministries and teams this member belongs to.',
   'members.request_basic_details_subtitle':

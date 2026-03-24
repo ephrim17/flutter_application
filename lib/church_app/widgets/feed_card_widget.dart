@@ -39,17 +39,18 @@ class FeedCard extends ConsumerWidget {
 
     final isOwner = currentUid != null && currentUid == post.userId;
     final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
+    final theme = Theme.of(context);
+    final hasImage = (post.imageUrl ?? '').trim().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: carouselBoxDecoration(context),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// HEADER
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
+            child: Row(
               children: [
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
@@ -57,38 +58,47 @@ class FeedCard extends ConsumerWidget {
                       ? () => _showPostAuthorDetails(context, ref)
                       : null,
                   child: CircleAvatar(
-                    radius: 20,
+                    radius: 21,
+                    backgroundColor:
+                        theme.colorScheme.primary.withValues(alpha: 0.10),
                     backgroundImage: post.userPhoto != null
                         ? NetworkImage(post.userPhoto!)
                         : null,
                     child: post.userPhoto == null
-                        ? Text(post.userName[0].toUpperCase())
+                        ? Text(
+                            post.userName[0].toUpperCase(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                            ),
+                          )
                         : null,
                   ),
                 ),
                 const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.userName,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    Text(
-                      humanFormatDate(post.createdAt),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
+                      const SizedBox(height: 2),
+                      Text(
+                        humanFormatDate(post.createdAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (isOwner || canDelete)
                   PopupMenuButton<_FeedPostAction>(
-                    icon: const Icon(Icons.more_vert),
+                    icon: const Icon(Icons.more_horiz_rounded),
                     onSelected: (action) async {
                       switch (action) {
                         case _FeedPostAction.edit:
@@ -118,37 +128,50 @@ class FeedCard extends ConsumerWidget {
                   ),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            /// TITLE
-            Text(
-              post.title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+          ),
+          if (hasImage)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                color: Colors.black.withValues(alpha: 0.04),
+              ),
+              child: Stack(
+                children: [
+                  ShimmerImage(
+                    imageUrl: post.imageUrl!,
+                    fit: BoxFit.cover,
+                    aspectRatio: 1,
+                    borderRadius: 22,
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            /// DESCRIPTION
-            LinkifiedText(
-              text: post.description,
-              style: const TextStyle(fontSize: 14),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Text(
+                  post.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+                if (post.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  LinkifiedText(
+                    text: post.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+                  ),
+                ],
+              ],
             ),
-
-            const SizedBox(height: 8),
-
-            /// IMAGE (OPTIONAL)
-            if (post.imageUrl != null)
-              ShimmerImage(
-                imageUrl: post.imageUrl!,
-                fit: BoxFit.fill,
-                aspectRatio: 1,
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -359,6 +382,47 @@ class FeedCard extends ConsumerWidget {
 
     if (!doc.exists) return null;
     return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+  }
+}
+
+class _FeedMetaChip extends StatelessWidget {
+  const _FeedMetaChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

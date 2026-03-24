@@ -602,7 +602,8 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 church.name,
@@ -612,25 +613,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_rounded,
-                                    size: 16,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      _valueOrFallback(church.pastorName),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              const SizedBox(height: 6)
                             ],
                           ),
                         ),
@@ -667,7 +650,8 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                               value: _valueOrFallback(church.contact),
                               onActionTap: church.contact.trim().isEmpty
                                   ? null
-                                  : () => launchPhoneCall(context, church.contact),
+                                  : () =>
+                                      launchPhoneCall(context, church.contact),
                             ),
                             _ChurchDetailRow(
                               icon: Icons.location_on_outlined,
@@ -845,19 +829,39 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredChurches = _filteredChurches;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        centerTitle: true,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+        title: Text(
+          widget.title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(86),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+            decoration: BoxDecoration(
+              color: theme.scaffoldBackgroundColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.dividerColor.withValues(alpha: 0.12),
+                ),
+              ),
+            ),
             child: Container(
+              height: 54,
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(22),
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                ),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x12000000),
@@ -876,21 +880,18 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                 decoration: InputDecoration(
                   hintText: context.t(
                     'common.search',
-                    fallback: 'Search',
+                    fallback: 'Search churches, pastors, address...',
                   ),
-                  prefixIcon: Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.10),
-                      shape: BoxShape.circle,
-                    ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 10, right: 6),
                     child: Icon(
                       Icons.search_rounded,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: theme.colorScheme.primary,
                     ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
                   ),
                   suffixIcon: _query.isEmpty
                       ? null
@@ -904,56 +905,54 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                           icon: const Icon(Icons.close_rounded),
                         ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1.4,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                      width: 1.2,
                     ),
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
+                  fillColor: Colors.transparent,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 18,
+                    horizontal: 8,
+                    vertical: 16,
                   ),
                 ),
               ),
             ),
           ),
-          Expanded(
-            child: filteredChurches.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        widget.emptyMessage,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: filteredChurches.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final church = filteredChurches[index];
-                      return _ChurchCoverCard(
-                        church: church,
-                        onTap: () => widget.onChurchTap(context, church),
-                      );
-                    },
-                  ),
-          ),
-        ],
+        ),
       ),
+      body: filteredChurches.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  widget.emptyMessage,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              itemCount: filteredChurches.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final church = filteredChurches[index];
+                return _ChurchCoverCard(
+                  church: church,
+                  onTap: () => widget.onChurchTap(context, church),
+                );
+              },
+            ),
     );
   }
 }
@@ -1074,88 +1073,75 @@ class _ChurchCoverCard extends StatelessWidget {
               ),
               child: _ChurchCoverImage(logoUrl: church.logo),
             ),
-            Transform.translate(
-              offset: const Offset(0, -28),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x18000000),
-                            blurRadius: 14,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: _PastorAvatar(
-                        imageUrl: church.pastorPhoto,
-                        size: 68,
-                      ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    church.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x18000000),
+                              blurRadius: 14,
+                              offset: Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: _PastorAvatar(
+                          imageUrl: church.pastorPhoto,
+                          size: 64,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _valueOrFallback(church.pastorName),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18.0
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _valueOrFallback(church.pastorName),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-              child: Transform.translate(
-                offset: const Offset(0, -14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      church.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _ChurchPreviewLine(
-                      icon: Icons.email_outlined,
-                      text: _valueOrFallback(church.email),
-                    ),
-                    const SizedBox(height: 8),
-                    _ChurchPreviewLine(
-                      icon: Icons.phone_outlined,
-                      text: _valueOrFallback(church.contact),
-                    ),
-                    const SizedBox(height: 8),
-                    _ChurchPreviewLine(
-                      icon: Icons.location_on_outlined,
-                      text: _valueOrFallback(church.address),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _ChurchPreviewLine(
+                    icon: Icons.email_outlined,
+                    text: _valueOrFallback(church.email),
+                  ),
+                  const SizedBox(height: 8),
+                  _ChurchPreviewLine(
+                    icon: Icons.phone_outlined,
+                    text: _valueOrFallback(church.contact),
+                  ),
+                  const SizedBox(height: 8),
+                  _ChurchPreviewLine(
+                    icon: Icons.location_on_outlined,
+                    text: _valueOrFallback(church.address),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1182,11 +1168,25 @@ class _PastorAvatar extends StatelessWidget {
       return _PastorAvatarFallback(size: size);
     }
 
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      return ClipOval(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Image.network(
+            trimmedUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _PastorAvatarFallback(size: size),
+          ),
+        ),
+      );
+    }
+
     return ClipOval(
       child: SizedBox(
         width: size,
         height: size,
-        child: Image.network(
+        child: Image.asset(
           trimmedUrl,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => _PastorAvatarFallback(size: size),
@@ -1228,21 +1228,34 @@ class _ChurchCoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasLogo = logoUrl.trim().isNotEmpty;
+    final trimmedLogo = logoUrl.trim();
 
-    if (hasLogo) {
+    if (trimmedLogo.isEmpty) {
+      return const _ChurchCoverFallback();
+    }
+
+    if (trimmedLogo.startsWith('http://') ||
+        trimmedLogo.startsWith('https://')) {
       return SizedBox(
         height: 156,
         width: double.infinity,
         child: Image.network(
-          logoUrl,
+          trimmedLogo,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => const _ChurchCoverFallback(),
         ),
       );
     }
 
-    return const _ChurchCoverFallback();
+    return SizedBox(
+      height: 156,
+      width: double.infinity,
+      child: Image.asset(
+        trimmedLogo,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const _ChurchCoverFallback(),
+      ),
+    );
   }
 }
 

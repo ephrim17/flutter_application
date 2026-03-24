@@ -128,7 +128,8 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
                       children: [
                         Text(
                           context
-                              .t('groups.add_to_group', fallback: 'Add to {group}')
+                              .t('groups.add_to_group',
+                                  fallback: 'Add to {group}')
                               .replaceAll('{group}', group.label),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
@@ -264,7 +265,8 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
         ? churchGroupDefinitions
         : churchGroupDefinitions
             .where(
-              (group) => currentUser?.churchGroupIds.contains(group.id) ?? false,
+              (group) =>
+                  currentUser?.churchGroupIds.contains(group.id) ?? false,
             )
             .toList();
 
@@ -272,7 +274,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
       return Scaffold(
         appBar: AppBar(
           title: AppBarTitle(
-            text: context.t('groups.title', fallback: 'Church Groups'),
+            text: context.t('groups.title', fallback: 'Church Directory'),
           ),
         ),
         body: Center(
@@ -296,7 +298,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('groups.title', fallback: 'Church Groups'),
+          text: context.t('groups.title', fallback: 'Church Directory'),
         ),
         actions: [
           if (isAdmin)
@@ -318,8 +320,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
               tabAlignment: TabAlignment.start,
               dividerColor: Colors.transparent,
               tabs: [
-                for (final group in visibleGroups)
-                  Tab(text: group.label),
+                for (final group in visibleGroups) Tab(text: group.label),
               ],
             ),
           ),
@@ -493,7 +494,9 @@ class _GroupMembersTab extends ConsumerWidget {
                   ].join(' • '),
                 ),
                 trailing: member.email.trim().isEmpty
-                    ? (onMemberTap == null ? null : const Icon(Icons.more_horiz))
+                    ? (onMemberTap == null
+                        ? null
+                        : const Icon(Icons.more_horiz))
                     : SizedBox(
                         width: 120,
                         child: Text(

@@ -28,7 +28,7 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.studio:
         return 'Studio';
       case DrawerMenuItem.churchGroups:
-        return 'Church Groups';
+        return 'Church Directory';
       case DrawerMenuItem.prayerRequest:
         return 'Prayer Request';
       case DrawerMenuItem.about:

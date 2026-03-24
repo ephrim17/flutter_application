@@ -235,9 +235,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     if (_dob == null) return null;
     final now = DateTime.now();
     var age = now.year - _dob!.year;
-    final hasHadBirthdayThisYear =
-        now.month > _dob!.month ||
-            (now.month == _dob!.month && now.day >= _dob!.day);
+    final hasHadBirthdayThisYear = now.month > _dob!.month ||
+        (now.month == _dob!.month && now.day >= _dob!.day);
     if (!hasHadBirthdayThisYear) {
       age -= 1;
     }
@@ -529,17 +528,19 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       }
 
       if (!widget.adminCreateMode) {
-        final existingDoc = await ref.read(authRepositoryProvider).getChurchUserDoc(
-              churchId: widget.churchId,
-              uid: firebaseUser!.uid,
-            );
+        final existingDoc =
+            await ref.read(authRepositoryProvider).getChurchUserDoc(
+                  churchId: widget.churchId,
+                  uid: firebaseUser!.uid,
+                );
 
         if (existingDoc.exists) {
           final appUser = AppUser.fromFirestore(
             existingDoc.id,
             existingDoc.data() as Map<String, dynamic>,
           );
-          ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
+          ref.read(forcePreflowThemeProvider.notifier).state =
+              !appUser.approved;
 
           ref.read(selectedChurchProvider.notifier).state = Church(
             id: widget.churchId,
@@ -655,8 +656,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           text: _isEditMode
               ? context.t('members.edit_member', fallback: 'Edit Member')
               : widget.adminCreateMode
-              ? context.t('members.create_member', fallback: 'Create Member')
-              : context.t('auth.request_access', fallback: 'Request Access'),
+                  ? context.t('members.create_member',
+                      fallback: 'Create Member')
+                  : context.t('auth.request_access',
+                      fallback: 'Request Access'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -712,7 +715,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                             'auth.dob_label',
                                             fallback: 'Date of Birth',
                                           ),
-                                          suffixIcon: Icon(Icons.calendar_today),
+                                          suffixIcon:
+                                              Icon(Icons.calendar_today),
                                         ),
                                         child: Text(
                                           _dob == null
@@ -794,8 +798,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     const SizedBox(height: 16),
                                     TextField(
                                       controller: _addressController,
-                                      keyboardType:
-                                          TextInputType.streetAddress,
+                                      keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,
                                       decoration: InputDecoration(
                                         labelText: context.t(
@@ -987,22 +990,25 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        context.t(
-                                          'members.financial_stability_rating',
-                                          fallback:
-                                              'Financial Stability Rating: {rating}/5',
-                                        ).replaceAll(
-                                          '{rating}',
-                                          _financialStabilityRating.toString(),
-                                        ),
+                                        context
+                                            .t(
+                                              'members.financial_stability_rating',
+                                              fallback:
+                                                  'Financial Stability Rating: {rating}/5',
+                                            )
+                                            .replaceAll(
+                                              '{rating}',
+                                              _financialStabilityRating
+                                                  .toString(),
+                                            ),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium,
                                       ),
                                     ),
                                     Slider(
-                                      value: _financialStabilityRating
-                                          .toDouble(),
+                                      value:
+                                          _financialStabilityRating.toDouble(),
                                       min: 0,
                                       max: 5,
                                       divisions: 5,
@@ -1037,8 +1043,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       decoration: InputDecoration(
                                         labelText: context.t(
                                           'members.educational_qualification',
-                                          fallback:
-                                              'Educational Qualification',
+                                          fallback: 'Educational Qualification',
                                         ),
                                       ),
                                     ),
@@ -1072,7 +1077,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               child: _StepShell(
                                 title: context.t(
                                   'members.church_groups_title',
-                                  fallback: 'Church Groups',
+                                  fallback: 'Church Directory',
                                 ),
                                 subtitle: context.t(
                                   'members.church_groups_subtitle',
@@ -1222,16 +1227,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
-                                        labelText:
-                                            context.t('auth.phone_label',
-                                                fallback: 'Contact'),
+                                        labelText: context.t('auth.phone_label',
+                                            fallback: 'Contact'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     TextField(
                                       controller: _addressController,
-                                      keyboardType:
-                                          TextInputType.streetAddress,
+                                      keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,
                                       decoration: InputDecoration(
                                         labelText: context.t(
@@ -1423,8 +1426,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 : _handleNext,
                       ),
                     ),
-
-                    const SizedBox(height: 30,)
+                    const SizedBox(
+                      height: 30,
+                    )
                   ],
                 ),
               ],
@@ -1597,9 +1601,7 @@ class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ...rows
-            .where((row) => row.value.trim().isNotEmpty)
-            .map(
+        ...rows.where((row) => row.value.trim().isNotEmpty).map(
               (row) => Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Row(
