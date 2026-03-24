@@ -266,25 +266,56 @@ class _SuperAdminChurchTile extends ConsumerWidget {
             ],
           ],
         ),
-        trailing: Switch(
-          value: church.enabled,
-          onChanged: (value) async {
-            await ref.read(churchRepositoryProvider).updateChurchEnabled(
-                  churchId: church.id,
-                  enabled: value,
-                );
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.t(
-                    'super_admin.status_updated',
-                    fallback: 'Church status updated',
-                  ),
-                ),
+        trailing: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          children: [
+            IconButton(
+              tooltip: context.t(
+                'super_admin.edit_church',
+                fallback: 'Edit Church',
               ),
-            );
-          },
+              onPressed: () async {
+                final updated = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) => CreateChurchScreen(church: church),
+                  ),
+                );
+                if (updated != true || !context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      context.t(
+                        'super_admin.edit_success',
+                        fallback: 'Church updated successfully',
+                      ),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            Switch(
+              value: church.enabled,
+              onChanged: (value) async {
+                await ref.read(churchRepositoryProvider).updateChurchEnabled(
+                      churchId: church.id,
+                      enabled: value,
+                    );
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      context.t(
+                        'super_admin.status_updated',
+                        fallback: 'Church status updated',
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

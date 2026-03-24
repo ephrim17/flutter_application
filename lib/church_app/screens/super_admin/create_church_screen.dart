@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
@@ -13,7 +14,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreateChurchScreen extends ConsumerStatefulWidget {
-  const CreateChurchScreen({super.key});
+  const CreateChurchScreen({
+    super.key,
+    this.church,
+  });
+
+  final Church? church;
 
   @override
   ConsumerState<CreateChurchScreen> createState() => _CreateChurchScreenState();
@@ -33,8 +39,29 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   bool _isSubmitting = false;
   PickedImageData? _logoImage;
   PickedImageData? _pastorPhotoImage;
+  late String _existingLogoUrl;
+  late String _existingPastorPhotoUrl;
+
+  bool get _isEditMode => widget.church != null;
 
   bool get _canSubmit => !_isSubmitting && _validate(context) == null;
+
+  @override
+  void initState() {
+    super.initState();
+    final church = widget.church;
+    _existingLogoUrl = church?.logo ?? '';
+    _existingPastorPhotoUrl = church?.pastorPhoto ?? '';
+
+    if (church != null) {
+      _nameController.text = church.name;
+      _pastorController.text = church.pastorName;
+      _addressController.text = church.address;
+      _contactController.text = church.contact;
+      _emailController.text = church.email;
+      _enabled = church.enabled;
+    }
+  }
 
   @override
   void dispose() {
@@ -92,13 +119,13 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             'Church ID can contain only lowercase letters, numbers, and underscores',
       );
     }
-    if (_logoImage == null) {
+    if (_logoImage == null && _existingLogoUrl.trim().isEmpty) {
       return context.t(
         'super_admin.logo_required',
         fallback: 'Please pick a church logo',
       );
     }
-    if (_pastorPhotoImage == null) {
+    if (_pastorPhotoImage == null && _existingPastorPhotoUrl.trim().isEmpty) {
       return context.t(
         'super_admin.pastor_photo_required',
         fallback: 'Please pick a pastor photo',
@@ -127,6 +154,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         'auth.email_address_invalid',
         fallback: 'Please enter a valid email address',
       );
+    }
+    if (_isEditMode) {
+      return null;
     }
     if (adminName.isEmpty) {
       return context.t(
@@ -194,8 +224,30 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     final normalizedChurchId = _slugifyChurchId(_nameController.text.trim());
 
     try {
-      if (await service.churchExists(normalizedChurchId)) {
+      if (!_isEditMode && await service.churchExists(normalizedChurchId)) {
         throw const CreateChurchException('duplicate-id');
+      }
+
+      if (_isEditMode) {
+        await service.updateChurch(
+          UpdateChurchInput(
+            churchId: widget.church!.id,
+            name: _nameController.text.trim(),
+            pastorName: _pastorController.text.trim(),
+            address: _addressController.text.trim(),
+            contact: _contactController.text.trim(),
+            email: _emailController.text.trim(),
+            enabled: _enabled,
+            existingLogoUrl: _existingLogoUrl,
+            existingPastorPhotoUrl: _existingPastorPhotoUrl,
+            logoImage: _logoImage,
+            pastorPhotoImage: _pastorPhotoImage,
+          ),
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
       }
 
       final createdAccount =
@@ -267,8 +319,10 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         appBar: AppBar(
           title: AppBarTitle(
             text: context.t(
-              'super_admin.create_church_title',
-              fallback: 'Create Church',
+              _isEditMode
+                  ? 'super_admin.edit_church_title'
+                  : 'super_admin.create_church_title',
+              fallback: _isEditMode ? 'Edit Church' : 'Create Church',
             ),
           ),
           backgroundColor: Colors.transparent,
@@ -294,8 +348,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                           children: [
                             Text(
                               context.t(
-                                'super_admin.create_church_title',
-                                fallback: 'Create Church',
+                                _isEditMode
+                                    ? 'super_admin.edit_church_title'
+                                    : 'super_admin.create_church_title',
+                                fallback: _isEditMode
+                                    ? 'Edit Church'
+                                    : 'Create Church',
                               ),
                               style: Theme.of(context)
                                   .textTheme
@@ -305,9 +363,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                             const SizedBox(height: 10),
                             Text(
                               context.t(
-                                'super_admin.create_church_subtitle',
-                                fallback:
-                                    'Create a new church and bootstrap the essential starter structure.',
+                                _isEditMode
+                                    ? 'super_admin.edit_church_subtitle'
+                                    : 'super_admin.create_church_subtitle',
+                                fallback: _isEditMode
+                                    ? 'Update the selected church details and media.'
+                                    : 'Create a new church and bootstrap the essential starter structure.',
                               ),
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
@@ -413,6 +474,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                 fallback: 'Replace Logo',
                               ),
                               imageBytes: _logoImage?.bytes,
+                              imageUrl:
+                                  _logoImage == null ? _existingLogoUrl : null,
                               onTap: _isSubmitting ? null : _pickLogo,
                             ),
                             const SizedBox(height: 20),
@@ -430,57 +493,62 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                 fallback: 'Replace Pastor Photo',
                               ),
                               imageBytes: _pastorPhotoImage?.bytes,
+                              imageUrl: _pastorPhotoImage == null
+                                  ? _existingPastorPhotoUrl
+                                  : null,
                               onTap: _isSubmitting ? null : _pickPastorPhoto,
                             ),
-                            const SizedBox(height: 20),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                context.t(
-                                  'super_admin.admin_section_title',
-                                  fallback: 'Initial Admin',
-                                ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            TextField(
-                              controller: _adminNameController,
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                labelText: context.t(
-                                  'super_admin.admin_name_label',
-                                  fallback: 'Admin Name',
+                            if (!_isEditMode) ...[
+                              const SizedBox(height: 20),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  context.t(
+                                    'super_admin.admin_section_title',
+                                    fallback: 'Initial Admin',
+                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 14),
-                            TextField(
-                              controller: _adminEmailController,
-                              onChanged: (_) => setState(() {}),
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                labelText: context.t(
-                                  'super_admin.admin_email_label',
-                                  fallback: 'Admin Email',
+                              const SizedBox(height: 14),
+                              TextField(
+                                controller: _adminNameController,
+                                onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  labelText: context.t(
+                                    'super_admin.admin_name_label',
+                                    fallback: 'Admin Name',
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 14),
-                            TextField(
-                              controller: _adminPhoneController,
-                              onChanged: (_) => setState(() {}),
-                              keyboardType: TextInputType.phone,
-                              decoration: InputDecoration(
-                                labelText: context.t(
-                                  'super_admin.admin_phone_label',
-                                  fallback: 'Admin Phone',
+                              const SizedBox(height: 14),
+                              TextField(
+                                controller: _adminEmailController,
+                                onChanged: (_) => setState(() {}),
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: InputDecoration(
+                                  labelText: context.t(
+                                    'super_admin.admin_email_label',
+                                    fallback: 'Admin Email',
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 14),
+                              TextField(
+                                controller: _adminPhoneController,
+                                onChanged: (_) => setState(() {}),
+                                keyboardType: TextInputType.phone,
+                                decoration: InputDecoration(
+                                  labelText: context.t(
+                                    'super_admin.admin_phone_label',
+                                    fallback: 'Admin Phone',
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 18),
                             SwitchListTile.adaptive(
                               value: _enabled,
@@ -504,8 +572,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                               width: double.infinity,
                               child: SolidButton(
                                 label: context.t(
-                                  'super_admin.create_action',
-                                  fallback: 'Create Church',
+                                  _isEditMode
+                                      ? 'super_admin.edit_action'
+                                      : 'super_admin.create_action',
+                                  fallback: _isEditMode
+                                      ? 'Update Church'
+                                      : 'Create Church',
                                 ),
                                 onPressed: _canSubmit ? _submit : null,
                               ),
@@ -537,8 +609,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                       const SizedBox(height: 14),
                       Text(
                         context.t(
-                          'super_admin.create_loading',
-                          fallback: 'Creating church...',
+                          _isEditMode
+                              ? 'super_admin.edit_loading'
+                              : 'super_admin.create_loading',
+                          fallback: _isEditMode
+                              ? 'Updating church...'
+                              : 'Creating church...',
                         ),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -560,6 +636,7 @@ class _LogoPickerCard extends StatelessWidget {
     required this.pickText,
     required this.replaceText,
     required this.imageBytes,
+    required this.imageUrl,
     required this.onTap,
   });
 
@@ -567,11 +644,12 @@ class _LogoPickerCard extends StatelessWidget {
   final String pickText;
   final String replaceText;
   final Uint8List? imageBytes;
+  final String? imageUrl;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = imageBytes != null;
+    final hasImage = imageBytes != null || (imageUrl ?? '').trim().isNotEmpty;
 
     return InkWell(
       onTap: onTap,
@@ -602,10 +680,20 @@ class _LogoPickerCard extends StatelessWidget {
                 width: double.infinity,
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: hasImage
-                    ? Image.memory(
-                        imageBytes!,
-                        fit: BoxFit.cover,
-                      )
+                    ? (imageBytes != null
+                        ? Image.memory(
+                            imageBytes!,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 40,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ))
                     : Icon(
                         Icons.add_photo_alternate_outlined,
                         size: 40,

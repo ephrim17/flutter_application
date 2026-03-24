@@ -36,6 +36,34 @@ class CreateChurchInput {
   final String adminPhone;
 }
 
+class UpdateChurchInput {
+  const UpdateChurchInput({
+    required this.churchId,
+    required this.name,
+    required this.pastorName,
+    required this.address,
+    required this.contact,
+    required this.email,
+    required this.enabled,
+    required this.existingLogoUrl,
+    required this.existingPastorPhotoUrl,
+    this.logoImage,
+    this.pastorPhotoImage,
+  });
+
+  final String churchId;
+  final String name;
+  final String pastorName;
+  final String address;
+  final String contact;
+  final String email;
+  final bool enabled;
+  final String existingLogoUrl;
+  final String existingPastorPhotoUrl;
+  final PickedImageData? logoImage;
+  final PickedImageData? pastorPhotoImage;
+}
+
 class SuperAdminChurchService {
   SuperAdminChurchService(
     this._firestore, {
@@ -266,6 +294,77 @@ class SuperAdminChurchService {
         },
       );
     }
+
+    await batch.commit();
+  }
+
+  Future<void> updateChurch(UpdateChurchInput input) async {
+    final churchId = input.churchId.trim();
+    final churchDoc = FirestorePaths.churchDoc(_firestore, churchId);
+    final now = FieldValue.serverTimestamp();
+    final normalizedChurchEmail = input.email.trim().toLowerCase();
+
+    final logoUrl = input.logoImage != null
+        ? await _uploadChurchLogo(
+            churchId: churchId,
+            imageFile: input.logoImage!,
+          )
+        : input.existingLogoUrl.trim();
+
+    final pastorPhotoUrl = input.pastorPhotoImage != null
+        ? await _uploadPastorPhoto(
+            churchId: churchId,
+            imageFile: input.pastorPhotoImage!,
+          )
+        : input.existingPastorPhotoUrl.trim();
+
+    final batch = _firestore.batch();
+
+    batch.set(
+      churchDoc,
+      {
+        'name': input.name.trim(),
+        'pastorName': input.pastorName.trim(),
+        'pastorPhoto': pastorPhotoUrl,
+        'address': input.address.trim(),
+        'contact': input.contact.trim(),
+        'email': normalizedChurchEmail,
+        'logo': logoUrl,
+        'enabled': input.enabled,
+        'updatedAt': now,
+      },
+      SetOptions(merge: true),
+    );
+
+    batch.set(
+      FirestorePaths.churchAppConfig(_firestore, churchId),
+      {
+        'textContent': <String, String>{
+          'church_tab.app_title': input.name.trim(),
+        },
+        'churchLogo': logoUrl,
+      },
+      SetOptions(merge: true),
+    );
+
+    batch.set(
+      FirestorePaths.churchAboutDoc(_firestore, churchId),
+      {
+        'title': input.name.trim(),
+      },
+      SetOptions(merge: true),
+    );
+
+    batch.set(
+      FirestorePaths.churchPastors(_firestore, churchId).doc('primary'),
+      {
+        'title': input.pastorName.trim(),
+        'contact': input.contact.trim(),
+        'imageUrl': pastorPhotoUrl,
+        'updatedAt': now,
+      },
+      SetOptions(merge: true),
+    );
 
     await batch.commit();
   }

@@ -304,10 +304,28 @@ class StudioRepository {
   }
 
   Future<void> updateBibleSwipeVerses(List<String> verses) async {
-    await bibleSwipeRef.set({
-      'verses': verses,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    final batch = firestore.batch();
+
+    batch.set(
+      bibleSwipeRef,
+      {
+        'verses': verses,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    batch.set(
+      appConfigRef,
+      {
+        'features': {
+          'bibleSwipeVersion': FieldValue.increment(1),
+        },
+      },
+      SetOptions(merge: true),
+    );
+
+    await batch.commit();
   }
 
   Future<void> createContactItem(Map<String, dynamic> data) async {

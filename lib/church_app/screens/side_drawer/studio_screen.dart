@@ -2035,6 +2035,15 @@ class _SectionGroupCard<T> extends StatelessWidget {
             final configById = {
               for (final item in items) itemId(item): item,
             };
+            final orderedDefinitions = [...definitions]..sort((a, b) {
+                final aConfig = configById[a.id];
+                final bConfig = configById[b.id];
+                final aOrder =
+                    aConfig != null ? itemOrder(aConfig) : a.defaultOrder;
+                final bOrder =
+                    bConfig != null ? itemOrder(bConfig) : b.defaultOrder;
+                return aOrder.compareTo(bOrder);
+              });
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2044,26 +2053,73 @@ class _SectionGroupCard<T> extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
-                ...definitions.map((definition) {
-                  final config = configById[definition.id];
-                  final enabled = config != null ? itemEnabled(config) : true;
-                  final order = config != null
-                      ? itemOrder(config)
-                      : definition.defaultOrder;
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  buildDefaultDragHandles: false,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: orderedDefinitions.length,
+                  onReorder: (oldIndex, newIndex) async {
+                    await _runWithBlockingLoader(context, () async {
+                      final reordered = [...orderedDefinitions];
+                      if (newIndex > oldIndex) {
+                        newIndex -= 1;
+                      }
+                      final moved = reordered.removeAt(oldIndex);
+                      reordered.insert(newIndex, moved);
 
-                  return _SectionConfigTile(
-                    definition: definition,
-                    enabled: enabled,
-                    order: order,
-                    onSave: (enabled, order) {
-                      return onSave(
-                        id: definition.id,
-                        enabled: enabled,
-                        order: order,
-                      );
-                    },
-                  );
-                }),
+                      for (var i = 0; i < reordered.length; i++) {
+                        final item = reordered[i];
+                        final existing = configById[item.id];
+                        await onSave(
+                          id: item.id,
+                          enabled:
+                              existing != null ? itemEnabled(existing) : true,
+                          order: (i + 1) * 10,
+                        );
+                      }
+                    });
+
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          context.t(
+                            'studio.section_updated',
+                            fallback: 'Section updated',
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  itemBuilder: (context, index) {
+                    final definition = orderedDefinitions[index];
+                    final config = configById[definition.id];
+                    final enabled = config != null ? itemEnabled(config) : true;
+
+                    return _SectionConfigTile(
+                      key: ValueKey(definition.id),
+                      definition: definition,
+                      enabled: enabled,
+                      onToggle: (value) {
+                        final existingOrder = config != null
+                            ? itemOrder(config)
+                            : definition.defaultOrder;
+                        return onSave(
+                          id: definition.id,
+                          enabled: value,
+                          order: existingOrder,
+                        );
+                      },
+                      dragHandle: ReorderableDragStartListener(
+                        index: index,
+                        child: Icon(
+                          Icons.drag_handle_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             );
           },
@@ -2075,141 +2131,78 @@ class _SectionGroupCard<T> extends StatelessWidget {
 
 class _SectionConfigTile extends StatelessWidget {
   const _SectionConfigTile({
+    super.key,
     required this.definition,
     required this.enabled,
-    required this.order,
-    required this.onSave,
+    required this.onToggle,
+    required this.dragHandle,
   });
 
   final _StudioSectionDefinition definition;
   final bool enabled;
-  final int order;
-  final Future<void> Function(bool enabled, int order) onSave;
+  final Future<void> Function(bool value) onToggle;
+  final Widget dragHandle;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        context.t(definition.titleKey, fallback: definition.fallbackTitle),
-      ),
-      subtitle: Text(
-        enabled
-            ? context.t('studio.section_enabled', fallback: 'Enabled')
-            : context.t('studio.section_disabled', fallback: 'Disabled'),
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.edit_outlined),
-        onPressed: () => _showSectionConfigEditor(
-          context,
-          definition: definition,
-          initialEnabled: enabled,
-          initialOrder: order,
-          onSave: onSave,
-        ),
-      ),
-    );
-  }
-}
+    final theme = Theme.of(context);
 
-Future<void> _showSectionConfigEditor(
-  BuildContext context, {
-  required _StudioSectionDefinition definition,
-  required bool initialEnabled,
-  required int initialOrder,
-  required Future<void> Function(bool enabled, int order) onSave,
-}) {
-  final orderController = TextEditingController(text: '$initialOrder');
-  var enabled = initialEnabled;
-  var isSaving = false;
-
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      child: Row(
+        children: [
+          Expanded(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   context.t(definition.titleKey,
                       fallback: definition.fallbackTitle),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    context.t('studio.section_enabled', fallback: 'Enabled'),
-                  ),
-                  value: enabled,
-                  onChanged: (value) => setState(() => enabled = value),
-                ),
-                TextField(
-                  controller: orderController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText:
-                        context.t('studio.section_order', fallback: 'Order'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            final parsedOrder =
-                                int.tryParse(orderController.text.trim()) ??
-                                    initialOrder;
-                            setState(() => isSaving = true);
-                            try {
-                              await onSave(enabled, parsedOrder);
-                              if (!context.mounted) return;
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t(
-                                      'studio.section_updated',
-                                      fallback: 'Section updated',
-                                    ),
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (context.mounted) {
-                                setState(() => isSaving = false);
-                              }
-                            }
-                          },
-                    child: isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(context.t('common.save', fallback: 'Save')),
-                  ),
+                const SizedBox(height: 4),
+                Text(
+                  enabled
+                      ? context.t('studio.section_enabled', fallback: 'Enabled')
+                      : context.t(
+                          'studio.section_disabled',
+                          fallback: 'Disabled',
+                        ),
+                  style: theme.textTheme.bodySmall,
                 ),
               ],
             ),
-          );
-        },
-      );
-    },
-  );
+          ),
+          Switch(
+            value: enabled,
+            onChanged: (value) async {
+              await _runWithBlockingLoader(
+                context,
+                () => onToggle(value),
+              );
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    context.t(
+                      'studio.section_updated',
+                      fallback: 'Section updated',
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          dragHandle,
+        ],
+      ),
+    );
+  }
 }
 
 class _StudioSectionDefinition {
