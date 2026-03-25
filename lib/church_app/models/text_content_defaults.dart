@@ -570,6 +570,7 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.tab_promise': 'Promise',
   'studio.tab_notifications': 'Notifications',
   'studio.tab_admins': 'Admins',
+  'studio.tab_admin_mode': 'Admin Mode',
   'studio.tab_sections': 'Sections',
   'studio.tab_prompt': 'Important',
   'studio.add_event': 'Add event',
@@ -657,6 +658,15 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.admins_label': 'Admin emails',
   'studio.admins_updated': 'Admins updated',
   'studio.admins_save': 'Save Admins',
+  'studio.admin_mode_description':
+      'Temporarily pause the church app for regular users while updates are in progress.',
+  'studio.admin_mode_toggle': 'Turn on admin mode',
+  'studio.admin_mode_hint':
+      'When enabled, regular users will see a temporary update screen. Admins can still access the app.',
+  'studio.admin_mode_updated': 'Admin mode updated',
+  'studio.admin_mode_save': 'Save Admin Mode',
+  'admin_mode.message': "We're updating {churchName}. Please check back soon.",
+  'admin_mode.okay': 'Okay',
   'studio.prompt_title': 'Important',
   'studio.prompt_description':
       'This controls the important pop-up card shown to members for urgent announcements or special updates.',

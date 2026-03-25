@@ -358,6 +358,29 @@ class StudioScreen extends ConsumerWidget {
             subtitle: 'Manage access and church-wide editing permissions.',
             items: [
               _StudioToolItem(
+                title: ref.t('studio.tab_admin_mode', fallback: 'Admin Mode'),
+                subtitle:
+                    'Pause the app for regular users while work is in progress.',
+                icon: Icons.construction_outlined,
+                status: config == null
+                    ? null
+                    : _StudioToolStatus(
+                        label: config.adminMode.enabled ? 'On' : 'Off',
+                        tone: config.adminMode.enabled
+                            ? _StudioStatusTone.good
+                            : _StudioStatusTone.neutral,
+                      ),
+                builder: (_) => _AdminModeEditor(
+                  onSave: ({
+                    required enabled,
+                  }) {
+                    return repository.updateAdminMode(
+                      enabled: enabled,
+                    );
+                  },
+                ),
+              ),
+              _StudioToolItem(
                 title: ref.t('studio.tab_admins', fallback: 'Admins'),
                 subtitle: 'Update the list of admin email addresses.',
                 icon: Icons.admin_panel_settings_outlined,
@@ -2436,6 +2459,158 @@ class _PromptSheetEditor extends ConsumerWidget {
         promptSheet: config.promptSheet,
         onSave: onSave,
       ),
+    );
+  }
+}
+
+class _AdminModeEditor extends ConsumerWidget {
+  const _AdminModeEditor({
+    required this.onSave,
+  });
+
+  final Future<void> Function({
+    required bool enabled,
+  }) onSave;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configAsync = ref.watch(appConfigProvider);
+
+    return configAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+        ),
+      ),
+      data: (config) => _AdminModeEditorForm(
+        initialEnabled: config.adminMode.enabled,
+        onSave: onSave,
+      ),
+    );
+  }
+}
+
+class _AdminModeEditorForm extends StatefulWidget {
+  const _AdminModeEditorForm({
+    required this.initialEnabled,
+    required this.onSave,
+  });
+
+  final bool initialEnabled;
+  final Future<void> Function({
+    required bool enabled,
+  }) onSave;
+
+  @override
+  State<_AdminModeEditorForm> createState() => _AdminModeEditorFormState();
+}
+
+class _AdminModeEditorFormState extends State<_AdminModeEditorForm> {
+  late bool _enabled;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.initialEnabled;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          decoration: carouselBoxDecoration(context),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.t('studio.tab_admin_mode', fallback: 'Admin Mode'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.t(
+                    'studio.admin_mode_description',
+                    fallback:
+                        'Temporarily pause the church app for regular users while updates are in progress.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile.adaptive(
+                  value: _enabled,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    context.t(
+                      'studio.admin_mode_toggle',
+                      fallback: 'Turn on admin mode',
+                    ),
+                  ),
+                  subtitle: Text(
+                    context.t(
+                      'studio.admin_mode_hint',
+                      fallback:
+                          'When enabled, regular users will see a temporary update screen. Admins can still access the app.',
+                    ),
+                  ),
+                  onChanged: _isSaving
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _enabled = value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            setState(() => _isSaving = true);
+                            try {
+                              await widget.onSave(enabled: _enabled);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    context.t(
+                                      'studio.admin_mode_updated',
+                                      fallback: 'Admin mode updated',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSaving = false);
+                              }
+                            }
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            context.t(
+                              'studio.admin_mode_save',
+                              fallback: 'Save Admin Mode',
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

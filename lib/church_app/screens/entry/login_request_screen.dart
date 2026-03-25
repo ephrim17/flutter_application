@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/services/FCM/FCM_notification_service.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -567,6 +568,33 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         }
       }
 
+      final normalizedEmail = (widget.initialEmail ??
+              firebaseUser?.email ??
+              _emailController.text.trim())
+          .trim()
+          .toLowerCase();
+      var shouldAutoApprove = widget.adminCreateMode;
+
+      if (!widget.adminCreateMode && normalizedEmail.isNotEmpty) {
+        final usersSnapshot = await FirestorePaths.churchUsers(
+          ref.read(firestoreProvider),
+          widget.churchId,
+        ).limit(1).get();
+        final appConfigDoc = await FirestorePaths.churchAppConfig(
+          ref.read(firestoreProvider),
+          widget.churchId,
+        ).get();
+        final admins =
+            List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
+                .map((item) => item.trim().toLowerCase())
+                .where((item) => item.isNotEmpty)
+                .toList(growable: false);
+
+        shouldAutoApprove = usersSnapshot.docs.isEmpty &&
+            admins.length == 1 &&
+            admins.first == normalizedEmail;
+      }
+
       await ref.read(authRepositoryProvider).requestAccess(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
@@ -594,7 +622,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 : null,
             targetUid: widget.targetUid,
             targetEmail: widget.initialEmail,
-            approved: widget.adminCreateMode,
+            approved: shouldAutoApprove,
             createChurchMemberWithoutAuth:
                 widget.adminCreateMode && widget.targetUid == null,
           );
@@ -627,11 +655,40 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         enabled: true,
       );
       ref.invalidate(currentChurchIdProvider);
+      ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;
       unawaited(syncNotificationTopicIfAuthorized(ref));
 
       if (!mounted) return;
+      final createdUser = AppUser(
+        uid: firebaseUser!.uid,
+        name: _nameController.text.trim(),
+        email: normalizedEmail,
+        role: 'user',
+        approved: shouldAutoApprove,
+        phone: _phoneController.text.trim(),
+        contact: _showAdminSections
+            ? _phoneController.text.trim()
+            : _contactController.text.trim(),
+        location: _locationController.text.trim(),
+        address: _addressController.text.trim(),
+        gender: _gender,
+        category: _category,
+        familyId: familyId,
+        maritalStatus: _maritalStatus,
+        weddingDay: _weddingDay,
+        financialStabilityRating: _financialStabilityRating,
+        financialSupportRequired: _financialSupportRequired,
+        educationalQualification:
+            _educationalQualificationController.text.trim(),
+        talentsAndGifts: _parsedTalentsAndGifts(),
+        churchGroupIds: _selectedChurchGroupIds.toList(),
+        authToken: authToken,
+        dob: _dob!,
+      );
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AppEntry()),
+        MaterialPageRoute(
+          builder: (_) => AppEntry(initialUser: createdUser),
+        ),
         (route) => false,
       );
     } catch (e) {

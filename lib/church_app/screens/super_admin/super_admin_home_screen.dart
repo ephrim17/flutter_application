@@ -132,29 +132,38 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                     fallback: 'Create Church',
                                   ),
                                   onPressed: () async {
-                                    final passwordEmailSent =
-                                        await Navigator.of(context).push<bool>(
+                                    final createResult =
+                                        await Navigator.of(context)
+                                            .push<String>(
                                       MaterialPageRoute(
                                         builder: (_) =>
                                             const CreateChurchScreen(),
                                       ),
                                     );
-                                    if (passwordEmailSent == null ||
+                                    if (createResult == null ||
                                         !context.mounted) {
                                       return;
                                     }
+                                    final snackText = switch (createResult) {
+                                      'created_with_email' => context.t(
+                                          'super_admin.create_success',
+                                          fallback:
+                                              'Church created successfully. Password setup email sent to the admin.',
+                                        ),
+                                      'created_email_failed' => context.t(
+                                          'super_admin.create_success_email_failed',
+                                          fallback:
+                                              'Church created successfully, but the password setup email could not be sent to the admin.',
+                                        ),
+                                      _ => context.t(
+                                          'super_admin.create_success_no_account',
+                                          fallback:
+                                              'Church created successfully without account setup.',
+                                        ),
+                                    };
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(
-                                          context.t(
-                                            passwordEmailSent
-                                                ? 'super_admin.create_success'
-                                                : 'super_admin.create_success_email_failed',
-                                            fallback: passwordEmailSent
-                                                ? 'Church created successfully. Password setup email sent to the admin.'
-                                                : 'Church created successfully, but the password setup email could not be sent to the admin.',
-                                          ),
-                                        ),
+                                        content: Text(snackText),
                                       ),
                                     );
                                   },

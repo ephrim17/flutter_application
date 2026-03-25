@@ -430,6 +430,16 @@ class StudioRepository {
     }, SetOptions(merge: true));
   }
 
+  Future<void> updateAdminMode({
+    required bool enabled,
+  }) async {
+    await appConfigRef.set({
+      'adminMode': {
+        'enabled': enabled,
+      },
+    }, SetOptions(merge: true));
+  }
+
   Future<void> updateThemeColors({
     required String primaryColor,
     required String secondaryColor,

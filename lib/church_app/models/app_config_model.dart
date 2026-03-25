@@ -15,6 +15,7 @@ class AppConfig {
   final DailyVerseRef dailyVerseRef;
   final PromiseVerseRef promiseVerseRef;
   final PromptSheetModel promptSheet;
+  final AdminModeModel adminMode;
   final TextContent textContent;
   final String churchLogo;
   final String youtubeLink;
@@ -31,6 +32,7 @@ class AppConfig {
       required this.cardColorHex,
       required this.dailyVerseRef,
       required this.promptSheet,
+      required this.adminMode,
       required this.bibleSwipeFetchEnabled,
       required this.bibleSwipeFetchVersion,
       required this.promiseVerseRef,
@@ -51,6 +53,7 @@ class AppConfig {
       cardColorHex: '#FFFFFF',
       dailyVerseRef: DailyVerseRef.empty(),
       promptSheet: PromptSheetModel.empty(),
+      adminMode: AdminModeModel.empty(),
       bibleSwipeFetchEnabled: false,
       bibleSwipeFetchVersion: 0,
       promiseVerseRef: PromiseVerseRef.empty(),
@@ -67,6 +70,7 @@ class AppConfig {
       dailyVerseRef: DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
       promiseVerseRef: PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
       promptSheet: PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
+      adminMode: AdminModeModel.fromMap(data['adminMode'] ?? {}),
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       bibleSwipeFetchEnabled:
           data['features']?['bibleSwipeFetchEnabled'] ?? false,
@@ -169,6 +173,26 @@ class PromptSheetModel {
     return PromptSheetModel(
       title: (map['title'] ?? '') as String,
       desc: (map['desc'] ?? '') as String,
+      enabled: map['enabled'] as bool? ?? false,
+    );
+  }
+}
+
+class AdminModeModel {
+  final bool enabled;
+
+  const AdminModeModel({
+    required this.enabled,
+  });
+
+  factory AdminModeModel.empty() {
+    return const AdminModeModel(
+      enabled: false,
+    );
+  }
+
+  factory AdminModeModel.fromMap(Map<String, dynamic> map) {
+    return AdminModeModel(
       enabled: map['enabled'] as bool? ?? false,
     );
   }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/admin_mode_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
@@ -133,6 +135,11 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
   Widget _buildResolvedScreen(AppUser? user) {
     final firebaseUser = ref.watch(authStateProvider).value;
+    final appConfig = ref.watch(appConfigProvider).value;
+    final normalizedEmail = firebaseUser?.email?.trim().toLowerCase() ?? '';
+    final isChurchAdmin = appConfig != null &&
+        normalizedEmail.isNotEmpty &&
+        appConfig.isAdmin(normalizedEmail);
     if (firebaseUser == null) {
       _syncPreflowTheme(true);
       return const CreateAuthAccountScreen();
@@ -144,6 +151,10 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     if (!user.approved) {
       _syncPreflowTheme(true);
       return const PendingApprovalWidget();
+    }
+    if (appConfig?.adminMode.enabled == true && !isChurchAdmin) {
+      _syncPreflowTheme(true);
+      return const AdminModeScreen();
     }
     _syncPreflowTheme(false);
     return const ChurchTabScreen();

@@ -15,10 +15,11 @@ class CreateChurchInput {
     required this.email,
     required this.logoImage,
     required this.enabled,
-    required this.adminUid,
-    required this.adminName,
-    required this.adminEmail,
-    required this.adminPhone,
+    required this.setupChurchAccount,
+    this.adminUid,
+    this.adminName,
+    this.adminEmail,
+    this.adminPhone,
   });
 
   final String churchId;
@@ -30,10 +31,11 @@ class CreateChurchInput {
   final String email;
   final PickedImageData logoImage;
   final bool enabled;
-  final String adminUid;
-  final String adminName;
-  final String adminEmail;
-  final String adminPhone;
+  final bool setupChurchAccount;
+  final String? adminUid;
+  final String? adminName;
+  final String? adminEmail;
+  final String? adminPhone;
 }
 
 class UpdateChurchInput {
@@ -118,7 +120,7 @@ class SuperAdminChurchService {
     final batch = _firestore.batch();
     final now = FieldValue.serverTimestamp();
     final normalizedChurchEmail = input.email.trim().toLowerCase();
-    final normalizedAdminEmail = input.adminEmail.trim().toLowerCase();
+    final normalizedAdminEmail = input.adminEmail?.trim().toLowerCase() ?? '';
     final adminGroupIds = <String>['administration'];
 
     batch.set(churchDoc, {
@@ -134,10 +136,14 @@ class SuperAdminChurchService {
       'updatedAt': now,
     });
 
+    final adminEmails = normalizedAdminEmail.isEmpty
+        ? <String>[]
+        : <String>[normalizedAdminEmail];
+
     batch.set(
       FirestorePaths.churchAppConfig(_firestore, churchId),
       {
-        'admins': <String>[normalizedAdminEmail],
+        'admins': adminEmails,
         'features': {
           'membersEnabled': true,
           'eventsEnabled': true,
@@ -157,6 +163,9 @@ class SuperAdminChurchService {
         'promptSheet': {
           'title': '',
           'desc': '',
+          'enabled': false,
+        },
+        'adminMode': {
           'enabled': false,
         },
         'onboarding': {
@@ -239,33 +248,73 @@ class SuperAdminChurchService {
       );
     }
 
-    batch.set(
-      FirestorePaths.churchUserDoc(_firestore, churchId, input.adminUid.trim()),
-      {
-        'uid': input.adminUid.trim(),
-        'name': input.adminName.trim(),
-        'email': normalizedAdminEmail,
-        'phone': input.adminPhone.trim(),
-        'contact': input.adminPhone.trim(),
-        'location': '',
-        'address': input.address.trim(),
-        'gender': '',
-        'category': 'individual',
-        'familyId': '',
-        'maritalStatus': '',
-        'weddingDay': null,
-        'financialStabilityRating': 0,
-        'financialSupportRequired': false,
-        'educationalQualification': '',
-        'talentsAndGifts': const <String>[],
-        'churchGroupIds': adminGroupIds,
-        'role': 'admin',
-        'authToken': '',
-        'approved': true,
-        'dob': null,
-        'createdAt': now,
-      },
-    );
+    if (input.setupChurchAccount &&
+        input.adminUid != null &&
+        input.adminName != null &&
+        input.adminEmail != null &&
+        input.adminPhone != null) {
+      batch.set(
+        FirestorePaths.churchUserDoc(
+          _firestore,
+          churchId,
+          input.adminUid!.trim(),
+        ),
+        {
+          'uid': input.adminUid!.trim(),
+          'name': input.adminName!.trim(),
+          'email': normalizedAdminEmail,
+          'phone': input.adminPhone!.trim(),
+          'contact': input.adminPhone!.trim(),
+          'location': '',
+          'address': input.address.trim(),
+          'gender': '',
+          'category': 'individual',
+          'familyId': '',
+          'maritalStatus': '',
+          'weddingDay': null,
+          'financialStabilityRating': 0,
+          'financialSupportRequired': false,
+          'educationalQualification': '',
+          'talentsAndGifts': const <String>[],
+          'churchGroupIds': adminGroupIds,
+          'role': 'admin',
+          'authToken': '',
+          'approved': true,
+          'dob': null,
+          'createdAt': now,
+        },
+      );
+    }
+
+    if (input.adminName != null &&
+        input.adminEmail != null &&
+        input.adminPhone != null &&
+        input.adminName!.trim().isNotEmpty &&
+        normalizedAdminEmail.isNotEmpty) {
+      final adminMemberId = input.setupChurchAccount &&
+              input.adminUid != null &&
+              input.adminUid!.trim().isNotEmpty
+          ? input.adminUid!.trim()
+          : normalizedAdminEmail;
+
+      batch.set(
+        FirestorePaths.churchGroupMembers(
+          _firestore,
+          churchId,
+          'administration',
+        ).doc(adminMemberId),
+        {
+          'uid': adminMemberId,
+          'email': normalizedAdminEmail,
+          'name': input.adminName!.trim(),
+          'phone': input.adminPhone!.trim(),
+          'category': 'individual',
+          'groupId': 'administration',
+          'groupLabel': 'Administration',
+          'updatedAt': now,
+        },
+      );
+    }
 
     _seedChurchGroups(
       batch: batch,

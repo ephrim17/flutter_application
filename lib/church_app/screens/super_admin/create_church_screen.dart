@@ -36,6 +36,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   final _adminPhoneController = TextEditingController();
 
   bool _enabled = true;
+  bool _setupChurchAccount = true;
   bool _isSubmitting = false;
   PickedImageData? _logoImage;
   PickedImageData? _pastorPhotoImage;
@@ -250,11 +251,23 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         return;
       }
 
-      final createdAccount =
-          await ref.read(authRepositoryProvider).createFirebaseAccountForAdmin(
-                email: _adminEmailController.text.trim(),
-                password: _generateTemporaryPassword(),
-              );
+      String? createdAdminUid;
+      String? createdAdminEmail;
+      var createResult = 'created_without_account';
+      final enteredAdminName = _adminNameController.text.trim();
+      final enteredAdminEmail = _adminEmailController.text.trim().toLowerCase();
+      final enteredAdminPhone = _adminPhoneController.text.trim();
+
+      if (_setupChurchAccount) {
+        final createdAccount = await ref
+            .read(authRepositoryProvider)
+            .createFirebaseAccountForAdmin(
+              email: enteredAdminEmail,
+              password: _generateTemporaryPassword(),
+            );
+        createdAdminUid = createdAccount.uid;
+        createdAdminEmail = createdAccount.email;
+      }
 
       await service.createChurch(
         CreateChurchInput(
@@ -267,24 +280,27 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           email: _emailController.text.trim(),
           logoImage: _logoImage!,
           enabled: _enabled,
-          adminUid: createdAccount.uid,
-          adminName: _adminNameController.text.trim(),
-          adminEmail: createdAccount.email,
-          adminPhone: _adminPhoneController.text.trim(),
+          setupChurchAccount: _setupChurchAccount,
+          adminUid: createdAdminUid,
+          adminName: enteredAdminName,
+          adminEmail: createdAdminEmail ?? enteredAdminEmail,
+          adminPhone: enteredAdminPhone,
         ),
       );
 
-      var passwordEmailSent = true;
-      try {
-        await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
-              email: createdAccount.email,
-            );
-      } catch (_) {
-        passwordEmailSent = false;
+      if (_setupChurchAccount && createdAdminEmail != null) {
+        createResult = 'created_with_email';
+        try {
+          await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
+                email: createdAdminEmail,
+              );
+        } catch (_) {
+          createResult = 'created_email_failed';
+        }
       }
 
       if (!mounted) return;
-      Navigator.of(context).pop(passwordEmailSent);
+      Navigator.of(context).pop(createResult);
     } on CreateChurchException catch (error) {
       if (!mounted) return;
       final message = error.code == 'duplicate-id'
@@ -499,6 +515,31 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                               onTap: _isSubmitting ? null : _pickPastorPhoto,
                             ),
                             if (!_isEditMode) ...[
+                              SwitchListTile.adaptive(
+                                value: _setupChurchAccount,
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  context.t(
+                                    'super_admin.setup_account_label',
+                                    fallback: 'Set up church account',
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  context.t(
+                                    'super_admin.setup_account_hint',
+                                    fallback: _setupChurchAccount
+                                        ? 'An initial admin account will be created and invited to finish password setup.'
+                                        : 'The church will be created without Firebase Auth account setup. You can add access later.',
+                                  ),
+                                ),
+                                onChanged: _isSubmitting
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _setupChurchAccount = value;
+                                        });
+                                      },
+                              ),
                               const SizedBox(height: 20),
                               Align(
                                 alignment: Alignment.centerLeft,
@@ -511,6 +552,19 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                       .textTheme
                                       .titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  context.t(
+                                    'super_admin.admin_section_hint',
+                                    fallback: _setupChurchAccount
+                                        ? 'This admin will be invited to finish account setup.'
+                                        : 'This admin will be saved under the church config, but no Firebase Auth account will be created yet.',
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ),
                               const SizedBox(height: 14),
