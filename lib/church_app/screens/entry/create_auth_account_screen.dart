@@ -11,6 +11,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
@@ -433,6 +434,32 @@ class _CreateAuthAccountScreenState
                             ),
                           ),
                         ),
+                        if (_isLoginMode) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => ForgotPasswordScreen(
+                                            initialEmail:
+                                                _emailController.text.trim(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                              child: Text(
+                                context.t(
+                                  'auth.forgot_password_title',
+                                  fallback: 'Forgot Password',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         if (!_isLoginMode) ...[
                           TextField(

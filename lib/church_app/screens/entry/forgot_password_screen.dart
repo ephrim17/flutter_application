@@ -10,10 +10,12 @@ class ForgotPasswordScreen extends StatefulWidget {
     super.key,
     this.churchName = '',
     this.churchLogo = '',
+    this.initialEmail = '',
   });
 
   final String churchName;
   final String churchLogo;
+  final String initialEmail;
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -28,6 +30,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.text = widget.initialEmail.trim();
   }
 
   Future<void> _sendResetEmail() async {

@@ -16,6 +16,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
@@ -150,6 +151,31 @@ class LoginScreen extends ConsumerWidget {
                           labelText: context.t(
                             'auth.password_label',
                             fallback: 'Password',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ForgotPasswordScreen(
+                                        churchName: churchName,
+                                        churchLogo: churchLogo,
+                                        initialEmail: emailCtrl.text.trim(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(
+                            context.t(
+                              'auth.forgot_password_title',
+                              fallback: 'Forgot Password',
+                            ),
                           ),
                         ),
                       ),
