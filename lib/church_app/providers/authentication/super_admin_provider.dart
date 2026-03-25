@@ -133,15 +133,18 @@ final isSuperAdminProvider = StreamProvider<bool>((ref) {
 
   return authState.when(
     data: (firebaseUser) {
-      if (firebaseUser == null) {
+      final email = firebaseUser?.email?.trim().toLowerCase() ?? '';
+      if (firebaseUser == null || email.isEmpty) {
         return Stream.value(false);
       }
 
       return firestore
           .collection('superAdmins')
-          .doc(firebaseUser.uid)
+          .where('email', isEqualTo: email)
+          .where('enabled', isEqualTo: true)
+          .limit(1)
           .snapshots()
-          .map((doc) => doc.exists);
+          .map((snapshot) => snapshot.docs.isNotEmpty);
     },
     loading: () => Stream.value(false),
     error: (_, __) => Stream.value(false),
