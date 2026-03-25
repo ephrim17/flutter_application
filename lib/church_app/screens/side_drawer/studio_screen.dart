@@ -120,7 +120,10 @@ class StudioScreen extends ConsumerWidget {
                     repository,
                     doc: doc,
                   ),
-                  onDelete: (doc) => repository.deletePastor(doc.id),
+                  onDelete: (doc) => repository.deletePastor(
+                    doc.id,
+                    imageUrl: (doc.data()['imageUrl'] ?? '') as String,
+                  ),
                 ),
               ),
               _StudioToolItem(
@@ -2936,6 +2939,9 @@ Future<void> _showPastorEditor(
       TextEditingController(text: (data['title'] ?? '') as String);
   final contactController =
       TextEditingController(text: (data['contact'] ?? '') as String);
+  final existingImageUrl = (data['imageUrl'] ?? '') as String;
+  var setAsMain = (data['primary'] ?? false) as bool;
+  PickedImageData? selectedImage;
   var isSaving = false;
 
   return showModalBottomSheet<void>(
@@ -2981,23 +2987,145 @@ Future<void> _showPastorEditor(
                   ),
                 ),
                 const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 85,
+                          );
+                          if (picked == null) return;
+                          final imageData =
+                              await PickedImageData.fromXFile(picked);
+                          if (imageData == null) return;
+                          setState(() {
+                            selectedImage = imageData;
+                          });
+                        },
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(
+                    selectedImage == null
+                        ? (existingImageUrl.isEmpty
+                            ? context.t(
+                                'super_admin.pastor_photo_pick',
+                                fallback: 'Pick Pastor Photo',
+                              )
+                            : context.t(
+                                'super_admin.pastor_photo_replace',
+                                fallback: 'Replace Pastor Photo',
+                              ))
+                        : context.t(
+                            'studio.announcement_change_image',
+                            fallback: 'Change image',
+                          ),
+                  ),
+                ),
+                if (selectedImage != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxHeight: 220),
+                      color: Colors.black12,
+                      child: Image.memory(
+                        selectedImage!.bytes,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ] else if (existingImageUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxHeight: 220),
+                      color: Colors.black12,
+                      child: Image.network(
+                        existingImageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: setAsMain,
+                  title: Text(
+                    'Set as Main',
+                  ),
+                  subtitle: Text(
+                    'Show this pastor as the main pastor in the app.',
+                  ),
+                  onChanged: isSaving
+                      ? null
+                      : (value) {
+                          setState(() {
+                            setAsMain = value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: isSaving
                         ? null
                         : () async {
+                            final title = titleController.text.trim();
+                            final contact = contactController.text.trim();
+                            if (title.isEmpty || contact.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Please add pastor photo, title, and contact.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            if (doc == null &&
+                                selectedImage == null &&
+                                existingImageUrl.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please add pastor photo, title, and contact.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
                             setState(() => isSaving = true);
-                            final payload = {
-                              'title': titleController.text.trim(),
-                              'contact': contactController.text.trim(),
-                              'updatedAt': FieldValue.serverTimestamp(),
-                            };
                             try {
+                              final payload = {
+                                'title': title,
+                                'contact': contact,
+                              };
                               if (doc == null) {
-                                await repository.createPastor(payload);
+                                final createdId = await repository.createPastor(
+                                  data: payload,
+                                  imageFile: selectedImage!,
+                                );
+                                if (setAsMain) {
+                                  await repository.setPrimaryPastor(createdId);
+                                }
                               } else {
-                                await repository.updatePastor(doc.id, payload);
+                                await repository.updatePastor(
+                                  id: doc.id,
+                                  data: payload,
+                                  imageFile: selectedImage,
+                                  existingImageUrl: existingImageUrl,
+                                );
+                                if (setAsMain) {
+                                  await repository.setPrimaryPastor(doc.id);
+                                }
                               }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();

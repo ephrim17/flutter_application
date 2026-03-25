@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/pastor_model.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/home_sections/pastor_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
@@ -20,9 +22,7 @@ class PastorSection implements MasterSection {
   @override
   List<Widget> buildSlivers(BuildContext context) {
     return [
-      SliverToBoxAdapter(
-        child: PastorWidget()
-      ),
+      SliverToBoxAdapter(child: PastorWidget()),
     ];
   }
 }
@@ -40,22 +40,27 @@ class PastorWidget extends ConsumerWidget {
             ),
         error: (e, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+              child: Text(
+                  "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
             ),
         data: (items) => _PastorList(items));
   }
 }
 
-
-class _PastorList extends StatelessWidget {
+class _PastorList extends ConsumerWidget {
   const _PastorList(this.items);
   final List<Pastor> items;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appConfig = ref.watch(appConfigProvider).value;
+    final primaryColor = (appConfig?.primaryColorHex ?? '#1C1C1C').toColor();
+    final secondaryColor =
+        (appConfig?.secondaryColorHex ?? '#5E5E5E').toColor();
+
     if (items.isEmpty) {
       return Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Text(
           context.t('pastor.empty_error', fallback: 'Something went wrong'),
         ),
@@ -63,56 +68,211 @@ class _PastorList extends StatelessWidget {
     }
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            text: context.t('pastor.section_title', fallback: 'Our Pastors'),
-            padding: 16.0,
-          ),
-          const SizedBox(height: 10,),
-          SizedBox(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          text: context.t('pastor.section_title', fallback: 'Our Pastors'),
+          padding: 16.0,
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        SizedBox(
             height: cardHeight(PastorSection().id),
-            child: 
-             AutoScrollCarousel(
-                height: cardHeight(PastorSection().id),
-                itemCount: items.length,
-                viewportFraction: 0.92,
-                spacing: 12,
-                itemBuilder: (_, i) =>
-                 _PastorCard(items[i]),
-              )
-          ),
-        ],
+            child: AutoScrollCarousel(
+              height: cardHeight(PastorSection().id),
+              itemCount: items.length,
+              viewportFraction: 0.92,
+              spacing: 12,
+              itemBuilder: (_, i) => _PastorCard(
+                pastor: items[i],
+                primaryColor: primaryColor,
+                secondaryColor: secondaryColor,
+              ),
+            )),
+      ],
     );
   }
 }
 
 class _PastorCard extends StatelessWidget {
-  const _PastorCard(this.a);
-  final Pastor a;
+  const _PastorCard({
+    required this.pastor,
+    required this.primaryColor,
+    required this.secondaryColor,
+  });
+
+  final Pastor pastor;
+  final Color primaryColor;
+  final Color secondaryColor;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final imageSize = (width - 32) * 0.30;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Container(
         width: width - 32,
-        padding: const EdgeInsets.all(12),
-        decoration: carouselBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(a.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(a.contact,
-                maxLines: 3, overflow: TextOverflow.ellipsis),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(cornerRadius + 4),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              primaryColor,
+              secondaryColor,
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withValues(alpha: 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 12),
+            ),
           ],
         ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: imageSize,
+              height: imageSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.16),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  width: 2.5,
+                ),
+              ),
+              child: ClipOval(
+                child: pastor.imageUrl.trim().isNotEmpty
+                    ? Image.network(
+                        pastor.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _PastorAvatarFallback(name: pastor.title),
+                      )
+                    : _PastorAvatarFallback(name: pastor.title),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (pastor.primary) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                      ),
+                      child: Text(
+                        'Main',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  Text(
+                    pastor.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: pastor.contact.trim().isEmpty
+                        ? null
+                        : () => launchPhoneCall(context, pastor.contact),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.call_outlined,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              pastor.contact.trim().isEmpty
+                                  ? 'Contact unavailable'
+                                  : pastor.contact,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PastorAvatarFallback extends StatelessWidget {
+  const _PastorAvatarFallback({
+    required this.name,
+  });
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.trim().isEmpty ? 'P' : name.trim().characters.first;
+
+    return Container(
+      color: Colors.white.withValues(alpha: 0.12),
+      alignment: Alignment.center,
+      child: Text(
+        initial.toUpperCase(),
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
       ),
     );
   }

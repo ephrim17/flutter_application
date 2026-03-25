@@ -291,16 +291,110 @@ class StudioRepository {
     await batch.commit();
   }
 
-  Future<void> createPastor(Map<String, dynamic> data) async {
-    await pastorsRef.add(data);
+  Future<String> createPastor({
+    required Map<String, dynamic> data,
+    required PickedImageData imageFile,
+  }) async {
+    final existingPastors = await pastorsRef.limit(1).get();
+    final docRef = pastorsRef.doc();
+    final imageUrl = await _uploadPastorImage(
+      pastorId: docRef.id,
+      imageFile: imageFile,
+    );
+
+    await docRef.set({
+      ...data,
+      'imageUrl': imageUrl,
+      'primary': existingPastors.docs.isEmpty,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return docRef.id;
   }
 
-  Future<void> updatePastor(String id, Map<String, dynamic> data) async {
-    await pastorsRef.doc(id).set(data, SetOptions(merge: true));
+  Future<void> updatePastor({
+    required String id,
+    required Map<String, dynamic> data,
+    PickedImageData? imageFile,
+    String? existingImageUrl,
+  }) async {
+    var imageUrl = existingImageUrl ?? '';
+
+    if (imageFile != null) {
+      imageUrl = await _uploadPastorImage(
+        pastorId: id,
+        imageFile: imageFile,
+      );
+    }
+
+    await pastorsRef.doc(id).set({
+      ...data,
+      'imageUrl': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  Future<void> deletePastor(String id) async {
+  Future<void> deletePastor(String id, {String? imageUrl}) async {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        await _storage.refFromURL(imageUrl).delete();
+      } on FirebaseException catch (error) {
+        if (error.code != 'object-not-found') {
+          rethrow;
+        }
+      }
+    }
     await pastorsRef.doc(id).delete();
+  }
+
+  Future<void> setPrimaryPastor(String id) async {
+    final snapshot = await pastorsRef.get();
+    final batch = firestore.batch();
+    Map<String, dynamic>? selectedPastor;
+
+    for (final doc in snapshot.docs) {
+      if (doc.id == id) {
+        selectedPastor = doc.data();
+      }
+      batch.set(
+        doc.reference,
+        {
+          'primary': doc.id == id,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    if (selectedPastor != null) {
+      batch.set(
+        FirestorePaths.churchDoc(firestore, churchId),
+        {
+          'pastorName': (selectedPastor['title'] ?? '').toString().trim(),
+          'pastorPhoto': (selectedPastor['imageUrl'] ?? '').toString().trim(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    await batch.commit();
+  }
+
+  Future<String> _uploadPastorImage({
+    required String pastorId,
+    required PickedImageData imageFile,
+  }) async {
+    final extension = imageFile.name.trim().split('.').last.toLowerCase();
+    final suffix = extension.isEmpty ? 'jpg' : extension;
+    final storageRef = _storage
+        .ref()
+        .child('churches/$churchId/pastorPhotos/$pastorId.$suffix');
+
+    await storageRef.putData(
+      imageFile.bytes,
+      _metadataFor(imageFile.name),
+    );
+    return storageRef.getDownloadURL();
   }
 
   Future<void> updateBibleSwipeVerses(List<String> verses) async {

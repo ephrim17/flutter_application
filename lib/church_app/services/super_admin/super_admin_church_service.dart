@@ -122,6 +122,8 @@ class SuperAdminChurchService {
     final normalizedChurchEmail = input.email.trim().toLowerCase();
     final normalizedAdminEmail = input.adminEmail?.trim().toLowerCase() ?? '';
     final adminGroupIds = <String>['administration'];
+    final pastorDocRef =
+        FirestorePaths.churchPastors(_firestore, churchId).doc();
 
     batch.set(churchDoc, {
       'name': input.name.trim(),
@@ -238,11 +240,12 @@ class SuperAdminChurchService {
 
     if (input.pastorName.trim().isNotEmpty || input.contact.trim().isNotEmpty) {
       batch.set(
-        FirestorePaths.churchPastors(_firestore, churchId).doc('primary'),
+        pastorDocRef,
         {
           'title': input.pastorName.trim(),
           'contact': input.contact.trim(),
           'imageUrl': pastorPhotoUrl,
+          'primary': true,
           'updatedAt': now,
         },
       );
@@ -352,6 +355,7 @@ class SuperAdminChurchService {
     final churchDoc = FirestorePaths.churchDoc(_firestore, churchId);
     final now = FieldValue.serverTimestamp();
     final normalizedChurchEmail = input.email.trim().toLowerCase();
+    final pastorDocRef = await _resolvePastorDocRef(churchId);
 
     final logoUrl = input.logoImage != null
         ? await _uploadChurchLogo(
@@ -405,7 +409,7 @@ class SuperAdminChurchService {
     );
 
     batch.set(
-      FirestorePaths.churchPastors(_firestore, churchId).doc('primary'),
+      pastorDocRef,
       {
         'title': input.pastorName.trim(),
         'contact': input.contact.trim(),
@@ -430,11 +434,26 @@ class SuperAdminChurchService {
     return storageRef.getDownloadURL();
   }
 
+  Future<DocumentReference<Object?>> _resolvePastorDocRef(
+    String churchId,
+  ) async {
+    final pastorsRef = FirestorePaths.churchPastors(_firestore, churchId);
+    final snapshot = await pastorsRef.limit(1).get();
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first.reference;
+    }
+    return pastorsRef.doc();
+  }
+
   Future<String> _uploadPastorPhoto({
     required String churchId,
     required PickedImageData imageFile,
   }) async {
-    final storageRef = _storage.ref().child('churches/$churchId/pastor_photo');
+    final fileName = imageFile.name.trim().isEmpty
+        ? 'pastor_photo.jpg'
+        : imageFile.name.trim();
+    final storageRef =
+        _storage.ref().child('churches/$churchId/pastorPhotos/$fileName');
     await storageRef.putData(
       imageFile.bytes,
       _metadataFor(imageFile.name),
