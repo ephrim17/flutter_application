@@ -41,9 +41,26 @@ class ChurchRepository {
   Future<void> updateChurchEnabled({
     required String churchId,
     required bool enabled,
-  }) {
-    return _firestore.collection('churches').doc(churchId).update({
+  }) async {
+    final batch = _firestore.batch();
+    final churchRef = _firestore.collection('churches').doc(churchId);
+    final appConfigRef = _firestore
+        .collection('churches')
+        .doc(churchId)
+        .collection('config')
+        .doc('app');
+
+    batch.update(churchRef, {
       'enabled': enabled,
     });
+    batch.set(
+      appConfigRef,
+      {
+        'superAdminDisabled': !enabled,
+      },
+      SetOptions(merge: true),
+    );
+
+    await batch.commit();
   }
 }

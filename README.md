@@ -1,16 +1,19 @@
-# flutter_application
+# Church Connect
 
-A new Flutter project.
+Project guide:
 
-## Getting Started
+- [APP_GUIDE.md](./APP_GUIDE.md)
 
-This project is a starting point for a Flutter application.
+Quick start:
 
-A few resources to get you started if this is your first Flutter project:
+1. `flutter pub get`
+2. `flutter run`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Tech stack:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Flutter
+- Riverpod
+- Firebase Auth
+- Cloud Firestore
+- Firebase Storage
+- Firebase Messaging

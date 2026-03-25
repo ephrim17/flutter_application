@@ -170,6 +170,7 @@ class SuperAdminChurchService {
         'adminMode': {
           'enabled': false,
         },
+        'superAdminDisabled': false,
         'onboarding': {
           'title': '',
           'subtitle': '',

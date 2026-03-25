@@ -152,6 +152,16 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       _syncPreflowTheme(true);
       return const PendingApprovalWidget();
     }
+    if (appConfig?.superAdminDisabled == true) {
+      _syncPreflowTheme(true);
+      return AdminModeScreen(
+        messageOverride: ref.t(
+          'super_admin.disabled_message',
+          fallback:
+              'Your church is disabled temporarily. Please contact super admin.',
+        ),
+      );
+    }
     if (appConfig?.adminMode.enabled == true && !isChurchAdmin) {
       _syncPreflowTheme(true);
       return const AdminModeScreen();

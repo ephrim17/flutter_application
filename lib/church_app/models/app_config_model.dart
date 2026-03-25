@@ -16,6 +16,7 @@ class AppConfig {
   final PromiseVerseRef promiseVerseRef;
   final PromptSheetModel promptSheet;
   final AdminModeModel adminMode;
+  final bool superAdminDisabled;
   final TextContent textContent;
   final String churchLogo;
   final String youtubeLink;
@@ -33,6 +34,7 @@ class AppConfig {
       required this.dailyVerseRef,
       required this.promptSheet,
       required this.adminMode,
+      required this.superAdminDisabled,
       required this.bibleSwipeFetchEnabled,
       required this.bibleSwipeFetchVersion,
       required this.promiseVerseRef,
@@ -54,6 +56,7 @@ class AppConfig {
       dailyVerseRef: DailyVerseRef.empty(),
       promptSheet: PromptSheetModel.empty(),
       adminMode: AdminModeModel.empty(),
+      superAdminDisabled: false,
       bibleSwipeFetchEnabled: false,
       bibleSwipeFetchVersion: 0,
       promiseVerseRef: PromiseVerseRef.empty(),
@@ -71,6 +74,7 @@ class AppConfig {
       promiseVerseRef: PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
       promptSheet: PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
       adminMode: AdminModeModel.fromMap(data['adminMode'] ?? {}),
+      superAdminDisabled: data['superAdminDisabled'] as bool? ?? false,
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       bibleSwipeFetchEnabled:
           data['features']?['bibleSwipeFetchEnabled'] ?? false,

@@ -13,7 +13,12 @@ import 'package:flutter_application/church_app/screens/select-church-screen.dart
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class AdminModeScreen extends ConsumerWidget {
-  const AdminModeScreen({super.key});
+  const AdminModeScreen({
+    super.key,
+    this.messageOverride,
+  });
+
+  final String? messageOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,13 +33,14 @@ class AdminModeScreen extends ConsumerWidget {
       },
       orElse: () => selectedChurch?.name.trim() ?? '',
     );
-    final message = context
-        .t(
-          'admin_mode.message',
-          fallback: "We're updating {churchName}. Please check back soon.",
-        )
-        .replaceAll(
-            '{churchName}', churchName.isEmpty ? 'the church' : churchName);
+    final message = messageOverride ??
+        context
+            .t(
+              'admin_mode.message',
+              fallback: "We're updating {churchName}. Please check back soon.",
+            )
+            .replaceAll(
+                '{churchName}', churchName.isEmpty ? 'the church' : churchName);
 
     return Scaffold(
       backgroundColor: Colors.white,

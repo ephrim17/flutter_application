@@ -667,6 +667,8 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.admin_mode_save': 'Save Admin Mode',
   'admin_mode.message': "We're updating {churchName}. Please check back soon.",
   'admin_mode.okay': 'Okay',
+  'super_admin.disabled_message':
+      'Your church is disabled temporarily. Please contact super admin.',
   'studio.prompt_title': 'Important',
   'studio.prompt_description':
       'This controls the important pop-up card shown to members for urgent announcements or special updates.',
