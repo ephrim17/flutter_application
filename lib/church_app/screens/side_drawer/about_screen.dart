@@ -20,9 +20,21 @@ class AboutScreen extends ConsumerWidget {
       body: aboutAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+          child: Text(
+              "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
         ),
         data: (about) {
+          if (about == null) {
+            return Center(
+              child: Text(
+                context.t(
+                  'about.empty_error',
+                  fallback: 'About content is not available yet.',
+                ),
+              ),
+            );
+          }
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,25 +45,28 @@ class AboutScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(context, about!),
+                      _buildHeader(context, about),
                       const SizedBox(height: 24),
                       _buildDescription(context, about.description),
                       const SizedBox(height: 32),
                       _buildInfoTile(
                         icon: Icons.church,
-                        title: context.t('about.our_mission', fallback: 'Our Mission'),
+                        title: context.t('about.our_mission',
+                            fallback: 'Our Mission'),
                         description: about.mission,
                       ),
                       const SizedBox(height: 16),
                       _buildInfoTile(
                         icon: Icons.groups,
-                        title: context.t('about.our_community', fallback: 'Our Community'),
+                        title: context.t('about.our_community',
+                            fallback: 'Our Community'),
                         description: about.community,
                       ),
                       const SizedBox(height: 16),
                       _buildInfoTile(
                         icon: Icons.favorite,
-                        title: context.t('about.our_values', fallback: 'Our Values'),
+                        title: context.t('about.our_values',
+                            fallback: 'Our Values'),
                         description: about.values,
                       ),
                       const SizedBox(height: 40),
