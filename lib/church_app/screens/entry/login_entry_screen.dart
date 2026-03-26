@@ -289,6 +289,7 @@ class LoginScreen extends ConsumerWidget {
                               pastorPhoto: '',
                               logo: churchLogo,
                               enabled: true,
+                              registrationSource: 'super_admin',
                             );
                             ref.invalidate(currentChurchIdProvider);
                             unawaited(

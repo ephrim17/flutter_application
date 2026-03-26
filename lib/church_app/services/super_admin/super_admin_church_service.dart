@@ -16,6 +16,7 @@ class CreateChurchInput {
     required this.logoImage,
     required this.enabled,
     required this.setupChurchAccount,
+    this.registrationSource = 'super_admin',
     this.adminUid,
     this.adminName,
     this.adminEmail,
@@ -32,6 +33,7 @@ class CreateChurchInput {
   final PickedImageData logoImage;
   final bool enabled;
   final bool setupChurchAccount;
+  final String registrationSource;
   final String? adminUid;
   final String? adminName;
   final String? adminEmail;
@@ -101,11 +103,36 @@ class SuperAdminChurchService {
     return doc.exists;
   }
 
+  Future<bool> churchEmailExists(
+    String email, {
+    String? excludeChurchId,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) return false;
+
+    final snapshot = await _firestore
+        .collection(FirestorePaths.churches)
+        .where('email', isEqualTo: normalizedEmail)
+        .limit(10)
+        .get();
+
+    for (final doc in snapshot.docs) {
+      if (excludeChurchId == null || doc.id != excludeChurchId.trim()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> createChurch(CreateChurchInput input) async {
     final churchId = input.churchId.trim();
     final churchDoc = FirestorePaths.churchDoc(_firestore, churchId);
     if (await churchExists(churchId)) {
       throw const CreateChurchException('duplicate-id');
+    }
+    if (await churchEmailExists(input.email)) {
+      throw const CreateChurchException('duplicate-email');
     }
 
     final logoUrl = await _uploadChurchLogo(
@@ -134,6 +161,9 @@ class SuperAdminChurchService {
       'email': normalizedChurchEmail,
       'logo': logoUrl,
       'enabled': input.enabled,
+      'registrationSource': input.registrationSource.trim().isEmpty
+          ? 'super_admin'
+          : input.registrationSource.trim(),
       'createdAt': now,
       'updatedAt': now,
     });

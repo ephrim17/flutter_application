@@ -94,146 +94,183 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                           church.id.toLowerCase().contains(query) ||
                           church.pastorName.toLowerCase().contains(query);
                     }).toList(growable: false);
+                    final pendingChurches = filteredChurches
+                        .where((church) => !church.enabled)
+                        .toList(growable: false);
+                    final approvedChurches = filteredChurches
+                        .where((church) => church.enabled)
+                        .toList(growable: false);
 
-                    return ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      children: [
-                        Container(
-                          decoration: carouselBoxDecoration(context),
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.t(
-                                  'super_admin.title',
-                                  fallback: 'Super Admin',
-                                ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(fontWeight: FontWeight.w800),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                context.t(
-                                  'super_admin.subtitle',
-                                  fallback:
-                                      'Manage platform-level churches before entering the church app.',
-                                ),
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: SolidButton(
-                                  label: context.t(
-                                    'super_admin.create_church',
-                                    fallback: 'Create Church',
+                    return DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Column(
+                              children: [
+                                Container(
+                                  decoration: carouselBoxDecoration(context),
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        context.t(
+                                          'super_admin.title',
+                                          fallback: 'Super Admin',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w800),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        context.t(
+                                          'super_admin.subtitle',
+                                          fallback:
+                                              'Manage platform-level churches before entering the church app.',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: SolidButton(
+                                          label: context.t(
+                                            'super_admin.create_church',
+                                            fallback: 'Create Church',
+                                          ),
+                                          onPressed: () async {
+                                            final createResult =
+                                                await Navigator.of(context)
+                                                    .push<String>(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const CreateChurchScreen(),
+                                              ),
+                                            );
+                                            if (createResult == null ||
+                                                !context.mounted) {
+                                              return;
+                                            }
+                                            final snackText =
+                                                switch (createResult) {
+                                              'created_with_email' => context.t(
+                                                  'super_admin.create_success',
+                                                  fallback:
+                                                      'Church created successfully. Password setup email sent to the admin.',
+                                                ),
+                                              'created_email_failed' =>
+                                                context.t(
+                                                  'super_admin.create_success_email_failed',
+                                                  fallback:
+                                                      'Church created successfully, but the password setup email could not be sent to the admin.',
+                                                ),
+                                              _ => context.t(
+                                                  'super_admin.create_success_no_account',
+                                                  fallback:
+                                                      'Church created successfully without account setup.',
+                                                ),
+                                            };
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(snackText),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  onPressed: () async {
-                                    final createResult =
-                                        await Navigator.of(context)
-                                            .push<String>(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const CreateChurchScreen(),
-                                      ),
-                                    );
-                                    if (createResult == null ||
-                                        !context.mounted) {
-                                      return;
-                                    }
-                                    final snackText = switch (createResult) {
-                                      'created_with_email' => context.t(
-                                          'super_admin.create_success',
-                                          fallback:
-                                              'Church created successfully. Password setup email sent to the admin.',
-                                        ),
-                                      'created_email_failed' => context.t(
-                                          'super_admin.create_success_email_failed',
-                                          fallback:
-                                              'Church created successfully, but the password setup email could not be sent to the admin.',
-                                        ),
-                                      _ => context.t(
-                                          'super_admin.create_success_no_account',
-                                          fallback:
-                                              'Church created successfully without account setup.',
-                                        ),
-                                    };
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(snackText),
-                                      ),
-                                    );
-                                  },
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          decoration: carouselBoxDecoration(context),
-                          padding: const EdgeInsets.all(16),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (value) {
-                              setState(() {
-                                _query = value;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: context.t(
-                                'super_admin.search_hint',
-                                fallback: 'Search churches',
-                              ),
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon: _query.isEmpty
-                                  ? null
-                                  : IconButton(
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _query = '';
-                                        });
-                                      },
-                                      icon: const Icon(Icons.clear),
+                                const SizedBox(height: 16),
+                                Container(
+                                  decoration: carouselBoxDecoration(context),
+                                  padding: const EdgeInsets.all(16),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _query = value;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: context.t(
+                                        'super_admin.search_hint',
+                                        fallback: 'Search churches',
+                                      ),
+                                      prefixIcon: const Icon(Icons.search),
+                                      suffixIcon: _query.isEmpty
+                                          ? null
+                                          : IconButton(
+                                              onPressed: () {
+                                                _searchController.clear();
+                                                setState(() {
+                                                  _query = '';
+                                                });
+                                              },
+                                              icon: const Icon(Icons.clear),
+                                            ),
                                     ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  decoration: carouselBoxDecoration(context),
+                                  padding: const EdgeInsets.all(6),
+                                  child: TabBar(
+                                    dividerColor: Colors.transparent,
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                    tabs: [
+                                      Tab(
+                                        text:
+                                            'Not Approved (${pendingChurches.length})',
+                                      ),
+                                      Tab(
+                                        text:
+                                            'Approved (${approvedChurches.length})',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          context.t(
-                            'super_admin.directory_title',
-                            fallback: 'All Churches',
-                          ),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 12),
-                        if (filteredChurches.isEmpty)
-                          Container(
-                            decoration: carouselBoxDecoration(context),
-                            padding: const EdgeInsets.all(20),
-                            child: Text(
-                              context.t(
-                                'super_admin.directory_empty',
-                                fallback: 'No churches found yet.',
-                              ),
-                            ),
-                          )
-                        else
-                          ...filteredChurches.map(
-                            (church) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _SuperAdminChurchTile(church: church),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                _ChurchListTab(
+                                  churches: pendingChurches,
+                                  emptyMessage: context.t(
+                                    'super_admin.pending_section_empty',
+                                    fallback:
+                                        'No churches are waiting for approval right now.',
+                                  ),
+                                ),
+                                _ChurchListTab(
+                                  churches: approvedChurches,
+                                  emptyMessage: context.t(
+                                    'super_admin.approved_section_empty',
+                                    fallback:
+                                        'No approved churches match your search yet.',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -255,35 +292,99 @@ class _SuperAdminChurchTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPublicRegistration = church.registrationSource == 'public';
+
     return Container(
       decoration: carouselBoxDecoration(context),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: ChurchLogoAvatar(
-          logo: church.logo,
-          size: 44,
-        ),
-        title: Text(church.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(church.id),
-            if (church.pastorName.trim().isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(church.pastorName),
-            ],
-          ],
-        ),
-        trailing: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 6,
-          children: [
-            IconButton(
-              tooltip: context.t(
-                'super_admin.edit_church',
-                fallback: 'Edit Church',
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ChurchLogoAvatar(
+                logo: church.logo,
+                size: 48,
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      church.name,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      church.id,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (church.pastorName.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        church.pastorName,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Switch(
+                value: church.enabled,
+                onChanged: (value) async {
+                  await ref.read(churchRepositoryProvider).updateChurchEnabled(
+                        churchId: church.id,
+                        enabled: value,
+                      );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        context.t(
+                          'super_admin.status_updated',
+                          fallback: 'Church status updated',
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _AdminChip(
+                label: isPublicRegistration
+                    ? 'Created by Public'
+                    : 'Created by Super Admin',
+                backgroundColor: isPublicRegistration
+                    ? Colors.blue.shade50
+                    : Colors.purple.shade50,
+                foregroundColor: isPublicRegistration
+                    ? Colors.blue.shade800
+                    : Colors.purple.shade800,
+              ),
+            ],
+          ),
+          if (church.email.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              church.email,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
               onPressed: () async {
                 final updated = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
@@ -303,29 +404,83 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.edit_outlined),
+              label: Text(
+                context.t(
+                  'super_admin.edit_church',
+                  fallback: 'Edit Church',
+                ),
+              ),
             ),
-            Switch(
-              value: church.enabled,
-              onChanged: (value) async {
-                await ref.read(churchRepositoryProvider).updateChurchEnabled(
-                      churchId: church.id,
-                      enabled: value,
-                    );
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      context.t(
-                        'super_admin.status_updated',
-                        fallback: 'Church status updated',
-                      ),
-                    ),
-                  ),
-                );
-              },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChurchListTab extends StatelessWidget {
+  const _ChurchListTab({
+    required this.churches,
+    required this.emptyMessage,
+  });
+
+  final List<Church> churches;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (churches.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          Container(
+            decoration: carouselBoxDecoration(context),
+            padding: const EdgeInsets.all(18),
+            child: Text(emptyMessage),
+          ),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      itemCount: churches.length,
+      itemBuilder: (context, index) {
+        final church = churches[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _SuperAdminChurchTile(church: church),
+        );
+      },
+    );
+  }
+}
+
+class _AdminChip extends StatelessWidget {
+  const _AdminChip({
+    required this.label,
+    required this.backgroundColor,
+    required this.foregroundColor,
+  });
+
+  final String label;
+  final Color backgroundColor;
+  final Color foregroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: foregroundColor,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
       ),
     );
   }

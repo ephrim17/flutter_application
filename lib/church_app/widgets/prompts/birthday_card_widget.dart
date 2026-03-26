@@ -67,7 +67,8 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verses) {
-        final verse = verses.isEmpty ? null : verses[Random().nextInt(verses.length)];
+        final verse =
+            verses.isEmpty ? null : verses[Random().nextInt(verses.length)];
 
         if (verse == null) {
           return Padding(
@@ -83,95 +84,88 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
           );
         }
 
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              // 🎈 Drag handle
-              Container(
-                width: 50,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      '🎉🎂🎁',
+                      style: TextStyle(fontSize: 48),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      context.t(
+                        'birthday.card_title',
+                        fallback: 'BIRTHDAY WISHES',
+                      ),
+                      textAlign: TextAlign.center,
+                      style:
+                          Theme.of(context).textTheme.headlineLarge!.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                    ),
+                    LightningGradientText(
+                      text: user?.name.toUpperCase() ?? "DEAR FRIEND",
+                      style:
+                          Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 32,
+                                letterSpacing: 1.5,
+                              ),
+                    ),
+                    const SizedBox(height: 10),
+                    RepaintBoundary(
+                      key: _globalKey,
+                      child: SizedBox(
+                        width: width - 32,
+                        child: BirthdayBlessingCard(
+                          userName: user?.name ?? 'Dear Friend',
+                          verse: verse,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: width - 32,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _saveAsImage,
+                        child: Text(
+                          context.t(
+                            'birthday.save_image',
+                            fallback: 'Save as Image',
+                          ),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // 🎂 Emoji / Icon
-              const Text(
-                '🎉🎂🎁',
-                style: TextStyle(fontSize: 48),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 🎁 Title
-              Text(context.t('birthday.card_title', fallback: 'BIRTHDAY WISHES'),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary)),
-
-              LightningGradientText(
-                  text: user?.name.toUpperCase() ?? "DEAR FRIEND",
-                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32,
-                        letterSpacing: 1.5,
-                      )),
-
-              const SizedBox(
-                height: 10,
-              ),
-
-              Column(
-                children: [
-                  RepaintBoundary(
-                    key: _globalKey,
-                    child: SizedBox(
-                      width: width - 32,
-                      child: BirthdayBlessingCard(
-                        userName: user?.name ?? 'Dear Friend',
-                        verse: verse,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  /// Save Button
-                  SizedBox(
-                    width: width - 32,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: _saveAsImage,
-                      child: Text(
-                        context.t(
-                          'birthday.save_image',
-                          fallback: 'Save as Image',
-                        ),
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // /Spacer(),
-
-              const SizedBox(
-                height: 10,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -274,8 +268,8 @@ Future<Uint8List?> captureBoundaryPng(
   GlobalKey boundaryKey, {
   double pixelRatio = 3.0,
 }) async {
-  final boundary = boundaryKey.currentContext?.findRenderObject()
-      as RenderRepaintBoundary?;
+  final boundary =
+      boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
   if (boundary == null) return null;
 
   final image = await boundary.toImage(pixelRatio: pixelRatio);

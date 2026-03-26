@@ -13,7 +13,7 @@ import 'package:flutter_application/church_app/providers/for_you_sections/favori
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
-    show selectedChurchProvider;
+    show selectedChurchProvider, churchesProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
@@ -121,6 +121,8 @@ class _LogoutSection extends ConsumerWidget {
               SuperAdminEntryMode.normal,
             );
         ref.invalidate(currentChurchIdProvider);
+        ref.invalidate(churchesProvider);
+        ref.invalidate(userChurchesProvider);
         ref.invalidate(appUserProvider);
         ref.invalidate(getCurrentUserProvider);
         navigator.pushAndRemoveUntil(

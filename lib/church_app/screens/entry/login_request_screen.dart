@@ -553,6 +553,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             pastorPhoto: '',
             logo: widget.churchLogo,
             enabled: true,
+            registrationSource: 'super_admin',
           );
           ref.invalidate(currentChurchIdProvider);
           unawaited(syncNotificationTopicIfAuthorized(ref));
@@ -653,6 +654,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         pastorPhoto: '',
         logo: widget.churchLogo,
         enabled: true,
+        registrationSource: 'super_admin',
       );
       ref.invalidate(currentChurchIdProvider);
       ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;

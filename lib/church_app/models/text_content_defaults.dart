@@ -139,6 +139,12 @@ const Map<String, String> preAuthDefaultTextContents = {
   'church.select_helper':
       "We'll help you find a local congregation to stay connected with services, events, and news.",
   'church.register_coming_soon': 'Register your church coming soon',
+  'church.register_subtitle':
+      'Share your church details. It will stay hidden until a super admin approves it.',
+  'church.register_loading': 'Registering church...',
+  'church.register_duplicate_email': 'A church with this email already exists.',
+  'church.register_success_pending':
+      'Church registered successfully. It will appear after super admin approval.',
   'church.directory_title': 'Churches',
   'church.directory_load_error': 'We could not load the church list right now.',
   'church.your_churches_title': 'Your Churches',

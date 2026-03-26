@@ -8,6 +8,7 @@ class Church {
   final String pastorPhoto;
   final String logo;
   final bool enabled;
+  final String registrationSource;
 
   Church({
     required this.id,
@@ -19,6 +20,7 @@ class Church {
     required this.pastorPhoto,
     required this.logo,
     required this.enabled,
+    required this.registrationSource,
   });
 
   factory Church.fromFirestore(String id, Map<String, dynamic> data) {
@@ -32,6 +34,7 @@ class Church {
       pastorPhoto: data['pastorPhoto'] ?? '',
       logo: data['logo'] ?? data['logoUrl'] ?? data['imageUrl'] ?? '',
       enabled: data['enabled'] ?? false,
+      registrationSource: data['registrationSource'] ?? 'super_admin',
     );
   }
 }

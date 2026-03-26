@@ -15,6 +15,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
@@ -354,18 +355,29 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                         Center(
                           child: InkWell(
                             borderRadius: BorderRadius.circular(24),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t(
-                                      'church.register_coming_soon',
-                                      fallback:
-                                          'Register your church coming soon',
-                                    ),
+                            onTap: () async {
+                              final result =
+                                  await Navigator.of(context).push<String>(
+                                MaterialPageRoute(
+                                  builder: (_) => const CreateChurchScreen(
+                                    publicRegistrationMode: true,
                                   ),
                                 ),
                               );
+                              if (!context.mounted || result == null) return;
+                              if (result == 'registered_pending_approval') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.t(
+                                        'church.register_success_pending',
+                                        fallback:
+                                            'Church registered successfully. It will appear after super admin approval.',
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                             child: const Padding(
                               padding: EdgeInsets.symmetric(
