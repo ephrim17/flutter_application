@@ -352,42 +352,43 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                         ),
                         const Spacer(),
                         const SizedBox(height: 16),
-                        Center(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: () async {
-                              final result =
-                                  await Navigator.of(context).push<String>(
-                                MaterialPageRoute(
-                                  builder: (_) => const CreateChurchScreen(
-                                    publicRegistrationMode: true,
-                                  ),
-                                ),
-                              );
-                              if (!context.mounted || result == null) return;
-                              if (result == 'registered_pending_approval') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      context.t(
-                                        'church.register_success_pending',
-                                        fallback:
-                                            'Church registered successfully. It will appear after super admin approval.',
-                                      ),
+                        if (!isSuperAdmin)
+                          Center(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(24),
+                              onTap: () async {
+                                final result =
+                                    await Navigator.of(context).push<String>(
+                                  MaterialPageRoute(
+                                    builder: (_) => const CreateChurchScreen(
+                                      publicRegistrationMode: true,
                                     ),
                                   ),
                                 );
-                              }
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                                if (!context.mounted || result == null) return;
+                                if (result == 'registered_pending_approval') {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        context.t(
+                                          'church.register_success_pending',
+                                          fallback:
+                                              'Church registered successfully. It will appear after super admin approval.',
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                child: _RegisterChurchText(),
                               ),
-                              child: _RegisterChurchText(),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
