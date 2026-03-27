@@ -200,6 +200,7 @@ class _CreateAuthAccountScreenState
         try {
           await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
                 email: createdAccount.email,
+                churchName: widget.churchName ?? '',
               );
           passwordEmailFeedback = passwordEmailSentMessage;
         } catch (_) {

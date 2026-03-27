@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/firebase_options.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CreatedAuthAccount {
   const CreatedAuthAccount({
@@ -84,9 +86,55 @@ class AuthRepository {
 
   Future<void> sendPasswordSetupEmail({
     required String email,
+    String churchName = '',
   }) async {
-    await _auth.sendPasswordResetEmail(
-      email: email.trim().toLowerCase(),
+    await _sendCustomPasswordEmail(
+      email: email,
+      churchName: churchName,
+      mode: 'setup',
+    );
+  }
+
+  Future<void> sendCustomPasswordResetEmail({
+    required String email,
+    String churchName = '',
+  }) async {
+    await _sendCustomPasswordEmail(
+      email: email,
+      churchName: churchName,
+      mode: 'reset',
+    );
+  }
+
+  Future<void> _sendCustomPasswordEmail({
+    required String email,
+    required String churchName,
+    required String mode,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    final functionUrl = Uri.parse(
+      'https://us-central1-${DefaultFirebaseOptions.currentPlatform.projectId}.cloudfunctions.net/sendPasswordResetSmtpEmail',
+    );
+
+    final response = await http.post(
+      functionUrl,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': normalizedEmail,
+        'churchName': churchName.trim(),
+        'mode': mode,
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    throw FirebaseAuthException(
+      code: 'reset-email-failed',
+      message: 'Unable to send the reset email right now.',
     );
   }
 
@@ -132,9 +180,9 @@ class AuthRepository {
   }) async {
     final batch = _firestore.batch();
 
-    final readingPlans = await FirestorePaths
-        .churchUserReadingPlans(_firestore, churchId, uid)
-        .get();
+    final readingPlans =
+        await FirestorePaths.churchUserReadingPlans(_firestore, churchId, uid)
+            .get();
 
     for (final doc in readingPlans.docs) {
       batch.delete(doc.reference);
@@ -207,8 +255,7 @@ class AuthRepository {
       'familyId': familyId.trim(),
       'dob': Timestamp.fromDate(dob),
       'maritalStatus': maritalStatus.trim(),
-      'weddingDay':
-          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
       'financialStabilityRating': financialStabilityRating,
       'financialSupportRequired': financialSupportRequired,
       'educationalQualification': educationalQualification.trim(),
@@ -250,8 +297,7 @@ class AuthRepository {
   }
 
   Future<List<String>> getFamilyIds(String churchId) async {
-    final snapshot = await FirestorePaths
-        .churchFamilies(_firestore, churchId)
+    final snapshot = await FirestorePaths.churchFamilies(_firestore, churchId)
         .orderBy('familyId')
         .get();
 
@@ -285,27 +331,33 @@ class AuthRepository {
         churchId,
         group.id,
       );
-      final memberDoc = FirestorePaths
-          .churchGroupMembers(_firestore, churchId, group.id)
-          .doc(userId);
+      final memberDoc =
+          FirestorePaths.churchGroupMembers(_firestore, churchId, group.id)
+              .doc(userId);
 
-      batch.set(groupDoc, {
-        'id': group.id,
-        'label': group.label,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          groupDoc,
+          {
+            'id': group.id,
+            'label': group.label,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
 
       if (churchGroupIds.contains(group.id)) {
-        batch.set(memberDoc, {
-          'uid': userId,
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'phone': phone,
-          'category': category,
-          'groupId': group.id,
-          'groupLabel': group.label,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        batch.set(
+            memberDoc,
+            {
+              'uid': userId,
+              'email': email.trim().toLowerCase(),
+              'name': name,
+              'phone': phone,
+              'category': category,
+              'groupId': group.id,
+              'groupLabel': group.label,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
       } else {
         batch.delete(memberDoc);
       }

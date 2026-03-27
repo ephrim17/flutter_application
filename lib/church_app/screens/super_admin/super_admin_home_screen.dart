@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/providers/preflow_theme_provider.
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
+import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
@@ -337,10 +338,12 @@ class _SuperAdminChurchTile extends ConsumerWidget {
               Switch(
                 value: church.enabled,
                 onChanged: (value) async {
-                  await ref.read(churchRepositoryProvider).updateChurchEnabled(
-                        churchId: church.id,
-                        enabled: value,
-                      );
+                  await SuperAdminChurchService(
+                    ref.read(firestoreProvider),
+                  ).updateChurchEnabled(
+                    churchId: church.id,
+                    enabled: value,
+                  );
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

@@ -7,6 +7,7 @@ class FirestorePaths {
   static const churches = 'churches';
   static const users = 'users';
   static const globalFeeds = 'globalFeeds';
+  static const mail = 'mail';
 
   //Section paths
   static const homeSections = 'home_sections';
@@ -239,5 +240,11 @@ class FirestorePaths {
     FirebaseFirestore firestore,
   ) {
     return firestore.collection(globalFeeds);
+  }
+
+  static CollectionReference<Map<String, dynamic>> mailQueue(
+    FirebaseFirestore firestore,
+  ) {
+    return firestore.collection(mail);
   }
 }

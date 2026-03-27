@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -379,11 +380,38 @@ class SuperAdminChurchService {
     }
 
     await batch.commit();
+
+    final shouldNotifyOnCreate =
+        input.registrationSource.trim() == 'super_admin';
+    if (shouldNotifyOnCreate) {
+      await _queueAdminNotificationSafely(
+        recipients: _normalizeRecipients([
+          input.adminEmail,
+          normalizedChurchEmail,
+        ]),
+        template: 'church_created',
+        subject: 'Church created: ${input.name.trim()}',
+        text: _buildChurchCreatedText(
+          churchName: input.name.trim(),
+          churchId: churchId,
+          enabled: input.enabled,
+        ),
+        data: {
+          'churchId': churchId,
+          'churchName': input.name.trim(),
+          'enabled': input.enabled,
+          'registrationSource': input.registrationSource.trim(),
+        },
+      );
+    }
   }
 
   Future<void> updateChurch(UpdateChurchInput input) async {
     final churchId = input.churchId.trim();
     final churchDoc = FirestorePaths.churchDoc(_firestore, churchId);
+    final existingChurchSnapshot = await churchDoc.get();
+    final existingChurchData =
+        (existingChurchSnapshot.data() as Map<String, dynamic>?) ?? const {};
     final now = FieldValue.serverTimestamp();
     final normalizedChurchEmail = input.email.trim().toLowerCase();
     final pastorDocRef = await _resolvePastorDocRef(churchId);
@@ -451,6 +479,63 @@ class SuperAdminChurchService {
     );
 
     await batch.commit();
+
+    final previousEnabled =
+        existingChurchData['enabled'] as bool? ?? input.enabled;
+    if (previousEnabled != input.enabled) {
+      await _queueStatusNotification(
+        churchId: churchId,
+        churchName: input.name.trim(),
+        fallbackEmail: normalizedChurchEmail,
+        enabled: input.enabled,
+      );
+    }
+  }
+
+  Future<void> updateChurchEnabled({
+    required String churchId,
+    required bool enabled,
+  }) async {
+    final normalizedChurchId = churchId.trim();
+    final churchRef = FirestorePaths.churchDoc(_firestore, normalizedChurchId);
+    final churchSnapshot = await churchRef.get();
+    final churchData = churchSnapshot.data() as Map<String, dynamic>?;
+
+    if (!churchSnapshot.exists || churchData == null) {
+      throw const CreateChurchException('church-not-found');
+    }
+
+    final previousEnabled = churchData['enabled'] as bool? ?? false;
+    final churchName = (churchData['name'] as String? ?? '').trim();
+    final fallbackEmail =
+        (churchData['email'] as String? ?? '').trim().toLowerCase();
+
+    final batch = _firestore.batch();
+    batch.set(
+      churchRef,
+      {
+        'enabled': enabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    batch.set(
+      FirestorePaths.churchAppConfig(_firestore, normalizedChurchId),
+      {
+        'superAdminDisabled': !enabled,
+      },
+      SetOptions(merge: true),
+    );
+    await batch.commit();
+
+    if (previousEnabled == enabled) return;
+
+    await _queueStatusNotification(
+      churchId: normalizedChurchId,
+      churchName: churchName,
+      fallbackEmail: fallbackEmail,
+      enabled: enabled,
+    );
   }
 
   Future<String> _uploadChurchLogo({
@@ -578,6 +663,124 @@ class SuperAdminChurchService {
       _ => 'image/jpeg',
     };
     return SettableMetadata(contentType: contentType);
+  }
+
+  Future<void> _queueStatusNotification({
+    required String churchId,
+    required String churchName,
+    required String fallbackEmail,
+    required bool enabled,
+  }) async {
+    final recipients = await _getAdminRecipients(
+      churchId: churchId,
+      fallbackEmail: fallbackEmail,
+    );
+    await _queueAdminNotificationSafely(
+      recipients: recipients,
+      template: enabled ? 'church_enabled' : 'church_disabled',
+      subject: 'Church ${enabled ? 'enabled' : 'disabled'}: $churchName',
+      text: _buildChurchStatusText(
+        churchName: churchName,
+        churchId: churchId,
+        enabled: enabled,
+      ),
+      data: {
+        'churchId': churchId,
+        'churchName': churchName,
+        'enabled': enabled,
+      },
+    );
+  }
+
+  Future<List<String>> _getAdminRecipients({
+    required String churchId,
+    required String fallbackEmail,
+  }) async {
+    final configSnapshot =
+        await FirestorePaths.churchAppConfig(_firestore, churchId).get();
+    final configData = configSnapshot.data() ?? const <String, dynamic>{};
+    final adminEmails = List<String>.from(configData['admins'] ?? const []);
+
+    return _normalizeRecipients([
+      ...adminEmails,
+      fallbackEmail,
+    ]);
+  }
+
+  List<String> _normalizeRecipients(Iterable<String?> values) {
+    return values
+        .map((value) => (value ?? '').trim().toLowerCase())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+  }
+
+  Future<void> _queueAdminNotificationSafely({
+    required List<String> recipients,
+    required String template,
+    required String subject,
+    required String text,
+    required Map<String, Object?> data,
+  }) async {
+    if (recipients.isEmpty) return;
+
+    try {
+      await FirestorePaths.mailQueue(_firestore).add({
+        'kind': 'super_admin_notification',
+        'template': template,
+        'to': recipients,
+        'subject': subject,
+        'text': text,
+        'html': _textToHtml(text),
+        'data': data,
+        'status': 'queued',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Failed to queue super admin notification: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  String _buildChurchCreatedText({
+    required String churchName,
+    required String churchId,
+    required bool enabled,
+  }) {
+    return [
+      'Hello Admin,',
+      '',
+      'Your church "$churchName" has been created from the super admin dashboard.',
+      'Church ID: $churchId',
+      'Current status: ${enabled ? 'enabled' : 'disabled'}',
+      '',
+      'You can now continue setting up the church in the app.',
+    ].join('\n');
+  }
+
+  String _buildChurchStatusText({
+    required String churchName,
+    required String churchId,
+    required bool enabled,
+  }) {
+    return [
+      'Hello Admin,',
+      '',
+      'Your church "$churchName" has been ${enabled ? 'enabled' : 'disabled'} from the super admin dashboard.',
+      'Church ID: $churchId',
+      '',
+      enabled
+          ? 'Access to the church is active again.'
+          : 'Access to the church is currently turned off.',
+    ].join('\n');
+  }
+
+  String _textToHtml(String text) {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('\n', '<br>');
   }
 }
 

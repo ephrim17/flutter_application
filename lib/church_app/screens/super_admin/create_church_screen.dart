@@ -435,6 +435,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         try {
           await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
                 email: createdAdminEmail,
+                churchName: _nameController.text.trim(),
               );
         } catch (_) {
           createResult = 'created_email_failed';
