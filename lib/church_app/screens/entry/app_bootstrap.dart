@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
+import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -14,12 +15,14 @@ class AppBootstrap extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final analyticsObserver = ref.watch(firebaseAnalyticsObserverProvider);
     final configAsync = ref.watch(appConfigProvider);
     final forcePreflowTheme = ref.watch(forcePreflowThemeProvider);
     final themeMode = ref.watch(themeProvider);
 
     return configAsync.when(
       loading: () => MaterialApp(
+        navigatorObservers: [analyticsObserver],
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
@@ -41,6 +44,7 @@ class AppBootstrap extends ConsumerWidget {
         ),
       ),
       error: (_, __) => MaterialApp(
+        navigatorObservers: [analyticsObserver],
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
@@ -76,9 +80,8 @@ class AppBootstrap extends ConsumerWidget {
         final bgColor = useChurchTheme
             ? config.backgroundColorHex.toColor()
             : PreflowColors.background;
-        final cardColor = useChurchTheme
-            ? config.cardColorHex.toColor()
-            : PreflowColors.card;
+        final cardColor =
+            useChurchTheme ? config.cardColorHex.toColor() : PreflowColors.card;
         final primaryColor = useChurchTheme
             ? config.primaryColorHex.toColor()
             : PreflowColors.accent;
@@ -87,8 +90,8 @@ class AppBootstrap extends ConsumerWidget {
             : PreflowColors.accent;
 
         return MaterialApp(
+          navigatorObservers: [analyticsObserver],
           themeMode: themeMode,
-
           theme: _buildTheme(
             context: context,
             brightness: Brightness.light,
@@ -97,12 +100,12 @@ class AppBootstrap extends ConsumerWidget {
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
-
           darkTheme: _buildTheme(
             context: context,
             brightness: Brightness.dark,
             bgColor: useChurchTheme ? Colors.black : PreflowColors.background,
-            cardColor: useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.card,
+            cardColor:
+                useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.card,
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
@@ -135,11 +138,9 @@ ThemeData _buildTheme({
   return ThemeData(
     brightness: brightness,
     useMaterial3: true,
-
     scaffoldBackgroundColor: bgColor,
     canvasColor: cardColor,
     dividerColor: mutedTextColor.withAlpha(40),
-
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryColor,
       primary: primaryColor,
@@ -150,20 +151,16 @@ ThemeData _buildTheme({
       onSecondary: buttonForegroundColor,
       onSurface: textColor,
     ),
-
     iconTheme: IconThemeData(color: inputColor),
-
     appBarTheme: AppBarTheme(
       backgroundColor: bgColor,
       elevation: 0,
       foregroundColor: textColor,
     ),
-
     cardTheme: CardThemeData().copyWith(
       color: cardColor,
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
     ),
-
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         shape: RoundedRectangleBorder(
@@ -176,7 +173,6 @@ ThemeData _buildTheme({
         foregroundColor: primaryColor,
       ),
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
@@ -186,13 +182,11 @@ ThemeData _buildTheme({
         ),
       ),
     ),
-
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: primaryColor,
       ),
     ),
-
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: primaryColor,
@@ -202,7 +196,6 @@ ThemeData _buildTheme({
         ),
       ),
     ),
-
     snackBarTheme: SnackBarThemeData(
       backgroundColor: cardColor,
       contentTextStyle: TextStyle(color: textColor),
@@ -212,7 +205,6 @@ ThemeData _buildTheme({
         borderRadius: BorderRadius.circular(18),
       ),
     ),
-
     dialogTheme: DialogThemeData(
       backgroundColor: cardColor,
       surfaceTintColor: cardColor,
@@ -229,7 +221,6 @@ ThemeData _buildTheme({
         fontSize: 16,
       ),
     ),
-
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: cardColor,
       surfaceTintColor: cardColor,
@@ -241,7 +232,6 @@ ThemeData _buildTheme({
       ),
       dragHandleColor: mutedTextColor,
     ),
-
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: cardColor,
@@ -262,12 +252,10 @@ ThemeData _buildTheme({
         borderSide: BorderSide(color: inputColor),
       ),
     ),
-
     progressIndicatorTheme: ProgressIndicatorThemeData(
       color: Colors.green,
       linearTrackColor: mutedTextColor.withAlpha(40),
     ),
-
     datePickerTheme: DatePickerThemeData(
       backgroundColor: cardColor,
       surfaceTintColor: cardColor,
@@ -310,41 +298,40 @@ ThemeData _buildTheme({
         borderRadius: BorderRadius.circular(24),
       ),
     ),
-
     textTheme: ThemeData().textTheme.copyWith(
-      titleLarge: GoogleFonts.anekTamil(
-        fontSize: 30,
-        fontWeight: FontWeight.w600,
-        color: textColor,
-      ),
-      headlineMedium: GoogleFonts.anekTamil(
-        color: textColor,
-      ),
-      headlineLarge: GoogleFonts.anekTamil(
-        color: textColor,
-      ),
-      headlineSmall: GoogleFonts.anekTamil(
-        color: textColor,
-      ),
-      titleMedium: GoogleFonts.anekTamil(
-        color: textColor,
-      ),
-      bodyMedium: GoogleFonts.anekTamil(
-        color: textColor,
-        //fontWeight: FontWeight.w600,
-      ),
-      bodyLarge: GoogleFonts.anekTamil(
-        color: textColor,
-      ),
-      bodySmall: GoogleFonts.anekTamil(
-        color: mutedTextColor,
-      ),
-      labelLarge: GoogleFonts.anekTamil(
-        color: buttonForegroundColor,
-      ),
-      labelMedium: GoogleFonts.anekTamil(
-        color: mutedTextColor,
-      ),
-    ),
+          titleLarge: GoogleFonts.anekTamil(
+            fontSize: 30,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+          headlineMedium: GoogleFonts.anekTamil(
+            color: textColor,
+          ),
+          headlineLarge: GoogleFonts.anekTamil(
+            color: textColor,
+          ),
+          headlineSmall: GoogleFonts.anekTamil(
+            color: textColor,
+          ),
+          titleMedium: GoogleFonts.anekTamil(
+            color: textColor,
+          ),
+          bodyMedium: GoogleFonts.anekTamil(
+            color: textColor,
+            //fontWeight: FontWeight.w600,
+          ),
+          bodyLarge: GoogleFonts.anekTamil(
+            color: textColor,
+          ),
+          bodySmall: GoogleFonts.anekTamil(
+            color: mutedTextColor,
+          ),
+          labelLarge: GoogleFonts.anekTamil(
+            color: buttonForegroundColor,
+          ),
+          labelMedium: GoogleFonts.anekTamil(
+            color: mutedTextColor,
+          ),
+        ),
   );
 }

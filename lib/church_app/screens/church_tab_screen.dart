@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
+import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -51,13 +54,37 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (selectedIndex == 0) {
-      _activeScreen = HomeScreen();
-    } else if (selectedIndex == 1) {
-      _activeScreen = ForYouScreen();
-    } else {
-      _activeScreen = FeedScreen();
+    final isAdmin = ref.watch(isAdminProvider);
+    final screens = <Widget>[
+      HomeScreen(),
+      ForYouScreen(),
+      FeedScreen(),
+      if (isAdmin) const DashboardScreen(),
+    ];
+    final items = <BottomNavigationBarItem>[
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.home_filled),
+        label: ref.t('church_tab.home', fallback: 'Home'),
+      ),
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.star),
+        label: ref.t('church_tab.for_you', fallback: 'For You'),
+      ),
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.newspaper_rounded),
+        label: ref.t('church_tab.feeds', fallback: 'Feeds'),
+      ),
+      if (isAdmin)
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard_customize_rounded),
+          label: 'Dashboard',
+        ),
+    ];
+
+    if (selectedIndex >= screens.length) {
+      selectedIndex = 0;
     }
+    _activeScreen = screens[selectedIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -82,24 +109,31 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       ),
       body: _activeScreen,
       drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        onTap: (value) => setActiveScreen(value),
-        currentIndex: selectedIndex,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_filled),
-            label: ref.t('church_tab.home', fallback: 'Home'),
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        decoration: carouselBoxDecoration(context),
+        child: SafeArea(
+          top: false,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
+            unselectedItemColor:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
+            selectedLabelStyle:
+                Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+            unselectedLabelStyle:
+                Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+            onTap: (value) => setActiveScreen(value),
+            currentIndex: selectedIndex,
+            items: items,
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.star),
-            label: ref.t('church_tab.for_you', fallback: 'For You'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.newspaper_rounded),
-            label: ref.t('church_tab.feeds', fallback: 'Feeds'),
-          ),
-        ],
+        ),
       ),
     );
   }

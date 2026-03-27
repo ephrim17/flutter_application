@@ -21,6 +21,7 @@ class AppUser {
   final String role;
   final String authToken;
   final DateTime? dob;
+  final DateTime? createdAt;
   final bool approved;
 
   AppUser({
@@ -45,6 +46,7 @@ class AppUser {
     required this.churchGroupIds,
     required this.authToken,
     required this.dob,
+    this.createdAt,
   });
 
   factory AppUser.fromFirestore(
@@ -53,6 +55,7 @@ class AppUser {
   ) {
     final dobRaw = data['dob'];
     final weddingDayRaw = data['weddingDay'];
+    final createdAtRaw = data['createdAt'];
 
     return AppUser(
       uid: uid,
@@ -89,6 +92,11 @@ class AppUser {
           : dobRaw is DateTime
               ? dobRaw
               : null,
+      createdAt: createdAtRaw is Timestamp
+          ? createdAtRaw.toDate()
+          : createdAtRaw is DateTime
+              ? createdAtRaw
+              : null,
       role: data['role'] ?? 'user',
       approved: data['approved'] ?? false,
     );
@@ -97,6 +105,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     final dobRaw = json['dob'];
     final weddingDayRaw = json['weddingDay'];
+    final createdAtRaw = json['createdAt'];
 
     return AppUser(
       uid: json['uid'] ?? '',
@@ -133,6 +142,11 @@ class AppUser {
           : dobRaw is DateTime
               ? dobRaw
               : null,
+      createdAt: createdAtRaw is Timestamp
+          ? createdAtRaw.toDate()
+          : createdAtRaw is DateTime
+              ? createdAtRaw
+              : null,
       role: json['role'] ?? 'user',
       approved: json['approved'] ?? false,
     );
@@ -160,6 +174,7 @@ class AppUser {
       'authToken': authToken,
       'approved': approved,
       'dob': dob != null ? Timestamp.fromDate(dob!) : null,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
     };
   }
 }

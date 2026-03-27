@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
+import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
+import 'package:flutter_application/church_app/services/analytics/app_analytics_service.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
@@ -31,6 +33,16 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appAnalyticsServiceProvider).logEvent(
+            AppAnalyticsEvent.superAdminDashboardOpened,
+          );
+    });
   }
 
   Future<void> _openNormalFlow(BuildContext context) async {
@@ -160,6 +172,16 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                                 !context.mounted) {
                                               return;
                                             }
+                                            ref
+                                                .read(
+                                                    appAnalyticsServiceProvider)
+                                                .logEvent(
+                                              AppAnalyticsEvent
+                                                  .churchCreatedSuperAdmin,
+                                              parameters: {
+                                                'result': createResult,
+                                              },
+                                            );
                                             final snackText =
                                                 switch (createResult) {
                                               'created_with_email' => context.t(
@@ -343,6 +365,12 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                   ).updateChurchEnabled(
                     churchId: church.id,
                     enabled: value,
+                  );
+                  ref.read(appAnalyticsServiceProvider).logEvent(
+                    AppAnalyticsEvent.churchStatusChanged,
+                    parameters: {
+                      'enabled': value,
+                    },
                   );
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
