@@ -76,7 +76,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       );
     }
     // Show onboarding if not completed
-    if (_showOnboarding!) {
+    if (!_showOnboarding!) {
       return OnboardingScreen(onComplete: _onOnboardingComplete);
     }
 

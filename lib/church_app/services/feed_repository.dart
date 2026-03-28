@@ -156,6 +156,18 @@ class FeedRepository {
         'imageUrl': downloadUrl,
       });
     }
+
+    if (!isGlobal && churchId != null && churchId.isNotEmpty) {
+      await FirestorePaths.churchNotificationRequests(_firestore, churchId).add({
+        'title': '$userName has posted a new feed',
+        'body': 'Tap to see more',
+        'topic': 'church_$churchId',
+        'status': 'queued',
+        'kind': 'feed_post_created',
+        'feedId': docRef.id,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   Future<void> updatePost({

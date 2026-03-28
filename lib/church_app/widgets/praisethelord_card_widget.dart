@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 
 class PraiseTheLordCard extends StatefulWidget {
   const PraiseTheLordCard({super.key});
@@ -72,61 +73,68 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 40,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              /// Main Title
-              Text(
-                "Praise \nThe Lord",
-                textAlign: TextAlign.center, // ✅ ADD THIS
-                style: TextStyle(
-                  fontSize: 64,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                  color: titleColor,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              /// Footer
-              SizedBox(
-                width: double.infinity,
-                child: RichText(
-                  textAlign: TextAlign.center, // ✅ ADD THIS
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: subtitleColor,
-                    ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              child: DecoratedScriptureCard(
+                width: constraints.maxWidth - 44,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 28,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const TextSpan(text: "Developed with "),
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: ScaleTransition(
-                          scale: _heartScale,
-                          child: const Icon(
-                            Icons.favorite,
-                            color: Color(0xFFE2556E),
-                            size: 20,
-                          ),
+                      Text(
+                        "Praise \nThe Lord",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                          color: titleColor,
                         ),
                       ),
-                      const TextSpan(text: " in Trivandrum, India"),
+
+                      const SizedBox(height: 36),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: subtitleColor,
+                            ),
+                            children: [
+                              const TextSpan(text: "Developed with "),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: ScaleTransition(
+                                  scale: _heartScale,
+                                  child: const Icon(
+                                    Icons.favorite,
+                                    color: Color(0xFFE2556E),
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const TextSpan(text: " from Trivandrum, India"),
+                            ],
+                          ),
+                          softWrap: true,
+                        ),
+                      ),
                     ],
                   ),
-                  softWrap: true,
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

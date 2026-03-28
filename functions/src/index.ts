@@ -269,46 +269,6 @@ export const processQueuedChurchNotification = onDocumentCreated(
   },
 );
 
-export const notifyOnFeedPostCreated = onDocumentCreated(
-  {
-    document: "churches/{churchId}/feeds/{feedId}",
-    region: "us-central1",
-  },
-  async (event) => {
-    const snapshot = event.data;
-    const data = snapshot?.data();
-    const churchId = readUnknownString(event.params.churchId);
-
-    if (!data || !churchId) {
-      logger.warn("Feed notification trigger missing data.", {
-        params: event.params,
-      });
-      return;
-    }
-
-    const userName = readUnknownString(data.userName) || "Someone";
-
-    try {
-      await sendTopicNotification({
-        title: `${userName} has posted a new feed`,
-        body: "Tap to see more",
-        topic: `church_${churchId}`,
-      });
-
-      logger.info("Feed post notification sent.", {
-        feedId: snapshot?.id ?? null,
-        churchId,
-      });
-    } catch (error) {
-      logger.error("Failed to send feed post notification.", {
-        churchId,
-        feedId: snapshot?.id ?? null,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  },
-);
-
 /**
  * Normalizes the queued recipients into a unique lowercase email list.
  * @param value Mail recipient payload from the queue document.

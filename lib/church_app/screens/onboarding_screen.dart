@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
 import 'package:flutter_application/church_app/providers/onboarding_provider.dart';
+import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
+import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,36 +123,105 @@ class _OnboardingScreenState
 
                             final page = pages[index];
 
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (page.imageUrl.isNotEmpty)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Image.network(
-                                      page.imageUrl,
-                                      height: 260,
-                                      fit: BoxFit.cover,
+                            return LayoutBuilder(
+                              builder: (context, constraints) {
+                                final availableHeight = constraints.maxHeight;
+                                final cardWidth = constraints.maxWidth > 460
+                                    ? 460.0
+                                    : constraints.maxWidth - 20;
+                                final imageShellHeight = availableHeight >= 760
+                                    ? 300.0
+                                    : availableHeight >= 680
+                                        ? 260.0
+                                        : 220.0;
+
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 12,
+                                    ),
+                                    child: DecoratedScriptureCard(
+                                      width: cardWidth,
+                                      child: SizedBox(
+                                        height: availableHeight - 24,
+                                        child: Column(
+                                          children: [
+                                            const SizedBox(height: 16),
+                                            SizedBox(
+                                              height: imageShellHeight,
+                                              width: double.infinity,
+                                              child: page.imageUrl.isNotEmpty
+                                                  ? ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        20,
+                                                      ),
+                                                      child: ShimmerImage(
+                                                        imageUrl: page.imageUrl,
+                                                        borderRadius: 0,
+                                                        fit: BoxFit.cover,
+                                                        errorWidget: Container(
+                                                          color: Colors
+                                                              .grey.shade200,
+                                                          alignment:
+                                                              Alignment.center,
+                                                          child: Icon(
+                                                            Icons
+                                                                .image_not_supported_outlined,
+                                                            size: 44,
+                                                            color: Colors
+                                                                .grey.shade500,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : const SizedBox.shrink(),
+                                            ),
+                                            const SizedBox(height: 28),
+                                            Expanded(
+                                              child: SingleChildScrollView(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 12,
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Text(
+                                                      page.title,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .headlineLarge
+                                                          ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            height: 1.08,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    Text(
+                                                      page.description,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .headlineMedium
+                                                          ?.copyWith(
+                                                            height: 1.28,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                const SizedBox(height: 40),
-                                Text(
-                                  page.title,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  page.description,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium,
-                                ),
-                              ],
+                                );
+                              },
                             );
                           },
                         ),
