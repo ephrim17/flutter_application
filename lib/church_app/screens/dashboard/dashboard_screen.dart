@@ -1,7 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
@@ -88,9 +87,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             .compareTo(a.createdAt ?? DateTime(1970)));
     final pendingMembers =
         members.where((member) => !member.approved).toList(growable: false);
-    final upcomingBirthdays = _upcomingBirthdays(members);
-    final groupSummaries = _groupSummaries(members);
-
+    final expiringPrayers = _expiringPrayers(prayers);
+    final recentJoinCount = recentMembers
+        .where(
+          (member) =>
+              member.createdAt != null &&
+              DateTime.now().difference(member.createdAt!).inDays <= 7,
+        )
+        .length;
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(membersProvider);
@@ -109,64 +113,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             isLoading: isLoading,
           ),
           const SizedBox(height: 18),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 860;
-              if (!isWide) {
-                return Column(
-                  children: [
-                    _SectionCard(
-                      title: 'Action Center',
-                      subtitle:
-                          'What needs attention right now across the church.',
-                      child: _ActionCenter(
-                        pendingMembers: pendingMembers,
-                        recentMembers: recentMembers,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _SectionCard(
-                      title: 'Church Insights',
-                      subtitle:
-                          'Participation, ministry reach, and birthday awareness.',
-                      child: _ChurchHealthPanel(
-                        groupSummaries: groupSummaries,
-                        upcomingBirthdays: upcomingBirthdays,
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _SectionCard(
-                      title: 'Action Center',
-                      subtitle:
-                          'What needs attention right now across the church.',
-                      child: _ActionCenter(
-                        pendingMembers: pendingMembers,
-                        recentMembers: recentMembers,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: _SectionCard(
-                      title: 'Church Insights',
-                      subtitle:
-                          'Participation, ministry reach, and birthday awareness.',
-                      child: _ChurchHealthPanel(
-                        groupSummaries: groupSummaries,
-                        upcomingBirthdays: upcomingBirthdays,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+          _ExecutiveDashboardGrid(
+            attentionNow: _SectionCard(
+              title: 'What Needs Attention Now',
+              subtitle: 'The items that need an admin response right away.',
+              child: _AttentionNowPanel(
+                pendingMembers: pendingMembers,
+                expiringPrayers: expiringPrayers,
+                announcements: announcements,
+                events: events,
+              ),
+            ),
+            recentChanges: _SectionCard(
+              title: 'What Changed Recently',
+              subtitle: 'Fresh movement across members, updates, and events.',
+              child: _RecentChangesPanel(
+                recentMembers: recentMembers,
+                recentJoinCount: recentJoinCount,
+              ),
+            ),
+            healthSignals: _SectionCard(
+              title: 'Church Insights',
+              subtitle:
+                  'A quick read on approvals, engagement, and content readiness.',
+              child: _HealthSignalsPanel(
+                metrics: metrics,
+                announcements: announcements,
+                events: events,
+                expiringPrayers: expiringPrayers,
+              ),
+            ),
           ),
           const SizedBox(height: 18),
           LayoutBuilder(
@@ -194,6 +170,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               );
             },
+          ),
+          const SizedBox(height: 18),
+          _SectionCard(
+            title: 'Members Joined Since Recorded',
+            subtitle:
+                'A quick read on membership growth since church records began.',
+            child: _MemberJoinHistory(
+              members: members,
+            ),
           ),
           const SizedBox(height: 18),
           LayoutBuilder(
@@ -543,6 +528,9 @@ class _MembersInsightsState extends State<_MembersInsights> {
               total: total,
               selectedIndex: safeIndex,
               onSectionTap: (index) {
+                if (index < 0 || index >= groups.length) {
+                  return;
+                }
                 FirebaseAnalytics.instance.logEvent(
                   name: 'members_chart_segment_selected',
                   parameters: {
@@ -639,129 +627,417 @@ class _MembersInsightsState extends State<_MembersInsights> {
   }
 }
 
-class _ActionCenter extends StatelessWidget {
-  const _ActionCenter({
+class _MemberJoinHistory extends StatelessWidget {
+  const _MemberJoinHistory({
+    required this.members,
+  });
+
+  final List<AppUser> members;
+
+  @override
+  Widget build(BuildContext context) {
+    final datedMembers = members
+        .where((member) => member.createdAt != null)
+        .toList(growable: false)
+      ..sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
+
+    if (datedMembers.isEmpty) {
+      return const _EmptyState(
+        title: 'No membership history yet',
+        subtitle:
+            'Once member records include join dates, growth insights will appear here.',
+      );
+    }
+
+    final firstRecorded = datedMembers.first.createdAt!;
+    final totalRecorded = datedMembers.length;
+    final joinedLast30 = datedMembers
+        .where(
+          (member) => DateTime.now().difference(member.createdAt!).inDays <= 30,
+        )
+        .length;
+    final joinedLast90 = datedMembers
+        .where(
+          (member) => DateTime.now().difference(member.createdAt!).inDays <= 90,
+        )
+        .length;
+    final joinedThisYear = datedMembers
+        .where((member) => member.createdAt!.year == DateTime.now().year)
+        .length;
+
+    return Column(
+      children: [
+        _SignalTile(
+          title: 'Records began',
+          value: _dateLabelVerbose(firstRecorded),
+          tone: _SignalTone.healthy,
+          caption:
+              '$totalRecorded members have been recorded since this date.',
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MiniMetricTile(
+                label: 'Last 30 days',
+                value: joinedLast30.toString(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MiniMetricTile(
+                label: 'Last 90 days',
+                value: joinedLast90.toString(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _SimpleStatRow(
+          label: 'Joined this year',
+          value: '$joinedThisYear members',
+        ),
+      ],
+    );
+  }
+}
+
+class _ExecutiveDashboardGrid extends StatelessWidget {
+  const _ExecutiveDashboardGrid({
+    required this.attentionNow,
+    required this.recentChanges,
+    required this.healthSignals,
+  });
+
+  final Widget attentionNow;
+  final Widget recentChanges;
+  final Widget healthSignals;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 860;
+
+        if (!isWide) {
+          return Column(
+            children: [
+              attentionNow,
+              const SizedBox(height: 18),
+              recentChanges,
+              const SizedBox(height: 18),
+              healthSignals,
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: attentionNow),
+                const SizedBox(width: 18),
+                Expanded(child: recentChanges),
+              ],
+            ),
+            const SizedBox(height: 18),
+            healthSignals,
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AttentionNowPanel extends StatelessWidget {
+  const _AttentionNowPanel({
     required this.pendingMembers,
-    required this.recentMembers,
+    required this.expiringPrayers,
+    required this.announcements,
+    required this.events,
   });
 
   final List<AppUser> pendingMembers;
-  final List<AppUser> recentMembers;
+  final List<PrayerRequest> expiringPrayers;
+  final List<Announcement> announcements;
+  final List<Event> events;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _SubsectionTitle(
-          title: 'Pending Approvals',
-          subtitle: 'People waiting for an admin decision.',
+        _SignalTile(
+          title: 'Pending approvals',
+          value: pendingMembers.length.toString(),
+          tone: pendingMembers.isEmpty
+              ? _SignalTone.healthy
+              : _SignalTone.attention,
+          caption: pendingMembers.isEmpty
+              ? 'No one is waiting for review.'
+              : 'Members are waiting for an admin decision.',
         ),
         const SizedBox(height: 12),
-        if (pendingMembers.isEmpty)
-          const _EmptyState(
-            title: 'No pending approvals',
-            subtitle: 'New signups waiting for review will appear here.',
-          )
-        else
-          ...pendingMembers.take(3).map(
-                (member) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _MemberMiniTile(
-                    member: member,
-                    badge: 'Pending',
-                  ),
-                ),
-              ),
-        const SizedBox(height: 18),
-        _SubsectionTitle(
-          title: 'Recent Members',
-          subtitle: 'The latest people added to the church directory.',
+        _SignalTile(
+          title: 'Prayers expiring this week',
+          value: expiringPrayers.length.toString(),
+          tone: expiringPrayers.isEmpty
+              ? _SignalTone.healthy
+              : _SignalTone.attention,
+          caption: expiringPrayers.isEmpty
+              ? 'Nothing urgent is about to expire.'
+              : 'Prayer follow-up may be needed soon.',
         ),
         const SizedBox(height: 12),
-        if (recentMembers.isEmpty)
-          const _EmptyState(
-            title: 'No members available',
-            subtitle:
-                'Newly added members will show up here as activity grows.',
-          )
-        else
-          ...recentMembers.take(4).map(
-                (member) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _MemberMiniTile(
-                    member: member,
-                    badge: member.approved ? 'Approved' : 'Pending',
-                  ),
-                ),
-              ),
+        _SignalTile(
+          title: 'Content gaps',
+          value: _contentGapCount(announcements, events).toString(),
+          tone: _contentGapCount(announcements, events) == 0
+              ? _SignalTone.healthy
+              : _SignalTone.warning,
+          caption: _contentGapCount(announcements, events) == 0
+              ? 'Announcements and events are both live.'
+              : 'One or more public-facing sections feel empty.',
+        ),
       ],
     );
   }
 }
 
-class _ChurchHealthPanel extends StatelessWidget {
-  const _ChurchHealthPanel({
-    required this.groupSummaries,
-    required this.upcomingBirthdays,
+class _RecentChangesPanel extends StatelessWidget {
+  const _RecentChangesPanel({
+    required this.recentMembers,
+    required this.recentJoinCount,
   });
 
-  final List<_GroupSummary> groupSummaries;
-  final List<AppUser> upcomingBirthdays;
+  final List<AppUser> recentMembers;
+  final int recentJoinCount;
 
   @override
   Widget build(BuildContext context) {
+    final latestMembers = recentMembers.take(3).toList(growable: false);
+
     return Column(
       children: [
-        _SubsectionTitle(
-          title: 'Group Coverage',
-          subtitle: 'A quick look at ministry distribution across groups.',
+        _SignalTile(
+          title: 'Recent joins this week',
+          value: recentJoinCount.toString(),
+          tone:
+              recentJoinCount == 0 ? _SignalTone.warning : _SignalTone.healthy,
+          caption: recentJoinCount == 0
+              ? 'No newly added members in the last 7 days.'
+              : 'Fresh movement is happening in the church directory.',
         ),
-        const SizedBox(height: 12),
-        if (groupSummaries.isEmpty)
-          const _EmptyState(
-            title: 'No group activity yet',
-            subtitle: 'Members assigned to church groups will show up here.',
-          )
-        else
-          ...groupSummaries.take(4).map(
-                (group) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _SimpleStatRow(
-                    label: group.label,
-                    value: group.count.toString(),
-                  ),
-                ),
+        if (latestMembers.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ...List.generate(latestMembers.length, (index) {
+            final member = latestMembers[index];
+            return Padding(
+              padding: EdgeInsets.only(bottom: index == latestMembers.length - 1 ? 0 : 12),
+              child: _SimpleStatRow(
+                label:
+                    'Member ${index + 1}: ${member.name.trim().isEmpty ? 'Member' : member.name}',
+                value: member.approved ? 'Approved' : 'Pending',
               ),
-        const SizedBox(height: 18),
-        _SubsectionTitle(
-          title: 'Upcoming Birthdays',
-          subtitle: 'A warm touchpoint for pastoral and admin follow-up.',
-        ),
-        const SizedBox(height: 12),
-        if (upcomingBirthdays.isEmpty)
-          const _EmptyState(
-            title: 'No birthdays coming up',
-            subtitle: 'Members with birthdays in the next 30 days appear here.',
-          )
-        else
-          ...upcomingBirthdays.take(3).map(
-                (member) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _SimpleStatRow(
-                    label: member.name.trim().isEmpty ? 'Member' : member.name,
-                    value: _birthdayLabel(member.dob),
-                  ),
-                ),
-              ),
+            );
+          }),
+        ] else ...[
+          const SizedBox(height: 12),
+          const _SimpleStatRow(
+            label: 'Recent members',
+            value: 'No change',
+          ),
+        ],
       ],
     );
   }
 }
+
+class _HealthSignalsPanel extends StatelessWidget {
+  const _HealthSignalsPanel({
+    required this.metrics,
+    required this.announcements,
+    required this.events,
+    required this.expiringPrayers,
+  });
+
+  final _DashboardMetrics metrics;
+  final List<Announcement> announcements;
+  final List<Event> events;
+  final List<PrayerRequest> expiringPrayers;
+
+  @override
+  Widget build(BuildContext context) {
+    final approvalRate = metrics.memberCount == 0
+        ? 100
+        : ((metrics.approvedMembers / metrics.memberCount) * 100).round();
+
+    return Column(
+      children: [
+        _HealthRow(
+          label: 'Approval health',
+          value: '$approvalRate%',
+          healthy: metrics.pendingApprovals <= 2,
+        ),
+        const SizedBox(height: 10),
+        _HealthRow(
+          label: 'Group participation',
+          value: '${metrics.groupParticipationRate}%',
+          healthy: metrics.groupParticipationRate >= 50,
+        ),
+        const SizedBox(height: 10),
+        _HealthRow(
+          label: 'Content readiness',
+          value: '${announcements.length + events.length} live',
+          healthy: announcements.isNotEmpty && events.isNotEmpty,
+        ),
+        const SizedBox(height: 10),
+        _HealthRow(
+          label: 'Prayer urgency',
+          value: '${expiringPrayers.length} urgent',
+          healthy: expiringPrayers.length <= 2,
+        ),
+      ],
+    );
+  }
+}
+
+enum _SignalTone {
+  healthy,
+  warning,
+  attention,
+}
+
+class _SignalTile extends StatelessWidget {
+  const _SignalTile({
+    required this.title,
+    required this.value,
+    required this.tone,
+    required this.caption,
+  });
+
+  final String title;
+  final String value;
+  final _SignalTone tone;
+  final String caption;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = switch (tone) {
+      _SignalTone.healthy => Colors.green,
+      _SignalTone.warning => Colors.orange,
+      _SignalTone.attention => theme.colorScheme.primary,
+    };
+    final onSurface = theme.colorScheme.onSurface;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: onSurface,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: onSurface,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            caption,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: onSurface.withValues(alpha: 0.76),
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthRow extends StatelessWidget {
+  const _HealthRow({
+    required this.label,
+    required this.value,
+    required this.healthy,
+  });
+
+  final String label;
+  final String value;
+  final bool healthy;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = healthy ? Colors.green : Colors.orange;
+    final status = healthy ? 'Healthy' : 'Needs attention';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  status,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: color.shade700,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 enum _MemberChartMode {
   gender('Gender', 'Distribution by profile gender.'),
   age('Age', 'A quick view of age buckets across the church.'),
-  family('Family', 'How members are split by family category.');
+  family('Family', 'How members are split by family category.'),
+  solemnized(
+    'Solemnized',
+    'A quick view of baptism records across the church.',
+  );
 
   const _MemberChartMode(this.label, this.description);
 
@@ -865,7 +1141,9 @@ class _InteractiveDonutChart extends StatelessWidget {
                 touchCallback: (event, response) {
                   if (!event.isInterestedForInteractions) return;
                   final index = response?.touchedSection?.touchedSectionIndex;
-                  if (index == null) return;
+                  if (index == null || index < 0 || index >= groups.length) {
+                    return;
+                  }
                   onSectionTap(index);
                 },
               ),
@@ -986,7 +1264,7 @@ class _LegendTile extends StatelessWidget {
   }
 }
 
-class _SelectedGroupDetails extends StatelessWidget {
+class _SelectedGroupDetails extends StatefulWidget {
   const _SelectedGroupDetails({
     super.key,
     required this.mode,
@@ -999,9 +1277,35 @@ class _SelectedGroupDetails extends StatelessWidget {
   final int total;
 
   @override
+  State<_SelectedGroupDetails> createState() => _SelectedGroupDetailsState();
+}
+
+class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
+  String? _selectedFamilyId;
+
+  @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final percentage = total == 0 ? 0 : ((group.count / total) * 100).round();
+    final percentage = widget.total == 0
+        ? 0
+        : ((widget.group.count / widget.total) * 100).round();
+    final showFamilyDrilldown = widget.mode == _MemberChartMode.family &&
+        widget.group.label == 'Family';
+    final families = showFamilyDrilldown
+        ? _groupFamiliesForDashboard(widget.group.members)
+        : const <_FamilyBucket>[];
+    final topFamilies =
+        families.take(5).toList(growable: false);
+    _FamilyBucket? selectedFamily;
+    if (_selectedFamilyId != null) {
+      for (final family in families) {
+        if (family.id == _selectedFamilyId) {
+          selectedFamily = family;
+          break;
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1020,14 +1324,14 @@ class _SelectedGroupDetails extends StatelessWidget {
                 width: 14,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: group.color,
+                  color: widget.group.color,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  group.label,
+                  widget.group.label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: onSurface,
                         fontWeight: FontWeight.w900,
@@ -1045,26 +1349,97 @@ class _SelectedGroupDetails extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${group.count} members in this ${mode.label.toLowerCase()} segment',
+            '${widget.group.count} members in this ${widget.mode.label.toLowerCase()} segment',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: onSurface.withValues(alpha: 0.76),
                 ),
           ),
           const SizedBox(height: 14),
-          if (group.members.isEmpty)
+          if (widget.group.members.isEmpty)
             const _EmptyState(
               title: 'No matching members',
               subtitle:
                   'Once profiles are updated, matching members will appear here.',
             )
+          else if (showFamilyDrilldown)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Families',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: onSurface,
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 10),
+                ...topFamilies.map(
+                  (family) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _SimpleStatRow(
+                      label: family.label,
+                      value: '${family.members.length} members',
+                      selected: family.id == _selectedFamilyId,
+                      onTap: () {
+                        setState(() {
+                          _selectedFamilyId = family.id == _selectedFamilyId
+                              ? null
+                              : family.id;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                if (families.length > topFamilies.length) ...[
+                  const SizedBox(height: 2),
+                  _SimpleStatRow(
+                    label: '+ ${families.length - topFamilies.length} more families',
+                    value: 'View all',
+                    onTap: () async {
+                      final selected = await _showFamilyDirectorySheet(
+                        context,
+                        families,
+                      );
+                      if (!mounted || selected == null) return;
+                      setState(() {
+                        _selectedFamilyId = selected.id;
+                      });
+                    },
+                  ),
+                ],
+                if (selectedFamily != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Members in ${selectedFamily.label}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: onSurface,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...selectedFamily.members.map(
+                    (member) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _SimpleStatRow(
+                        label:
+                            member.name.trim().isEmpty ? 'Member' : member.name,
+                        value: member.maritalStatus.trim().isEmpty
+                            ? 'Family member'
+                            : _formatDashboardCategory(member.maritalStatus),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            )
           else
-            ...group.members.take(5).map(
+            ...widget.group.members.take(5).map(
                   (member) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _SimpleStatRow(
                       label:
                           member.name.trim().isEmpty ? 'Member' : member.name,
-                      value: _memberSecondaryLabel(member, mode),
+                      value: _memberSecondaryLabel(member, widget.mode),
                     ),
                   ),
                 ),
@@ -1074,124 +1449,161 @@ class _SelectedGroupDetails extends StatelessWidget {
   }
 }
 
-class _SubsectionTitle extends StatelessWidget {
-  const _SubsectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+Future<_FamilyBucket?> _showFamilyDirectorySheet(
+  BuildContext context,
+  List<_FamilyBucket> families,
+) {
+  var query = '';
+  return showModalBottomSheet<_FamilyBucket>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          final filteredFamilies = families.where((family) {
+            final q = query.trim().toLowerCase();
+            if (q.isEmpty) return true;
+            return family.label.toLowerCase().contains(q);
+          }).toList(growable: false);
 
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: onSurface,
-                fontWeight: FontWeight.w800,
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                16 + MediaQuery.of(context).viewInsets.bottom,
               ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: onSurface.withValues(alpha: 0.74),
-                height: 1.35,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All Families',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    onChanged: (value) {
+                      setModalState(() {
+                        query = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Search families',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: filteredFamilies.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('No families match this search.'),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: filteredFamilies.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final family = filteredFamilies[index];
+                              return _SimpleStatRow(
+                                label: family.label,
+                                value: '${family.members.length} members',
+                                onTap: () =>
+                                    Navigator.of(context).pop(family),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MemberMiniTile extends StatelessWidget {
-  const _MemberMiniTile({
-    required this.member,
-    required this.badge,
-  });
-
-  final AppUser member;
-  final String badge;
-
-  @override
-  Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final badgeColor = badge == 'Pending' ? Colors.amber : Colors.green;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-            child: Text(
-              member.name.trim().isEmpty
-                  ? '?'
-                  : member.name.trim()[0].toUpperCase(),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: onSurface,
-                    fontWeight: FontWeight.w900,
-                  ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  member.name.trim().isEmpty ? 'Member' : member.name,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: onSurface,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  member.email.trim().isEmpty ? 'No email added' : member.email,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: onSurface.withValues(alpha: 0.76),
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              badge,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: badgeColor.shade700,
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          );
+        },
+      );
+    },
+  );
 }
 
 class _SimpleStatRow extends StatelessWidget {
   const _SimpleStatRow({
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.selected = false,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withValues(alpha: 0.4)
+              : Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.24),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: onSurface.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FamilyBucket {
+  const _FamilyBucket({
+    required this.id,
+    required this.label,
+    required this.members,
+  });
+
+  final String id;
+  final String label;
+  final List<AppUser> members;
+}
+
+class _MiniMetricTile extends StatelessWidget {
+  const _MiniMetricTile({
     required this.label,
     required this.value,
   });
@@ -1201,33 +1613,28 @@ class _SimpleStatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.24),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.74),
             ),
           ),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: onSurface.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w800,
-                ),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
@@ -1396,7 +1803,7 @@ class _AnnouncementQuickLook extends StatelessWidget {
                 subtitle: announcement.body.trim().isEmpty
                     ? 'No announcement body provided.'
                     : announcement.body,
-                trailing: 'Priority ${announcement.priority}',
+                trailing: '',
               ),
             ),
           )
@@ -1638,49 +2045,26 @@ class _DashboardMetrics {
   }
 }
 
-class _GroupSummary {
-  const _GroupSummary({
-    required this.label,
-    required this.count,
-  });
-
-  final String label;
-  final int count;
-}
-
-List<_GroupSummary> _groupSummaries(List<AppUser> members) {
-  final summaries = churchGroupDefinitions.map((group) {
-    final count = members
-        .where((member) => member.churchGroupIds.contains(group.id))
-        .length;
-    return _GroupSummary(
-      label: group.label,
-      count: count,
-    );
-  }).toList(growable: false);
-
-  summaries.sort((a, b) => b.count.compareTo(a.count));
-  return summaries;
-}
-
-List<AppUser> _upcomingBirthdays(List<AppUser> members) {
+List<PrayerRequest> _expiringPrayers(List<PrayerRequest> prayers) {
   final now = DateTime.now();
-  final withBirthdays =
-      members.where((member) => member.dob != null).toList(growable: false);
+  final cutoff = now.add(const Duration(days: 7));
+  return prayers
+      .where(
+        (prayer) =>
+            !prayer.expiryDate.isBefore(now) &&
+            !prayer.expiryDate.isAfter(cutoff),
+      )
+      .toList(growable: false);
+}
 
-  final upcoming = withBirthdays.where((member) {
-    final dob = member.dob!;
-    final next = _nextBirthday(dob, now);
-    return next.difference(now).inDays <= 30;
-  }).toList();
-
-  upcoming.sort((a, b) {
-    final nextA = _nextBirthday(a.dob!, now);
-    final nextB = _nextBirthday(b.dob!, now);
-    return nextA.compareTo(nextB);
-  });
-
-  return upcoming;
+int _contentGapCount(
+  List<Announcement> announcements,
+  List<Event> events,
+) {
+  var gaps = 0;
+  if (announcements.isEmpty) gaps += 1;
+  if (events.isEmpty) gaps += 1;
+  return gaps;
 }
 
 List<_MemberGroup> _buildMemberGroups(
@@ -1770,6 +2154,20 @@ List<_MemberGroup> _buildMemberGroups(
           ),
         },
       );
+    case _MemberChartMode.solemnized:
+      return _groupFromBuckets(
+        members,
+        {
+          'Solemnized': (
+            Colors.blue,
+            (AppUser member) => member.solemnizedBaptism,
+          ),
+          'Not solemnized': (
+            Colors.orange,
+            (AppUser member) => !member.solemnizedBaptism,
+          ),
+        },
+      );
   }
 }
 
@@ -1793,6 +2191,70 @@ List<_MemberGroup> _groupFromBuckets(
   return groups;
 }
 
+List<_FamilyBucket> _groupFamiliesForDashboard(List<AppUser> members) {
+  final grouped = <String, List<AppUser>>{};
+
+  for (final member in members) {
+    final familyId = member.familyId.trim().isEmpty
+        ? 'unknown_family'
+        : member.familyId.trim();
+    grouped.putIfAbsent(familyId, () => []).add(member);
+  }
+
+  final buckets = grouped.entries
+      .map(
+        (entry) => _FamilyBucket(
+          id: entry.key,
+          label: _formatDashboardFamilyLabel(entry.key),
+          members: [...entry.value]
+            ..sort(
+              (a, b) =>
+                  a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            ),
+        ),
+      )
+      .toList()
+    ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+
+  return buckets;
+}
+
+String _formatDashboardFamilyLabel(String familyId) {
+  final normalized = familyId.trim().toLowerCase();
+  if (normalized.isEmpty || normalized == 'unknown_family') {
+    return 'Unknown family';
+  }
+
+  var cleaned = normalized
+      .replaceFirst(RegExp(r'^family_'), '')
+      .replaceFirst(RegExp(r'^individual_'), '');
+
+  final parts = cleaned.split('_').where((part) => part.isNotEmpty).toList();
+  if (parts.length > 1) {
+    parts.removeLast();
+  }
+
+  final displayName = parts
+      .map((part) => part[0].toUpperCase() + part.substring(1))
+      .join(' ')
+      .trim();
+
+  if (displayName.isEmpty) {
+    return 'Unknown family';
+  }
+
+  final suffix = displayName.endsWith('s') ? "'" : "'s";
+  return '$displayName$suffix family';
+}
+
+String _formatDashboardCategory(String value) {
+  final normalized = value.trim().toLowerCase();
+  if (normalized.isEmpty) {
+    return 'Not provided';
+  }
+  return normalized[0].toUpperCase() + normalized.substring(1);
+}
+
 String _memberSecondaryLabel(AppUser member, _MemberChartMode mode) {
   switch (mode) {
     case _MemberChartMode.gender:
@@ -1806,6 +2268,15 @@ String _memberSecondaryLabel(AppUser member, _MemberChartMode mode) {
       return member.category.trim().isEmpty
           ? 'Unspecified category'
           : member.category;
+    case _MemberChartMode.solemnized:
+      if (!member.solemnizedBaptism) {
+        return 'No baptism record yet';
+      }
+      final churchName = member.baptismChurchName.trim();
+      if (churchName.isNotEmpty) {
+        return churchName;
+      }
+      return 'Baptism recorded';
   }
 }
 
@@ -1817,15 +2288,6 @@ int? _ageOf(DateTime? dob) {
       now.month > dob.month || (now.month == dob.month && now.day >= dob.day);
   if (!hadBirthday) age -= 1;
   return age;
-}
-
-DateTime _nextBirthday(DateTime dob, DateTime now) {
-  var year = now.year;
-  var next = DateTime(year, dob.month, dob.day);
-  if (next.isBefore(DateTime(now.year, now.month, now.day))) {
-    next = DateTime(year + 1, dob.month, dob.day);
-  }
-  return next;
 }
 
 String _dateLabel(DateTime value) {
@@ -1846,7 +2308,20 @@ String _dateLabel(DateTime value) {
   return '$month ${value.day}';
 }
 
-String _birthdayLabel(DateTime? dob) {
-  if (dob == null) return '-';
-  return _dateLabel(dob);
+String _dateLabelVerbose(DateTime value) {
+  final month = switch (value.month) {
+    1 => 'Jan',
+    2 => 'Feb',
+    3 => 'Mar',
+    4 => 'Apr',
+    5 => 'May',
+    6 => 'Jun',
+    7 => 'Jul',
+    8 => 'Aug',
+    9 => 'Sep',
+    10 => 'Oct',
+    11 => 'Nov',
+    _ => 'Dec',
+  };
+  return '${value.day} $month ${value.year}';
 }

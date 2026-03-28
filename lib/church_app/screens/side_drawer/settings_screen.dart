@@ -322,7 +322,10 @@ class _PushNotificationSectionState
       if (status == AuthorizationStatus.denied) {
         await openAppSettings();
       } else {
-        await handleNotificationSetup(context: context, ref: ref);
+        await handleNotificationSetup(
+          context: context,
+          container: ProviderScope.containerOf(context, listen: false),
+        );
       }
     } finally {
       await _loadStatus();

@@ -93,7 +93,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> handleNotificationSetup({
   required BuildContext context,
-  required WidgetRef ref,
+  required ProviderContainer container,
   bool promptIfNeeded = true,
 }) async {
   if (kIsWeb) {
@@ -135,14 +135,16 @@ Future<void> handleNotificationSetup({
       if (!isAuthorized) return;
     }
 
-    await _syncNotificationState(ref);
+    await _syncNotificationState(container);
     await _attachNotificationListeners(messaging);
   } catch (e) {
     debugPrint("Notification setup error: $e");
   }
 }
 
-Future<void> syncNotificationTopicIfAuthorized(WidgetRef ref) async {
+Future<void> syncNotificationTopicIfAuthorized(
+  ProviderContainer container,
+) async {
   if (kIsWeb) {
     return;
   }
@@ -159,14 +161,14 @@ Future<void> syncNotificationTopicIfAuthorized(WidgetRef ref) async {
 
     if (!isAuthorized) return;
 
-    await _syncNotificationState(ref);
+    await _syncNotificationState(container);
     await _attachNotificationListeners(messaging);
   } catch (e) {
     debugPrint("Notification topic sync error: $e");
   }
 }
 
-Future<void> _syncNotificationState(WidgetRef ref) async {
+Future<void> _syncNotificationState(ProviderContainer container) async {
   final messaging = FirebaseMessaging.instance;
   final token = await messaging.getToken();
   if (token == null) return;
@@ -174,12 +176,12 @@ Future<void> _syncNotificationState(WidgetRef ref) async {
   final firebaseUser = FirebaseAuth.instance.currentUser;
   if (firebaseUser == null) return;
 
-  final churchId = await ref.read(currentChurchIdProvider.future);
+  final churchId = await container.read(currentChurchIdProvider.future);
   if (churchId == null) return;
   final churchTopic = 'church_$churchId';
 
   final repo = ChurchUsersRepository(
-    firestore: ref.read(firestoreProvider),
+    firestore: container.read(firestoreProvider),
     churchId: churchId,
   );
   final localStorage = ChurchLocalStorage();

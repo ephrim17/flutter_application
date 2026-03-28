@@ -60,6 +60,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   final _familyNameController = TextEditingController();
   final _educationalQualificationController = TextEditingController();
   final _talentsAndGiftsController = TextEditingController();
+  final _additionalNotesController = TextEditingController();
+  final _baptismChurchNameController = TextEditingController();
+  final _baptismPastorNameController = TextEditingController();
 
   int _stepIndex = 0;
   DateTime? _dob;
@@ -69,6 +72,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   String _maritalStatus = '';
   bool _useExistingFamilyId = false;
   bool _financialSupportRequired = false;
+  bool _solemnizedBaptism = false;
   String? _selectedExistingFamilyId;
   int _financialStabilityRating = 0;
   Set<String> _selectedChurchGroupIds = <String>{};
@@ -76,7 +80,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
   bool get _isEditMode => widget.existingMember != null;
   bool get _showAdminSections => widget.adminCreateMode || _isEditMode;
-  int get _stepCount => _showAdminSections ? 3 : 2;
+  int get _stepCount => _showAdminSections ? 4 : 2;
 
   @override
   void initState() {
@@ -103,6 +107,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           existingMember.educationalQualification;
       _talentsAndGiftsController.text =
           existingMember.talentsAndGifts.join(', ');
+      _additionalNotesController.text = existingMember.additionalNotes;
+      _solemnizedBaptism = existingMember.solemnizedBaptism;
+      _baptismChurchNameController.text = existingMember.baptismChurchName;
+      _baptismPastorNameController.text = existingMember.baptismPastorName;
       _selectedChurchGroupIds = existingMember.churchGroupIds.toSet();
 
       if (_category == 'family') {
@@ -131,6 +139,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     _familyNameController.dispose();
     _educationalQualificationController.dispose();
     _talentsAndGiftsController.dispose();
+    _additionalNotesController.dispose();
+    _baptismChurchNameController.dispose();
+    _baptismPastorNameController.dispose();
     super.dispose();
   }
 
@@ -253,6 +264,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         .toList();
   }
 
+  String _formatMemberSince(DateTime? date) {
+    if (date == null) {
+      return context.t('common.not_provided', fallback: 'Not provided');
+    }
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
   Future<void> _pickDob() async {
     FocusScope.of(context).unfocus();
     final pickedDate = await showDatePicker(
@@ -345,6 +365,22 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 _familyNameController.text.trim().isEmpty) {
               return 'Please enter a family name';
             }
+          }
+          return null;
+        case 2:
+          if (_solemnizedBaptism &&
+              _baptismChurchNameController.text.trim().isEmpty) {
+            return context.t(
+              'members.baptism_church_name_required',
+              fallback: 'Please enter the baptism church name',
+            );
+          }
+          if (_solemnizedBaptism &&
+              _baptismPastorNameController.text.trim().isEmpty) {
+            return context.t(
+              'members.baptism_pastor_name_required',
+              fallback: 'Please enter the baptism pastor name',
+            );
           }
           return null;
         default:
@@ -509,6 +545,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
               _educationalQualificationController.text.trim(),
           talentsAndGifts: _parsedTalentsAndGifts(),
           churchGroupIds: _selectedChurchGroupIds.toList(),
+          solemnizedBaptism: _solemnizedBaptism,
+          baptismChurchName: _baptismChurchNameController.text.trim(),
+          baptismPastorName: _baptismPastorNameController.text.trim(),
+          additionalNotes: _additionalNotesController.text.trim(),
           familyLabel: _category == 'family' && !_useExistingFamilyId
               ? _familyNameController.text.trim()
               : null,
@@ -564,7 +604,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             registrationSource: 'super_admin',
           );
           ref.invalidate(currentChurchIdProvider);
-          unawaited(syncNotificationTopicIfAuthorized(ref));
+          unawaited(
+            syncNotificationTopicIfAuthorized(
+              ProviderScope.containerOf(context, listen: false),
+            ),
+          );
 
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
@@ -626,6 +670,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 _educationalQualificationController.text.trim(),
             talentsAndGifts: _parsedTalentsAndGifts(),
             churchGroupIds: _selectedChurchGroupIds.toList(),
+            solemnizedBaptism: _solemnizedBaptism,
+            baptismChurchName: _baptismChurchNameController.text.trim(),
+            baptismPastorName: _baptismPastorNameController.text.trim(),
+            additionalNotes: _additionalNotesController.text.trim(),
             familyLabel: _category == 'family' && !_useExistingFamilyId
                 ? _familyNameController.text.trim()
                 : null,
@@ -673,7 +721,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       );
       ref.invalidate(currentChurchIdProvider);
       ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;
-      unawaited(syncNotificationTopicIfAuthorized(ref));
+      unawaited(
+        syncNotificationTopicIfAuthorized(
+          ProviderScope.containerOf(context, listen: false),
+        ),
+      );
 
       if (!mounted) return;
       final createdUser = AppUser(
@@ -701,6 +753,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         churchGroupIds: _selectedChurchGroupIds.toList(),
         authToken: authToken,
         dob: _dob!,
+        solemnizedBaptism: _solemnizedBaptism,
+        baptismChurchName: _baptismChurchNameController.text.trim(),
+        baptismPastorName: _baptismPastorNameController.text.trim(),
+        additionalNotes: _additionalNotesController.text.trim(),
       );
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
@@ -770,6 +826,73 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 ),
                                 child: Column(
                                   children: [
+                                    if (_isEditMode) ...[
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer
+                                              .withValues(alpha: 0.38),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.16),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.history_rounded,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    context.t(
+                                                      'members.member_since_label',
+                                                      fallback: 'Member Since',
+                                                    ),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .labelLarge
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    _formatMemberSince(
+                                                      widget.existingMember
+                                                          ?.createdAt,
+                                                    ),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
                                     TextField(
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
@@ -1061,6 +1184,56 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 ),
                                 child: Column(
                                   children: [
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer
+                                            .withValues(alpha: 0.38),
+                                        borderRadius: BorderRadius.circular(18),
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.16),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.notes_rounded,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              context.t(
+                                                'members.extended_information_note',
+                                                fallback:
+                                                    'Use this section for details that help the church understand care needs, education, and gifting better.',
+                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface,
+                                                    height: 1.35,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
@@ -1138,6 +1311,109 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                     ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _additionalNotesController,
+                                      minLines: 2,
+                                      maxLines: 4,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.additional_notes_label',
+                                          fallback: 'Additional Notes',
+                                        ),
+                                        helperText: context.t(
+                                          'members.additional_notes_helper',
+                                          fallback:
+                                              'Optional short notes about this member for church reference.',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _StepViewport(
+                              churchLogo: widget.churchLogo,
+                              churchName: widget.churchName,
+                              stepIndex: _stepIndex,
+                              stepCount: _stepCount,
+                              progress: progress,
+                              child: _StepShell(
+                                title: context.t(
+                                  'members.church_records_title',
+                                  fallback: 'Church Records',
+                                ),
+                                subtitle: context.t(
+                                  'members.church_records_subtitle',
+                                  fallback:
+                                      'Capture baptism-related records for this member.',
+                                ),
+                                child: Column(
+                                  children: [
+                                    DropdownButtonFormField<String>(
+                                      value:
+                                          _solemnizedBaptism ? 'yes' : 'no',
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.solemnized_baptism_label',
+                                          fallback: 'Solemnized Baptism',
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'yes',
+                                          child: Text(
+                                            context.t(
+                                              'common.yes',
+                                              fallback: 'Yes',
+                                            ),
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'no',
+                                          child: Text(
+                                            context.t(
+                                              'common.no',
+                                              fallback: 'No',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _solemnizedBaptism = value == 'yes';
+                                          if (!_solemnizedBaptism) {
+                                            _baptismChurchNameController.clear();
+                                            _baptismPastorNameController.clear();
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    if (_solemnizedBaptism) ...[
+                                      const SizedBox(height: 16),
+                                      TextField(
+                                        controller:
+                                            _baptismChurchNameController,
+                                        textInputAction: TextInputAction.next,
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'members.baptism_church_name_label',
+                                            fallback: 'Church Name',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextField(
+                                        controller:
+                                            _baptismPastorNameController,
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'members.baptism_pastor_name_label',
+                                            fallback: 'Pastor Name',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

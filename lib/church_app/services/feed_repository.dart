@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_path
 
 class FeedRepository {
   final FirebaseFirestore _firestore;
+  static const int recentFeedWindowDays = 90;
 
   FeedRepository(this._firestore);
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -21,8 +22,12 @@ class FeedRepository {
     final collection = isGlobal
         ? FirestorePaths.globalFeedCollection(_firestore)
         : FirestorePaths.feedCollection(_firestore, churchId!);
+    final cutoff = Timestamp.fromDate(
+      DateTime.now().subtract(const Duration(days: recentFeedWindowDays)),
+    );
 
     Query<Map<String, dynamic>> query = collection
+        .where('createdAt', isGreaterThanOrEqualTo: cutoff)
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .withConverter<Map<String, dynamic>>(

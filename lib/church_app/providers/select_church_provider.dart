@@ -27,3 +27,12 @@ final allChurchesProvider = StreamProvider<List<Church>>((ref) {
   final repository = ref.watch(churchRepositoryProvider);
   return repository.getAllChurches();
 });
+
+final churchByIdProvider = FutureProvider.family<Church?, String>((
+  ref,
+  churchId,
+) async {
+  if (churchId.trim().isEmpty) return null;
+  final repository = ref.watch(churchRepositoryProvider);
+  return repository.getChurchById(churchId);
+});

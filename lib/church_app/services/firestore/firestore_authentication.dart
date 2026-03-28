@@ -217,6 +217,10 @@ class AuthRepository {
       String educationalQualification = '',
       List<String> talentsAndGifts = const [],
       List<String> churchGroupIds = const [],
+      bool solemnizedBaptism = false,
+      String baptismChurchName = '',
+      String baptismPastorName = '',
+      String additionalNotes = '',
       String? familyLabel,
       String? targetUid,
       String? targetEmail,
@@ -267,6 +271,12 @@ class AuthRepository {
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty)
           .toList(),
+      'solemnizedBaptism': solemnizedBaptism,
+      'baptismChurchName':
+          solemnizedBaptism ? baptismChurchName.trim() : '',
+      'baptismPastorName':
+          solemnizedBaptism ? baptismPastorName.trim() : '',
+      'additionalNotes': additionalNotes.trim(),
       'approved': approved,
       'authToken': authToken,
       'createdAt': FieldValue.serverTimestamp(),

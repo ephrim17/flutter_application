@@ -118,6 +118,10 @@ class MembersRepository extends ChurchScopedRepository {
     required String educationalQualification,
     required List<String> talentsAndGifts,
     required List<String> churchGroupIds,
+    required bool solemnizedBaptism,
+    required String baptismChurchName,
+    required String baptismPastorName,
+    required String additionalNotes,
     String? familyLabel,
   }) async {
     await collectionRef().doc(userId).update({
@@ -144,6 +148,12 @@ class MembersRepository extends ChurchScopedRepository {
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty)
           .toList(),
+      'solemnizedBaptism': solemnizedBaptism,
+      'baptismChurchName':
+          solemnizedBaptism ? baptismChurchName.trim() : '',
+      'baptismPastorName':
+          solemnizedBaptism ? baptismPastorName.trim() : '',
+      'additionalNotes': additionalNotes.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 

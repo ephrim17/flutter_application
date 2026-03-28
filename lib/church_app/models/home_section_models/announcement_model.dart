@@ -5,6 +5,7 @@ class Announcement {
   final String title;
   final String body;
   final bool isActive;
+  final DateTime? expiryAt;
   final int priority;
   final String imageUrl;
 
@@ -13,6 +14,7 @@ class Announcement {
     required this.title,
     required this.body,
     required this.isActive,
+    required this.expiryAt,
     required this.priority,
     required this.imageUrl,
   });
@@ -22,6 +24,8 @@ class Announcement {
     String? title,
     String? body,
     bool? isActive,
+    DateTime? expiryAt,
+    bool clearExpiryAt = false,
     int? priority,
     String? imageUrl,
   }) {
@@ -30,6 +34,7 @@ class Announcement {
       title: title ?? this.title,
       body: body ?? this.body,
       isActive: isActive ?? this.isActive,
+      expiryAt: clearExpiryAt ? null : (expiryAt ?? this.expiryAt),
       priority: priority ?? this.priority,
       imageUrl: imageUrl ?? this.imageUrl,
     );
@@ -40,6 +45,7 @@ class Announcement {
         'title': title,
         'body': body,
         'isActive': isActive,
+        'expiryAt': expiryAt == null ? null : Timestamp.fromDate(expiryAt!),
         'priority': priority,
         'imageUrl': imageUrl,
       };
@@ -53,6 +59,7 @@ class Announcement {
       title: (data['title'] ?? '') as String,
       body: (data['body'] ?? '') as String,
       isActive: (data['isActive'] ?? true) as bool,
+      expiryAt: (data['expiryAt'] as Timestamp?)?.toDate(),
       imageUrl: (data['imageUrl'] ?? '') as String,
       priority: (data['priority'] ?? 0) as int,
     );

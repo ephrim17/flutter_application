@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChurchSideDrawer extends StatelessWidget {
@@ -81,19 +82,41 @@ class AppDrawer extends ConsumerWidget {
             ),
             error: (_, __) => DrawerHeader(
               child: Text(
-                context.t('drawer.error_loading_user', fallback: 'Error loading user'),
+                context.t(
+                  'drawer.error_loading_user',
+                  fallback: 'Error loading user',
+                ),
               ),
             ),
             data: (user) {
-              return UserAccountsDrawerHeader(
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor),
-                  accountName: Text(
-                    user?.name ?? '',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  accountEmail: Text(user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodyMedium));
+              final theme = Theme.of(context);
+              return DrawerHeader(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                ),
+                margin: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      user?.name ?? '',
+                      style: theme.textTheme.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      user?.email ?? '',
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 10),
+                    MemberSinceChip(date: user?.createdAt),
+                  ],
+                ),
+              );
             },
           ),
 

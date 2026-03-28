@@ -26,7 +26,16 @@ class EventsRepository extends ChurchScopedRepository{
         .where('isActive', isEqualTo: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs.map((d) => d.data()).toList());
+        .map(
+          (s) => s.docs
+              .map((d) => d.data())
+              .where(
+                (event) =>
+                    event.expiryAt == null || event.expiryAt!.isAfter(now),
+              )
+              .take(limit)
+              .toList(),
+        );
   }
 
   Stream<List<Event>> watchAllActive({
@@ -37,6 +46,15 @@ class EventsRepository extends ChurchScopedRepository{
         .where('isActive', isEqualTo: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs.map((d) => d.data()).toList());
+        .map(
+          (s) => s.docs
+              .map((d) => d.data())
+              .where(
+                (event) =>
+                    event.expiryAt == null || event.expiryAt!.isAfter(now),
+              )
+              .take(limit)
+              .toList(),
+        );
   }
 }

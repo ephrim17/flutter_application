@@ -59,6 +59,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final churchAsync = ref.watch(currentChurchIdProvider);
+    final config = ref.watch(appConfigProvider).asData?.value;
+    final globalFeedEnabled = config?.globalFeedEnabled ?? false;
 
     return churchAsync.when(
       loading: () => const Scaffold(
@@ -88,15 +90,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         final feedState = ref.watch(feedPaginationControllerProvider(churchId));
         final globalFeedState =
             ref.watch(globalFeedPaginationControllerProvider);
+        if (!globalFeedEnabled && _selectedTabIndex > 0) {
+          _selectedTabIndex = 0;
+        }
+
+        final tabCount = globalFeedEnabled ? 2 : 1;
 
         return DefaultTabController(
-          length: 2,
+          length: tabCount,
           child: Scaffold(
             floatingActionButton: FloatingActionButton(
               onPressed: () => _openCreatePostModal(
                 context,
                 churchId,
-                isGlobal: _selectedTabIndex == 1,
+                isGlobal: globalFeedEnabled && _selectedTabIndex == 1,
               ),
               child: const Icon(Icons.add),
             ),
@@ -107,15 +114,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   child: Container(
                     decoration: carouselBoxDecoration(context),
                     child: TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
                       dividerColor: Colors.transparent,
                       onTap: (index) {
                         setState(() {
                           _selectedTabIndex = index;
                         });
                       },
-                      tabs: const [
-                        Tab(text: 'Church'),
-                        Tab(text: 'Global'),
+                      tabs: [
+                        const Tab(text: 'Your Church'),
+                        if (globalFeedEnabled)
+                          const Tab(text: "What's happening in other churches"),
                       ],
                     ),
                   ),
@@ -129,12 +139,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         feedState,
                         isGlobal: false,
                       ),
-                      _buildBody(
-                        context,
-                        churchId,
-                        globalFeedState,
-                        isGlobal: true,
-                      ),
+                      if (globalFeedEnabled)
+                        _buildBody(
+                          context,
+                          churchId,
+                          globalFeedState,
+                          isGlobal: true,
+                        ),
                     ],
                   ),
                 ),

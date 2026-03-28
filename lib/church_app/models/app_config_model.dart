@@ -4,6 +4,8 @@ class AppConfig {
   final List<String> admins;
   final bool membersEnabled;
   final bool eventsEnabled;
+  final bool dashboardEnabled;
+  final bool globalFeedEnabled;
   final bool bibleSwipeFetchEnabled;
   final int bibleSwipeFetchVersion;
   final String onboardingTitle;
@@ -25,6 +27,8 @@ class AppConfig {
       {required this.admins,
       required this.membersEnabled,
       required this.eventsEnabled,
+      required this.dashboardEnabled,
+      required this.globalFeedEnabled,
       required this.onboardingTitle,
       required this.onboardingSubtitle,
       required this.primaryColorHex,
@@ -47,6 +51,8 @@ class AppConfig {
       admins: const [],
       membersEnabled: false,
       eventsEnabled: false,
+      dashboardEnabled: false,
+      globalFeedEnabled: false,
       onboardingTitle: '',
       onboardingSubtitle: '',
       primaryColorHex: '#000000',
@@ -76,6 +82,8 @@ class AppConfig {
       adminMode: AdminModeModel.fromMap(data['adminMode'] ?? {}),
       superAdminDisabled: data['superAdminDisabled'] as bool? ?? false,
       membersEnabled: data['features']?['membersEnabled'] ?? false,
+      dashboardEnabled: data['features']?['dashboardEnabled'] ?? false,
+      globalFeedEnabled: data['features']?['globalFeedEnabled'] ?? false,
       bibleSwipeFetchEnabled:
           data['features']?['bibleSwipeFetchEnabled'] ?? false,
       bibleSwipeFetchVersion:

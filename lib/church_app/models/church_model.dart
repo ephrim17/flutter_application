@@ -9,6 +9,9 @@ class Church {
   final String logo;
   final bool enabled;
   final String registrationSource;
+  final String facebookLink;
+  final String instagramLink;
+  final String youtubeLink;
 
   Church({
     required this.id,
@@ -21,7 +24,15 @@ class Church {
     required this.logo,
     required this.enabled,
     required this.registrationSource,
+    this.facebookLink = '',
+    this.instagramLink = '',
+    this.youtubeLink = '',
   });
+
+  bool get hasAnySocialLinks =>
+      facebookLink.trim().isNotEmpty ||
+      instagramLink.trim().isNotEmpty ||
+      youtubeLink.trim().isNotEmpty;
 
   factory Church.fromFirestore(String id, Map<String, dynamic> data) {
     return Church(
@@ -35,6 +46,9 @@ class Church {
       logo: data['logo'] ?? data['logoUrl'] ?? data['imageUrl'] ?? '',
       enabled: data['enabled'] ?? false,
       registrationSource: data['registrationSource'] ?? 'super_admin',
+      facebookLink: data['facebookLink'] ?? '',
+      instagramLink: data['instagramLink'] ?? '',
+      youtubeLink: data['youtubeLink'] ?? '',
     );
   }
 }

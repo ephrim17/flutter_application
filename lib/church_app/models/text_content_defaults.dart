@@ -366,6 +366,19 @@ const Map<String, String> defaultChurchTextContents = {
   'members.extended_information_subtitle':
       'Capture financial, educational and gifting details.',
   'members.church_groups_title': 'Church Directory',
+
+  // For You / Featured
+  'for_you.featured.plan_badge': 'Challenge Yourself to do',
+  'for_you.featured.plan_title': 'Bible in a year',
+  'for_you.featured.plan_description':
+      "Reading the Bible in a year won't just change what you know; it will change how you think. You are trading 15 minutes of scrolling for a lifetime of wisdom",
+  'for_you.featured.plan_button': 'Explore Now',
+  'for_you.featured.youtube_title':
+      'Deepen the Word, One Video at a Time. Follow us on YouTube.',
+  'for_you.featured.youtube_button': 'Start Watching',
+  'for_you.featured.swipe_title':
+      'Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.',
+  'for_you.featured.swipe_button': 'Let’s Go',
   'members.church_groups_subtitle':
       'Select the ministries and teams this member belongs to.',
   'members.request_basic_details_subtitle':

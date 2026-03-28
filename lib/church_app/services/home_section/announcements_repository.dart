@@ -26,7 +26,17 @@ class AnnouncementsRepository extends ChurchScopedRepository {
         .where('isActive', isEqualTo: true)
         .orderBy('priority')
         .snapshots()
-        .map((s) => s.docs.map((d) => d.data()).toList());
+        .map(
+          (s) => s.docs
+              .map((d) => d.data())
+              .where(
+                (announcement) =>
+                    announcement.expiryAt == null ||
+                    announcement.expiryAt!.isAfter(now),
+              )
+              .take(limit)
+              .toList(),
+        );
   }
 
   Stream<List<Announcement>> watchAllActive({
@@ -37,6 +47,16 @@ class AnnouncementsRepository extends ChurchScopedRepository {
         .where('isActive', isEqualTo: true)
         .orderBy('priority')
         .snapshots()
-        .map((s) => s.docs.map((d) => d.data()).toList());
+        .map(
+          (s) => s.docs
+              .map((d) => d.data())
+              .where(
+                (announcement) =>
+                    announcement.expiryAt == null ||
+                    announcement.expiryAt!.isAfter(now),
+              )
+              .take(limit)
+              .toList(),
+        );
   }
 }

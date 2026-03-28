@@ -178,7 +178,11 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
         ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
         ref.invalidate(currentChurchIdProvider);
-        unawaited(syncNotificationTopicIfAuthorized(ref));
+        unawaited(
+          syncNotificationTopicIfAuthorized(
+            ProviderScope.containerOf(context, listen: false),
+          ),
+        );
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(

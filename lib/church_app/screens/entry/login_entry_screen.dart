@@ -294,7 +294,12 @@ class LoginScreen extends ConsumerWidget {
                             );
                             ref.invalidate(currentChurchIdProvider);
                             unawaited(
-                              syncNotificationTopicIfAuthorized(ref),
+                              syncNotificationTopicIfAuthorized(
+                                ProviderScope.containerOf(
+                                  context,
+                                  listen: false,
+                                ),
+                              ),
                             );
                             await FirebaseAnalytics.instance.logEvent(
                               name: 'login_success',

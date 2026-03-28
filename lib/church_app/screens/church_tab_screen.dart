@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
+import 'package:flutter_application/church_app/screens/go_further_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -49,7 +50,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await handleNotificationSetup(
         context: context,
-        ref: ref,
+        container: ProviderScope.containerOf(context, listen: false),
         promptIfNeeded: true,
       );
       await _logTabOpen(selectedIndex);
@@ -61,6 +62,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       0 => 'home_opened',
       1 => 'for_you_opened',
       2 => 'feed_opened',
+      3 => 'go_further_opened',
       _ => null,
     };
 
@@ -74,11 +76,14 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
+    final config = ref.watch(appConfigProvider).asData?.value;
+    final canSeeDashboard = isAdmin && (config?.dashboardEnabled ?? false);
     final screens = <Widget>[
       HomeScreen(),
       ForYouScreen(),
       FeedScreen(),
-      if (isAdmin) const DashboardScreen(),
+      const GoFurtherScreen(),
+      if (canSeeDashboard) const DashboardScreen(),
     ];
     final items = <BottomNavigationBarItem>[
       BottomNavigationBarItem(
@@ -93,7 +98,11 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         icon: const Icon(Icons.newspaper_rounded),
         label: ref.t('church_tab.feeds', fallback: 'Feeds'),
       ),
-      if (isAdmin)
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.travel_explore_rounded),
+        label: 'Go Further',
+      ),
+      if (canSeeDashboard)
         const BottomNavigationBarItem(
           icon: Icon(Icons.dashboard_customize_rounded),
           label: 'Dashboard',

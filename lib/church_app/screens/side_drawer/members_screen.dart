@@ -18,6 +18,7 @@ import 'package:flutter_application/church_app/screens/entry/login_request_scree
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -704,6 +705,8 @@ Future<void> _showMemberDetailsSheet(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              MemberSinceChip(date: member.createdAt),
                             ],
                           ),
                         ),
@@ -820,6 +823,25 @@ Future<void> _showMemberDetailsSheet(
                             ),
                           ),
                           _MemberDetailRow(
+                            icon: Icons.favorite_border,
+                            label: context.t(
+                              'members.marital_status_label',
+                              fallback: 'Marital Status',
+                            ),
+                            value: _valueOrFallback(
+                              context,
+                              _formatCategory(context, member.maritalStatus),
+                            ),
+                          ),
+                          _MemberDetailRow(
+                            icon: Icons.celebration_outlined,
+                            label: context.t(
+                              'members.wedding_day_label',
+                              fallback: 'Wedding Day',
+                            ),
+                            value: _formatDob(context, member.weddingDay),
+                          ),
+                          _MemberDetailRow(
                             icon: Icons.family_restroom_outlined,
                             label: context.t(
                               'members.family_id_label',
@@ -846,25 +868,6 @@ Future<void> _showMemberDetailsSheet(
                         ),
                         child: Column(
                           children: [
-                            _MemberDetailRow(
-                              icon: Icons.favorite_border,
-                              label: context.t(
-                                'members.marital_status_label',
-                                fallback: 'Marital Status',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                _formatCategory(context, member.maritalStatus),
-                              ),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.celebration_outlined,
-                              label: context.t(
-                                'members.wedding_day_label',
-                                fallback: 'Wedding Day',
-                              ),
-                              value: _formatDob(context, member.weddingDay),
-                            ),
                             _MemberDetailRow(
                               icon: Icons.account_balance_wallet_outlined,
                               label: context.t(
@@ -912,9 +915,92 @@ Future<void> _showMemberDetailsSheet(
                                     )
                                   : member.talentsAndGifts.join(', '),
                             ),
+                            _MemberDetailRow(
+                              icon: Icons.sticky_note_2_outlined,
+                              label: context.t(
+                                'members.additional_notes_label',
+                                fallback: 'Additional Notes',
+                              ),
+                              value: _valueOrFallback(
+                                context,
+                                member.additionalNotes,
+                              ),
+                            ),
                           ],
                         ),
                       ),
+                    _MemberDetailSection(
+                      title: context.t(
+                        'members.church_records_title',
+                        fallback: 'Church Records',
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!isAdmin) ...[
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.18),
+                                ),
+                              ),
+                              child: Text(
+                                context.t(
+                                  'members.church_records_contact_banner',
+                                  fallback:
+                                      'Please contact Church Pastor for change in details',
+                                ),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                          _MemberDetailRow(
+                            icon: Icons.water_drop_outlined,
+                            label: context.t(
+                              'members.solemnized_baptism_label',
+                              fallback: 'Solemnized Baptism',
+                            ),
+                            value: member.solemnizedBaptism
+                                ? context.t('common.yes', fallback: 'Yes')
+                                : context.t('common.no', fallback: 'No'),
+                          ),
+                          if (member.solemnizedBaptism) ...[
+                            _MemberDetailRow(
+                              icon: Icons.church_outlined,
+                              label: context.t(
+                                'members.baptism_church_name_label',
+                                fallback: 'Church Name',
+                              ),
+                              value: _valueOrFallback(
+                                context,
+                                member.baptismChurchName,
+                              ),
+                            ),
+                            _MemberDetailRow(
+                              icon: Icons.person_2_outlined,
+                              label: context.t(
+                                'members.baptism_pastor_name_label',
+                                fallback: 'Pastor Name',
+                              ),
+                              value: _valueOrFallback(
+                                context,
+                                member.baptismPastorName,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                     if (isAdmin)
                       _MemberDetailSection(
                         title: context.t(

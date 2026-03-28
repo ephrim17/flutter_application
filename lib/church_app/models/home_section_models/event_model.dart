@@ -10,6 +10,7 @@ class Event {
   final String timing;
   final EventType type;
   final bool isActive;
+  final DateTime? expiryAt;
 
   const Event({
     required this.id,
@@ -20,6 +21,7 @@ class Event {
     required this.timing,
     required this.type,
     required this.isActive,
+    required this.expiryAt,
   });
 
   Event copyWith({
@@ -31,6 +33,8 @@ class Event {
     String? timing,
     EventType? type,
     bool? isActive,
+    DateTime? expiryAt,
+    bool clearExpiryAt = false,
   }) {
     return Event(
       id: id ?? this.id,
@@ -40,7 +44,8 @@ class Event {
       location: location ?? this.location,
       timing: timing ?? this.timing,
       type: type ?? this.type,
-      isActive: isActive ?? this.isActive
+      isActive: isActive ?? this.isActive,
+      expiryAt: clearExpiryAt ? null : (expiryAt ?? this.expiryAt),
     );
   }
 
@@ -53,6 +58,7 @@ class Event {
         'timing': timing,
         'type': type, 
         'isActive': isActive,
+        'expiryAt': expiryAt == null ? null : Timestamp.fromDate(expiryAt!),
       };
 
   /// For reading from Firestore
@@ -68,6 +74,7 @@ class Event {
       timing: (data['timing'] ?? '') as String,
       type: EventTypeX.fromString(data['type'] as String?), 
       isActive: (data['isActive'] ?? true) as bool,
+      expiryAt: (data['expiryAt'] as Timestamp?)?.toDate(),
     );
   }
 }

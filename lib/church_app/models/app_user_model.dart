@@ -23,6 +23,10 @@ class AppUser {
   final DateTime? dob;
   final DateTime? createdAt;
   final bool approved;
+  final bool solemnizedBaptism;
+  final String baptismChurchName;
+  final String baptismPastorName;
+  final String additionalNotes;
 
   AppUser({
     required this.uid,
@@ -47,6 +51,10 @@ class AppUser {
     required this.authToken,
     required this.dob,
     this.createdAt,
+    this.solemnizedBaptism = false,
+    this.baptismChurchName = '',
+    this.baptismPastorName = '',
+    this.additionalNotes = '',
   });
 
   factory AppUser.fromFirestore(
@@ -99,6 +107,10 @@ class AppUser {
               : null,
       role: data['role'] ?? 'user',
       approved: data['approved'] ?? false,
+      solemnizedBaptism: data['solemnizedBaptism'] ?? false,
+      baptismChurchName: data['baptismChurchName'] ?? '',
+      baptismPastorName: data['baptismPastorName'] ?? '',
+      additionalNotes: data['additionalNotes'] ?? '',
     );
   }
 
@@ -149,6 +161,10 @@ class AppUser {
               : null,
       role: json['role'] ?? 'user',
       approved: json['approved'] ?? false,
+      solemnizedBaptism: json['solemnizedBaptism'] ?? false,
+      baptismChurchName: json['baptismChurchName'] ?? '',
+      baptismPastorName: json['baptismPastorName'] ?? '',
+      additionalNotes: json['additionalNotes'] ?? '',
     );
   }
 
@@ -175,6 +191,10 @@ class AppUser {
       'approved': approved,
       'dob': dob != null ? Timestamp.fromDate(dob!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      'solemnizedBaptism': solemnizedBaptism,
+      'baptismChurchName': baptismChurchName,
+      'baptismPastorName': baptismPastorName,
+      'additionalNotes': additionalNotes,
     };
   }
 }

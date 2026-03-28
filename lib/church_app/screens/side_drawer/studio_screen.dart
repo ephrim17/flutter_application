@@ -175,6 +175,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   emptyText: ref.t('studio.no_announcements',
                       fallback: 'No announcements yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
+                  tileStatus: (data) {
+                    final expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
+                    if (expiryAt == null || expiryAt.isAfter(DateTime.now())) {
+                      return null;
+                    }
+
+                    return const _StudioInlineStatusChip(
+                      label: 'Expired',
+                      color: Colors.deepOrange,
+                    );
+                  },
                   tileSubtitle: (data) =>
                       '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
                   onAdd: () =>
@@ -203,6 +214,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   emptyText:
                       ref.t('studio.no_events', fallback: 'No events yet.'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
+                  tileStatus: (data) {
+                    final expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
+                    if (expiryAt == null || expiryAt.isAfter(DateTime.now())) {
+                      return null;
+                    }
+
+                    return const _StudioInlineStatusChip(
+                      label: 'Expired',
+                      color: Colors.deepOrange,
+                    );
+                  },
                   tileSubtitle: (data) {
                     final parts = <String>[
                       if ((data['type'] ?? '').toString().isNotEmpty)
@@ -816,6 +838,7 @@ class _CollectionEditor extends StatelessWidget {
     required this.emptyText,
     required this.tileTitle,
     required this.tileSubtitle,
+    this.tileStatus,
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
@@ -827,6 +850,7 @@ class _CollectionEditor extends StatelessWidget {
   final String emptyText;
   final String Function(Map<String, dynamic>) tileTitle;
   final String Function(Map<String, dynamic>) tileSubtitle;
+  final Widget? Function(Map<String, dynamic>)? tileStatus;
   final Future<void> Function() onAdd;
   final Future<void> Function(QueryDocumentSnapshot<Map<String, dynamic>> doc)
       onEdit;
@@ -890,7 +914,18 @@ class _CollectionEditor extends StatelessWidget {
               decoration: carouselBoxDecoration(context),
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
-                title: Text(tileTitle(data)),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(tileTitle(data)),
+                    ),
+                    if (tileStatus != null) ...[
+                      const SizedBox(width: 8),
+                      if (tileStatus!(data) case final statusWidget?)
+                        statusWidget,
+                    ],
+                  ],
+                ),
                 subtitle: Text(subtitle),
                 isThreeLine: subtitle.contains('\n'),
                 trailing: Wrap(
@@ -943,6 +978,34 @@ class _CollectionEditor extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _StudioInlineStatusChip extends StatelessWidget {
+  const _StudioInlineStatusChip({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
+      ),
     );
   }
 }
@@ -1069,21 +1132,6 @@ class _ThemeEditorForm extends StatefulWidget {
 }
 
 class _ThemeEditorFormState extends State<_ThemeEditorForm> {
-  static const List<String> _paletteHexValues = <String>[
-    '#0F172A',
-    '#1D4ED8',
-    '#1E88E5',
-    '#0EA5E9',
-    '#14B8A6',
-    '#16A34A',
-    '#65A30D',
-    '#EAB308',
-    '#F97316',
-    '#DC2626',
-    '#E11D48',
-    '#C026D3',
-  ];
-
   late final TextEditingController _primaryController;
   late final TextEditingController _secondaryController;
   bool _isSaving = false;
@@ -1110,12 +1158,35 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
 
   String _normalizeHex(String value) => value.trim().toUpperCase();
 
+  String _colorToHex(Color color) {
+    final value = color.toARGB32() & 0x00FFFFFF;
+    return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
+
   Color _safeColor(String value) {
     final normalized = _normalizeHex(value);
     if (_isValidHex(normalized)) {
       return normalized.toColor();
     }
     return Colors.grey.shade400;
+  }
+
+  Future<void> _pickColor({
+    required TextEditingController controller,
+    required String label,
+  }) async {
+    final picked = await showDialog<Color>(
+      context: context,
+      builder: (dialogContext) => _ThemeColorPickerDialog(
+        title: label,
+        initialColor: _safeColor(controller.text),
+      ),
+    );
+
+    if (picked == null || !mounted) return;
+    setState(() {
+      controller.text = _colorToHex(picked);
+    });
   }
 
   @override
@@ -1159,13 +1230,14 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
                   ),
                   controller: _primaryController,
                   previewColor: _safeColor(_primaryController.text),
-                  paletteHexValues: _paletteHexValues,
                   onChanged: (_) => setState(() {}),
-                  onPaletteSelected: (value) {
-                    setState(() {
-                      _primaryController.text = value;
-                    });
-                  },
+                  onPickPressed: () => _pickColor(
+                    controller: _primaryController,
+                    label: context.t(
+                      'studio.theme_primary_label',
+                      fallback: 'Primary Color',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _ThemeColorField(
@@ -1175,13 +1247,14 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
                   ),
                   controller: _secondaryController,
                   previewColor: _safeColor(_secondaryController.text),
-                  paletteHexValues: _paletteHexValues,
                   onChanged: (_) => setState(() {}),
-                  onPaletteSelected: (value) {
-                    setState(() {
-                      _secondaryController.text = value;
-                    });
-                  },
+                  onPickPressed: () => _pickColor(
+                    controller: _secondaryController,
+                    label: context.t(
+                      'studio.theme_secondary_label',
+                      fallback: 'Secondary Color',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -1256,17 +1329,15 @@ class _ThemeColorField extends StatelessWidget {
     required this.label,
     required this.controller,
     required this.previewColor,
-    required this.paletteHexValues,
     required this.onChanged,
-    required this.onPaletteSelected,
+    required this.onPickPressed,
   });
 
   final String label;
   final TextEditingController controller;
   final Color previewColor;
-  final List<String> paletteHexValues;
   final ValueChanged<String> onChanged;
-  final ValueChanged<String> onPaletteSelected;
+  final VoidCallback onPickPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -1302,48 +1373,178 @@ class _ThemeColorField extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: paletteHexValues.map((hex) {
-            final isSelected = controller.text.trim().toUpperCase() == hex;
-            return InkWell(
-              onTap: () => onPaletteSelected(hex),
-              borderRadius: BorderRadius.circular(999),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: hex.toColor(),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.outlineVariant,
-                    width: isSelected ? 2.4 : 1,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x14000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: isSelected
-                    ? Icon(
-                        Icons.check,
-                        size: 16,
-                        color: hex.toColor().computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
-                      )
-                    : null,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: onPickPressed,
+            icon: const Icon(Icons.colorize_outlined),
+            label: Text(
+              context.t(
+                'studio.theme_pick_color',
+                fallback: 'Pick color',
               ),
-            );
-          }).toList(),
+            ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _ThemeColorPickerDialog extends StatefulWidget {
+  const _ThemeColorPickerDialog({
+    required this.title,
+    required this.initialColor,
+  });
+
+  final String title;
+  final Color initialColor;
+
+  @override
+  State<_ThemeColorPickerDialog> createState() =>
+      _ThemeColorPickerDialogState();
+}
+
+class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
+  late HSVColor _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedColor = HSVColor.fromColor(widget.initialColor);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _selectedColor.toColor();
+
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 72,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _ColorSliderRow(
+              label: 'Hue',
+              value: _selectedColor.hue,
+              max: 360,
+              activeColor: color,
+              onChanged: (value) {
+                setState(() {
+                  _selectedColor = _selectedColor.withHue(value);
+                });
+              },
+            ),
+            _ColorSliderRow(
+              label: 'Saturation',
+              value: _selectedColor.saturation,
+              max: 1,
+              activeColor: color,
+              onChanged: (value) {
+                setState(() {
+                  _selectedColor = _selectedColor.withSaturation(value);
+                });
+              },
+            ),
+            _ColorSliderRow(
+              label: 'Brightness',
+              value: _selectedColor.value,
+              max: 1,
+              activeColor: color,
+              onChanged: (value) {
+                setState(() {
+                  _selectedColor = _selectedColor.withValue(value);
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.t('common.cancel', fallback: 'Cancel')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(color),
+          child: Text(context.t('common.apply', fallback: 'Apply')),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorSliderRow extends StatelessWidget {
+  const _ColorSliderRow({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.activeColor,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double max;
+  final Color activeColor;
+  final ValueChanged<double> onChanged;
+
+  String get _formattedValue {
+    if (max == 360) {
+      return '${value.round()} deg';
+    }
+    return '${(value * 100).round()}%';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formattedValue,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.72),
+                ),
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: activeColor,
+              thumbColor: activeColor,
+            ),
+            child: Slider(
+              value: value.clamp(0, max),
+              max: max,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -3484,8 +3685,12 @@ Future<void> _showEventEditor(
       TextEditingController(text: (data['location'] ?? '') as String);
   final timingController =
       TextEditingController(text: (data['timing'] ?? '') as String);
+  final expiryController = TextEditingController(
+    text: _formatOptionalDateTime((data['expiryAt'] as Timestamp?)?.toDate()),
+  );
   String type = (data['type'] ?? 'family') as String;
   bool isActive = (data['isActive'] ?? true) as bool;
+  DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
   var isSaving = false;
 
   return showModalBottomSheet<void>(
@@ -3643,6 +3848,73 @@ Future<void> _showEventEditor(
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
+                  TextField(
+                    controller: expiryController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.expiry_at_label',
+                        fallback: 'Expiry date & time',
+                      ),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (expiryController.text.trim().isNotEmpty)
+                            IconButton(
+                              onPressed: isSaving
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        expiryAt = null;
+                                        expiryController.clear();
+                                      });
+                                    },
+                              icon: const Icon(Icons.clear),
+                            ),
+                          IconButton(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    final now = DateTime.now();
+                                    final pickedDate = await showDatePicker(
+                                      context: context,
+                                      initialDate: expiryAt ?? now,
+                                      firstDate: DateTime(now.year - 1),
+                                      lastDate: DateTime(now.year + 10),
+                                    );
+                                    if (pickedDate == null ||
+                                        !context.mounted) {
+                                      return;
+                                    }
+
+                                    final pickedTime = await showTimePicker(
+                                      context: context,
+                                      initialTime: expiryAt == null
+                                          ? TimeOfDay.fromDateTime(now)
+                                          : TimeOfDay.fromDateTime(expiryAt!),
+                                    );
+
+                                    if (!context.mounted) return;
+                                    final resolved = DateTime(
+                                      pickedDate.year,
+                                      pickedDate.month,
+                                      pickedDate.day,
+                                      pickedTime?.hour ?? 23,
+                                      pickedTime?.minute ?? 59,
+                                    );
+
+                                    setState(() {
+                                      expiryAt = resolved;
+                                      expiryController.text =
+                                          _formatOptionalDateTime(resolved);
+                                    });
+                                  },
+                              icon: const Icon(Icons.event_outlined),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: isSaving
@@ -3659,6 +3931,9 @@ Future<void> _showEventEditor(
                                 'location': locationController.text.trim(),
                                 'timing': timingController.text.trim(),
                                 'isActive': isActive,
+                                'expiryAt': expiryAt == null
+                                    ? null
+                                    : Timestamp.fromDate(expiryAt!),
                               };
                               if (doc == null) {
                                 await repository.createEvent(payload);
@@ -3708,8 +3983,12 @@ Future<void> _showAnnouncementEditor(
   final priorityController =
       TextEditingController(text: '${(data['priority'] ?? 0) as int}');
   final existingImageUrl = (data['imageUrl'] ?? '') as String;
+  final expiryController = TextEditingController(
+    text: _formatOptionalDateTime((data['expiryAt'] as Timestamp?)?.toDate()),
+  );
   PickedImageData? selectedImage;
   bool isActive = (data['isActive'] ?? true) as bool;
+  DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
   var isSaving = false;
 
   return showModalBottomSheet<void>(
@@ -3848,6 +4127,72 @@ Future<void> _showAnnouncementEditor(
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
+                  TextField(
+                    controller: expiryController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: context.t(
+                        'studio.expiry_at_label',
+                        fallback: 'Expiry date & time',
+                      ),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (expiryController.text.trim().isNotEmpty)
+                            IconButton(
+                              onPressed: isSaving
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        expiryAt = null;
+                                        expiryController.clear();
+                                      });
+                                    },
+                              icon: const Icon(Icons.clear),
+                            ),
+                          IconButton(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    final now = DateTime.now();
+                                    final pickedDate = await showDatePicker(
+                                      context: context,
+                                      initialDate: expiryAt ?? now,
+                                      firstDate: DateTime(now.year - 1),
+                                      lastDate: DateTime(now.year + 10),
+                                    );
+                                    if (pickedDate == null || !context.mounted) {
+                                      return;
+                                    }
+
+                                    final pickedTime = await showTimePicker(
+                                      context: context,
+                                      initialTime: expiryAt == null
+                                          ? TimeOfDay.fromDateTime(now)
+                                          : TimeOfDay.fromDateTime(expiryAt!),
+                                    );
+                                    if (!context.mounted) return;
+
+                                    final resolved = DateTime(
+                                      pickedDate.year,
+                                      pickedDate.month,
+                                      pickedDate.day,
+                                      pickedTime?.hour ?? 23,
+                                      pickedTime?.minute ?? 59,
+                                    );
+
+                                    setState(() {
+                                      expiryAt = resolved;
+                                      expiryController.text =
+                                          _formatOptionalDateTime(resolved);
+                                    });
+                                  },
+                              icon: const Icon(Icons.event_outlined),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -3864,6 +4209,9 @@ Future<void> _showAnnouncementEditor(
                                           priorityController.text.trim()) ??
                                       0,
                                   'isActive': isActive,
+                                  'expiryAt': expiryAt == null
+                                      ? null
+                                      : Timestamp.fromDate(expiryAt!),
                                 };
                                 if (doc == null) {
                                   await repository.createAnnouncement(
@@ -4470,4 +4818,9 @@ String _formatHumanReadableDate(DateTime date) {
   };
 
   return '$day$suffix ${DateFormat('MMMM yyyy').format(date)}';
+}
+
+String _formatOptionalDateTime(DateTime? value) {
+  if (value == null) return '';
+  return DateFormat('d MMM yyyy, h:mm a').format(value);
 }
