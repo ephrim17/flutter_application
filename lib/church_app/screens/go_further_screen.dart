@@ -523,9 +523,21 @@ class _GoFurtherChurchCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              _GoFurtherPreviewLine(
-                icon: Icons.person_outline_rounded,
-                text: _valueOrFallback(church.pastorName),
+              Row(
+                children: [
+                  _PastorPhotoAvatar(
+                    photoUrl: church.pastorPhoto,
+                    size: 42,
+                    onTap: () => _showPastorPhotoPreview(context, church),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _GoFurtherPreviewLine(
+                      icon: Icons.person_outline_rounded,
+                      text: _valueOrFallback(church.pastorName),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               _GoFurtherPreviewLine(
@@ -557,6 +569,117 @@ class _GoFurtherChurchCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+Future<void> _showPastorPhotoPreview(BuildContext context, Church church) async {
+  final photoUrl = church.pastorPhoto.trim();
+  if (photoUrl.isEmpty) return;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      final theme = Theme.of(dialogContext);
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 64,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                church.pastorName.trim().isEmpty ? 'Pastor' : church.pastorName,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _PastorPhotoAvatar extends StatelessWidget {
+  const _PastorPhotoAvatar({
+    required this.photoUrl,
+    this.size = 42,
+    this.onTap,
+  });
+
+  final String photoUrl;
+  final double size;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = photoUrl.trim();
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: trimmed.isEmpty ? null : onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.colorScheme.primary.withValues(alpha: 0.10),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.14),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: trimmed.isEmpty
+            ? Icon(
+                Icons.person_rounded,
+                color: theme.colorScheme.primary,
+                size: size * 0.5,
+              )
+            : Image.network(
+                trimmed,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.person_rounded,
+                  color: theme.colorScheme.primary,
+                  size: size * 0.5,
+                ),
+              ),
       ),
     );
   }

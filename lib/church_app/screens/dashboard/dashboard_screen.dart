@@ -181,6 +181,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 18),
+          _SectionCard(
+            title: 'Daily Streaks',
+            subtitle:
+                'See which members are showing up consistently across the app.',
+            child: _MemberStreakInsights(
+              members: members,
+            ),
+          ),
+          const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 860;
@@ -896,6 +905,72 @@ class _HealthSignalsPanel extends StatelessWidget {
           label: 'Prayer urgency',
           value: '${expiringPrayers.length} urgent',
           healthy: expiringPrayers.length <= 2,
+        ),
+      ],
+    );
+  }
+}
+
+class _MemberStreakInsights extends StatelessWidget {
+  const _MemberStreakInsights({
+    required this.members,
+  });
+
+  final List<AppUser> members;
+
+  @override
+  Widget build(BuildContext context) {
+    final streakMembers = members
+        .where((member) => member.dayStreak > 0)
+        .toList(growable: false)
+      ..sort((a, b) => b.dayStreak.compareTo(a.dayStreak));
+    final sevenDayMembers =
+        streakMembers.where((member) => member.dayStreak >= 7).length;
+    final longestStreakMember =
+        streakMembers.isEmpty ? null : streakMembers.first;
+    final activeRate = members.isEmpty
+        ? 0
+        : ((streakMembers.length / members.length) * 100).round();
+
+    if (members.isEmpty) {
+      return const _EmptyState(
+        title: 'No streak data yet',
+        subtitle:
+            'As members begin using the app, daily streak insights will show here.',
+      );
+    }
+
+    return Column(
+      children: [
+        _SignalTile(
+          title: 'Members on a streak',
+          value: '${streakMembers.length}',
+          tone: streakMembers.isEmpty ? _SignalTone.warning : _SignalTone.healthy,
+          caption: streakMembers.isEmpty
+              ? 'No member has started a daily streak yet.'
+              : '$activeRate% of members currently have an active streak.',
+        ),
+        const SizedBox(height: 12),
+        _SignalTile(
+          title: 'Strong consistency',
+          value: '$sevenDayMembers',
+          tone: sevenDayMembers == 0 ? _SignalTone.warning : _SignalTone.healthy,
+          caption: sevenDayMembers == 0
+              ? 'No member has crossed a 7-day streak yet.'
+              : '$sevenDayMembers member${sevenDayMembers == 1 ? '' : 's'} have built a 7+ day rhythm.',
+        ),
+        const SizedBox(height: 12),
+        _SignalTile(
+          title: 'Current streak leader',
+          value: longestStreakMember == null
+              ? 'No streak yet'
+              : '${longestStreakMember.dayStreak} days',
+          tone: longestStreakMember == null
+              ? _SignalTone.warning
+              : _SignalTone.attention,
+          caption: longestStreakMember == null
+              ? 'Once a member starts a streak, the top streak will show here.'
+              : '${longestStreakMember.name.trim().isEmpty ? 'A member' : longestStreakMember.name} is leading the church right now.',
         ),
       ],
     );

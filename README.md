@@ -1,4 +1,4 @@
-# Church Connect
+# Church Tree
 
 Project guide:
 

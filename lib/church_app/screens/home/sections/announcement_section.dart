@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
+import 'package:flutter_application/church_app/widgets/media_detail_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,15 +30,18 @@ class AnnouncementSection implements MasterSection {
             final asyncBanner = ref.watch(announcementsProvider);
 
             return asyncBanner.when(
-                loading: () => const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: LinearProgressIndicator(),
-                    ),
-                error: (e, _) => Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
-                    ),
-                data: (items) => _AnnouncementList(items));
+              loading: () => const Padding(
+                padding: EdgeInsets.all(16),
+                child: LinearProgressIndicator(),
+              ),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  "${context.t('common.error_prefix', fallback: 'Error')}: $e",
+                ),
+              ),
+              data: (items) => _AnnouncementList(items),
+            );
           },
         ),
       ),
@@ -53,7 +57,7 @@ class _AnnouncementList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Text(
           context.t('announcements.none', fallback: 'No announcements'),
         ),
@@ -72,12 +76,13 @@ class _AnnouncementList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          text: context.t('announcements.section_title', fallback: 'Announcements'),
+          text: context.t(
+            'announcements.section_title',
+            fallback: 'Announcements',
+          ),
           padding: 16.0,
         ),
-        const SizedBox(
-          height: 10,
-        ),
+        const SizedBox(height: 10),
         Align(
           alignment: Alignment.center,
           child: ConstrainedBox(
@@ -113,58 +118,55 @@ class _AnnouncementCard extends ConsumerWidget {
             'source': 'home',
           },
         );
+        if (!context.mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) {
-              return DetailWidget(
-                title: a.title,
-                description: a.body,
-                imageUrl: a.imageUrl, 
-              );
-            },
+            builder: (context) => DetailWidget(
+              title: a.title,
+              description: a.body,
+              imageUrl: a.imageUrl,
+            ),
           ),
         );
       },
-      child: Container(
-        width: double.infinity,
+      child: MediaDetailCard(
         height: cardHeight(AnnouncementSection().id),
-        padding: const EdgeInsets.all(2),
-        decoration: carouselBoxDecoration(context),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(cornerRadius), // SAME radius
-            child: a.imageUrl.isNotEmpty ?  ShimmerImage(
-              imageUrl: a.imageUrl,
-            ) : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      a.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      a.body,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+        badgeText: 'Announcement',
+        title: a.title,
+        body: a.body,
+        topChild: a.imageUrl.trim().isNotEmpty
+            ? _AnnouncementBackgroundImage(imageUrl: a.imageUrl)
+            : Container(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.08),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.campaign_outlined,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-            ) ,
-          ),
-        ),
       ),
+    );
+  }
+}
+
+class _AnnouncementBackgroundImage extends StatelessWidget {
+  const _AnnouncementBackgroundImage({
+    required this.imageUrl,
+  });
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerImage(
+      imageUrl: imageUrl,
+      aspectRatio: 16 / 9,
+      borderRadius: 0,
+      fit: BoxFit.cover,
     );
   }
 }

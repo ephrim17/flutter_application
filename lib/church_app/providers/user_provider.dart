@@ -40,7 +40,10 @@ Future<AppUser?> getCurrentUser(String churchId) async {
 
   if (!doc.exists) return null;
 
-  return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+  return AppUser.fromFirestore(
+    doc.id,
+    doc.data() as Map<String, dynamic>,
+  );
 }
 
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -67,6 +70,9 @@ final appUserProvider = StreamProvider<AppUser?>((ref) async* {
     firebaseUser.uid,
   ).snapshots().map((doc) {
     if (!doc.exists) return null;
-    return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+    return AppUser.fromFirestore(
+      doc.id,
+      doc.data() as Map<String, dynamic>,
+    );
   });
 });

@@ -1,11 +1,11 @@
 {
-    "name": "Church Connect",
-    "short_name": "Church Connect",
+    "name": "Church Tree",
+    "short_name": "Church Tree",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Church Connect web app.",
+    "description": "Church Tree web app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

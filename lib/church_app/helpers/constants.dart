@@ -6,8 +6,8 @@ double spacingForOrder(int order) {
 
 //cardHeights
 double cardHeight(String id) {
-  if (id == "announcements") return 250; 
-  if (id == "events") return 200; 
+  if (id == "announcements") return 390;
+  if (id == "events") return 390;
   if (id == "pastor") return 220; 
   if (id == "promise") return 400; 
   if (id == "dailyVerse") return 220;
@@ -36,7 +36,7 @@ BoxDecoration carouselBoxDecoration(BuildContext context) {
 
 double cornerRadius = 28.0;
 
-String appName = "My Church";
+String appName = "Church Tree";
 String appTagline = "Connecting Faith and Community";
 
 extension HexColor on String {

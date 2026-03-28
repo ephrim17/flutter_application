@@ -26,6 +26,12 @@ type MailJobData = {
   status?: string;
 };
 
+type TopicNotificationPayload = {
+  title: string;
+  body: string;
+  topic: string;
+};
+
 export const sendQueuedSuperAdminMail = onDocumentCreated(
   {
     document: "mail/{mailId}",
@@ -181,6 +187,124 @@ export const sendPasswordResetSmtpEmail = onRequest(
         error: authError.message ?? String(error),
       });
       res.status(500).json({error: "reset-email-failed"});
+    }
+  },
+);
+
+/**
+ * Sends a topic notification through FCM.
+ * @param payload Notification payload.
+ * @return Promise that resolves when the notification is sent.
+ */
+async function sendTopicNotification(
+  payload: TopicNotificationPayload,
+): Promise<void> {
+  await admin.messaging().send({
+    notification: {
+      title: payload.title,
+      body: payload.body,
+    },
+    topic: payload.topic,
+  });
+}
+
+export const processQueuedChurchNotification = onDocumentCreated(
+  {
+    document: "churches/{churchId}/notification_requests/{notificationId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const snapshot = event.data;
+    const data = snapshot?.data();
+
+    if (!snapshot || !data) {
+      logger.warn("Notification queue trigger fired without snapshot data.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const title = readUnknownString(data.title);
+    const body = readUnknownString(data.body);
+    const topic = readUnknownString(data.topic);
+
+    if (!title || !body || !topic) {
+      await snapshot.ref.update({
+        status: "failed",
+        error: "Missing required notification fields",
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    try {
+      await sendTopicNotification({title, body, topic});
+
+      await snapshot.ref.update({
+        status: "sent",
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        error: admin.firestore.FieldValue.delete(),
+      });
+
+      logger.info("Queued church notification sent.", {
+        notificationId: snapshot.id,
+        topic,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      logger.error("Error sending queued church notification.", {
+        notificationId: snapshot.id,
+        topic,
+        error: message,
+      });
+
+      await snapshot.ref.update({
+        status: "failed",
+        error: message,
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  },
+);
+
+export const notifyOnFeedPostCreated = onDocumentCreated(
+  {
+    document: "churches/{churchId}/feeds/{feedId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const snapshot = event.data;
+    const data = snapshot?.data();
+    const churchId = readUnknownString(event.params.churchId);
+
+    if (!data || !churchId) {
+      logger.warn("Feed notification trigger missing data.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const userName = readUnknownString(data.userName) || "Someone";
+
+    try {
+      await sendTopicNotification({
+        title: `${userName} has posted a new feed`,
+        body: "Tap to see more",
+        topic: `church_${churchId}`,
+      });
+
+      logger.info("Feed post notification sent.", {
+        feedId: snapshot?.id ?? null,
+        churchId,
+      });
+    } catch (error) {
+      logger.error("Failed to send feed post notification.", {
+        churchId,
+        feedId: snapshot?.id ?? null,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 );

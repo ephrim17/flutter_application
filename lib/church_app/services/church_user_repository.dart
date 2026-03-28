@@ -45,10 +45,73 @@ class ChurchUsersRepository extends ChurchScopedRepository {
     return doc.data()?.authToken;
   }
 
+  Future<void> updateDailyStreak({
+    required String uid,
+  }) async {
+    final docRef = FirestorePaths.churchUserDoc(firestore, churchId, uid);
+
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data() as Map<String, dynamic>? ?? const {};
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      final rawLastRecorded = data['lastStreakRecordedAt'];
+      final lastRecorded = rawLastRecorded is Timestamp
+          ? rawLastRecorded.toDate()
+          : rawLastRecorded is DateTime
+              ? rawLastRecorded
+              : null;
+
+      if (lastRecorded != null) {
+        final lastDay =
+            DateTime(lastRecorded.year, lastRecorded.month, lastRecorded.day);
+        if (lastDay == today) {
+          return;
+        }
+      }
+
+      final yesterday = today.subtract(const Duration(days: 1));
+      final rawDayStreak = data['dayStreak'];
+      final currentStreak = rawDayStreak is num
+          ? rawDayStreak.round()
+          : rawDayStreak is String
+              ? int.tryParse(rawDayStreak.trim()) ?? 0
+              : 0;
+
+      if (lastRecorded == null && currentStreak <= 0) {
+        transaction.set(
+          docRef,
+          {
+            'dayStreak': '1',
+            'lastStreakRecordedAt': Timestamp.fromDate(now),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        return;
+      }
+
+      final nextStreak = lastRecorded != null &&
+              DateTime(lastRecorded.year, lastRecorded.month, lastRecorded.day) ==
+                  yesterday
+          ? currentStreak + 1
+          : 1;
+
+      transaction.update(docRef, {
+        'dayStreak': nextStreak.toString(),
+        'lastStreakRecordedAt': Timestamp.fromDate(now),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   CollectionReference<AppUser> collectionRef() {
     return FirestorePaths.churchUsers(firestore, churchId)
         .withConverter<AppUser>(
-      fromFirestore: (snap, _) => AppUser.fromJson(snap.data()!),
+      fromFirestore: (snap, _) => AppUser.fromFirestore(snap.id, snap.data()!),
       toFirestore: (user, _) => user.toMap(),
     );
   }

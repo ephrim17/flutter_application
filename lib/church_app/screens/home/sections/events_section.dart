@@ -7,8 +7,8 @@ import 'package:flutter_application/church_app/providers/home_sections/event_pro
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
-import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
+import 'package:flutter_application/church_app/widgets/media_detail_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -110,7 +110,6 @@ class EventsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     return InkWell(
       onTap: () async {
         await logChurchAnalyticsEvent(
@@ -136,13 +135,29 @@ class EventsCard extends ConsumerWidget {
           ),
         );
       },
-      child: BlurImageTextContainer(
+      child: MediaDetailCard(
+        height: cardHeight(EventsSection().id),
+        badgeText: a.type.label,
+        badgeColor: a.type.badgeColor,
+        title: a.title,
+        body: a.description.trim().isEmpty ? a.timing : a.description,
+        topChild: Image.asset(
           a.type.imageAsset,
-          a.title,
-          "",
-          a.type.badgeColor,
-          a.type.label,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: Theme.of(context)
+                .colorScheme
+                .primary
+                .withValues(alpha: 0.08),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.event_outlined,
+              size: 44,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ),
+      ),
     );
   }
 }

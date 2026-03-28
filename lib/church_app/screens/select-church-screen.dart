@@ -139,7 +139,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           content: Text(
             context.t(
               'auth.login_subtitle',
-              fallback: 'Sign in with your Church Connect account to continue.',
+              fallback: 'Sign in with your Church Tree account to continue.',
             ),
           ),
         ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/home_sections/promise_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,40 +58,34 @@ class PromiseVerseCard extends ConsumerWidget {
               ),
               padding: 0.0,
             ),
-            const SizedBox(height: 10,),
-            Container(
-              //height: height,
+            const SizedBox(height: 10),
+            DecoratedScriptureCard(
               width: width - 32,
-              padding: const EdgeInsets.all(12),
-              decoration: carouselBoxDecoration(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 12),
-                  /// 🔹 Verse text
                   Text(
                     verse['tamil']!,
-                    textAlign: TextAlign.center, 
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 10),
-                   Text(
-                    verse['english']!,
-                    textAlign: TextAlign.center, 
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  /// 🔹 Reference
                   Text(
-                    verse['reference']!,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    verse['english']!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ScriptureReferencePill(
+                    reference: verse['reference']!,
+                    fontSize: 14,
                   ),
                 ],
               ),

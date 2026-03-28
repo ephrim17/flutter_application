@@ -22,11 +22,19 @@ class AppUser {
   final String authToken;
   final DateTime? dob;
   final DateTime? createdAt;
+  final int dayStreak;
+  final DateTime? lastStreakRecordedAt;
   final bool approved;
   final bool solemnizedBaptism;
   final String baptismChurchName;
   final String baptismPastorName;
   final String additionalNotes;
+
+  static int _parseDayStreak(dynamic raw) {
+    if (raw is num) return raw.round();
+    if (raw is String) return int.tryParse(raw.trim()) ?? 0;
+    return 0;
+  }
 
   AppUser({
     required this.uid,
@@ -51,6 +59,8 @@ class AppUser {
     required this.authToken,
     required this.dob,
     this.createdAt,
+    this.dayStreak = 0,
+    this.lastStreakRecordedAt,
     this.solemnizedBaptism = false,
     this.baptismChurchName = '',
     this.baptismPastorName = '',
@@ -64,6 +74,7 @@ class AppUser {
     final dobRaw = data['dob'];
     final weddingDayRaw = data['weddingDay'];
     final createdAtRaw = data['createdAt'];
+    final lastStreakRecordedAtRaw = data['lastStreakRecordedAt'];
 
     return AppUser(
       uid: uid,
@@ -105,6 +116,12 @@ class AppUser {
           : createdAtRaw is DateTime
               ? createdAtRaw
               : null,
+      dayStreak: _parseDayStreak(data['dayStreak']),
+      lastStreakRecordedAt: lastStreakRecordedAtRaw is Timestamp
+          ? lastStreakRecordedAtRaw.toDate()
+          : lastStreakRecordedAtRaw is DateTime
+              ? lastStreakRecordedAtRaw
+              : null,
       role: data['role'] ?? 'user',
       approved: data['approved'] ?? false,
       solemnizedBaptism: data['solemnizedBaptism'] ?? false,
@@ -118,6 +135,7 @@ class AppUser {
     final dobRaw = json['dob'];
     final weddingDayRaw = json['weddingDay'];
     final createdAtRaw = json['createdAt'];
+    final lastStreakRecordedAtRaw = json['lastStreakRecordedAt'];
 
     return AppUser(
       uid: json['uid'] ?? '',
@@ -159,6 +177,12 @@ class AppUser {
           : createdAtRaw is DateTime
               ? createdAtRaw
               : null,
+      dayStreak: _parseDayStreak(json['dayStreak']),
+      lastStreakRecordedAt: lastStreakRecordedAtRaw is Timestamp
+          ? lastStreakRecordedAtRaw.toDate()
+          : lastStreakRecordedAtRaw is DateTime
+              ? lastStreakRecordedAtRaw
+              : null,
       role: json['role'] ?? 'user',
       approved: json['approved'] ?? false,
       solemnizedBaptism: json['solemnizedBaptism'] ?? false,
@@ -191,6 +215,10 @@ class AppUser {
       'approved': approved,
       'dob': dob != null ? Timestamp.fromDate(dob!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      'dayStreak': dayStreak.toString(),
+      'lastStreakRecordedAt': lastStreakRecordedAt != null
+          ? Timestamp.fromDate(lastStreakRecordedAt!)
+          : null,
       'solemnizedBaptism': solemnizedBaptism,
       'baptismChurchName': baptismChurchName,
       'baptismPastorName': baptismPastorName,

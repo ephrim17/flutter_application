@@ -342,7 +342,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     context.t(
                       'members.create_with_email_subtitle',
                       fallback:
-                          'Create Church Connect account first, then complete member details.',
+                          'Create Church Tree account first, then complete member details.',
                     ),
                   ),
                   onTap: () async {
@@ -1063,14 +1063,14 @@ Future<void> _showMemberDetailsSheet(
                                           context.t(
                                             'members.create_church_connect_account',
                                             fallback:
-                                                'Create Church Connect account?',
+                                                'Create Church Tree account?',
                                           ),
                                         ),
                                         content: Text(
                                           context.t(
                                             'members.create_church_connect_account_message',
                                             fallback:
-                                                'This member does not have a Church Connect account yet. Do you want to create it first?',
+                                                'This member does not have a Church Tree account yet. Do you want to create it first?',
                                           ),
                                         ),
                                         actions: [

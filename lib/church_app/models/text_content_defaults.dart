@@ -113,13 +113,13 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.login_screen_password_required': 'Please enter your password.',
   'auth.login_fetch_user_failed': 'Unable to fetch logged in user',
   'auth.welcome_back_heading': 'Welcome back',
-  'auth.create_account_heading': 'Create your Church Connect account',
+  'auth.create_account_heading': 'Create your Church Tree account',
   'auth.login_subtitle':
-      'Sign in with your Church Connect account to continue.',
+      'Sign in with your Church Tree account to continue.',
   'auth.register_subtitle':
-      'Create your Church Connect first, then request access to your church.',
-  'auth.login_toggle_register': 'Need a new Church Connect account? Register',
-  'auth.register_toggle_login': 'Already have a Church Connect account? Login',
+      'Create your Church Tree first, then request access to your church.',
+  'auth.login_toggle_register': 'Need a new Church Tree account? Register',
+  'auth.register_toggle_login': 'Already have a Church Tree account? Login',
 
   // Onboarding / bootstrap
   'onboarding.get_started': 'Get Started',
@@ -332,7 +332,7 @@ const Map<String, String> defaultChurchTextContents = {
   'members.create_member_login_title': 'Create Member Login',
   'members.create_member_login_heading': 'Create member login',
   'members.create_member_login_subtitle':
-      'Create a Church Connect login for this member.',
+      'Create a Church Tree login for this member.',
   'members.create_member_account_heading': 'Create member account',
   'members.create_member_account_subtitle':
       'Enter the member email. We will create the account and send a password setup email.',
@@ -421,13 +421,13 @@ const Map<String, String> defaultChurchTextContents = {
   'members.no_church_groups_assigned': 'No church groups assigned',
   'members.create_with_email': 'Create with email',
   'members.create_with_email_subtitle':
-      'Create Church Connect account first, then complete member details.',
+      'Create Church Tree account first, then complete member details.',
   'members.create_without_email': 'Create without email',
   'members.create_without_email_subtitle':
       'Add the member directly using church details only.',
-  'members.create_church_connect_account': 'Create Church Connect account?',
+  'members.create_church_connect_account': 'Create Church Tree account?',
   'members.create_church_connect_account_message':
-      'This member does not have a Church Connect account yet. Do you want to create it first?',
+      'This member does not have a Church Tree account yet. Do you want to create it first?',
   'members.no_family_id': 'No Family ID',
   'members.unknown_family': 'Unknown family',
   'groups.empty_state': 'No church groups are assigned yet.',

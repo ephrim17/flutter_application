@@ -1,4 +1,4 @@
-# Church Connect App Guide
+# Church Tree App Guide
 
 ## What This App Is
 

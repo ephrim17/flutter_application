@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
+import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -19,9 +23,53 @@ class AppBootstrap extends ConsumerStatefulWidget {
 }
 
 class _AppBootstrapState extends ConsumerState<AppBootstrap> {
+  String? _lastDailyStreakSyncKey;
+
+  bool _isSameDay(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
+  Future<void> _syncDailyStreakIfNeeded(AppUser user) async {
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (churchId == null || !mounted) return;
+
+    final today = DateTime.now();
+    if (user.lastStreakRecordedAt != null &&
+        _isSameDay(user.lastStreakRecordedAt!, today)) {
+      return;
+    }
+
+    final syncKey =
+        '$churchId:${user.uid}:${today.year}-${today.month}-${today.day}';
+    if (_lastDailyStreakSyncKey == syncKey) return;
+
+    _lastDailyStreakSyncKey = syncKey;
+    final repository = ChurchUsersRepository(
+      firestore: ref.read(firestoreProvider),
+      churchId: churchId,
+    );
+
+    try {
+      await repository.updateDailyStreak(uid: user.uid);
+      ref.invalidate(appUserProvider);
+      ref.invalidate(getCurrentUserProvider);
+    } catch (_) {
+      _lastDailyStreakSyncKey = null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final user = await ref.read(getCurrentUserProvider.future);
+      if (user != null) {
+        await _syncDailyStreakIfNeeded(user);
+      }
+    });
+
     ref.listenManual(currentChurchIdProvider, (previous, next) {
       next.whenData((churchId) async {
         await FirebaseAnalytics.instance.setUserProperty(
@@ -29,6 +77,12 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
           value: churchId?.trim().isEmpty ?? true ? null : churchId,
         );
       });
+    }, fireImmediately: true);
+
+    ref.listenManual(appUserProvider, (previous, next) async {
+      final user = next.asData?.value;
+      if (user == null) return;
+      await _syncDailyStreakIfNeeded(user);
     }, fireImmediately: true);
   }
 

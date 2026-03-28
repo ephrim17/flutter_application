@@ -355,7 +355,7 @@ class _CreateAuthAccountScreenState
                                     : context.t(
                                         'auth.create_account_heading',
                                         fallback:
-                                            'Create your Church Connect account',
+                                            'Create your Church Tree account',
                                       ),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
@@ -365,7 +365,7 @@ class _CreateAuthAccountScreenState
                             ? context.t(
                                 'members.create_member_login_subtitle',
                                 fallback:
-                                    'Create a Church Connect login for this member.',
+                                    'Create a Church Tree login for this member.',
                               )
                             : widget.adminCreateMode
                                 ? context.t(
@@ -377,12 +377,12 @@ class _CreateAuthAccountScreenState
                                     ? context.t(
                                         'auth.login_subtitle',
                                         fallback:
-                                            'Sign in with your Church Connect account to continue.',
+                                            'Sign in with your Church Tree account to continue.',
                                       )
                                     : context.t(
                                         'auth.register_subtitle',
                                         fallback:
-                                            'Create your Church Connect first, then request access to your church.',
+                                            'Create your Church Tree first, then request access to your church.',
                                       ),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
@@ -537,12 +537,12 @@ class _CreateAuthAccountScreenState
                             ? context.t(
                                 'auth.login_toggle_register',
                                 fallback:
-                                    'Need a new Church Connect account? Register',
+                                    'Need a new Church Tree account? Register',
                               )
                             : context.t(
                                 'auth.register_toggle_login',
                                 fallback:
-                                    'Already have a Church Connect account? Login',
+                                    'Already have a Church Tree account? Login',
                               ),
                   ),
                 ),
