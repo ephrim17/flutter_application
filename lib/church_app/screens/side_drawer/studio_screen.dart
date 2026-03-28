@@ -11,6 +11,7 @@ import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
@@ -19,11 +20,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-class StudioScreen extends ConsumerWidget {
+class StudioScreen extends ConsumerStatefulWidget {
   const StudioScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StudioScreen> createState() => _StudioScreenState();
+}
+
+class _StudioScreenState extends ConsumerState<StudioScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await logChurchAnalyticsEvent(
+        ref,
+        name: 'studio_opened',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
     final churchIdAsync = ref.watch(currentChurchIdProvider);
 
@@ -541,7 +558,7 @@ class _StudioCategorySection extends StatelessWidget {
   }
 }
 
-class _StudioToolCard extends StatelessWidget {
+class _StudioToolCard extends ConsumerWidget {
   const _StudioToolCard({
     required this.item,
   });
@@ -549,12 +566,19 @@ class _StudioToolCard extends StatelessWidget {
   final _StudioToolItem item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return InkWell(
       borderRadius: BorderRadius.circular(cornerRadius),
-      onTap: () {
+      onTap: () async {
+        await logChurchAnalyticsEvent(
+          ref,
+          name: 'studio_option_selected',
+          parameters: {
+            'option': item.title,
+          },
+        );
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => _StudioToolScreen(

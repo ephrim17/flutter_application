@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/providers/authentication/admin_pr
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
@@ -183,6 +184,14 @@ class FeedCard extends ConsumerWidget {
   }
 
   Future<void> _editPost(BuildContext context, WidgetRef ref) async {
+    await logChurchAnalyticsEvent(
+      ref,
+      name: 'feed_post_edit_started',
+      parameters: {
+        'post_id': post.id,
+        'scope': isGlobal ? 'global' : 'church',
+      },
+    );
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -239,6 +248,14 @@ class FeedCard extends ConsumerWidget {
       postId: post.id,
       imageUrl: post.imageUrl,
       isGlobal: isGlobal,
+    );
+    await logChurchAnalyticsEvent(
+      ref,
+      name: 'feed_post_deleted',
+      parameters: {
+        'post_id': post.id,
+        'scope': isGlobal ? 'global' : 'church',
+      },
     );
 
     if (!context.mounted) return;
@@ -382,47 +399,6 @@ class FeedCard extends ConsumerWidget {
 
     if (!doc.exists) return null;
     return AppUser.fromJson(doc.data() as Map<String, dynamic>);
-  }
-}
-
-class _FeedMetaChip extends StatelessWidget {
-  const _FeedMetaChip({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

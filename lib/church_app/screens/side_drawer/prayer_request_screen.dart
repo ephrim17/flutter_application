@@ -1,19 +1,38 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
 
-class PrayerRequestScreen extends ConsumerWidget {
+class PrayerRequestScreen extends ConsumerStatefulWidget {
   const PrayerRequestScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PrayerRequestScreen> createState() => _PrayerRequestScreenState();
+}
+
+class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await logChurchAnalyticsEvent(
+        ref,
+        name: 'prayer_screen_opened',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
     final segment = ref.watch(prayerSegmentProvider);
 
@@ -40,7 +59,14 @@ class PrayerRequestScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () {
+        onPressed: () async {
+          await logChurchAnalyticsEvent(
+            ref,
+            name: 'prayer_request_create_started',
+            parameters: {
+              'segment': segment.name,
+            },
+          );
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -68,6 +94,19 @@ class PrayerRequestScreen extends ConsumerWidget {
               return Card(
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
+                  onTap: () async {
+                    await logChurchAnalyticsEvent(
+                      ref,
+                      name: 'prayer_request_opened',
+                      parameters: {
+                        'prayer_id': prayer.id,
+                        'segment': segment.name,
+                        'is_anonymous': prayer.isAnonymous,
+                      },
+                    );
+                    if (!context.mounted) return;
+                    await _showPrayerDetailsSheet(context, prayer);
+                  },
                   title: Text(prayer.title),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +149,15 @@ class PrayerRequestScreen extends ConsumerWidget {
                       if (segment == PrayerSegment.my)
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () {
+                        onPressed: () async {
+                          await logChurchAnalyticsEvent(
+                            ref,
+                            name: 'prayer_request_edit_started',
+                            parameters: {
+                              'prayer_id': prayer.id,
+                              'segment': segment.name,
+                            },
+                          );
                           showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
@@ -126,6 +173,14 @@ class PrayerRequestScreen extends ConsumerWidget {
                           await ref
                               .read(prayerRepositoryProvider)
                               .deletePrayer(prayer.id);
+                          await logChurchAnalyticsEvent(
+                            ref,
+                            name: 'prayer_request_deleted',
+                            parameters: {
+                              'prayer_id': prayer.id,
+                              'segment': segment.name,
+                            },
+                          );
                         },
                       ),
                     ],
@@ -138,6 +193,45 @@ class PrayerRequestScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _showPrayerDetailsSheet(
+  BuildContext context,
+  PrayerRequest prayer,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              prayer.title.trim().isEmpty ? 'Prayer Request' : prayer.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              prayer.description.trim().isEmpty
+                  ? 'No description provided.'
+                  : prayer.description,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Expires: ${DateFormat.yMMMd().format(prayer.expiryDate)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 
@@ -349,6 +443,8 @@ class _AddPrayerModalState
 
     setState(() => _isLoading = true);
 
+    final currentChurchId = await ref.read(currentChurchIdProvider.future);
+
     if (widget.existing == null) {
       await ref.read(prayerRepositoryProvider).addPrayer(
             title: _titleCtrl.text.trim(),
@@ -356,6 +452,14 @@ class _AddPrayerModalState
             isAnonymous: _isAnonymous,
             expiryDate: _expiryDate!,
           );
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'prayer_request_created',
+        parameters: {
+          if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
+            'church_id': currentChurchId,
+          'is_anonymous': _isAnonymous.toString(),
+        },
+      );
     } else {
       await ref.read(prayerRepositoryProvider).updatePrayer(
             prayerId: widget.existing!.id,
@@ -364,6 +468,15 @@ class _AddPrayerModalState
             isAnonymous: _isAnonymous,
             expiryDate: _expiryDate!,
           );
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'prayer_request_updated',
+        parameters: {
+          if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
+            'church_id': currentChurchId,
+          'prayer_id': widget.existing!.id,
+          'is_anonymous': _isAnonymous.toString(),
+        },
+      );
     }
 
     if (!mounted) return;

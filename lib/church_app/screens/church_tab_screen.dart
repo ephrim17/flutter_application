@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/screens/dashboard/dashboard_scree
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -22,10 +23,12 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   Widget? _activeScreen;
   int selectedIndex = 0;
 
-  void setActiveScreen(int index) {
+  Future<void> setActiveScreen(int index) async {
     setState(() {
       selectedIndex = index;
     });
+
+    await _logTabOpen(index);
   }
 
   void _onSelectedMenu(String menu) async {
@@ -49,7 +52,23 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         ref: ref,
         promptIfNeeded: true,
       );
+      await _logTabOpen(selectedIndex);
     });
+  }
+
+  Future<void> _logTabOpen(int index) async {
+    final eventName = switch (index) {
+      0 => 'home_opened',
+      1 => 'for_you_opened',
+      2 => 'feed_opened',
+      _ => null,
+    };
+
+    if (eventName == null) return;
+    await logChurchAnalyticsEvent(
+      ref,
+      name: eventName,
+    );
   }
 
   @override

@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
@@ -96,14 +97,22 @@ class _AnnouncementList extends StatelessWidget {
   }
 }
 
-class _AnnouncementCard extends StatelessWidget {
+class _AnnouncementCard extends ConsumerWidget {
   const _AnnouncementCard(this.a);
   final Announcement a;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        await logChurchAnalyticsEvent(
+          ref,
+          name: 'announcement_opened',
+          parameters: {
+            'announcement_id': a.id,
+            'source': 'home',
+          },
+        );
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) {

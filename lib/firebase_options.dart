@@ -46,7 +46,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '527118580197',
     projectId: 'flutterlearning-c9f6c',
     authDomain: 'flutterlearning-c9f6c.firebaseapp.com',
+    databaseURL: 'https://flutterlearning-c9f6c-default-rtdb.firebaseio.com',
     storageBucket: 'flutterlearning-c9f6c.firebasestorage.app',
+    measurementId: 'G-LHP0822YM8',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -54,6 +56,7 @@ class DefaultFirebaseOptions {
     appId: '1:527118580197:android:e2a54aa637be8f1f86d70c',
     messagingSenderId: '527118580197',
     projectId: 'flutterlearning-c9f6c',
+    databaseURL: 'https://flutterlearning-c9f6c-default-rtdb.firebaseio.com',
     storageBucket: 'flutterlearning-c9f6c.firebasestorage.app',
   );
 
@@ -62,7 +65,10 @@ class DefaultFirebaseOptions {
     appId: '1:527118580197:ios:1e7030eb2c2444a486d70c',
     messagingSenderId: '527118580197',
     projectId: 'flutterlearning-c9f6c',
+    databaseURL: 'https://flutterlearning-c9f6c-default-rtdb.firebaseio.com',
     storageBucket: 'flutterlearning-c9f6c.firebasestorage.app',
+    androidClientId: '527118580197-ser3u5k5mfiepnvrgkr8ji9rdgn2us29.apps.googleusercontent.com',
+    iosClientId: '527118580197-c9fv0me7kcc9pcq4431k66hcbl90asb1.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication',
   );
 
@@ -71,7 +77,10 @@ class DefaultFirebaseOptions {
     appId: '1:527118580197:ios:1e7030eb2c2444a486d70c',
     messagingSenderId: '527118580197',
     projectId: 'flutterlearning-c9f6c',
+    databaseURL: 'https://flutterlearning-c9f6c-default-rtdb.firebaseio.com',
     storageBucket: 'flutterlearning-c9f6c.firebasestorage.app',
+    androidClientId: '527118580197-ser3u5k5mfiepnvrgkr8ji9rdgn2us29.apps.googleusercontent.com',
+    iosClientId: '527118580197-c9fv0me7kcc9pcq4431k66hcbl90asb1.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication',
   );
 
@@ -81,6 +90,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '527118580197',
     projectId: 'flutterlearning-c9f6c',
     authDomain: 'flutterlearning-c9f6c.firebaseapp.com',
+    databaseURL: 'https://flutterlearning-c9f6c-default-rtdb.firebaseio.com',
     storageBucket: 'flutterlearning-c9f6c.firebasestorage.app',
+    measurementId: 'G-K6V42ERPNR',
   );
+
 }

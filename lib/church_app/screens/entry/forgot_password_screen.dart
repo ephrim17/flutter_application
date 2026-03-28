@@ -1,8 +1,8 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/services/analytics/app_analytics_service.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
@@ -50,10 +50,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _isLoading = true;
     });
     try {
-      await ref.read(appAnalyticsServiceProvider).logEvent(
-        AppAnalyticsEvent.forgotPasswordRequested,
+      final churchId = await ref.read(currentChurchIdProvider.future);
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'forgot_password_requested',
         parameters: {
-          'has_church_context': widget.churchName.trim().isNotEmpty,
+          if (churchId != null && churchId.trim().isNotEmpty)
+            'church_id': churchId,
+          'has_church_context': widget.churchName.trim().isNotEmpty.toString(),
         },
       );
       await ref.read(authRepositoryProvider).sendCustomPasswordResetEmail(

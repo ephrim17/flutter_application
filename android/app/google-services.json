@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "527118580197",
+    "firebase_url": "https://flutterlearning-c9f6c-default-rtdb.firebaseio.com",
     "project_id": "flutterlearning-c9f6c",
     "storage_bucket": "flutterlearning-c9f6c.firebasestorage.app"
   },

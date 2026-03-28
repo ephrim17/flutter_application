@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -291,6 +292,13 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                     sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
                                   );
+                              await logChurchAnalyticsEvent(
+                                ref,
+                                name: 'feed_post_created',
+                                parameters: {
+                                  'scope': widget.isGlobal ? 'global' : 'church',
+                                },
+                              );
                             } else {
                               /// UPDATE
                               await ref
@@ -305,6 +313,14 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                     sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
                                   );
+                              await logChurchAnalyticsEvent(
+                                ref,
+                                name: 'feed_post_updated',
+                                parameters: {
+                                  'post_id': widget.post!.id,
+                                  'scope': widget.isGlobal ? 'global' : 'church',
+                                },
+                              );
                             }
 
                             navigator.pop();

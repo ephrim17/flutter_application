@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -294,6 +295,12 @@ class LoginScreen extends ConsumerWidget {
                             ref.invalidate(currentChurchIdProvider);
                             unawaited(
                               syncNotificationTopicIfAuthorized(ref),
+                            );
+                            await FirebaseAnalytics.instance.logEvent(
+                              name: 'login_success',
+                              parameters: {
+                                'church_id': churchId,
+                              },
                             );
 
                             Navigator.of(context).pushAndRemoveUntil(

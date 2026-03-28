@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -6,14 +7,13 @@ import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
-import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/providers/members_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
-import 'package:flutter_application/church_app/services/analytics/app_analytics_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -27,10 +27,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appAnalyticsServiceProvider).logEvent(
-            AppAnalyticsEvent.dashboardOpened,
-          );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final churchId = await ref.read(currentChurchIdProvider.future);
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'dashboard_opened',
+        parameters: {
+          if (churchId != null && churchId.trim().isNotEmpty)
+            'church_id': churchId,
+        },
+      );
     });
   }
 
@@ -57,6 +62,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final announcementsAsync = ref.watch(announcementsProvider);
     final eventsAsync = ref.watch(eventsProvider);
     final configAsync = ref.watch(appConfigProvider);
+    final churchId = ref.watch(currentChurchIdProvider).value;
     final title = ref.t('church_tab.app_title', fallback: 'Church');
 
     final members = membersAsync.value ?? const <AppUser>[];
@@ -173,7 +179,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: _MembersInsights(
                     members: members,
                     metrics: metrics,
-                    analytics: ref.read(appAnalyticsServiceProvider),
+                    churchId: churchId,
                   ),
                 );
               }
@@ -184,7 +190,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: _MembersInsights(
                   members: members,
                   metrics: metrics,
-                  analytics: ref.read(appAnalyticsServiceProvider),
+                  churchId: churchId,
                 ),
               );
             },
@@ -474,12 +480,12 @@ class _MembersInsights extends StatefulWidget {
   const _MembersInsights({
     required this.members,
     required this.metrics,
-    required this.analytics,
+    required this.churchId,
   });
 
   final List<AppUser> members;
   final _DashboardMetrics metrics;
-  final AppAnalyticsService analytics;
+  final String? churchId;
 
   @override
   State<_MembersInsights> createState() => _MembersInsightsState();
@@ -510,9 +516,12 @@ class _MembersInsightsState extends State<_MembersInsights> {
                   label: mode.label,
                   selected: _mode == mode,
                   onTap: () {
-                    widget.analytics.logEvent(
-                      AppAnalyticsEvent.membersChartModeChanged,
+                    FirebaseAnalytics.instance.logEvent(
+                      name: 'members_chart_mode_changed',
                       parameters: {
+                        if (widget.churchId != null &&
+                            widget.churchId!.trim().isNotEmpty)
+                          'church_id': widget.churchId!,
                         'mode': mode.name,
                       },
                     );
@@ -534,9 +543,12 @@ class _MembersInsightsState extends State<_MembersInsights> {
               total: total,
               selectedIndex: safeIndex,
               onSectionTap: (index) {
-                widget.analytics.logEvent(
-                  AppAnalyticsEvent.membersChartSegmentSelected,
+                FirebaseAnalytics.instance.logEvent(
+                  name: 'members_chart_segment_selected',
                   parameters: {
+                    if (widget.churchId != null &&
+                        widget.churchId!.trim().isNotEmpty)
+                      'church_id': widget.churchId!,
                     'mode': _mode.name,
                     'segment': groups[index].label,
                   },
@@ -566,9 +578,12 @@ class _MembersInsightsState extends State<_MembersInsights> {
                       total: total,
                       selected: index == safeIndex,
                       onTap: () {
-                        widget.analytics.logEvent(
-                          AppAnalyticsEvent.membersChartSegmentSelected,
+                        FirebaseAnalytics.instance.logEvent(
+                          name: 'members_chart_segment_selected',
                           parameters: {
+                            if (widget.churchId != null &&
+                                widget.churchId!.trim().isNotEmpty)
+                              'church_id': widget.churchId!,
                             'mode': _mode.name,
                             'segment': group.label,
                           },

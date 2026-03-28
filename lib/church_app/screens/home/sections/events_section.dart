@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/autoscroll_widget.dart';
 import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/detail_widget.dart';
@@ -103,15 +104,23 @@ class EventsList extends StatelessWidget {
   }
 }
 
-class EventsCard extends StatelessWidget {
+class EventsCard extends ConsumerWidget {
   const EventsCard(this.a, {super.key});
   final Event a;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        await logChurchAnalyticsEvent(
+          ref,
+          name: 'event_opened',
+          parameters: {
+            'event_id': a.id,
+            'source': 'home',
+          },
+        );
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) {

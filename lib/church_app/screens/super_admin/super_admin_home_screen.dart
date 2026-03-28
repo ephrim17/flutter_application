@@ -1,15 +1,14 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
-import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
-import 'package:flutter_application/church_app/services/analytics/app_analytics_service.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
@@ -39,9 +38,9 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appAnalyticsServiceProvider).logEvent(
-            AppAnalyticsEvent.superAdminDashboardOpened,
-          );
+      FirebaseAnalytics.instance.logEvent(
+        name: 'super_admin_dashboard_opened',
+      );
     });
   }
 
@@ -172,12 +171,8 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                                 !context.mounted) {
                                               return;
                                             }
-                                            ref
-                                                .read(
-                                                    appAnalyticsServiceProvider)
-                                                .logEvent(
-                                              AppAnalyticsEvent
-                                                  .churchCreatedSuperAdmin,
+                                            FirebaseAnalytics.instance.logEvent(
+                                              name: 'church_created_super_admin',
                                               parameters: {
                                                 'result': createResult,
                                               },
@@ -366,10 +361,11 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                     churchId: church.id,
                     enabled: value,
                   );
-                  ref.read(appAnalyticsServiceProvider).logEvent(
-                    AppAnalyticsEvent.churchStatusChanged,
+                  FirebaseAnalytics.instance.logEvent(
+                    name: 'church_status_changed',
                     parameters: {
-                      'enabled': value,
+                      'church_id': church.id,
+                      'enabled': value.toString(),
                     },
                   );
                   if (!context.mounted) return;

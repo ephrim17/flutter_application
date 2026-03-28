@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/feed_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -221,6 +222,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     String churchId, {
     required bool isGlobal,
   }) async {
+    await logChurchAnalyticsEvent(
+      ref,
+      name: 'feed_post_create_started',
+      parameters: {
+        'scope': isGlobal ? 'global' : 'church',
+      },
+    );
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,

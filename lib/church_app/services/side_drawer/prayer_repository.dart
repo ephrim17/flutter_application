@@ -20,6 +20,19 @@ class PrayerRepository {
     return FirestorePaths.churchPrayerRequests(firestore, churchId);
   }
 
+  Future<DocumentReference<Map<String, dynamic>>> _validatedPrayerDoc(
+    String prayerId,
+  ) async {
+    final prayerDoc = collectionRef().doc(prayerId);
+    final snapshot = await prayerDoc.get();
+
+    if (!snapshot.exists) {
+      throw Exception("Prayer request not found for the selected church");
+    }
+
+    return prayerDoc;
+  }
+
   /// ADD PRAYER
   Future<void> addPrayer({
     required String title,
@@ -43,6 +56,7 @@ class PrayerRepository {
     }
 
     await collectionRef().add({
+      'churchId': churchId,
       'userId': user.uid,
       'email': user.email,
       'title': title.trim(),
@@ -72,7 +86,9 @@ class PrayerRepository {
       throw Exception("Expiry date must be within 30 days");
     }
 
-    await collectionRef().doc(prayerId).update({
+    final prayerDoc = await _validatedPrayerDoc(prayerId);
+
+    await prayerDoc.update({
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
@@ -124,6 +140,6 @@ class PrayerRepository {
   }
 
   Future<void> deletePrayer(String prayerId) {
-    return collectionRef().doc(prayerId).delete();
+    return _validatedPrayerDoc(prayerId).then((prayerDoc) => prayerDoc.delete());
   }
 }

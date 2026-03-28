@@ -15,6 +15,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
@@ -31,6 +32,17 @@ class MembersScreen extends ConsumerStatefulWidget {
 class _MembersScreenState extends ConsumerState<MembersScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await logChurchAnalyticsEvent(
+        ref,
+        name: 'members_opened',
+      );
+    });
+  }
 
   @override
   void dispose() {
@@ -332,7 +344,14 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                           'Create Church Connect account first, then complete member details.',
                     ),
                   ),
-                  onTap: () {
+                  onTap: () async {
+                    await logChurchAnalyticsEvent(
+                      ref,
+                      name: 'member_create_started',
+                      parameters: {
+                        'method': 'with_email',
+                      },
+                    );
                     Navigator.of(context).pop();
                     Navigator.of(this.context).push(
                       MaterialPageRoute(
@@ -361,7 +380,14 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                           'Add the member directly using church details only.',
                     ),
                   ),
-                  onTap: () {
+                  onTap: () async {
+                    await logChurchAnalyticsEvent(
+                      ref,
+                      name: 'member_create_started',
+                      parameters: {
+                        'method': 'without_email',
+                      },
+                    );
                     Navigator.of(context).pop();
                     Navigator.of(this.context).push(
                       MaterialPageRoute(
@@ -573,6 +599,13 @@ class _MemberTile extends ConsumerWidget {
                   );
 
                   await repo.approveMember(member.uid, val);
+                  await logChurchAnalyticsEvent(
+                    ref,
+                    name: val ? 'member_approved' : 'member_rejected',
+                    parameters: {
+                      'member_id': member.uid,
+                    },
+                  );
                 },
               )
             : null;
@@ -603,6 +636,13 @@ Future<void> _showMemberDetailsSheet(
   required bool isAdmin,
   required String? currentUid,
 }) {
+  logChurchAnalyticsEvent(
+    ref,
+    name: 'member_profile_opened',
+    parameters: {
+      'member_id': member.uid,
+    },
+  );
   final theme = Theme.of(context);
   final canDelete = isAdmin && member.uid != currentUid;
   final canEditMember = isAdmin;
@@ -699,6 +739,13 @@ Future<void> _showMemberDetailsSheet(
                           );
 
                           await repo.approveMember(member.uid, val);
+                          await logChurchAnalyticsEvent(
+                            ref,
+                            name: val ? 'member_approved' : 'member_rejected',
+                            parameters: {
+                              'member_id': member.uid,
+                            },
+                          );
                           setModalState(() {
                             approvedValue = val;
                           });
@@ -971,6 +1018,14 @@ Future<void> _showMemberDetailsSheet(
                             if (!context.mounted) return;
                             Navigator.of(context).pop();
                             if (shouldCreateLoginFirst) {
+                              await logChurchAnalyticsEvent(
+                                ref,
+                                name: 'member_edit_started',
+                                parameters: {
+                                  'member_id': member.uid,
+                                  'with_auth_setup': true,
+                                },
+                              );
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => CreateAuthAccountScreen(
@@ -985,6 +1040,14 @@ Future<void> _showMemberDetailsSheet(
                               );
                               return;
                             }
+                            await logChurchAnalyticsEvent(
+                              ref,
+                              name: 'member_edit_started',
+                              parameters: {
+                                'member_id': member.uid,
+                                'with_auth_setup': false,
+                              },
+                            );
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => LoginRequestScreen(
@@ -1070,6 +1133,13 @@ Future<void> _showMemberDetailsSheet(
                             );
 
                             await repo.deleteMember(member.uid);
+                            await logChurchAnalyticsEvent(
+                              ref,
+                              name: 'member_deleted',
+                              parameters: {
+                                'member_id': member.uid,
+                              },
+                            );
 
                             if (!context.mounted) return;
                             Navigator.of(context).pop();

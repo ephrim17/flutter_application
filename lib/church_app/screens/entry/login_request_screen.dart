@@ -15,6 +15,7 @@ import 'package:flutter_application/church_app/services/FCM/FCM_notification_ser
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
@@ -524,6 +525,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             ),
           ),
         );
+        await logAnalyticsEvent(
+          name: 'member_updated',
+          parameters: {
+            'church_id': widget.churchId,
+            'member_id': widget.existingMember?.uid ?? widget.targetUid,
+          },
+        );
         Navigator.of(context).pop();
         return;
       }
@@ -629,6 +637,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           );
 
       if (widget.adminCreateMode) {
+        await logAnalyticsEvent(
+          name: 'member_created',
+          parameters: {
+            'church_id': widget.churchId,
+            'member_id': widget.targetUid ?? firebaseUser?.uid,
+          },
+        );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

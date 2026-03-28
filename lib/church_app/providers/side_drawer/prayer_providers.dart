@@ -4,33 +4,57 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/services/side_drawer/prayer_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final prayerRepositoryProvider =
-    Provider.autoDispose<PrayerRepository>((ref) {
+final prayerRepositoryForChurchProvider =
+    Provider.autoDispose.family<PrayerRepository, String>((ref, churchId) {
+  return PrayerRepository(
+    firestore: ref.read(firestoreProvider),
+    auth: ref.read(firebaseAuthProvider),
+    churchId: churchId,
+  );
+});
+
+final prayerRepositoryProvider = Provider.autoDispose<PrayerRepository>((ref) {
+  final churchId = ref.watch(currentChurchIdProvider).asData?.value;
+  if (churchId == null || churchId.trim().isEmpty) {
+    throw Exception("Church not selected");
+  }
+
+  return ref.watch(prayerRepositoryForChurchProvider(churchId));
+});
+
+final myPrayerRequestsProvider =
+    StreamProvider<List<PrayerRequest>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
     data: (churchId) {
-      if (churchId == null) {
-        throw Exception("Church not selected");
+      if (churchId == null || churchId.trim().isEmpty) {
+        return Stream.value(const <PrayerRequest>[]);
       }
 
-      return PrayerRepository(
-        firestore: ref.read(firestoreProvider),
-        auth: ref.read(firebaseAuthProvider),
-        churchId: churchId,
-      );
+      return ref
+          .watch(prayerRepositoryForChurchProvider(churchId))
+          .watchMyPrayers();
     },
-    loading: () => throw Exception("Church loading"),
-    error: (e, _) => throw e,
+    loading: () => const Stream.empty(),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
 
-final myPrayerRequestsProvider =
-    StreamProvider<List<PrayerRequest>>(
-  (ref) => ref.watch(prayerRepositoryProvider).watchMyPrayers(),
-);
+final allPrayerRequestsProvider = StreamProvider<List<PrayerRequest>>((ref) {
+  final churchIdAsync = ref.watch(currentChurchIdProvider);
 
-final allPrayerRequestsProvider =
-    StreamProvider<List<PrayerRequest>>((ref) {
-  return ref.read(prayerRepositoryProvider).getAllPrayers();
+  return churchIdAsync.when(
+    data: (churchId) {
+      if (churchId == null || churchId.trim().isEmpty) {
+        return Stream.value(const <PrayerRequest>[]);
+      }
+
+      return ref
+          .watch(prayerRepositoryForChurchProvider(churchId))
+          .getAllPrayers();
+    },
+    loading: () => const Stream.empty(),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
+  );
 });

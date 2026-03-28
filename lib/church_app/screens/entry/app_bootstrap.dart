@@ -1,21 +1,42 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
-import 'package:flutter_application/church_app/providers/analytics_provider.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class AppBootstrap extends ConsumerWidget {
+class AppBootstrap extends ConsumerStatefulWidget {
   const AppBootstrap({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final analyticsObserver = ref.watch(firebaseAnalyticsObserverProvider);
+  ConsumerState<AppBootstrap> createState() => _AppBootstrapState();
+}
+
+class _AppBootstrapState extends ConsumerState<AppBootstrap> {
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(currentChurchIdProvider, (previous, next) {
+      next.whenData((churchId) async {
+        await FirebaseAnalytics.instance.setUserProperty(
+          name: 'church_id',
+          value: churchId?.trim().isEmpty ?? true ? null : churchId,
+        );
+      });
+    }, fireImmediately: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final analyticsObserver = FirebaseAnalyticsObserver(
+      analytics: FirebaseAnalytics.instance,
+    );
     final configAsync = ref.watch(appConfigProvider);
     final forcePreflowTheme = ref.watch(forcePreflowThemeProvider);
     final themeMode = ref.watch(themeProvider);
