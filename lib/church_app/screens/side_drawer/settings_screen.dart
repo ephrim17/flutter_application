@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
@@ -31,26 +32,405 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(appUserProvider);
+    final selectedChurch = ref.watch(selectedChurchProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
           text: ref.t('settings.title', fallback: 'Settings'),
         ),
       ),
-      body: Scrollbar(
-        thumbVisibility: true,
-        child: ListView(
-          padding: const EdgeInsets.all(8),
-          children: const [
-            _EditProfileSection(),
-            _AppearanceSection(),
-            _PushNotificationSection(),
-            _PrayerReminderSection(),
-            _StorageSection(),
-            _LogoutSection(),
-            SizedBox(height: 12),
-            PraiseTheLordCard(),
-            CopyrightWidget(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.secondary.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Scrollbar(
+          thumbVisibility: true,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            children: [
+              _SettingsHeroCard(
+                userAsync: userAsync,
+                churchName: selectedChurch?.name ?? '',
+              ),
+              const SizedBox(height: 18),
+              _SettingsSectionLabel(
+                title: ref.t('settings.profile_title', fallback: 'Profile'),
+                subtitle: ref.t(
+                  'settings.profile_subtitle',
+                  fallback: 'Your identity and personal details.',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const _SettingsGroupCard(
+                children: [
+                  _EditProfileSection(),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _SettingsSectionLabel(
+                title:
+                    ref.t('settings.preferences_title', fallback: 'Preferences'),
+                subtitle: ref.t(
+                  'settings.preferences_subtitle',
+                  fallback: 'Appearance, notifications, and reminders.',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const _SettingsGroupCard(
+                children: [
+                  _AppearanceSection(),
+                  _PushNotificationSection(),
+                  _PrayerReminderSection(),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _SettingsSectionLabel(
+                title: ref.t('settings.account_title', fallback: 'Account'),
+                subtitle: ref.t(
+                  'settings.account_subtitle',
+                  fallback: 'Manage local data and sign out safely.',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const _SettingsGroupCard(
+                children: [
+                  _StorageSection(),
+                  _LogoutSection(),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const PraiseTheLordCard(),
+              const SizedBox(height: 10),
+              const CopyrightWidget(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsHeroCard extends StatelessWidget {
+  const _SettingsHeroCard({
+    required this.userAsync,
+    required this.churchName,
+  });
+
+  final AsyncValue<AppUser?> userAsync;
+  final String churchName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final secondary = theme.colorScheme.secondary;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: carouselBoxDecoration(context).copyWith(
+        gradient: LinearGradient(
+          colors: [
+            primary.withValues(alpha: 0.14),
+            secondary.withValues(alpha: 0.08),
+            theme.colorScheme.surface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: userAsync.when(
+        loading: () => const SizedBox(
+          height: 112,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (_, __) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Settings',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Manage your app preferences and account details.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+              ),
+            ),
+          ],
+        ),
+        data: (user) {
+          final userName = user?.name.trim().isNotEmpty == true
+              ? user!.name.trim()
+              : 'Church Tree';
+          final email = user?.email.trim() ?? '';
+          final initials = userName
+              .split(RegExp(r'\s+'))
+              .where((part) => part.isNotEmpty)
+              .take(2)
+              .map((part) => part.characters.first.toUpperCase())
+              .join();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 64,
+                    width: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: primary.withValues(alpha: 0.14),
+                      border: Border.all(color: primary.withValues(alpha: 0.2)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      initials.isEmpty ? 'CT' : initials,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            height: 1.05,
+                          ),
+                        ),
+                        if (email.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            email,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (churchName.trim().isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _SettingsHeroChip(
+                  icon: Icons.account_balance_outlined,
+                  label: churchName.trim(),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SettingsHeroChip extends StatelessWidget {
+  const _SettingsHeroChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis, 
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSectionLabel extends StatelessWidget {
+  const _SettingsSectionLabel({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsGroupCard extends StatelessWidget {
+  const _SettingsGroupCard({
+    required this.children,
+  });
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        children: children
+            .asMap()
+            .entries
+            .expand(
+              (entry) => [
+                entry.value,
+                if (entry.key != children.length - 1)
+                  Divider(
+                    height: 1,
+                    indent: 68,
+                    endIndent: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outlineVariant
+                        .withValues(alpha: 0.45),
+                  ),
+              ],
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.iconColor,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final effectiveIconColor = iconColor ?? theme.colorScheme.primary;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: effectiveIconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (subtitle?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            trailing ??
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.42),
+                ),
           ],
         ),
       ),
@@ -66,27 +446,35 @@ class _EditProfileSection extends ConsumerWidget {
     final userAsync = ref.watch(appUserProvider);
 
     return userAsync.when(
-      loading: () => ListTile(
-        leading: const Icon(Icons.person_outline),
-        title: Text(
-          ref.t('settings.loading_profile', fallback: 'Loading...'),
+      loading: () => _SettingsTile(
+        icon: Icons.person_outline,
+        title: ref.t('settings.loading_profile', fallback: 'Loading...'),
+        subtitle: ref.t(
+          'settings.loading_profile_subtitle',
+          fallback: 'Fetching your current profile details.',
+        ),
+        trailing: const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      error: (error, _) => ListTile(
-        leading: const Icon(Icons.person_outline),
-        title: Text(
-          ref
-              .t('settings.error_loading_profile', fallback: 'Error: {error}')
-              .replaceAll('{error}', '$error'),
-        ),
+      error: (error, _) => _SettingsTile(
+        icon: Icons.person_outline,
+        title: ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+        subtitle: ref
+            .t('settings.error_loading_profile', fallback: 'Error: {error}')
+            .replaceAll('{error}', '$error'),
       ),
       data: (user) {
         if (user == null) return const SizedBox.shrink();
 
-        return ListTile(
-          leading: const Icon(Icons.person_outline),
-          title: Text(
-            ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+        return _SettingsTile(
+          icon: Icons.person_outline,
+          title: ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+          subtitle: ref.t(
+            'settings.edit_profile_subtitle',
+            fallback: 'Update phone number, birthday, address, and location.',
           ),
           onTap: () => showModalBottomSheet<void>(
             context: context,
@@ -104,10 +492,13 @@ class _LogoutSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: const Icon(Icons.logout),
-      title: Text(
-        ref.t('drawer.logout', fallback: 'Logout'),
+    return _SettingsTile(
+      icon: Icons.logout_rounded,
+      iconColor: Colors.redAccent,
+      title: ref.t('drawer.logout', fallback: 'Logout'),
+      subtitle: ref.t(
+        'settings.logout_subtitle',
+        fallback: 'Sign out of the current church session.',
       ),
       onTap: () async {
         final navigator = Navigator.of(context);
@@ -161,15 +552,19 @@ class _AppearanceSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
 
-    return SwitchListTile(
-      secondary: const Icon(Icons.dark_mode_outlined),
-      title: Text(
-        ref.t('settings.dark_mode', fallback: 'Dark Mode'),
+    return _SettingsTile(
+      icon: Icons.dark_mode_outlined,
+      title: ref.t('settings.dark_mode', fallback: 'Dark Mode'),
+      subtitle: ref.t(
+        'settings.dark_mode_subtitle',
+        fallback: 'Switch between a lighter and darker app appearance.',
       ),
-      value: themeMode == ThemeMode.dark,
-      onChanged: (value) {
-        ref.read(themeProvider.notifier).toggle(value);
-      },
+      trailing: Switch(
+        value: themeMode == ThemeMode.dark,
+        onChanged: (value) {
+          ref.read(themeProvider.notifier).toggle(value);
+        },
+      ),
     );
   }
 }
@@ -346,12 +741,10 @@ class _PushNotificationSectionState
                 ? ref.t('settings.push_refresh', fallback: 'Refresh')
                 : ref.t('settings.push_enable', fallback: 'Enable');
 
-    return ListTile(
-      leading: const Icon(Icons.notifications_outlined),
-      title: Text(
-        ref.t('settings.push_notifications', fallback: 'Push Notifications'),
-      ),
-      subtitle: Text(_subtitleText()),
+    return _SettingsTile(
+      icon: Icons.notifications_outlined,
+      title: ref.t('settings.push_notifications', fallback: 'Push Notifications'),
+      subtitle: _subtitleText(),
       trailing: _isLoading
           ? const SizedBox(
               height: 20,
@@ -432,45 +825,50 @@ class _PrayerReminderSectionState
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SwitchListTile(
-          secondary: const Icon(Icons.notifications_active_outlined),
-          title: Text(
-            ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
+        _SettingsTile(
+          icon: Icons.notifications_active_outlined,
+          title: ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
+          subtitle: enabled && selectedTime != null
+              ? "${ref.t('settings.prayer_daily_at_prefix', fallback: 'Daily at')} ${selectedTime!.format(context)}"
+              : ref.t(
+                  'settings.prayer_reminders_subtitle_off',
+                  fallback: 'Enable daily prayer reminder',
+                ),
+          trailing: Switch(
+            value: enabled,
+            onChanged: (value) async {
+              final service = PrayerNotificationService.instance;
+
+              if (value) {
+                final granted = await service.requestPermissions(context);
+
+                if (!granted) return;
+
+                await _pickTime();
+              } else {
+                await service.cancel();
+                setState(() {
+                  enabled = false;
+                  selectedTime = null;
+                });
+              }
+            },
           ),
-          subtitle: Text(
-            enabled && selectedTime != null
-                ? "${ref.t('settings.prayer_daily_at_prefix', fallback: 'Daily at')} ${selectedTime!.format(context)}"
-                : ref.t(
-                    'settings.prayer_reminders_subtitle_off',
-                    fallback: 'Enable daily prayer reminder',
-                  ),
-          ),
-          value: enabled,
-          onChanged: (value) async {
-            final service = PrayerNotificationService.instance;
-
-            if (value) {
-              final granted = await service.requestPermissions(context);
-
-              if (!granted) return;
-
-              await _pickTime();
-            } else {
-              await service.cancel();
-              setState(() {
-                enabled = false;
-                selectedTime = null;
-              });
-            }
-          },
         ),
         if (enabled)
-          TextButton(
-            onPressed: _pickTime,
-            child: Text(
-              ref.t(
-                'settings.edit_reminder_time',
-                fallback: 'Edit Reminder Time',
+          Padding(
+            padding: const EdgeInsets.fromLTRB(74, 0, 16, 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _pickTime,
+                icon: const Icon(Icons.schedule_outlined),
+                label: Text(
+                  ref.t(
+                    'settings.edit_reminder_time',
+                    fallback: 'Edit Reminder Time',
+                  ),
+                ),
               ),
             ),
           ),
@@ -484,10 +882,13 @@ class _StorageSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: const Icon(Icons.delete_outline, color: Colors.red),
-      title: Text(
-        ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
+    return _SettingsTile(
+      icon: Icons.delete_outline,
+      iconColor: Colors.red,
+      title: ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
+      subtitle: ref.t(
+        'settings.clear_local_data_subtitle',
+        fallback: 'Remove stored preferences and cached local app data.',
       ),
       onTap: () async {
         final confirm = await showDialog(
@@ -758,9 +1159,51 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
-              style: Theme.of(context).textTheme.titleLarge,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: carouselBoxDecoration(context).copyWith(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.12),
+                    Theme.of(context)
+                        .colorScheme
+                        .secondary
+                        .withValues(alpha: 0.06),
+                    Theme.of(context).colorScheme.surface,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    ref.t(
+                      'settings.edit_profile_sheet_subtitle',
+                      fallback:
+                          'Keep your contact information and location up to date.',
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             _SettingsReviewCard(
@@ -907,10 +1350,7 @@ class _SettingsReviewCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: carouselBoxDecoration(context),
       child: Column(
         children: rows
             .where((row) => row.value.trim().isNotEmpty)

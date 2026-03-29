@@ -139,6 +139,22 @@ class PrayerRepository {
         );
   }
 
+  Future<List<PrayerRequest>> getAllPrayersOnce() async {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
+    final snapshot = await collectionRef()
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return snapshot.docs.map(PrayerRequest.fromDoc).toList(growable: false);
+  }
+
   Future<void> deletePrayer(String prayerId) {
     return _validatedPrayerDoc(prayerId).then((prayerDoc) => prayerDoc.delete());
   }

@@ -2,17 +2,14 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/home_sections/announcement_providers.dart';
-import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
-import 'package:flutter_application/church_app/providers/members_provider.dart';
-import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/providers/dashboard_metrics_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -56,52 +53,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       );
     }
 
-    final membersAsync = ref.watch(membersProvider);
-    final prayersAsync = ref.watch(allPrayerRequestsProvider);
-    final announcementsAsync = ref.watch(announcementsProvider);
-    final eventsAsync = ref.watch(eventsProvider);
-    final configAsync = ref.watch(appConfigProvider);
+    final memberMetricsAsync = ref.watch(dashboardMemberMetricsProvider);
+    final prayersAsync = ref.watch(dashboardPrayerRequestsProvider);
+    final announcementsAsync = ref.watch(dashboardAnnouncementsProvider);
+    final eventsAsync = ref.watch(dashboardEventsProvider);
+    final configAsync = ref.watch(dashboardAppConfigProvider);
     final churchId = ref.watch(currentChurchIdProvider).value;
     final title = ref.t('church_tab.app_title', fallback: 'Church');
 
-    final members = membersAsync.value ?? const <AppUser>[];
+    final memberMetrics = memberMetricsAsync.value ?? DashboardMemberMetrics.empty;
     final prayers = prayersAsync.value ?? const <PrayerRequest>[];
     final announcements = announcementsAsync.value ?? const <Announcement>[];
     final events = eventsAsync.value ?? const <Event>[];
     final admins = configAsync.value?.admins ?? const <String>[];
-    final metrics = _DashboardMetrics.fromData(
-      members: members,
+    final metrics = _DashboardMetrics.fromSummary(
+      summary: memberMetrics,
       prayers: prayers,
       announcements: announcements,
       events: events,
       admins: admins,
     );
 
-    final isLoading = membersAsync.isLoading ||
+    final isLoading = memberMetricsAsync.isLoading ||
         prayersAsync.isLoading ||
         announcementsAsync.isLoading ||
         eventsAsync.isLoading ||
         configAsync.isLoading;
-    final recentMembers = [...members]..sort((a, b) =>
-        (b.createdAt ?? DateTime(1970))
-            .compareTo(a.createdAt ?? DateTime(1970)));
-    final pendingMembers =
-        members.where((member) => !member.approved).toList(growable: false);
     final expiringPrayers = _expiringPrayers(prayers);
-    final recentJoinCount = recentMembers
-        .where(
-          (member) =>
-              member.createdAt != null &&
-              DateTime.now().difference(member.createdAt!).inDays <= 7,
-        )
-        .length;
     return RefreshIndicator(
       onRefresh: () async {
-        ref.invalidate(membersProvider);
-        ref.invalidate(allPrayerRequestsProvider);
-        ref.invalidate(announcementsProvider);
-        ref.invalidate(eventsProvider);
-        ref.invalidate(appConfigProvider);
+        ref.invalidate(dashboardMemberMetricsProvider);
+        ref.invalidate(dashboardPrayerRequestsProvider);
+        ref.invalidate(dashboardAnnouncementsProvider);
+        ref.invalidate(dashboardEventsProvider);
+        ref.invalidate(dashboardAppConfigProvider);
         await Future<void>.delayed(const Duration(milliseconds: 250));
       },
       child: ListView(
@@ -118,7 +103,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               title: 'What Needs Attention Now',
               subtitle: 'The items that need an admin response right away.',
               child: _AttentionNowPanel(
-                pendingMembers: pendingMembers,
+                pendingApprovals: memberMetrics.pendingApprovals,
                 expiringPrayers: expiringPrayers,
                 announcements: announcements,
                 events: events,
@@ -128,8 +113,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               title: 'What Changed Recently',
               subtitle: 'Fresh movement across members, updates, and events.',
               child: _RecentChangesPanel(
-                recentMembers: recentMembers,
-                recentJoinCount: recentJoinCount,
+                recentMembers: memberMetrics.recentMembers,
+                recentJoinCount: memberMetrics.recentJoinCount7d,
               ),
             ),
             healthSignals: _SectionCard(
@@ -153,7 +138,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   title: 'Members Snapshot',
                   subtitle: 'Approved, pending, families, and ministry reach.',
                   child: _MembersInsights(
-                    members: members,
+                    summary: memberMetrics,
                     metrics: metrics,
                     churchId: churchId,
                   ),
@@ -164,7 +149,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 title: 'Members Snapshot',
                 subtitle: 'Approved, pending, families, and ministry reach.',
                 child: _MembersInsights(
-                  members: members,
+                  summary: memberMetrics,
                   metrics: metrics,
                   churchId: churchId,
                 ),
@@ -177,7 +162,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             subtitle:
                 'A quick read on membership growth since church records began.',
             child: _MemberJoinHistory(
-              members: members,
+              summary: memberMetrics,
             ),
           ),
           const SizedBox(height: 18),
@@ -186,7 +171,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             subtitle:
                 'See which members are showing up consistently across the app.',
             child: _MemberStreakInsights(
-              members: members,
+              summary: memberMetrics,
             ),
           ),
           const SizedBox(height: 18),
@@ -472,12 +457,12 @@ class _SectionCard extends StatelessWidget {
 
 class _MembersInsights extends StatefulWidget {
   const _MembersInsights({
-    required this.members,
+    required this.summary,
     required this.metrics,
     required this.churchId,
   });
 
-  final List<AppUser> members;
+  final DashboardMemberMetrics summary;
   final _DashboardMetrics metrics;
   final String? churchId;
 
@@ -491,7 +476,7 @@ class _MembersInsightsState extends State<_MembersInsights> {
 
   @override
   Widget build(BuildContext context) {
-    final groups = _buildMemberGroups(widget.members, _mode);
+    final groups = _buildMemberGroups(widget.summary, _mode);
     final safeIndex =
         groups.isEmpty ? -1 : _selectedIndex.clamp(0, groups.length - 1);
     final selectedGroup = safeIndex >= 0 ? groups[safeIndex] : null;
@@ -629,6 +614,7 @@ class _MembersInsightsState extends State<_MembersInsights> {
                   mode: _mode,
                   group: selectedGroup,
                   total: total,
+                  summary: widget.summary,
                 ),
         ),
       ],
@@ -638,19 +624,14 @@ class _MembersInsightsState extends State<_MembersInsights> {
 
 class _MemberJoinHistory extends StatelessWidget {
   const _MemberJoinHistory({
-    required this.members,
+    required this.summary,
   });
 
-  final List<AppUser> members;
+  final DashboardMemberMetrics summary;
 
   @override
   Widget build(BuildContext context) {
-    final datedMembers = members
-        .where((member) => member.createdAt != null)
-        .toList(growable: false)
-      ..sort((a, b) => a.createdAt!.compareTo(b.createdAt!));
-
-    if (datedMembers.isEmpty) {
+    if (summary.memberCount == 0 || summary.firstRecordedAt == null) {
       return const _EmptyState(
         title: 'No membership history yet',
         subtitle:
@@ -658,30 +639,14 @@ class _MemberJoinHistory extends StatelessWidget {
       );
     }
 
-    final firstRecorded = datedMembers.first.createdAt!;
-    final totalRecorded = datedMembers.length;
-    final joinedLast30 = datedMembers
-        .where(
-          (member) => DateTime.now().difference(member.createdAt!).inDays <= 30,
-        )
-        .length;
-    final joinedLast90 = datedMembers
-        .where(
-          (member) => DateTime.now().difference(member.createdAt!).inDays <= 90,
-        )
-        .length;
-    final joinedThisYear = datedMembers
-        .where((member) => member.createdAt!.year == DateTime.now().year)
-        .length;
-
     return Column(
       children: [
         _SignalTile(
           title: 'Records began',
-          value: _dateLabelVerbose(firstRecorded),
+          value: _dateLabelVerbose(summary.firstRecordedAt!),
           tone: _SignalTone.healthy,
           caption:
-              '$totalRecorded members have been recorded since this date.',
+              '${summary.memberCount} members have been recorded since this date.',
         ),
         const SizedBox(height: 12),
         Row(
@@ -689,14 +654,14 @@ class _MemberJoinHistory extends StatelessWidget {
             Expanded(
               child: _MiniMetricTile(
                 label: 'Last 30 days',
-                value: joinedLast30.toString(),
+                value: summary.recentJoinCount30d.toString(),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _MiniMetricTile(
                 label: 'Last 90 days',
-                value: joinedLast90.toString(),
+                value: summary.recentJoinCount90d.toString(),
               ),
             ),
           ],
@@ -704,7 +669,7 @@ class _MemberJoinHistory extends StatelessWidget {
         const SizedBox(height: 12),
         _SimpleStatRow(
           label: 'Joined this year',
-          value: '$joinedThisYear members',
+          value: '${summary.joinedThisYear} members',
         ),
       ],
     );
@@ -761,13 +726,13 @@ class _ExecutiveDashboardGrid extends StatelessWidget {
 
 class _AttentionNowPanel extends StatelessWidget {
   const _AttentionNowPanel({
-    required this.pendingMembers,
+    required this.pendingApprovals,
     required this.expiringPrayers,
     required this.announcements,
     required this.events,
   });
 
-  final List<AppUser> pendingMembers;
+  final int pendingApprovals;
   final List<PrayerRequest> expiringPrayers;
   final List<Announcement> announcements;
   final List<Event> events;
@@ -778,11 +743,11 @@ class _AttentionNowPanel extends StatelessWidget {
       children: [
         _SignalTile(
           title: 'Pending approvals',
-          value: pendingMembers.length.toString(),
-          tone: pendingMembers.isEmpty
+          value: pendingApprovals.toString(),
+          tone: pendingApprovals == 0
               ? _SignalTone.healthy
               : _SignalTone.attention,
-          caption: pendingMembers.isEmpty
+          caption: pendingApprovals == 0
               ? 'No one is waiting for review.'
               : 'Members are waiting for an admin decision.',
         ),
@@ -819,7 +784,7 @@ class _RecentChangesPanel extends StatelessWidget {
     required this.recentJoinCount,
   });
 
-  final List<AppUser> recentMembers;
+  final List<DashboardPreviewMember> recentMembers;
   final int recentJoinCount;
 
   @override
@@ -913,26 +878,14 @@ class _HealthSignalsPanel extends StatelessWidget {
 
 class _MemberStreakInsights extends StatelessWidget {
   const _MemberStreakInsights({
-    required this.members,
+    required this.summary,
   });
 
-  final List<AppUser> members;
+  final DashboardMemberMetrics summary;
 
   @override
   Widget build(BuildContext context) {
-    final streakMembers = members
-        .where((member) => member.dayStreak > 0)
-        .toList(growable: false)
-      ..sort((a, b) => b.dayStreak.compareTo(a.dayStreak));
-    final sevenDayMembers =
-        streakMembers.where((member) => member.dayStreak >= 7).length;
-    final longestStreakMember =
-        streakMembers.isEmpty ? null : streakMembers.first;
-    final activeRate = members.isEmpty
-        ? 0
-        : ((streakMembers.length / members.length) * 100).round();
-
-    if (members.isEmpty) {
+    if (summary.memberCount == 0) {
       return const _EmptyState(
         title: 'No streak data yet',
         subtitle:
@@ -944,33 +897,37 @@ class _MemberStreakInsights extends StatelessWidget {
       children: [
         _SignalTile(
           title: 'Members on a streak',
-          value: '${streakMembers.length}',
-          tone: streakMembers.isEmpty ? _SignalTone.warning : _SignalTone.healthy,
-          caption: streakMembers.isEmpty
+          value: '${summary.activeStreakMembersCount}',
+          tone: summary.activeStreakMembersCount == 0
+              ? _SignalTone.warning
+              : _SignalTone.healthy,
+          caption: summary.activeStreakMembersCount == 0
               ? 'No member has started a daily streak yet.'
-              : '$activeRate% of members currently have an active streak.',
+              : '${summary.activeStreakRate}% of members currently have an active streak.',
         ),
         const SizedBox(height: 12),
         _SignalTile(
           title: 'Strong consistency',
-          value: '$sevenDayMembers',
-          tone: sevenDayMembers == 0 ? _SignalTone.warning : _SignalTone.healthy,
-          caption: sevenDayMembers == 0
+          value: '${summary.membersWith7PlusCount}',
+          tone: summary.membersWith7PlusCount == 0
+              ? _SignalTone.warning
+              : _SignalTone.healthy,
+          caption: summary.membersWith7PlusCount == 0
               ? 'No member has crossed a 7-day streak yet.'
-              : '$sevenDayMembers member${sevenDayMembers == 1 ? '' : 's'} have built a 7+ day rhythm.',
+              : '${summary.membersWith7PlusCount} member${summary.membersWith7PlusCount == 1 ? '' : 's'} have built a 7+ day rhythm.',
         ),
         const SizedBox(height: 12),
         _SignalTile(
           title: 'Current streak leader',
-          value: longestStreakMember == null
+          value: summary.topStreakMember == null
               ? 'No streak yet'
-              : '${longestStreakMember.dayStreak} days',
-          tone: longestStreakMember == null
+              : '${summary.topStreakValue} days',
+          tone: summary.topStreakMember == null
               ? _SignalTone.warning
               : _SignalTone.attention,
-          caption: longestStreakMember == null
+          caption: summary.topStreakMember == null
               ? 'Once a member starts a streak, the top streak will show here.'
-              : '${longestStreakMember.name.trim().isEmpty ? 'A member' : longestStreakMember.name} is leading the church right now.',
+              : '${summary.topStreakMember!.name.trim().isEmpty ? 'A member' : summary.topStreakMember!.name} is leading the church right now.',
         ),
       ],
     );
@@ -1124,14 +1081,14 @@ class _MemberGroup {
   const _MemberGroup({
     required this.label,
     required this.color,
-    required this.members,
+    required this.count,
+    required this.previewMembers,
   });
 
   final String label;
   final Color color;
-  final List<AppUser> members;
-
-  int get count => members.length;
+  final int count;
+  final List<DashboardPreviewMember> previewMembers;
 }
 
 class _ModeChip extends StatelessWidget {
@@ -1339,23 +1296,26 @@ class _LegendTile extends StatelessWidget {
   }
 }
 
-class _SelectedGroupDetails extends StatefulWidget {
+class _SelectedGroupDetails extends ConsumerStatefulWidget {
   const _SelectedGroupDetails({
     super.key,
     required this.mode,
     required this.group,
     required this.total,
+    required this.summary,
   });
 
   final _MemberChartMode mode;
   final _MemberGroup group;
   final int total;
+  final DashboardMemberMetrics summary;
 
   @override
-  State<_SelectedGroupDetails> createState() => _SelectedGroupDetailsState();
+  ConsumerState<_SelectedGroupDetails> createState() =>
+      _SelectedGroupDetailsState();
 }
 
-class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
+class _SelectedGroupDetailsState extends ConsumerState<_SelectedGroupDetails> {
   String? _selectedFamilyId;
 
   @override
@@ -1367,11 +1327,11 @@ class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
     final showFamilyDrilldown = widget.mode == _MemberChartMode.family &&
         widget.group.label == 'Family';
     final families = showFamilyDrilldown
-        ? _groupFamiliesForDashboard(widget.group.members)
-        : const <_FamilyBucket>[];
+        ? widget.summary.familyBuckets
+        : const <DashboardFamilyBucket>[];
     final topFamilies =
         families.take(5).toList(growable: false);
-    _FamilyBucket? selectedFamily;
+    DashboardFamilyBucket? selectedFamily;
     if (_selectedFamilyId != null) {
       for (final family in families) {
         if (family.id == _selectedFamilyId) {
@@ -1430,7 +1390,7 @@ class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
                 ),
           ),
           const SizedBox(height: 14),
-          if (widget.group.members.isEmpty)
+          if (widget.group.count == 0)
             const _EmptyState(
               title: 'No matching members',
               subtitle:
@@ -1453,7 +1413,7 @@ class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _SimpleStatRow(
                       label: family.label,
-                      value: '${family.members.length} members',
+                      value: '${family.count} members',
                       selected: family.id == _selectedFamilyId,
                       onTap: () {
                         setState(() {
@@ -1492,29 +1452,67 @@ class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
                         ),
                   ),
                   const SizedBox(height: 10),
-                  ...selectedFamily.members.map(
-                    (member) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _SimpleStatRow(
-                        label:
-                            member.name.trim().isEmpty ? 'Member' : member.name,
-                        value: member.maritalStatus.trim().isEmpty
-                            ? 'Family member'
-                            : _formatDashboardCategory(member.maritalStatus),
-                      ),
-                    ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final familyMembersAsync = ref.watch(
+                        dashboardFamilyMembersProvider(selectedFamily!),
+                      );
+                      return familyMembersAsync.when(
+                        loading: () =>
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        error: (_, __) => const _EmptyState(
+                          title: 'Unable to load family members',
+                          subtitle:
+                              'Try refreshing the dashboard to load this family again.',
+                        ),
+                        data: (familyMembers) {
+                          if (familyMembers.isEmpty) {
+                            return const _EmptyState(
+                              title: 'No family members found',
+                              subtitle:
+                                  'No members are currently linked to this family.',
+                            );
+                          }
+                          return Column(
+                            children: familyMembers
+                                .map(
+                                  (member) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: _SimpleStatRow(
+                                      label: member.name.trim().isEmpty
+                                          ? 'Member'
+                                          : member.name,
+                                      value: member.maritalStatus.trim().isEmpty
+                                          ? 'Family member'
+                                          : _formatDashboardCategory(
+                                              member.maritalStatus,
+                                            ),
+                                    ),
+                                  ),
+                                )
+                                .toList(growable: false),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ],
             )
           else
-            ...widget.group.members.take(5).map(
+            ...widget.group.previewMembers.take(5).map(
                   (member) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _SimpleStatRow(
-                      label:
-                          member.name.trim().isEmpty ? 'Member' : member.name,
-                      value: _memberSecondaryLabel(member, widget.mode),
+                      label: member.name.trim().isEmpty ? 'Member' : member.name,
+                      value: member.secondary.trim().isEmpty
+                          ? 'Member'
+                          : member.secondary,
                     ),
                   ),
                 ),
@@ -1524,12 +1522,12 @@ class _SelectedGroupDetailsState extends State<_SelectedGroupDetails> {
   }
 }
 
-Future<_FamilyBucket?> _showFamilyDirectorySheet(
+Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
   BuildContext context,
-  List<_FamilyBucket> families,
+  List<DashboardFamilyBucket> families,
 ) {
   var query = '';
-  return showModalBottomSheet<_FamilyBucket>(
+  return showModalBottomSheet<DashboardFamilyBucket>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -1590,7 +1588,7 @@ Future<_FamilyBucket?> _showFamilyDirectorySheet(
                               final family = filteredFamilies[index];
                               return _SimpleStatRow(
                                 label: family.label,
-                                value: '${family.members.length} members',
+                                value: '${family.count} members',
                                 onTap: () =>
                                     Navigator.of(context).pop(family),
                               );
@@ -1663,18 +1661,6 @@ class _SimpleStatRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _FamilyBucket {
-  const _FamilyBucket({
-    required this.id,
-    required this.label,
-    required this.members,
-  });
-
-  final String id;
-  final String label;
-  final List<AppUser> members;
 }
 
 class _MiniMetricTile extends StatelessWidget {
@@ -2083,39 +2069,25 @@ class _DashboardMetrics {
   final int membersWithGroups;
   final int groupParticipationRate;
 
-  factory _DashboardMetrics.fromData({
-    required List<AppUser> members,
+  factory _DashboardMetrics.fromSummary({
+    required DashboardMemberMetrics summary,
     required List<PrayerRequest> prayers,
     required List<Announcement> announcements,
     required List<Event> events,
     required List<String> admins,
   }) {
-    final approvedMembers = members.where((member) => member.approved).length;
-    final pendingApprovals = members.where((member) => !member.approved).length;
-    final familyCount = members
-        .where((member) => member.category.trim().toLowerCase() == 'family')
-        .length;
-    final individualCount = members
-        .where((member) => member.category.trim().toLowerCase() != 'family')
-        .length;
-    final membersWithGroups =
-        members.where((member) => member.churchGroupIds.isNotEmpty).length;
-    final groupParticipationRate = members.isEmpty
-        ? 0
-        : ((membersWithGroups / members.length) * 100).round();
-
     return _DashboardMetrics(
-      memberCount: members.length,
-      approvedMembers: approvedMembers,
-      pendingApprovals: pendingApprovals,
-      familyCount: familyCount,
-      individualCount: individualCount,
+      memberCount: summary.memberCount,
+      approvedMembers: summary.approvedMembers,
+      pendingApprovals: summary.pendingApprovals,
+      familyCount: summary.familyCount,
+      individualCount: summary.individualCount,
       prayerCount: prayers.length,
       adminCount: admins.length,
       announcementCount: announcements.length,
       eventCount: events.length,
-      membersWithGroups: membersWithGroups,
-      groupParticipationRate: groupParticipationRate,
+      membersWithGroups: summary.membersWithGroups,
+      groupParticipationRate: summary.groupParticipationRate,
     );
   }
 }
@@ -2143,183 +2115,27 @@ int _contentGapCount(
 }
 
 List<_MemberGroup> _buildMemberGroups(
-  List<AppUser> members,
+  DashboardMemberMetrics summary,
   _MemberChartMode mode,
 ) {
-  switch (mode) {
-    case _MemberChartMode.gender:
-      return _groupFromBuckets(
-        members,
-        {
-          'Male': (
-            Colors.blue,
-            (AppUser member) => member.gender.trim().toLowerCase() == 'male',
-          ),
-          'Female': (
-            Colors.pink,
-            (AppUser member) => member.gender.trim().toLowerCase() == 'female',
-          ),
-          'Unknown': (
-            Colors.grey,
-            (AppUser member) => !{'male', 'female'}
-                .contains(member.gender.trim().toLowerCase()),
-          ),
-        },
-      );
-    case _MemberChartMode.age:
-      return _groupFromBuckets(
-        members,
-        {
-          'Children': (
-            Colors.orange,
-            (AppUser member) =>
-                _ageOf(member.dob) != null && _ageOf(member.dob)! <= 12,
-          ),
-          'Youth': (
-            Colors.purple,
-            (AppUser member) {
-              final age = _ageOf(member.dob);
-              return age != null && age >= 13 && age <= 24;
-            },
-          ),
-          'Adults': (
-            Colors.green,
-            (AppUser member) {
-              final age = _ageOf(member.dob);
-              return age != null && age >= 25 && age <= 59;
-            },
-          ),
-          'Seniors': (
-            Colors.teal,
-            (AppUser member) =>
-                _ageOf(member.dob) != null && _ageOf(member.dob)! >= 60,
-          ),
-          'Unknown': (
-            Colors.grey,
-            (AppUser member) => _ageOf(member.dob) == null,
-          ),
-        },
-      );
-    case _MemberChartMode.family:
-      return _groupFromBuckets(
-        members,
-        {
-          'Family': (
-            Colors.indigo,
-            (AppUser member) =>
-                member.category.trim().toLowerCase() == 'family',
-          ),
-          'Individual': (
-            Colors.cyan,
-            (AppUser member) =>
-                member.category.trim().toLowerCase() == 'individual',
-          ),
-          'Other': (
-            Colors.amber,
-            (AppUser member) {
-              final category = member.category.trim().toLowerCase();
-              return category.isNotEmpty &&
-                  category != 'family' &&
-                  category != 'individual';
-            },
-          ),
-          'Unspecified': (
-            Colors.grey,
-            (AppUser member) => member.category.trim().isEmpty,
-          ),
-        },
-      );
-    case _MemberChartMode.solemnized:
-      return _groupFromBuckets(
-        members,
-        {
-          'Solemnized': (
-            Colors.blue,
-            (AppUser member) => member.solemnizedBaptism,
-          ),
-          'Not solemnized': (
-            Colors.orange,
-            (AppUser member) => !member.solemnizedBaptism,
-          ),
-        },
-      );
-  }
-}
+  final buckets = switch (mode) {
+    _MemberChartMode.gender => summary.genderBuckets,
+    _MemberChartMode.age => summary.ageBuckets,
+    _MemberChartMode.family => summary.familyModeBuckets,
+    _MemberChartMode.solemnized => summary.solemnizedBuckets,
+  };
 
-List<_MemberGroup> _groupFromBuckets(
-  List<AppUser> members,
-  Map<String, (Color, bool Function(AppUser))> buckets,
-) {
-  final groups = buckets.entries
-      .map((entry) {
-        final bucketMembers =
-            members.where(entry.value.$2).toList(growable: false);
-        return _MemberGroup(
-          label: entry.key,
-          color: entry.value.$1,
-          members: bucketMembers,
-        );
-      })
-      .where((group) => group.count > 0)
-      .toList(growable: false);
-
-  return groups;
-}
-
-List<_FamilyBucket> _groupFamiliesForDashboard(List<AppUser> members) {
-  final grouped = <String, List<AppUser>>{};
-
-  for (final member in members) {
-    final familyId = member.familyId.trim().isEmpty
-        ? 'unknown_family'
-        : member.familyId.trim();
-    grouped.putIfAbsent(familyId, () => []).add(member);
-  }
-
-  final buckets = grouped.entries
+  return buckets
       .map(
-        (entry) => _FamilyBucket(
-          id: entry.key,
-          label: _formatDashboardFamilyLabel(entry.key),
-          members: [...entry.value]
-            ..sort(
-              (a, b) =>
-                  a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-            ),
+        (bucket) => _MemberGroup(
+          label: bucket.label,
+          color: _dashboardBucketColor(mode, bucket.label),
+          count: bucket.count,
+          previewMembers: bucket.previewMembers,
         ),
       )
-      .toList()
-    ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
-
-  return buckets;
-}
-
-String _formatDashboardFamilyLabel(String familyId) {
-  final normalized = familyId.trim().toLowerCase();
-  if (normalized.isEmpty || normalized == 'unknown_family') {
-    return 'Unknown family';
-  }
-
-  var cleaned = normalized
-      .replaceFirst(RegExp(r'^family_'), '')
-      .replaceFirst(RegExp(r'^individual_'), '');
-
-  final parts = cleaned.split('_').where((part) => part.isNotEmpty).toList();
-  if (parts.length > 1) {
-    parts.removeLast();
-  }
-
-  final displayName = parts
-      .map((part) => part[0].toUpperCase() + part.substring(1))
-      .join(' ')
-      .trim();
-
-  if (displayName.isEmpty) {
-    return 'Unknown family';
-  }
-
-  final suffix = displayName.endsWith('s') ? "'" : "'s";
-  return '$displayName$suffix family';
+      .where((group) => group.count > 0)
+      .toList(growable: false);
 }
 
 String _formatDashboardCategory(String value) {
@@ -2330,39 +2146,44 @@ String _formatDashboardCategory(String value) {
   return normalized[0].toUpperCase() + normalized.substring(1);
 }
 
-String _memberSecondaryLabel(AppUser member, _MemberChartMode mode) {
+Color _dashboardBucketColor(_MemberChartMode mode, String label) {
   switch (mode) {
     case _MemberChartMode.gender:
-      return member.gender.trim().isEmpty
-          ? 'Unspecified gender'
-          : member.gender;
+      switch (label) {
+        case 'Male':
+          return Colors.blue;
+        case 'Female':
+          return Colors.pink;
+        default:
+          return Colors.grey;
+      }
     case _MemberChartMode.age:
-      final age = _ageOf(member.dob);
-      return age == null ? 'DOB missing' : '$age years';
+      switch (label) {
+        case 'Children':
+          return Colors.orange;
+        case 'Youth':
+          return Colors.purple;
+        case 'Adults':
+          return Colors.green;
+        case 'Seniors':
+          return Colors.teal;
+        default:
+          return Colors.grey;
+      }
     case _MemberChartMode.family:
-      return member.category.trim().isEmpty
-          ? 'Unspecified category'
-          : member.category;
+      switch (label) {
+        case 'Family':
+          return Colors.indigo;
+        case 'Individual':
+          return Colors.cyan;
+        case 'Other':
+          return Colors.amber;
+        default:
+          return Colors.grey;
+      }
     case _MemberChartMode.solemnized:
-      if (!member.solemnizedBaptism) {
-        return 'No baptism record yet';
-      }
-      final churchName = member.baptismChurchName.trim();
-      if (churchName.isNotEmpty) {
-        return churchName;
-      }
-      return 'Baptism recorded';
+      return label == 'Solemnized' ? Colors.blue : Colors.orange;
   }
-}
-
-int? _ageOf(DateTime? dob) {
-  if (dob == null) return null;
-  final now = DateTime.now();
-  var age = now.year - dob.year;
-  final hadBirthday =
-      now.month > dob.month || (now.month == dob.month && now.day >= dob.day);
-  if (!hadBirthday) age -= 1;
-  return age;
 }
 
 String _dateLabel(DateTime value) {

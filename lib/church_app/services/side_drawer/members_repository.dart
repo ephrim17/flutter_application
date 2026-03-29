@@ -40,6 +40,40 @@ class MembersRepository extends ChurchScopedRepository {
     return snapshot.data();
   }
 
+  Future<List<AppUser>> getMembersByFamilyIds(List<String> familyIds) async {
+    final normalizedIds = familyIds
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (normalizedIds.isEmpty) {
+      return const <AppUser>[];
+    }
+
+    if (normalizedIds.length == 1) {
+      final snapshot = await collectionRef()
+          .where('familyId', isEqualTo: normalizedIds.first)
+          .get();
+
+      final members = snapshot.docs.map((doc) => doc.data()).toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return members;
+    }
+
+    final docs = <QueryDocumentSnapshot<AppUser>>[];
+    for (var i = 0; i < normalizedIds.length; i += 10) {
+      final chunk = normalizedIds.skip(i).take(10).toList(growable: false);
+      final chunkSnapshot =
+          await collectionRef().where('familyId', whereIn: chunk).get();
+      docs.addAll(chunkSnapshot.docs);
+    }
+
+    final members = docs.map((doc) => doc.data()).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return members;
+  }
+
   Stream<List<ChurchGroupMember>> watchGroupMembers(String groupId) {
     return FirestorePaths.churchGroupMembers(firestore, churchId, groupId)
         .orderBy('name')

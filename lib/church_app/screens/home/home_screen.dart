@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/promise_section.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/widgets/prompts/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
@@ -26,44 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   ProviderSubscription<PromptSheetModel?>? _announcementListener;
   ProviderSubscription<bool>? _birthdayListener;
-  ProviderSubscription<AsyncValue<AppUser?>>? _streakListener;
   bool _isPromptOpen = false;
-  String? _lastDailyStreakSyncKey;
-
-  bool _isSameDay(DateTime first, DateTime second) {
-    return first.year == second.year &&
-        first.month == second.month &&
-        first.day == second.day;
-  }
-
-  Future<void> _syncDailyStreakIfNeeded(AppUser user) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || !mounted) return;
-
-    final today = DateTime.now();
-    if (user.lastStreakRecordedAt != null &&
-        _isSameDay(user.lastStreakRecordedAt!, today)) {
-      return;
-    }
-
-    final syncKey =
-        '$churchId:${user.uid}:${today.year}-${today.month}-${today.day}';
-    if (_lastDailyStreakSyncKey == syncKey) return;
-
-    _lastDailyStreakSyncKey = syncKey;
-    final repository = ChurchUsersRepository(
-      firestore: ref.read(firestoreProvider),
-      churchId: churchId,
-    );
-
-    try {
-      await repository.updateDailyStreak(uid: user.uid);
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
-    } catch (_) {
-      _lastDailyStreakSyncKey = null;
-    }
-  }
 
   @override
   void initState() {
@@ -91,21 +50,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       );
 
-      _streakListener = ref.listenManual<AsyncValue<AppUser?>>(
-        appUserProvider,
-        (previous, next) async {
-          final user = next.asData?.value;
-          if (user == null) return;
-          await _syncDailyStreakIfNeeded(user);
-        },
-        fireImmediately: true,
-      );
-
-      final currentUser = await ref.read(getCurrentUserProvider.future);
-      if (currentUser != null) {
-        await _syncDailyStreakIfNeeded(currentUser);
-      }
-
       await _showInitialPrompts();
     });
   }
@@ -114,7 +58,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _announcementListener?.close();
     _birthdayListener?.close();
-    _streakListener?.close();
     super.dispose();
   }
 
@@ -198,13 +141,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final slivers = <Widget>[];
         final appUser = userAsync.asData?.value;
         final userName = appUser?.name.trim() ?? '';
-
-        if (appUser != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (!mounted) return;
-            await _syncDailyStreakIfNeeded(appUser);
-          });
-        }
 
         if (userName.isNotEmpty) {
           slivers.add(

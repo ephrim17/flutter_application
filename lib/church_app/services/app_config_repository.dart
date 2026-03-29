@@ -23,4 +23,16 @@ class AppConfigRepository {
           return AppConfig.fromFirestore(data);
         });
   }
+
+  Future<AppConfig> getAppConfigOnce() async {
+    final snapshot = await FirestorePaths.churchAppConfig(
+      firestore,
+      churchId,
+    ).get();
+    final data = snapshot.data();
+    if (data == null) {
+      return AppConfig.fallback();
+    }
+    return AppConfig.fromFirestore(data);
+  }
 }

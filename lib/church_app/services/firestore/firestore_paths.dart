@@ -48,6 +48,7 @@ class FirestorePaths {
   static const families = 'families';
   static const groups = 'groups';
   static const notificationRequests = 'notification_requests';
+  static const dashboardMetrics = 'dashboard_metrics';
 
   /// Church document
   static DocumentReference churchDoc(
@@ -109,6 +110,21 @@ class FirestorePaths {
   static CollectionReference<Map<String, dynamic>> churchNotificationRequests(
       FirebaseFirestore firestore, String churchId) {
     return churchDoc(firestore, churchId).collection(notificationRequests);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchDashboardMetrics(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return churchDoc(firestore, churchId).collection(dashboardMetrics);
+  }
+
+  static DocumentReference<Map<String, dynamic>> churchDashboardMetricDoc(
+    FirebaseFirestore firestore,
+    String churchId,
+    String metricId,
+  ) {
+    return churchDashboardMetrics(firestore, churchId).doc(metricId);
   }
 
   /// daily Article subcollection under church

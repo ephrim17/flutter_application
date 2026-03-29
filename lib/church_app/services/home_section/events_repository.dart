@@ -57,4 +57,22 @@ class EventsRepository extends ChurchScopedRepository{
               .toList(),
         );
   }
+
+  Future<List<Event>> getAllActiveOnce({
+    required DateTime now,
+    int limit = 50,
+  }) async {
+    final snapshot = await collectionRef()
+        .where('isActive', isEqualTo: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => doc.data())
+        .where(
+          (event) => event.expiryAt == null || event.expiryAt!.isAfter(now),
+        )
+        .take(limit)
+        .toList(growable: false);
+  }
 }

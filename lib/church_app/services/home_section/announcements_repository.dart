@@ -59,4 +59,23 @@ class AnnouncementsRepository extends ChurchScopedRepository {
               .toList(),
         );
   }
+
+  Future<List<Announcement>> getAllActiveOnce({
+    required DateTime now,
+    int limit = 50,
+  }) async {
+    final snapshot = await collectionRef()
+        .where('isActive', isEqualTo: true)
+        .orderBy('priority')
+        .get();
+
+    return snapshot.docs
+        .map((doc) => doc.data())
+        .where(
+          (announcement) =>
+              announcement.expiryAt == null || announcement.expiryAt!.isAfter(now),
+        )
+        .take(limit)
+        .toList(growable: false);
+  }
 }
