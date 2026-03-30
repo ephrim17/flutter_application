@@ -153,8 +153,14 @@ class MembersRepository extends ChurchScopedRepository {
     required List<String> talentsAndGifts,
     required List<String> churchGroupIds,
     required bool solemnizedBaptism,
+    required DateTime? baptismDate,
+    required String baptismCertificateNumber,
     required String baptismChurchName,
     required String baptismPastorName,
+    required String marriageSolemnizationChurchType,
+    required String marriageSolemnizationChurchName,
+    required String membershipCurrentStatus,
+    required String membershipNotes,
     required String additionalNotes,
     String? familyLabel,
   }) async {
@@ -169,8 +175,7 @@ class MembersRepository extends ChurchScopedRepository {
       'familyId': familyId.trim(),
       'dob': Timestamp.fromDate(dob),
       'maritalStatus': maritalStatus.trim(),
-      'weddingDay':
-          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
       'financialStabilityRating': financialStabilityRating,
       'financialSupportRequired': financialSupportRequired,
       'educationalQualification': educationalQualification.trim(),
@@ -183,10 +188,23 @@ class MembersRepository extends ChurchScopedRepository {
           .where((item) => item.isNotEmpty)
           .toList(),
       'solemnizedBaptism': solemnizedBaptism,
-      'baptismChurchName':
-          solemnizedBaptism ? baptismChurchName.trim() : '',
-      'baptismPastorName':
-          solemnizedBaptism ? baptismPastorName.trim() : '',
+      'baptismDate': solemnizedBaptism && baptismDate != null
+          ? Timestamp.fromDate(baptismDate)
+          : null,
+      'baptismCertificateNumber':
+          solemnizedBaptism ? baptismCertificateNumber.trim() : '',
+      'baptismChurchName': solemnizedBaptism ? baptismChurchName.trim() : '',
+      'baptismPastorName': solemnizedBaptism ? baptismPastorName.trim() : '',
+      'marriageSolemnizationChurchType':
+          maritalStatus.trim().toLowerCase() == 'married'
+              ? marriageSolemnizationChurchType.trim()
+              : '',
+      'marriageSolemnizationChurchName':
+          maritalStatus.trim().toLowerCase() == 'married'
+              ? marriageSolemnizationChurchName.trim()
+              : '',
+      'membershipCurrentStatus': membershipCurrentStatus.trim(),
+      'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -219,9 +237,9 @@ class MembersRepository extends ChurchScopedRepository {
     required String newUid,
     required String email,
   }) async {
-    final existingDoc = await FirestorePaths
-        .churchUserDoc(firestore, churchId, existingUserId)
-        .get();
+    final existingDoc =
+        await FirestorePaths.churchUserDoc(firestore, churchId, existingUserId)
+            .get();
     if (!existingDoc.exists) {
       throw StateError('Member not found.');
     }
@@ -247,14 +265,13 @@ class MembersRepository extends ChurchScopedRepository {
     final category = (existingData['category'] ?? '').toString();
 
     if (existingUserId != newUid) {
-      final readingPlans = await FirestorePaths
-          .churchUserReadingPlans(firestore, churchId, existingUserId)
+      final readingPlans = await FirestorePaths.churchUserReadingPlans(
+              firestore, churchId, existingUserId)
           .get();
 
       for (final doc in readingPlans.docs) {
         batch.set(
-          FirestorePaths
-              .churchUserReadingPlans(firestore, churchId, newUid)
+          FirestorePaths.churchUserReadingPlans(firestore, churchId, newUid)
               .doc(doc.id),
           doc.data(),
         );
@@ -267,30 +284,36 @@ class MembersRepository extends ChurchScopedRepository {
     for (final group in churchGroupDefinitions) {
       final groupDoc =
           FirestorePaths.churchGroupDoc(firestore, churchId, group.id);
-      batch.set(groupDoc, {
-        'id': group.id,
-        'label': group.label,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          groupDoc,
+          {
+            'id': group.id,
+            'label': group.label,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
 
-      final oldGroupMemberDoc = FirestorePaths
-          .churchGroupMembers(firestore, churchId, group.id)
-          .doc(existingUserId);
-      final newGroupMemberDoc = FirestorePaths
-          .churchGroupMembers(firestore, churchId, group.id)
-          .doc(newUid);
+      final oldGroupMemberDoc =
+          FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
+              .doc(existingUserId);
+      final newGroupMemberDoc =
+          FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
+              .doc(newUid);
 
       if (churchGroupIds.contains(group.id)) {
-        batch.set(newGroupMemberDoc, {
-          'uid': newUid,
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'phone': phone,
-          'category': category,
-          'groupId': group.id,
-          'groupLabel': group.label,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        batch.set(
+            newGroupMemberDoc,
+            {
+              'uid': newUid,
+              'email': email.trim().toLowerCase(),
+              'name': name,
+              'phone': phone,
+              'category': category,
+              'groupId': group.id,
+              'groupLabel': group.label,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
         if (existingUserId != newUid) {
           batch.delete(oldGroupMemberDoc);
         }
@@ -310,28 +333,26 @@ class MembersRepository extends ChurchScopedRepository {
   }
 
   Future<void> _deleteChurchUserData(String userId) async {
-    final userDoc = await FirestorePaths
-        .churchUserDoc(firestore, churchId, userId)
-        .get();
+    final userDoc =
+        await FirestorePaths.churchUserDoc(firestore, churchId, userId).get();
     final userData = userDoc.data() as Map<String, dynamic>?;
     final familyId = (userData?['familyId'] ?? '').toString().trim();
 
     if (familyId.isNotEmpty) {
-      final familyDoc = await FirestorePaths
-          .churchFamilies(firestore, churchId)
+      final familyDoc = await FirestorePaths.churchFamilies(firestore, churchId)
           .doc(familyId)
           .get();
       final familyHeadUid =
           (familyDoc.data()?['familyHeadUid'] ?? '').toString().trim();
       if (familyHeadUid == userId) {
-        final familyMembers = await collectionRef()
-            .where('familyId', isEqualTo: familyId)
-            .get();
+        final familyMembers =
+            await collectionRef().where('familyId', isEqualTo: familyId).get();
         final remainingMembers = familyMembers.docs
             .map((doc) => doc.data())
             .where((member) => member.uid != userId)
             .toList()
-          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
         if (remainingMembers.isEmpty) {
           await familyDoc.reference.delete().catchError((_) {});
@@ -350,8 +371,7 @@ class MembersRepository extends ChurchScopedRepository {
     }
 
     for (final group in churchGroupDefinitions) {
-      await FirestorePaths
-          .churchGroupMembers(firestore, churchId, group.id)
+      await FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
           .doc(userId)
           .delete()
           .catchError((_) {});
@@ -375,27 +395,33 @@ class MembersRepository extends ChurchScopedRepository {
     for (final group in churchGroupDefinitions) {
       final groupDoc =
           FirestorePaths.churchGroupDoc(firestore, churchId, group.id);
-      final memberDoc = FirestorePaths
-          .churchGroupMembers(firestore, churchId, group.id)
-          .doc(userId);
+      final memberDoc =
+          FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
+              .doc(userId);
 
-      batch.set(groupDoc, {
-        'id': group.id,
-        'label': group.label,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          groupDoc,
+          {
+            'id': group.id,
+            'label': group.label,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
 
       if (churchGroupIds.contains(group.id)) {
-        batch.set(memberDoc, {
-          'uid': userId,
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'phone': phone,
-          'category': category,
-          'groupId': group.id,
-          'groupLabel': group.label,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        batch.set(
+            memberDoc,
+            {
+              'uid': userId,
+              'email': email.trim().toLowerCase(),
+              'name': name,
+              'phone': phone,
+              'category': category,
+              'groupId': group.id,
+              'groupLabel': group.label,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
       } else {
         batch.delete(memberDoc);
       }

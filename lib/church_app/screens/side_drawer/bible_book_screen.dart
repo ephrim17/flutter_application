@@ -43,16 +43,29 @@ class BibleBookScreen extends StatelessWidget {
   }
 }
 
-class ChapterScreen extends StatelessWidget {
-  final BibleBook book;
-  final repo = BibleRepository();
+class ChapterScreen extends StatefulWidget {
+  const ChapterScreen({super.key, required this.book});
 
-  ChapterScreen({super.key, required this.book});
+  final BibleBook book;
+
+  @override
+  State<ChapterScreen> createState() => _ChapterScreenState();
+}
+
+class _ChapterScreenState extends State<ChapterScreen> {
+  final BibleRepository _repo = BibleRepository();
+  late final Future<Map<String, dynamic>> _bookFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookFuture = _repo.loadBook(widget.book.key);
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: repo.loadBook(book.key),
+      future: _bookFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -77,11 +90,11 @@ class ChapterScreen extends StatelessWidget {
               title: Column(
             children: [
               Text(
-                book.key,
+                widget.book.key,
                 style: TextStyle(fontSize: 18),
               ),
               Text(
-                book.name,
+                widget.book.name,
                 style: TextStyle(fontSize: 10),
               ),
             ],
@@ -101,7 +114,7 @@ class ChapterScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => VerseScreen(
-                        book: book,
+                        book: widget.book,
                         startChapterIndex: index,
                       ),
                     ),
@@ -139,6 +152,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
   final repo = BibleRepository();
 
   late PageController _pageController;
+  late final Future<Map<String, dynamic>> _bookFuture;
   String chapterIndexText = '';
 
   @override
@@ -147,17 +161,69 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     _pageController = PageController(
       initialPage: 0,
     );
+    _bookFuture = repo.loadBook(widget.book.key);
     chapterIndexText = (widget.startChapterIndex + 1).toString();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: repo.loadBook(widget.book.key),
+      future: _bookFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: BibleReaderAppBar(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.book.key, style: const TextStyle(fontSize: 18)),
+                  Text(
+                    widget.book.name,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  "${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}",
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return Scaffold(
+            appBar: BibleReaderAppBar(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.book.key, style: const TextStyle(fontSize: 18)),
+                  Text(
+                    widget.book.name,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+            body: Center(
+              child: Text(
+                context.t(
+                  'common.no_data',
+                  fallback: 'No data found',
+                ),
+              ),
+            ),
           );
         }
 
@@ -229,7 +295,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: isHighlighted
-                          ? Colors.yellow.withOpacity(0.25)
+                          ? Colors.yellow.withValues(alpha: 0.25)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -272,7 +338,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     final text = highlights.map((v) {
       final reference = v['reference'] ?? '';
       final verse = verses.firstWhere(
-        (vv) => "${widget.book.key} ${chapterIndexText}:${vv['verse']}" == reference,
+        (vv) => "$chapterIndexText:${vv['verse']}" == reference.split(' ').last,
         orElse: () => null,
       );
       if (verse == null) return '';

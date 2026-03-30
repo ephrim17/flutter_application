@@ -26,8 +26,14 @@ class AppUser {
   final DateTime? lastStreakRecordedAt;
   final bool approved;
   final bool solemnizedBaptism;
+  final DateTime? baptismDate;
+  final String baptismCertificateNumber;
   final String baptismChurchName;
   final String baptismPastorName;
+  final String marriageSolemnizationChurchType;
+  final String marriageSolemnizationChurchName;
+  final String membershipCurrentStatus;
+  final String membershipNotes;
   final String additionalNotes;
 
   static int _parseDayStreak(dynamic raw) {
@@ -62,8 +68,14 @@ class AppUser {
     this.dayStreak = 0,
     this.lastStreakRecordedAt,
     this.solemnizedBaptism = false,
+    this.baptismDate,
+    this.baptismCertificateNumber = '',
     this.baptismChurchName = '',
     this.baptismPastorName = '',
+    this.marriageSolemnizationChurchType = '',
+    this.marriageSolemnizationChurchName = '',
+    this.membershipCurrentStatus = '',
+    this.membershipNotes = '',
     this.additionalNotes = '',
   });
 
@@ -73,6 +85,7 @@ class AppUser {
   ) {
     final dobRaw = data['dob'];
     final weddingDayRaw = data['weddingDay'];
+    final baptismDateRaw = data['baptismDate'];
     final createdAtRaw = data['createdAt'];
     final lastStreakRecordedAtRaw = data['lastStreakRecordedAt'];
 
@@ -125,8 +138,20 @@ class AppUser {
       role: data['role'] ?? 'user',
       approved: data['approved'] ?? false,
       solemnizedBaptism: data['solemnizedBaptism'] ?? false,
+      baptismDate: baptismDateRaw is Timestamp
+          ? baptismDateRaw.toDate()
+          : baptismDateRaw is DateTime
+              ? baptismDateRaw
+              : null,
+      baptismCertificateNumber: data['baptismCertificateNumber'] ?? '',
       baptismChurchName: data['baptismChurchName'] ?? '',
       baptismPastorName: data['baptismPastorName'] ?? '',
+      marriageSolemnizationChurchType:
+          data['marriageSolemnizationChurchType'] ?? '',
+      marriageSolemnizationChurchName:
+          data['marriageSolemnizationChurchName'] ?? '',
+      membershipCurrentStatus: data['membershipCurrentStatus'] ?? '',
+      membershipNotes: data['membershipNotes'] ?? '',
       additionalNotes: data['additionalNotes'] ?? '',
     );
   }
@@ -134,6 +159,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     final dobRaw = json['dob'];
     final weddingDayRaw = json['weddingDay'];
+    final baptismDateRaw = json['baptismDate'];
     final createdAtRaw = json['createdAt'];
     final lastStreakRecordedAtRaw = json['lastStreakRecordedAt'];
 
@@ -186,8 +212,20 @@ class AppUser {
       role: json['role'] ?? 'user',
       approved: json['approved'] ?? false,
       solemnizedBaptism: json['solemnizedBaptism'] ?? false,
+      baptismDate: baptismDateRaw is Timestamp
+          ? baptismDateRaw.toDate()
+          : baptismDateRaw is DateTime
+              ? baptismDateRaw
+              : null,
+      baptismCertificateNumber: json['baptismCertificateNumber'] ?? '',
       baptismChurchName: json['baptismChurchName'] ?? '',
       baptismPastorName: json['baptismPastorName'] ?? '',
+      marriageSolemnizationChurchType:
+          json['marriageSolemnizationChurchType'] ?? '',
+      marriageSolemnizationChurchName:
+          json['marriageSolemnizationChurchName'] ?? '',
+      membershipCurrentStatus: json['membershipCurrentStatus'] ?? '',
+      membershipNotes: json['membershipNotes'] ?? '',
       additionalNotes: json['additionalNotes'] ?? '',
     );
   }
@@ -220,8 +258,15 @@ class AppUser {
           ? Timestamp.fromDate(lastStreakRecordedAt!)
           : null,
       'solemnizedBaptism': solemnizedBaptism,
+      'baptismDate':
+          baptismDate != null ? Timestamp.fromDate(baptismDate!) : null,
+      'baptismCertificateNumber': baptismCertificateNumber,
       'baptismChurchName': baptismChurchName,
       'baptismPastorName': baptismPastorName,
+      'marriageSolemnizationChurchType': marriageSolemnizationChurchType,
+      'marriageSolemnizationChurchName': marriageSolemnizationChurchName,
+      'membershipCurrentStatus': membershipCurrentStatus,
+      'membershipNotes': membershipNotes,
       'additionalNotes': additionalNotes,
     };
   }

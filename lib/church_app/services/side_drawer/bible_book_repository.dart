@@ -3,10 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 
 class BibleRepository {
+  static final Map<String, Future<Map<String, dynamic>>> _bookCache = {};
+
   Future<Map<String, dynamic>> loadBook(String bookKey) async {
-    final path = 'assets/bible/$bookKey.json';
-    final raw = await rootBundle.loadString(path);
-    return json.decode(raw);
+    return _bookCache.putIfAbsent(bookKey, () async {
+      final path = 'assets/bible/$bookKey.json';
+      final raw = await rootBundle.loadString(path).timeout(
+        const Duration(seconds: 15),
+      );
+      return Map<String, dynamic>.from(json.decode(raw) as Map);
+    });
   }
 
   Future<Map<String, String>> getVerse({

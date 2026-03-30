@@ -976,6 +976,25 @@ Future<void> _showMemberDetailsSheet(
                           ),
                           if (member.solemnizedBaptism) ...[
                             _MemberDetailRow(
+                              icon: Icons.event_outlined,
+                              label: context.t(
+                                'members.baptism_date_label',
+                                fallback: 'Baptism Date',
+                              ),
+                              value: _formatDob(context, member.baptismDate),
+                            ),
+                            _MemberDetailRow(
+                              icon: Icons.confirmation_number_outlined,
+                              label: context.t(
+                                'members.baptism_certificate_number_label',
+                                fallback: 'Baptism Certificate Number',
+                              ),
+                              value: _valueOrFallback(
+                                context,
+                                member.baptismCertificateNumber,
+                              ),
+                            ),
+                            _MemberDetailRow(
                               icon: Icons.church_outlined,
                               label: context.t(
                                 'members.baptism_church_name_label',
@@ -998,6 +1017,55 @@ Future<void> _showMemberDetailsSheet(
                               ),
                             ),
                           ],
+                          if (member.maritalStatus.trim().toLowerCase() ==
+                              'married') ...[
+                            _MemberDetailRow(
+                              icon: Icons.favorite_outline,
+                              label: context.t(
+                                'members.marriage_solemnization_title',
+                                fallback: 'Marriage Solemnization',
+                              ),
+                              value: _valueOrFallback(
+                                context,
+                                member.marriageSolemnizationChurchType ==
+                                            'current_church' &&
+                                        member.marriageSolemnizationChurchName
+                                            .trim()
+                                            .isEmpty
+                                    ? context.t(
+                                        'members.current_church_option',
+                                        fallback: 'Current Church',
+                                      )
+                                    : member.marriageSolemnizationChurchName,
+                              ),
+                            ),
+                          ],
+                          _MemberDetailRow(
+                            icon: Icons.badge_outlined,
+                            label: context.t(
+                              'members.membership_current_status_label',
+                              fallback: 'Membership Current Status',
+                            ),
+                            value: _valueOrFallback(
+                              context,
+                              _formatCategory(
+                                context,
+                                member.membershipCurrentStatus
+                                    .replaceAll('_', ' '),
+                              ),
+                            ),
+                          ),
+                          _MemberDetailRow(
+                            icon: Icons.notes_outlined,
+                            label: context.t(
+                              'members.membership_notes_label',
+                              fallback: 'Additional Note',
+                            ),
+                            value: _valueOrFallback(
+                              context,
+                              member.membershipNotes,
+                            ),
+                          ),
                         ],
                       ),
                     ),

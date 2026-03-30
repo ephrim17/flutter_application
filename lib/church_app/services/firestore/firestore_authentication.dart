@@ -218,8 +218,14 @@ class AuthRepository {
       List<String> talentsAndGifts = const [],
       List<String> churchGroupIds = const [],
       bool solemnizedBaptism = false,
+      DateTime? baptismDate,
+      String baptismCertificateNumber = '',
       String baptismChurchName = '',
       String baptismPastorName = '',
+      String marriageSolemnizationChurchType = '',
+      String marriageSolemnizationChurchName = '',
+      String membershipCurrentStatus = '',
+      String membershipNotes = '',
       String additionalNotes = '',
       String? familyLabel,
       String? targetUid,
@@ -272,10 +278,23 @@ class AuthRepository {
           .where((item) => item.isNotEmpty)
           .toList(),
       'solemnizedBaptism': solemnizedBaptism,
-      'baptismChurchName':
-          solemnizedBaptism ? baptismChurchName.trim() : '',
-      'baptismPastorName':
-          solemnizedBaptism ? baptismPastorName.trim() : '',
+      'baptismDate': solemnizedBaptism && baptismDate != null
+          ? Timestamp.fromDate(baptismDate)
+          : null,
+      'baptismCertificateNumber':
+          solemnizedBaptism ? baptismCertificateNumber.trim() : '',
+      'baptismChurchName': solemnizedBaptism ? baptismChurchName.trim() : '',
+      'baptismPastorName': solemnizedBaptism ? baptismPastorName.trim() : '',
+      'marriageSolemnizationChurchType':
+          maritalStatus.trim().toLowerCase() == 'married'
+              ? marriageSolemnizationChurchType.trim()
+              : '',
+      'marriageSolemnizationChurchName':
+          maritalStatus.trim().toLowerCase() == 'married'
+              ? marriageSolemnizationChurchName.trim()
+              : '',
+      'membershipCurrentStatus': membershipCurrentStatus.trim(),
+      'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
       'approved': approved,
       'authToken': authToken,

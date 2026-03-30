@@ -61,18 +61,24 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   final _educationalQualificationController = TextEditingController();
   final _talentsAndGiftsController = TextEditingController();
   final _additionalNotesController = TextEditingController();
+  final _membershipNotesController = TextEditingController();
   final _baptismChurchNameController = TextEditingController();
   final _baptismPastorNameController = TextEditingController();
+  final _baptismCertificateNumberController = TextEditingController();
+  final _marriageOtherChurchNameController = TextEditingController();
 
   int _stepIndex = 0;
   DateTime? _dob;
   DateTime? _weddingDay;
+  DateTime? _baptismDate;
   String _gender = '';
   String _category = '';
   String _maritalStatus = '';
   bool _useExistingFamilyId = false;
   bool _financialSupportRequired = false;
   bool _solemnizedBaptism = false;
+  String _marriageSolemnizationChurchType = '';
+  String _membershipCurrentStatus = '';
   String? _selectedExistingFamilyId;
   int _financialStabilityRating = 0;
   Set<String> _selectedChurchGroupIds = <String>{};
@@ -108,9 +114,27 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       _talentsAndGiftsController.text =
           existingMember.talentsAndGifts.join(', ');
       _additionalNotesController.text = existingMember.additionalNotes;
+      _membershipNotesController.text = existingMember.membershipNotes;
       _solemnizedBaptism = existingMember.solemnizedBaptism;
+      _baptismDate = existingMember.baptismDate;
+      _baptismCertificateNumberController.text =
+          existingMember.baptismCertificateNumber;
       _baptismChurchNameController.text = existingMember.baptismChurchName;
       _baptismPastorNameController.text = existingMember.baptismPastorName;
+      _marriageSolemnizationChurchType =
+          existingMember.marriageSolemnizationChurchType.trim();
+      _marriageOtherChurchNameController.text =
+          existingMember.marriageSolemnizationChurchName;
+      _membershipCurrentStatus = existingMember.membershipCurrentStatus.trim();
+      if (_maritalStatus == 'married' &&
+          _marriageSolemnizationChurchType.isEmpty &&
+          existingMember.marriageSolemnizationChurchName.trim().isNotEmpty) {
+        _marriageSolemnizationChurchType =
+            existingMember.marriageSolemnizationChurchName.trim() ==
+                    widget.churchName.trim()
+                ? 'current_church'
+                : 'other_church';
+      }
       _selectedChurchGroupIds = existingMember.churchGroupIds.toSet();
 
       if (_category == 'family') {
@@ -140,8 +164,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     _educationalQualificationController.dispose();
     _talentsAndGiftsController.dispose();
     _additionalNotesController.dispose();
+    _membershipNotesController.dispose();
     _baptismChurchNameController.dispose();
     _baptismPastorNameController.dispose();
+    _baptismCertificateNumberController.dispose();
+    _marriageOtherChurchNameController.dispose();
     super.dispose();
   }
 
@@ -304,6 +331,28 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     }
   }
 
+  Future<void> _pickBaptismDate() async {
+    FocusScope.of(context).unfocus();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _baptismDate ?? _weddingDay ?? _dob ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _baptismDate = pickedDate;
+      });
+    }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
   String? _validateCurrentStep() {
     if (_showAdminSections) {
       switch (_stepIndex) {
@@ -368,6 +417,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           }
           return null;
         case 2:
+          if (_solemnizedBaptism && _baptismDate == null) {
+            return context.t(
+              'members.baptism_date_required',
+              fallback: 'Please select the baptism date',
+            );
+          }
           if (_solemnizedBaptism &&
               _baptismChurchNameController.text.trim().isEmpty) {
             return context.t(
@@ -380,6 +435,21 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             return context.t(
               'members.baptism_pastor_name_required',
               fallback: 'Please enter the baptism pastor name',
+            );
+          }
+          if (_maritalStatus == 'married' &&
+              _marriageSolemnizationChurchType.isEmpty) {
+            return context.t(
+              'members.marriage_solemnization_required',
+              fallback: 'Please choose the marriage solemnization church',
+            );
+          }
+          if (_maritalStatus == 'married' &&
+              _marriageSolemnizationChurchType == 'other_church' &&
+              _marriageOtherChurchNameController.text.trim().isEmpty) {
+            return context.t(
+              'members.marriage_solemnization_other_church_required',
+              fallback: 'Please enter the other church name',
             );
           }
           return null;
@@ -546,8 +616,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           talentsAndGifts: _parsedTalentsAndGifts(),
           churchGroupIds: _selectedChurchGroupIds.toList(),
           solemnizedBaptism: _solemnizedBaptism,
+          baptismDate: _baptismDate,
+          baptismCertificateNumber:
+              _baptismCertificateNumberController.text.trim(),
           baptismChurchName: _baptismChurchNameController.text.trim(),
           baptismPastorName: _baptismPastorNameController.text.trim(),
+          marriageSolemnizationChurchType: _marriageSolemnizationChurchType,
+          marriageSolemnizationChurchName:
+              _marriageSolemnizationChurchType == 'current_church'
+                  ? widget.churchName
+                  : _marriageOtherChurchNameController.text.trim(),
+          membershipCurrentStatus: _membershipCurrentStatus,
+          membershipNotes: _membershipNotesController.text.trim(),
           additionalNotes: _additionalNotesController.text.trim(),
           familyLabel: _category == 'family' && !_useExistingFamilyId
               ? _familyNameController.text.trim()
@@ -671,8 +751,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             talentsAndGifts: _parsedTalentsAndGifts(),
             churchGroupIds: _selectedChurchGroupIds.toList(),
             solemnizedBaptism: _solemnizedBaptism,
+            baptismDate: _baptismDate,
+            baptismCertificateNumber:
+                _baptismCertificateNumberController.text.trim(),
             baptismChurchName: _baptismChurchNameController.text.trim(),
             baptismPastorName: _baptismPastorNameController.text.trim(),
+            marriageSolemnizationChurchType: _marriageSolemnizationChurchType,
+            marriageSolemnizationChurchName:
+                _marriageSolemnizationChurchType == 'current_church'
+                    ? widget.churchName
+                    : _marriageOtherChurchNameController.text.trim(),
+            membershipCurrentStatus: _membershipCurrentStatus,
+            membershipNotes: _membershipNotesController.text.trim(),
             additionalNotes: _additionalNotesController.text.trim(),
             familyLabel: _category == 'family' && !_useExistingFamilyId
                 ? _familyNameController.text.trim()
@@ -754,8 +844,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         authToken: authToken,
         dob: _dob!,
         solemnizedBaptism: _solemnizedBaptism,
+        baptismDate: _baptismDate,
+        baptismCertificateNumber:
+            _baptismCertificateNumberController.text.trim(),
         baptismChurchName: _baptismChurchNameController.text.trim(),
         baptismPastorName: _baptismPastorNameController.text.trim(),
+        marriageSolemnizationChurchType: _marriageSolemnizationChurchType,
+        marriageSolemnizationChurchName:
+            _marriageSolemnizationChurchType == 'current_church'
+                ? widget.churchName
+                : _marriageOtherChurchNameController.text.trim(),
+        membershipCurrentStatus: _membershipCurrentStatus,
+        membershipNotes: _membershipNotesController.text.trim(),
         additionalNotes: _additionalNotesController.text.trim(),
       );
       Navigator.of(context).pushAndRemoveUntil(
@@ -1041,6 +1141,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           _syncCategoryWithMaritalStatus();
                                           if (_maritalStatus != 'married') {
                                             _weddingDay = null;
+                                            _marriageSolemnizationChurchType =
+                                                '';
+                                            _marriageOtherChurchNameController
+                                                .clear();
                                           }
                                         });
                                       },
@@ -1346,13 +1450,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 subtitle: context.t(
                                   'members.church_records_subtitle',
                                   fallback:
-                                      'Capture baptism-related records for this member.',
+                                      'Capture baptism, marriage solemnization, and membership records for this member.',
                                 ),
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     DropdownButtonFormField<String>(
-                                      value:
-                                          _solemnizedBaptism ? 'yes' : 'no',
+                                      value: _solemnizedBaptism ? 'yes' : 'no',
                                       decoration: InputDecoration(
                                         labelText: context.t(
                                           'members.solemnized_baptism_label',
@@ -1383,13 +1487,58 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         setState(() {
                                           _solemnizedBaptism = value == 'yes';
                                           if (!_solemnizedBaptism) {
-                                            _baptismChurchNameController.clear();
-                                            _baptismPastorNameController.clear();
+                                            _baptismDate = null;
+                                            _baptismCertificateNumberController
+                                                .clear();
+                                            _baptismChurchNameController
+                                                .clear();
+                                            _baptismPastorNameController
+                                                .clear();
                                           }
                                         });
                                       },
                                     ),
                                     if (_solemnizedBaptism) ...[
+                                      const SizedBox(height: 16),
+                                      InkWell(
+                                        onTap: _pickBaptismDate,
+                                        child: InputDecorator(
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                              'members.baptism_date_label',
+                                              fallback: 'Baptism Date',
+                                            ),
+                                            suffixIcon: const Icon(
+                                                Icons.calendar_today),
+                                          ),
+                                          child: Text(
+                                            _formatDate(_baptismDate).isEmpty
+                                                ? context.t(
+                                                    'members.baptism_date_hint',
+                                                    fallback:
+                                                        'Select baptism date',
+                                                  )
+                                                : _formatDate(_baptismDate),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextField(
+                                        controller:
+                                            _baptismCertificateNumberController,
+                                        textInputAction: TextInputAction.next,
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'members.baptism_certificate_number_label',
+                                            fallback:
+                                                'Baptism Certificate Number',
+                                          ),
+                                          helperText: context.t(
+                                            'members.baptism_certificate_number_helper',
+                                            fallback: 'Optional',
+                                          ),
+                                        ),
+                                      ),
                                       const SizedBox(height: 16),
                                       TextField(
                                         controller:
@@ -1414,6 +1563,171 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                     ],
+                                    if (_maritalStatus == 'married') ...[
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        context.t(
+                                          'members.marriage_solemnization_title',
+                                          fallback: 'Marriage Solemnization',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      DropdownButtonFormField<String>(
+                                        value: _marriageSolemnizationChurchType
+                                                .isEmpty
+                                            ? null
+                                            : _marriageSolemnizationChurchType,
+                                        decoration: InputDecoration(
+                                          labelText: context.t(
+                                            'members.marriage_solemnization_church_label',
+                                            fallback: 'Select Church',
+                                          ),
+                                        ),
+                                        items: [
+                                          DropdownMenuItem(
+                                            value: 'current_church',
+                                            child: Text(
+                                              context.t(
+                                                'members.current_church_option',
+                                                fallback: 'Current Church',
+                                              ),
+                                            ),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'other_church',
+                                            child: Text(
+                                              context.t(
+                                                'members.other_church_option',
+                                                fallback:
+                                                    'Type Other Church Name',
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _marriageSolemnizationChurchType =
+                                                value ?? '';
+                                            if (_marriageSolemnizationChurchType !=
+                                                'other_church') {
+                                              _marriageOtherChurchNameController
+                                                  .clear();
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      if (_marriageSolemnizationChurchType ==
+                                          'current_church') ...[
+                                        const SizedBox(height: 12),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer
+                                                .withValues(alpha: 0.32),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                          ),
+                                          child: Text(
+                                            widget.churchName,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                      if (_marriageSolemnizationChurchType ==
+                                          'other_church') ...[
+                                        const SizedBox(height: 16),
+                                        TextField(
+                                          controller:
+                                              _marriageOtherChurchNameController,
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                              'members.other_church_name_label',
+                                              fallback: 'Other Church Name',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      context.t(
+                                        'members.membership_section_title',
+                                        fallback: 'Membership Section',
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    DropdownButtonFormField<String>(
+                                      value: _membershipCurrentStatus.isEmpty
+                                          ? null
+                                          : _membershipCurrentStatus,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.membership_current_status_label',
+                                          fallback: 'Membership Current Status',
+                                        ),
+                                      ),
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 'active',
+                                          child: Text('Active'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'transfered',
+                                          child: Text('Transfered'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'quit_the_church',
+                                          child: Text('Quit the church'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'not_known',
+                                          child: Text('Not Known'),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _membershipCurrentStatus =
+                                              value ?? '';
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      controller: _membershipNotesController,
+                                      minLines: 2,
+                                      maxLines: 4,
+                                      decoration: InputDecoration(
+                                        labelText: context.t(
+                                          'members.membership_notes_label',
+                                          fallback: 'Additional Note',
+                                        ),
+                                        helperText: context.t(
+                                          'members.membership_notes_helper',
+                                          fallback:
+                                              'Optional church membership note for reference.',
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1630,6 +1944,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           _syncCategoryWithMaritalStatus();
                                           if (_maritalStatus != 'married') {
                                             _weddingDay = null;
+                                            _marriageSolemnizationChurchType =
+                                                '';
+                                            _marriageOtherChurchNameController
+                                                .clear();
                                           }
                                         });
                                       },
