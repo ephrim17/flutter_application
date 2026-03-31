@@ -21,10 +21,9 @@ class PromiseSection implements MasterSection {
       SliverToBoxAdapter(
         child: Consumer(
           builder: (context, ref, _) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                child: PromiseVerseCard()),
+            return const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: PromiseVerseCard(),
             );
           },
         ),
@@ -33,64 +32,86 @@ class PromiseSection implements MasterSection {
   }
 }
 
-
 class PromiseVerseCard extends ConsumerWidget {
   const PromiseVerseCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final promiseWordAsync = ref.watch(promiseWordProviderLocal);
-    final width = MediaQuery.of(context).size.width;
-
-    //final double height = cardHeight(PromiseSection().id) * 0.5;
 
     return promiseWordAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verse) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              text: context.t(
-                'promise.section_title',
-                fallback: 'Promise Word 2026',
-              ),
-              padding: 0.0,
-            ),
-            const SizedBox(height: 10),
-            DecoratedScriptureCard(
-              width: width - 32,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    verse['tamil']!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      height: 1.4,
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+
+        return Align(
+          alignment: Alignment.center,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final availableWidth = constraints.maxWidth;
+                final isTabletWidth = availableWidth >= 700;
+                final tamilStyle =
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          height: 1.45,
+                        );
+                final englishStyle =
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.45,
+                        );
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SectionHeader(
+                      text: context.t(
+                        'promise.section_title',
+                        fallback: 'Promise Word 2026',
+                      ),
+                      padding: 0.0,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    verse['english']!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      height: 1.4,
+                    const SizedBox(height: 10),
+                    DecoratedScriptureCard(
+                      width: availableWidth,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTabletWidth ? 18 : 6,
+                          vertical: isTabletWidth ? 12 : 4,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              verse['tamil']!,
+                              textAlign: TextAlign.center,
+                              style: tamilStyle,
+                            ),
+                            SizedBox(height: isTabletWidth ? 14 : 10),
+                            Text(
+                              verse['english']!,
+                              textAlign: TextAlign.center,
+                              style: englishStyle,
+                            ),
+                            SizedBox(height: isTabletWidth ? 16 : 12),
+                            ScriptureReferencePill(
+                              reference: verse['reference']!,
+                              fontSize: isTabletWidth ? 15 : 14,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ScriptureReferencePill(
-                    reference: verse['reference']!,
-                    fontSize: 14,
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
-          ],
+          ),
         );
       },
     );
