@@ -28,6 +28,7 @@ import 'package:flutter_application/church_app/widgets/solid_button_widget.dart'
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
   final firebaseUser = ref.watch(authStateProvider).value;
@@ -887,7 +888,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                   ),
                 ],
               ),
-              child: TextField(
+              child: AppTextField(
                 controller: _searchController,
                 onChanged: (value) {
                   setState(() {

@@ -15,6 +15,7 @@ import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class SuperAdminHomeScreen extends ConsumerStatefulWidget {
   const SuperAdminHomeScreen({super.key});
@@ -172,7 +173,8 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                               return;
                                             }
                                             FirebaseAnalytics.instance.logEvent(
-                                              name: 'church_created_super_admin',
+                                              name:
+                                                  'church_created_super_admin',
                                               parameters: {
                                                 'result': createResult,
                                               },
@@ -212,7 +214,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                 Container(
                                   decoration: carouselBoxDecoration(context),
                                   padding: const EdgeInsets.all(16),
-                                  child: TextField(
+                                  child: AppTextField(
                                     controller: _searchController,
                                     onChanged: (value) {
                                       setState(() {

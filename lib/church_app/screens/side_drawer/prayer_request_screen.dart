@@ -11,12 +11,14 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class PrayerRequestScreen extends ConsumerStatefulWidget {
   const PrayerRequestScreen({super.key});
 
   @override
-  ConsumerState<PrayerRequestScreen> createState() => _PrayerRequestScreenState();
+  ConsumerState<PrayerRequestScreen> createState() =>
+      _PrayerRequestScreenState();
 }
 
 class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
@@ -117,20 +119,18 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
                       /// Show user only if NOT anonymous
                       if (!prayer.isAnonymous)
                         ref.watch(churchUserNameProvider(prayer.userId)).when(
-                              loading: () =>
-                                  Text(
-                                    context.t(
-                                      'prayer.by_loading',
-                                      fallback: 'By: Loading...',
-                                    ),
-                                  ),
-                              error: (_, __) =>
-                                  Text(
-                                    context.t(
-                                      'prayer.by_unknown',
-                                      fallback: 'By: Unknown',
-                                    ),
-                                  ),
+                              loading: () => Text(
+                                context.t(
+                                  'prayer.by_loading',
+                                  fallback: 'By: Loading...',
+                                ),
+                              ),
+                              error: (_, __) => Text(
+                                context.t(
+                                  'prayer.by_unknown',
+                                  fallback: 'By: Unknown',
+                                ),
+                              ),
                               data: (name) => Text(
                                   "By: ${name?.toUpperCase() ?? "Unknown"}"),
                             ),
@@ -147,28 +147,26 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (segment == PrayerSegment.my)
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () async {
+                            await logChurchAnalyticsEvent(
+                              ref,
+                              name: 'prayer_request_edit_started',
+                              parameters: {
+                                'prayer_id': prayer.id,
+                                'segment': segment.name,
+                              },
+                            );
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => AddPrayerModal(existing: prayer),
+                            );
+                          },
+                        ),
                       IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () async {
-                          await logChurchAnalyticsEvent(
-                            ref,
-                            name: 'prayer_request_edit_started',
-                            parameters: {
-                              'prayer_id': prayer.id,
-                              'segment': segment.name,
-                            },
-                          );
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) =>
-                                AddPrayerModal(existing: prayer),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete,
-                            color: Colors.red),
+                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
                           await ref
                               .read(prayerRepositoryProvider)
@@ -234,7 +232,6 @@ Future<void> _showPrayerDetailsSheet(
   );
 }
 
-
 class _SegmentControl extends ConsumerWidget {
   final bool isAdmin;
   const _SegmentControl({required this.isAdmin});
@@ -283,12 +280,10 @@ class AddPrayerModal extends ConsumerStatefulWidget {
   const AddPrayerModal({super.key, this.existing});
 
   @override
-  ConsumerState<AddPrayerModal> createState() =>
-      _AddPrayerModalState();
+  ConsumerState<AddPrayerModal> createState() => _AddPrayerModalState();
 }
 
-class _AddPrayerModalState
-    extends ConsumerState<AddPrayerModal> {
+class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -327,26 +322,22 @@ class _AddPrayerModalState
           children: [
             Text(
               context.t('prayer.modal_title', fallback: 'Prayer Request'),
-              style:
-                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-
-            TextFormField(
+            AppTextField(
               controller: _titleCtrl,
               decoration: InputDecoration(
                 labelText: context.t('prayer.title_label', fallback: 'Title'),
                 border: OutlineInputBorder(),
               ),
-              validator: (value) =>
-                  value == null || value.trim().isEmpty
-                      ? context.t('prayer.title_required', fallback: 'Title required')
-                      : null,
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? context.t('prayer.title_required',
+                      fallback: 'Title required')
+                  : null,
             ),
-
             const SizedBox(height: 16),
-
-            TextFormField(
+            AppTextField(
               controller: _descCtrl,
               maxLines: 3,
               decoration: InputDecoration(
@@ -356,17 +347,14 @@ class _AddPrayerModalState
                 ),
                 border: OutlineInputBorder(),
               ),
-              validator: (value) =>
-                  value == null || value.trim().isEmpty
-                      ? context.t(
-                          'prayer.description_required',
-                          fallback: 'Description required',
-                        )
-                      : null,
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? context.t(
+                      'prayer.description_required',
+                      fallback: 'Description required',
+                    )
+                  : null,
             ),
-
             const SizedBox(height: 16),
-
             SwitchListTile(
               title: Text(
                 context.t(
@@ -379,9 +367,7 @@ class _AddPrayerModalState
                 setState(() => _isAnonymous = v);
               },
             ),
-
             const SizedBox(height: 8),
-
             ListTile(
               title: Text(
                 _expiryDate == null
@@ -397,8 +383,7 @@ class _AddPrayerModalState
                   context: context,
                   initialDate: now,
                   firstDate: now,
-                  lastDate:
-                      now.add(const Duration(days: 30)),
+                  lastDate: now.add(const Duration(days: 30)),
                 );
 
                 if (picked != null) {
@@ -406,9 +391,7 @@ class _AddPrayerModalState
                 }
               },
             ),
-
             const SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
               child: _isLoading
@@ -417,7 +400,6 @@ class _AddPrayerModalState
                       context.t('common.submit', fallback: 'Submit'),
                     ),
             ),
-
             const SizedBox(height: 20),
           ],
         ),

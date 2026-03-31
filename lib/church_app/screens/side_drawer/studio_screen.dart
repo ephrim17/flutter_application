@@ -19,6 +19,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   const StudioScreen({super.key});
@@ -1361,7 +1362,7 @@ class _ThemeColorField extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: TextField(
+              child: AppTextField(
                 controller: controller,
                 onChanged: onChanged,
                 decoration: InputDecoration(
@@ -2118,7 +2119,7 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                 Text(
                     '${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _titleController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -2128,7 +2129,7 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: _bodyController,
                   maxLines: 4,
                   decoration: InputDecoration(
@@ -2602,7 +2603,7 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
                       fallback: 'Enter one admin email per line.'),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _controller,
                   maxLines: 10,
                   decoration: InputDecoration(
@@ -2907,14 +2908,14 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _titleController,
                   decoration: InputDecoration(
                     labelText: context.t('common.title', fallback: 'Title'),
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: _descController,
                   maxLines: 4,
                   decoration: InputDecoration(
@@ -3027,7 +3028,7 @@ Future<void> _showAboutEditor(
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  AppTextField(
                     controller: churchAppTitleController,
                     decoration: InputDecoration(
                       labelText: context.t(
@@ -3037,14 +3038,14 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: taglineController,
                     decoration: InputDecoration(
                       labelText: context.t(
@@ -3054,7 +3055,7 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: descriptionController,
                     maxLines: 4,
                     decoration: InputDecoration(
@@ -3065,7 +3066,7 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: missionController,
                     maxLines: 3,
                     decoration: InputDecoration(
@@ -3076,7 +3077,7 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: communityController,
                     maxLines: 3,
                     decoration: InputDecoration(
@@ -3087,7 +3088,7 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  AppTextField(
                     controller: valuesController,
                     maxLines: 3,
                     decoration: InputDecoration(
@@ -3195,14 +3196,14 @@ Future<void> _showPastorEditor(
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: titleController,
                   decoration: InputDecoration(
                     labelText: context.t('common.title', fallback: 'Title'),
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: contactController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3442,7 +3443,7 @@ Future<void> _showFooterContactEditor(
                   },
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: labelController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3452,7 +3453,7 @@ Future<void> _showFooterContactEditor(
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: actionController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3462,7 +3463,7 @@ Future<void> _showFooterContactEditor(
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: orderController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
@@ -3573,7 +3574,7 @@ Future<void> _showFooterSocialEditor(
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: iconController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3583,7 +3584,7 @@ Future<void> _showFooterSocialEditor(
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: platformController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3593,7 +3594,7 @@ Future<void> _showFooterSocialEditor(
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: urlController,
                   decoration: InputDecoration(
                     labelText: context.t(
@@ -3603,7 +3604,7 @@ Future<void> _showFooterSocialEditor(
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                AppTextField(
                   controller: orderController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
@@ -3719,13 +3720,13 @@ Future<void> _showEventEditor(
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: context.t('common.description',
@@ -3762,21 +3763,21 @@ Future<void> _showEventEditor(
                       }
                     },
                   ),
-                  TextField(
+                  AppTextField(
                     controller: contactController,
                     decoration: InputDecoration(
                       labelText: context.t('studio.event_contact',
                           fallback: 'Contact'),
                     ),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: locationController,
                     decoration: InputDecoration(
                       labelText: context.t('studio.event_location',
                           fallback: 'Location'),
                     ),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: timingController,
                     readOnly: true,
                     decoration: InputDecoration(
@@ -3848,7 +3849,7 @@ Future<void> _showEventEditor(
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: expiryController,
                     readOnly: true,
                     decoration: InputDecoration(
@@ -3909,8 +3910,8 @@ Future<void> _showEventEditor(
                                           _formatOptionalDateTime(resolved);
                                     });
                                   },
-                              icon: const Icon(Icons.event_outlined),
-                            ),
+                            icon: const Icon(Icons.event_outlined),
+                          ),
                         ],
                       ),
                     ),
@@ -4033,13 +4034,13 @@ Future<void> _showAnnouncementEditor(
                     ],
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: bodyController,
                     decoration: InputDecoration(
                       labelText: context.t('studio.announcement_body',
@@ -4113,7 +4114,7 @@ Future<void> _showAnnouncementEditor(
                       ),
                     ),
                   ],
-                  TextField(
+                  AppTextField(
                     controller: priorityController,
                     decoration: InputDecoration(
                       labelText: context.t('studio.priority_label',
@@ -4127,7 +4128,7 @@ Future<void> _showAnnouncementEditor(
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: expiryController,
                     readOnly: true,
                     decoration: InputDecoration(
@@ -4161,7 +4162,8 @@ Future<void> _showAnnouncementEditor(
                                       firstDate: DateTime(now.year - 1),
                                       lastDate: DateTime(now.year + 10),
                                     );
-                                    if (pickedDate == null || !context.mounted) {
+                                    if (pickedDate == null ||
+                                        !context.mounted) {
                                       return;
                                     }
 
@@ -4187,8 +4189,8 @@ Future<void> _showAnnouncementEditor(
                                           _formatOptionalDateTime(resolved);
                                     });
                                   },
-                              icon: const Icon(Icons.event_outlined),
-                            ),
+                            icon: const Icon(Icons.event_outlined),
+                          ),
                         ],
                       ),
                     ),
@@ -4304,13 +4306,13 @@ Future<void> _showArticleEditor(
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
-                  TextField(
+                  AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: context.t('common.description',
@@ -4318,7 +4320,7 @@ Future<void> _showArticleEditor(
                     ),
                     maxLines: 3,
                   ),
-                  TextField(
+                  AppTextField(
                     controller: contentController,
                     decoration: InputDecoration(
                       labelText:

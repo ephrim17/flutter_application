@@ -22,6 +22,7 @@ import 'package:flutter_application/church_app/widgets/member_since_chip_widget.
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class MembersScreen extends ConsumerStatefulWidget {
   const MembersScreen({super.key});
@@ -127,7 +128,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                           ),
                         ],
                       ),
-                      child: TextField(
+                      child: AppTextField(
                         controller: _searchController,
                         onChanged: (value) {
                           setState(() {

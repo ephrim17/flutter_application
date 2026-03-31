@@ -24,6 +24,7 @@ import 'package:flutter_application/church_app/widgets/notification_reprompt_she
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class LoginRequestScreen extends ConsumerStatefulWidget {
   final String churchId;
@@ -993,7 +994,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                       const SizedBox(height: 16),
                                     ],
-                                    TextField(
+                                    AppTextField(
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
@@ -1081,7 +1082,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _phoneController,
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
@@ -1093,7 +1094,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _addressController,
                                       keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,
@@ -1246,7 +1247,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                   },
                                                 )
                                               else
-                                                TextField(
+                                                AppTextField(
                                                   controller:
                                                       _familyNameController,
                                                   decoration: InputDecoration(
@@ -1388,7 +1389,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 8),
-                                    TextField(
+                                    AppTextField(
                                       controller:
                                           _educationalQualificationController,
                                       decoration: InputDecoration(
@@ -1399,7 +1400,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _talentsAndGiftsController,
                                       minLines: 2,
                                       maxLines: 4,
@@ -1416,7 +1417,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _additionalNotesController,
                                       minLines: 2,
                                       maxLines: 4,
@@ -1523,7 +1524,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 16),
-                                      TextField(
+                                      AppTextField(
                                         controller:
                                             _baptismCertificateNumberController,
                                         textInputAction: TextInputAction.next,
@@ -1540,7 +1541,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 16),
-                                      TextField(
+                                      AppTextField(
                                         controller:
                                             _baptismChurchNameController,
                                         textInputAction: TextInputAction.next,
@@ -1552,7 +1553,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 16),
-                                      TextField(
+                                      AppTextField(
                                         controller:
                                             _baptismPastorNameController,
                                         decoration: InputDecoration(
@@ -1650,7 +1651,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       if (_marriageSolemnizationChurchType ==
                                           'other_church') ...[
                                         const SizedBox(height: 16),
-                                        TextField(
+                                        AppTextField(
                                           controller:
                                               _marriageOtherChurchNameController,
                                           decoration: InputDecoration(
@@ -1712,7 +1713,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _membershipNotesController,
                                       minLines: 2,
                                       maxLines: 4,
@@ -1793,7 +1794,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 ),
                                 child: Column(
                                   children: [
-                                    TextField(
+                                    AppTextField(
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
@@ -1886,7 +1887,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _phoneController,
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
@@ -1896,7 +1897,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    TextField(
+                                    AppTextField(
                                       controller: _addressController,
                                       keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,

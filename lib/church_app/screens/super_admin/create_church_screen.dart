@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/widgets/linear_screen_background_
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class CreateChurchScreen extends ConsumerStatefulWidget {
   const CreateChurchScreen({
@@ -543,7 +544,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        AppTextField(
           controller: _nameController,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
@@ -573,7 +574,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        TextField(
+        AppTextField(
           controller: _addressController,
           onChanged: (_) => setState(() {}),
           maxLines: 3,
@@ -585,7 +586,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        TextField(
+        AppTextField(
           controller: _contactController,
           onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.phone,
@@ -597,7 +598,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        TextField(
+        AppTextField(
           controller: _emailController,
           onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.emailAddress,
@@ -634,7 +635,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        AppTextField(
           controller: _pastorController,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
@@ -689,7 +690,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
+          AppTextField(
             controller: _adminNameController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
@@ -700,7 +701,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          TextField(
+          AppTextField(
             controller: _adminEmailController,
             onChanged: (_) => setState(() {}),
             keyboardType: TextInputType.emailAddress,
@@ -712,7 +713,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          TextField(
+          AppTextField(
             controller: _adminPhoneController,
             onChanged: (_) => setState(() {}),
             keyboardType: TextInputType.phone,

@@ -24,6 +24,7 @@ import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class LoginScreen extends ConsumerWidget {
   //const LoginScreen({super.key});
@@ -133,7 +134,7 @@ class LoginScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       /// 📧 Email
-                      TextField(
+                      AppTextField(
                         controller: emailCtrl,
                         decoration: InputDecoration(
                           labelText: context.t(
@@ -145,7 +146,7 @@ class LoginScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
 
                       /// 🔑 Password
-                      TextField(
+                      AppTextField(
                         controller: passCtrl,
                         obscureText: true,
                         decoration: InputDecoration(

@@ -18,6 +18,7 @@ import 'package:flutter_application/church_app/services/side_drawer/members_repo
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class CreateAuthAccountScreen extends ConsumerStatefulWidget {
   const CreateAuthAccountScreen({
@@ -387,7 +388,7 @@ class _CreateAuthAccountScreenState
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
-                      TextField(
+                      AppTextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
@@ -406,7 +407,7 @@ class _CreateAuthAccountScreenState
                       ),
                       if (!widget.adminCreateMode) ...[
                         const SizedBox(height: 16),
-                        TextField(
+                        AppTextField(
                           controller: _passwordController,
                           obscureText: _hidePassword,
                           decoration: InputDecoration(
@@ -463,7 +464,7 @@ class _CreateAuthAccountScreenState
                         ],
                         const SizedBox(height: 16),
                         if (!_isLoginMode) ...[
-                          TextField(
+                          AppTextField(
                             controller: _confirmPasswordController,
                             obscureText: _hideConfirmPassword,
                             decoration: InputDecoration(

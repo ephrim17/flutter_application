@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/providers/feed_post_modal_provide
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class CreatePostModal extends ConsumerStatefulWidget {
   final FeedPost? post;
@@ -116,7 +117,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 ],
               ),
               const SizedBox(height: 16),
-              TextField(
+              AppTextField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
@@ -140,7 +141,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
+              AppTextField(
                 controller: _descriptionController,
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
@@ -296,7 +297,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                 ref,
                                 name: 'feed_post_created',
                                 parameters: {
-                                  'scope': widget.isGlobal ? 'global' : 'church',
+                                  'scope':
+                                      widget.isGlobal ? 'global' : 'church',
                                 },
                               );
                             } else {
@@ -318,7 +320,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                 name: 'feed_post_updated',
                                 parameters: {
                                   'post_id': widget.post!.id,
-                                  'scope': widget.isGlobal ? 'global' : 'church',
+                                  'scope':
+                                      widget.isGlobal ? 'global' : 'church',
                                 },
                               );
                             }

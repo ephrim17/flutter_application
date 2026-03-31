@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class GoFurtherScreen extends ConsumerStatefulWidget {
   const GoFurtherScreen({super.key});
@@ -67,7 +68,9 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
-          await ref.read(goFurtherPaginationControllerProvider.notifier).refresh();
+          await ref
+              .read(goFurtherPaginationControllerProvider.notifier)
+              .refresh();
           if ((currentChurchId ?? '').trim().isNotEmpty) {
             ref.invalidate(churchByIdProvider(currentChurchId!));
           }
@@ -92,7 +95,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   ),
                 ],
               ),
-              child: TextField(
+              child: AppTextField(
                 controller: _searchController,
                 onChanged: (value) {
                   setState(() {
@@ -100,7 +103,8 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText: 'Search churches with Facebook, Instagram or YouTube...',
+                  hintText:
+                      'Search churches with Facebook, Instagram or YouTube...',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 10, right: 6),
                     child: Icon(
@@ -307,7 +311,8 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                     width: 42,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -397,7 +402,9 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
         church: church,
         onSaved: () async {
           ref.invalidate(churchByIdProvider(church.id));
-          await ref.read(goFurtherPaginationControllerProvider.notifier).refresh();
+          await ref
+              .read(goFurtherPaginationControllerProvider.notifier)
+              .refresh();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -486,7 +493,8 @@ class _GoFurtherChurchCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            if (canEditCurrentChurch && onEditCurrentChurch != null)
+                            if (canEditCurrentChurch &&
+                                onEditCurrentChurch != null)
                               InkWell(
                                 borderRadius: BorderRadius.circular(999),
                                 onTap: onEditCurrentChurch,
@@ -502,7 +510,8 @@ class _GoFurtherChurchCard extends StatelessWidget {
                                   ),
                                   child: Text(
                                     'Edit',
-                                    style: theme.textTheme.labelMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
                                       color: theme.colorScheme.secondary,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -574,7 +583,8 @@ class _GoFurtherChurchCard extends StatelessWidget {
   }
 }
 
-Future<void> _showPastorPhotoPreview(BuildContext context, Church church) async {
+Future<void> _showPastorPhotoPreview(
+    BuildContext context, Church church) async {
   final photoUrl = church.pastorPhoto.trim();
   if (photoUrl.isEmpty) return;
 
@@ -827,7 +837,7 @@ class _EditorField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
+      child: AppTextField(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,

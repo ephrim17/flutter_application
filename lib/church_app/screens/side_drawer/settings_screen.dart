@@ -26,6 +26,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -78,8 +79,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 18),
               _SettingsSectionLabel(
-                title:
-                    ref.t('settings.preferences_title', fallback: 'Preferences'),
+                title: ref.t('settings.preferences_title',
+                    fallback: 'Preferences'),
                 subtitle: ref.t(
                   'settings.preferences_subtitle',
                   fallback: 'Appearance, notifications, and reminders.',
@@ -282,7 +283,7 @@ class _SettingsHeroChip extends StatelessWidget {
             child: Text(
               label,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis, 
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -417,7 +418,8 @@ class _SettingsTile extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.68),
                         height: 1.3,
                       ),
                     ),
@@ -743,7 +745,8 @@ class _PushNotificationSectionState
 
     return _SettingsTile(
       icon: Icons.notifications_outlined,
-      title: ref.t('settings.push_notifications', fallback: 'Push Notifications'),
+      title:
+          ref.t('settings.push_notifications', fallback: 'Push Notifications'),
       subtitle: _subtitleText(),
       trailing: _isLoading
           ? const SizedBox(
@@ -827,7 +830,8 @@ class _PrayerReminderSectionState
       children: [
         _SettingsTile(
           icon: Icons.notifications_active_outlined,
-          title: ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
+          title:
+              ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
           subtitle: enabled && selectedTime != null
               ? "${ref.t('settings.prayer_daily_at_prefix', fallback: 'Daily at')} ${selectedTime!.format(context)}"
               : ref.t(
@@ -885,7 +889,8 @@ class _StorageSection extends ConsumerWidget {
     return _SettingsTile(
       icon: Icons.delete_outline,
       iconColor: Colors.red,
-      title: ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
+      title:
+          ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
       subtitle: ref.t(
         'settings.clear_local_data_subtitle',
         fallback: 'Remove stored preferences and cached local app data.',
@@ -1183,7 +1188,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+                    ref.t('settings.edit_profile_title',
+                        fallback: 'Edit Profile'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
@@ -1223,7 +1229,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            TextField(
+            AppTextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
@@ -1263,7 +1269,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            TextField(
+            AppTextField(
               controller: _locationController,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
@@ -1306,7 +1312,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 ),
               ),
             ),
-            TextField(
+            AppTextField(
               controller: _addressController,
               keyboardType: TextInputType.streetAddress,
               maxLines: 3,

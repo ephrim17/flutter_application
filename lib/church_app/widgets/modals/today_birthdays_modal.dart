@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/providers/feed_post_modal_provide
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 Future<void> showTodayBirthdaysModal(
   BuildContext context, {
@@ -269,7 +270,7 @@ class _BirthdayPostComposerModalState
               ],
             ),
             const SizedBox(height: 12),
-            TextField(
+            AppTextField(
               controller: _titleController,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
@@ -281,7 +282,7 @@ class _BirthdayPostComposerModalState
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            AppTextField(
               controller: _descriptionController,
               minLines: 3,
               maxLines: null,

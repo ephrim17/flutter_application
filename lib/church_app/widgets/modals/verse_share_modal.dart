@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:gal/gal.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 enum ShareFormat { square, story }
 
@@ -759,7 +760,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 20),
           if (format == ShareFormat.story)
-            TextField(
+            AppTextField(
               controller: _storyCaptionController,
               maxLength: 30,
               decoration: InputDecoration(
@@ -1243,7 +1244,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
               ),
             ],
           ),
-          TextField(
+          AppTextField(
             controller: controller,
             decoration: InputDecoration(
               labelText: context.t(
