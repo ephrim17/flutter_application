@@ -1,4 +1,4 @@
-part of 'package:flutter_application/church_app/screens/side_drawer/about_screen/about_screen.dart';
+part of 'package:flutter_application/church_app/screens/side_drawer/about/about_screen.dart';
 
 class _AboutHeroCard extends StatelessWidget {
   const _AboutHeroCard({
@@ -270,33 +270,6 @@ class _AboutFooterSection extends StatelessWidget {
           SizedBox(height: 12),
           FooterSocialIconsWidget(),
         ],
-      ),
-    );
-  }
-}
-
-class _AboutAccentChip extends StatelessWidget {
-  const _AboutAccentChip({
-    required this.label,
-  });
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }

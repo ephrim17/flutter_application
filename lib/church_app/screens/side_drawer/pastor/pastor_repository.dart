@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/helpers/church_scoped.dart';
-import 'package:flutter_application/church_app/models/home_section_models/pastor_model.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/pastor/pastor_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class PastorsRepository extends ChurchScopedRepository {
@@ -12,9 +12,9 @@ class PastorsRepository extends ChurchScopedRepository {
   CollectionReference<Pastor> collectionRef() {
     return FirestorePaths.churchPastors(firestore, churchId)
         .withConverter<Pastor>(
-          fromFirestore: (snap, _) => Pastor.fromFirestore(snap),
-          toFirestore: (a, _) => a.toMap(),
-        );
+      fromFirestore: (snap, _) => Pastor.fromFirestore(snap),
+      toFirestore: (a, _) => a.toMap(),
+    );
   }
 
   Stream<List<Pastor>> watchActiveForBanner({

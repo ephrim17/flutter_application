@@ -1,6 +1,6 @@
 import 'package:flutter_application/church_app/models/side_drawer_models/about_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/about_providers.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/about_screen/about_screen_view_state.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen_view_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final aboutScreenViewModelProvider = Provider<AboutScreenViewModel>((ref) {

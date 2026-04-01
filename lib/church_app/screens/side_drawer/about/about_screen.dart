@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/about_screen/about_screen_view_state.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/about_screen/about_screen_viewmodel.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/pastor_section.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen_view_state.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen_viewmodel.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/pastor/pastor_view.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
