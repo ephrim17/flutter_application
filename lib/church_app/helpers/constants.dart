@@ -8,8 +8,8 @@ double spacingForOrder(int order) {
 double cardHeight(String id) {
   if (id == "announcements") return 390;
   if (id == "events") return 390;
-  if (id == "pastor") return 220; 
-  if (id == "promise") return 400; 
+  if (id == "pastor") return 220;
+  if (id == "promise") return 400;
   if (id == "dailyVerse") return 220;
   if (id == "eventsFullListCard") return 250;
   return 120;
@@ -25,14 +25,42 @@ BoxDecoration carouselBoxDecoration(BuildContext context) {
     boxShadow: const [
       BoxShadow(
         color: Color(0x0D000000), // ~5% opacity
-        blurRadius: 18,           // higher blur = softer edge
-        spreadRadius: 0,          // IMPORTANT: no spread
-        offset: Offset.zero,      // all sides
+        blurRadius: 18, // higher blur = softer edge
+        spreadRadius: 0, // IMPORTANT: no spread
+        offset: Offset.zero, // all sides
       ),
     ],
   );
 }
 
+BoxDecoration welcomeBackCardDecoration(
+  BuildContext context, {
+  Color? primaryColor,
+  Color? secondaryColor,
+  double? radius,
+}) {
+  final theme = Theme.of(context);
+  final start = primaryColor ?? theme.colorScheme.primary;
+  final end = secondaryColor ?? theme.colorScheme.secondary;
+  return BoxDecoration(
+    borderRadius: BorderRadius.circular(radius ?? cornerRadius),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        start.withValues(alpha: 0.96),
+        end.withValues(alpha: 0.88),
+      ],
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: start.withValues(alpha: 0.18),
+        blurRadius: 24,
+        offset: const Offset(0, 10),
+      ),
+    ],
+  );
+}
 
 double cornerRadius = 28.0;
 

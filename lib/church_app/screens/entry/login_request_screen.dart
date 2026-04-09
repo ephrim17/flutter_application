@@ -1008,13 +1008,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     InkWell(
                                       onTap: _pickDob,
                                       child: InputDecorator(
-                                        decoration: InputDecoration(
+                                        decoration: appTextFieldDecoration(
+                                          context,
                                           labelText: context.t(
                                             'auth.dob_label',
                                             fallback: 'Date of Birth',
                                           ),
                                           suffixIcon:
-                                              Icon(Icons.calendar_today),
+                                              const Icon(Icons.calendar_today),
                                         ),
                                         child: Text(
                                           _dob == null
@@ -1031,7 +1032,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     InputDecorator(
-                                      decoration: InputDecoration(
+                                      decoration: appTextFieldDecoration(
+                                        context,
                                         labelText: context.t(
                                           'auth.age_label',
                                           fallback: 'Age',
@@ -1047,13 +1049,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      value: _gender.isEmpty ? null : _gender,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.gender_label',
-                                          fallback: 'Gender',
-                                        ),
+                                    AppDropdownField<String>(
+                                      initialValue:
+                                          _gender.isEmpty ? null : _gender,
+                                      labelText: context.t(
+                                        'members.gender_label',
+                                        fallback: 'Gender',
                                       ),
                                       items: [
                                         DropdownMenuItem(
@@ -1106,15 +1107,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      value: _maritalStatus.isEmpty
+                                    AppDropdownField<String>(
+                                      initialValue: _maritalStatus.isEmpty
                                           ? null
                                           : _maritalStatus,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.marital_status_label',
-                                          fallback: 'Marital Status',
-                                        ),
+                                      labelText: context.t(
+                                        'members.marital_status_label',
+                                        fallback: 'Marital Status',
                                       ),
                                       items: [
                                         DropdownMenuItem(
@@ -1155,13 +1154,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       InkWell(
                                         onTap: _pickWeddingDay,
                                         child: InputDecorator(
-                                          decoration: InputDecoration(
+                                          decoration: appTextFieldDecoration(
+                                            context,
                                             labelText: context.t(
                                               'members.wedding_day_label',
                                               fallback: 'Wedding Day',
                                             ),
-                                            suffixIcon:
-                                                Icon(Icons.calendar_today),
+                                            suffixIcon: const Icon(
+                                              Icons.calendar_today,
+                                            ),
                                           ),
                                           child: Text(
                                             _weddingDay == null
@@ -1218,13 +1219,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                               const SizedBox(height: 8),
                                               if (familyIds.isNotEmpty &&
                                                   _useExistingFamilyId)
-                                                DropdownButtonFormField<String>(
-                                                  value: selectedFamilyValue,
-                                                  decoration: InputDecoration(
-                                                    labelText: context.t(
-                                                      'members.family_id_label',
-                                                      fallback: 'Family ID',
-                                                    ),
+                                                AppDropdownField<String>(
+                                                  initialValue:
+                                                      selectedFamilyValue,
+                                                  labelText: context.t(
+                                                    'members.family_id_label',
+                                                    fallback: 'Family ID',
                                                   ),
                                                   items: familyIds
                                                       .map(
@@ -1456,13 +1456,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    DropdownButtonFormField<String>(
-                                      value: _solemnizedBaptism ? 'yes' : 'no',
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.solemnized_baptism_label',
-                                          fallback: 'Solemnized Baptism',
-                                        ),
+                                    AppDropdownField<String>(
+                                      initialValue:
+                                          _solemnizedBaptism ? 'yes' : 'no',
+                                      labelText: context.t(
+                                        'members.solemnized_baptism_label',
+                                        fallback: 'Solemnized Baptism',
                                       ),
                                       items: [
                                         DropdownMenuItem(
@@ -1579,16 +1578,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                             ),
                                       ),
                                       const SizedBox(height: 12),
-                                      DropdownButtonFormField<String>(
-                                        value: _marriageSolemnizationChurchType
-                                                .isEmpty
-                                            ? null
-                                            : _marriageSolemnizationChurchType,
-                                        decoration: InputDecoration(
-                                          labelText: context.t(
-                                            'members.marriage_solemnization_church_label',
-                                            fallback: 'Select Church',
-                                          ),
+                                      AppDropdownField<String>(
+                                        initialValue:
+                                            _marriageSolemnizationChurchType
+                                                    .isEmpty
+                                                ? null
+                                                : _marriageSolemnizationChurchType,
+                                        labelText: context.t(
+                                          'members.marriage_solemnization_church_label',
+                                          fallback: 'Select Church',
                                         ),
                                         items: [
                                           DropdownMenuItem(
@@ -1677,15 +1675,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           ),
                                     ),
                                     const SizedBox(height: 12),
-                                    DropdownButtonFormField<String>(
-                                      value: _membershipCurrentStatus.isEmpty
-                                          ? null
-                                          : _membershipCurrentStatus,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.membership_current_status_label',
-                                          fallback: 'Membership Current Status',
-                                        ),
+                                    AppDropdownField<String>(
+                                      initialValue:
+                                          _membershipCurrentStatus.isEmpty
+                                              ? null
+                                              : _membershipCurrentStatus,
+                                      labelText: context.t(
+                                        'members.membership_current_status_label',
+                                        fallback: 'Membership Current Status',
                                       ),
                                       items: const [
                                         DropdownMenuItem(
@@ -1813,7 +1810,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     InkWell(
                                       onTap: _pickDob,
                                       child: InputDecorator(
-                                        decoration: InputDecoration(
+                                        decoration: appTextFieldDecoration(
+                                          context,
                                           labelText: context.t(
                                             'auth.dob_label',
                                             fallback: 'Date of Birth',
@@ -1836,7 +1834,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     InputDecorator(
-                                      decoration: InputDecoration(
+                                      decoration: appTextFieldDecoration(
+                                        context,
                                         labelText: context.t(
                                           'auth.age_label',
                                           fallback: 'Age',
@@ -1852,13 +1851,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      value: _gender.isEmpty ? null : _gender,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'auth.gender_label',
-                                          fallback: 'Gender',
-                                        ),
+                                    AppDropdownField<String>(
+                                      initialValue:
+                                          _gender.isEmpty ? null : _gender,
+                                      labelText: context.t(
+                                        'auth.gender_label',
+                                        fallback: 'Gender',
                                       ),
                                       items: [
                                         DropdownMenuItem(
@@ -1909,15 +1907,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      value: _maritalStatus.isEmpty
+                                    AppDropdownField<String>(
+                                      initialValue: _maritalStatus.isEmpty
                                           ? null
                                           : _maritalStatus,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.marital_status_label',
-                                          fallback: 'Marital Status',
-                                        ),
+                                      labelText: context.t(
+                                        'members.marital_status_label',
+                                        fallback: 'Marital Status',
                                       ),
                                       items: [
                                         DropdownMenuItem(
@@ -1958,13 +1954,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       InkWell(
                                         onTap: _pickWeddingDay,
                                         child: InputDecorator(
-                                          decoration: InputDecoration(
+                                          decoration: appTextFieldDecoration(
+                                            context,
                                             labelText: context.t(
                                               'members.wedding_day_label',
                                               fallback: 'Wedding Day',
                                             ),
-                                            suffixIcon:
-                                                Icon(Icons.calendar_today),
+                                            suffixIcon: const Icon(
+                                              Icons.calendar_today,
+                                            ),
                                           ),
                                           child: Text(
                                             _weddingDay == null

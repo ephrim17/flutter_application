@@ -889,6 +889,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                 ],
               ),
               child: AppTextField(
+                variant: AppTextFieldVariant.search,
                 controller: _searchController,
                 onChanged: (value) {
                   setState(() {

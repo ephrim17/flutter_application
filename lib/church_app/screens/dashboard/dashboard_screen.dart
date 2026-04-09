@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_application/church_app/models/side_drawer_models/prayer_
 import 'package:flutter_application/church_app/providers/dashboard/dashboard_providers.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_model.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_state.dart';
+import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
@@ -21,6 +23,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardStateAsync = ref.watch(dashboardViewModelProvider);
+    final dashboardMembersAsync = ref.watch(dashboardMembersProvider);
     final dashboardState = dashboardStateAsync.value ??
         DashboardViewState.accessDenied(
           churchTitle: 'Church',
@@ -41,6 +44,13 @@ class DashboardScreen extends ConsumerWidget {
         ),
       );
     }
+    final dashboardMembers =
+        dashboardMembersAsync.asData?.value ?? const <AppUser>[];
+    final birthdayMembers =
+        dashboardMembers.where((member) => isBirthdayToday(member.dob)).toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
     return RefreshIndicator(
       onRefresh: () => ref.read(dashboardViewModelProvider.notifier).refresh(),
       child: ListView(
@@ -52,32 +62,21 @@ class DashboardScreen extends ConsumerWidget {
             isLoading: dashboardStateAsync.isLoading,
           ),
           const SizedBox(height: 18),
-          _DashboardExecutiveGrid(
-            attentionNow: _DashboardSectionCard(
-              title: 'What Needs Attention Now',
-              subtitle: 'The items that need an admin response right away.',
-              child: _DashboardAttentionPanel(
-                pendingApprovals: dashboardState.memberMetrics.pendingApprovals,
-                expiringPrayers: dashboardState.expiringPrayers,
-                announcements: dashboardState.announcements,
-                events: dashboardState.events,
-              ),
+          _DashboardSectionCard(
+            title: "Today's Birthdays",
+            subtitle:
+                'Celebrate members today and jump straight into a birthday post.',
+            child: _DashboardBirthdaySection(
+              members: birthdayMembers,
             ),
-            recentChanges: _DashboardSectionCard(
-              title: 'What Changed Recently',
-              subtitle: 'Fresh movement across members, updates, and events.',
-              child: _DashboardRecentChangesPanel(
-                recentMembers: dashboardState.memberMetrics.recentMembers,
-                recentJoinCount: dashboardState.memberMetrics.recentJoinCount7d,
-              ),
-            ),
-            healthSignals: _DashboardSectionCard(
-              title: 'Church Insights',
-              subtitle:
-                  'A quick read on approvals, engagement, and content readiness.',
-              child: _DashboardHealthSignalsPanel(
-                state: dashboardState,
-              ),
+          ),
+          const SizedBox(height: 18),
+          _DashboardSectionCard(
+            title: 'Church Insights',
+            subtitle:
+                'A quick read on approvals, engagement, content readiness, and recent movement.',
+            child: _DashboardHealthSignalsPanel(
+              state: dashboardState,
             ),
           ),
           const SizedBox(height: 18),

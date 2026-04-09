@@ -177,10 +177,12 @@ class BirthdayBlessingCard extends StatelessWidget {
     super.key,
     required this.userName,
     required this.verse,
+    this.backgroundImageBytes,
   });
 
   final String userName;
   final Map<String, String> verse;
+  final Uint8List? backgroundImageBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -188,81 +190,162 @@ class BirthdayBlessingCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFF758C),
-            Color(0xFFFF7EB3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        image: backgroundImageBytes == null
+            ? null
+            : DecorationImage(
+                image: MemoryImage(backgroundImageBytes!),
+                fit: BoxFit.cover,
+              ),
+        gradient: backgroundImageBytes == null
+            ? const LinearGradient(
+                colors: [
+                  Color(0xFFFF758C),
+                  Color(0xFFFF7EB3),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
         boxShadow: const [
           BoxShadow(
-            color: Colors.pink,
-            blurRadius: 5,
-            offset: Offset(0, 1),
+            color: Color(0x1FB54A7A),
+            blurRadius: 22,
+            offset: Offset(0, 12),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            "🎉 Happy Birthday 🎂",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: backgroundImageBytes == null
+                ? [
+                    Colors.transparent,
+                    Colors.transparent,
+                  ]
+                : [
+                    const Color(0xCC7A175C),
+                    const Color(0xD91B2448),
+                  ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            userName.toUpperCase(),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              letterSpacing: 1.2,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              "Celebrating You",
+              style: TextStyle(
+                fontSize: 14,
+                letterSpacing: 2.6,
+                fontWeight: FontWeight.w700,
+                color: Colors.white70,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            verse['tamil'] ?? '',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              height: 1.5,
-              fontSize: 16,
+            const SizedBox(height: 10),
+            const Text(
+              "Happy Birthday",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            verse['english'] ?? '',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white70,
-              height: 1.4,
-              fontSize: 14,
+            const SizedBox(height: 6),
+            Text(
+              userName.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                letterSpacing: 1.4,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            verse['reference'] ?? '',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 22),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    verse['tamil'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      height: 1.55,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    verse['english'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      height: 1.45,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 18),
+            Text(
+              verse['reference'] ?? '',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
 }
 
-String buildBirthdayPostTitle(String userName) => 'Happy Birthday $userName';
+String buildBirthdayPostTitle(String userName, DateTime? dob) {
+  final age = birthdayAge(dob);
+  if (age == null) {
+    return 'Happy Birthday $userName';
+  }
+  return 'Happy ${_ordinal(age)} Birthday $userName';
+}
+
+int? birthdayAge(DateTime? dob) {
+  if (dob == null) return null;
+  final now = DateTime.now();
+  return now.year - dob.year;
+}
+
+String _ordinal(int value) {
+  final mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return '${value}th';
+  }
+
+  switch (value % 10) {
+    case 1:
+      return '${value}st';
+    case 2:
+      return '${value}nd';
+    case 3:
+      return '${value}rd';
+    default:
+      return '${value}th';
+  }
+}
 
 Future<Uint8List?> captureBoundaryPng(
   GlobalKey boundaryKey, {

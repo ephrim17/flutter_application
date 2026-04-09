@@ -6,9 +6,12 @@ import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
+import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/widgets/bible_verse_picker_sheet.dart';
+import 'package:image_picker/image_picker.dart';
 
 Future<void> showTodayBirthdaysModal(
   BuildContext context, {
@@ -90,7 +93,8 @@ class _TodayBirthdaysModal extends StatelessWidget {
                             ),
                           ),
                           title: Text(member.name),
-                          subtitle: Text(_formatDob(context, member.dob)),
+                          subtitle:
+                              Text(_formatBirthdayMoment(context, member.dob)),
                           trailing: FilledButton(
                             onPressed: () {
                               showModalBottomSheet<void>(
@@ -133,18 +137,22 @@ class BirthdayPostComposerModal extends ConsumerStatefulWidget {
 
 class _BirthdayPostComposerModalState
     extends ConsumerState<BirthdayPostComposerModal> {
+  final BibleRepository _bibleRepository = BibleRepository();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final GlobalKey _cardKey = GlobalKey();
+  final ImagePicker _imagePicker = ImagePicker();
 
   Map<String, String>? _selectedVerse;
   PickedImageData? _generatedImage;
+  PickedImageData? _selectedBackgroundImage;
   bool _captureQueued = false;
 
   @override
   void initState() {
     super.initState();
-    _titleController.text = buildBirthdayPostTitle(widget.member.name);
+    _titleController.text =
+        buildBirthdayPostTitle(widget.member.name, widget.member.dob);
     _descriptionController.text =
         'Wishing ${widget.member.name} a joyful and blessed birthday.';
   }
@@ -159,6 +167,68 @@ class _BirthdayPostComposerModalState
   void _pickVerse(List<Map<String, String>> verses) {
     if (_selectedVerse != null || verses.isEmpty) return;
     _selectedVerse = verses[Random().nextInt(verses.length)];
+  }
+
+  Future<void> _pickBackgroundImage() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
+    if (picked == null) return;
+
+    final imageData = await PickedImageData.fromXFile(picked);
+    if (!mounted || imageData == null) return;
+
+    setState(() {
+      _selectedBackgroundImage = imageData;
+      _generatedImage = null;
+      _captureQueued = false;
+    });
+    _queueCapture();
+  }
+
+  Future<void> _changeVerse() async {
+    final currentVerse = _selectedVerse;
+    final initialBook = currentVerse?['book'] ?? 'John';
+    final initialChapter = int.tryParse(currentVerse?['chapter'] ?? '') ?? 3;
+    final initialVerse = int.tryParse(currentVerse?['verse'] ?? '') ?? 16;
+
+    await showBibleVersePickerSheet(
+      context,
+      title: context.t(
+        'birthday.change_verse',
+        fallback: 'Birthday Verse',
+      ),
+      initialBook: initialBook,
+      initialChapter: initialChapter,
+      initialVerse: initialVerse,
+      onSave: ({
+        required String book,
+        required int chapter,
+        required int verse,
+      }) async {
+        final verseData = await _bibleRepository.getVerse(
+          book: book,
+          chapter: chapter,
+          verse: verse,
+        );
+
+        if (!mounted) return;
+        setState(() {
+          _selectedVerse = {
+            'book': book,
+            'chapter': '$chapter',
+            'verse': '$verse',
+            'tamil': verseData['tamil'] ?? verseData['text'] ?? '',
+            'english': verseData['english'] ?? '',
+            'reference': '$book $chapter:$verse',
+          };
+          _generatedImage = null;
+          _captureQueued = false;
+        });
+        _queueCapture();
+      },
+    );
   }
 
   void _queueCapture() {
@@ -329,33 +399,50 @@ class _BirthdayPostComposerModalState
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.t(
-                        'birthday.image_preview',
-                        fallback: 'Image preview',
-                      ),
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          _selectedVerse?['reference'] ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _changeVerse,
+                          icon: const Icon(Icons.edit_outlined),
+                          label: Text(
+                            context.t(
+                              'birthday.change_verse',
+                              fallback: 'Change verse',
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _pickBackgroundImage,
+                          icon: const Icon(Icons.image_outlined),
+                          label: Text(
+                            _selectedBackgroundImage == null
+                                ? context.t(
+                                    'birthday.choose_image',
+                                    fallback: 'Choose image',
+                                  )
+                                : context.t(
+                                    'birthday.change_image',
+                                    fallback: 'Change image',
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     RepaintBoundary(
                       key: _cardKey,
                       child: BirthdayBlessingCard(
                         userName: widget.member.name,
                         verse: _selectedVerse!,
+                        backgroundImageBytes: _selectedBackgroundImage?.bytes,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _generatedImage == null
-                          ? context.t(
-                              'birthday.image_preparing',
-                              fallback: 'Preparing image...',
-                            )
-                          : context.t(
-                              'birthday.image_ready',
-                              fallback: 'Birthday image ready',
-                            ),
-                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 );
@@ -402,4 +489,15 @@ String _formatDob(BuildContext context, DateTime? dob) {
     );
   }
   return '${context.t('birthday.date_prefix', fallback: 'Birthday')}: ${dob.day}/${dob.month}';
+}
+
+String _formatBirthdayMoment(BuildContext context, DateTime? dob) {
+  if (dob == null) {
+    return _formatDob(context, dob);
+  }
+
+  final now = DateTime.now();
+  final turningAge = now.year - dob.year;
+
+  return '${context.t('birthday.turning_prefix', fallback: 'Turning')} $turningAge';
 }

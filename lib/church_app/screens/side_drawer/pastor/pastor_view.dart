@@ -97,23 +97,11 @@ class _PastorCard extends StatelessWidget {
       child: Container(
         width: width - 32,
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(cornerRadius + 4),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              primaryColor,
-              secondaryColor,
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withValues(alpha: 0.18),
-              blurRadius: 18,
-              offset: const Offset(0, 12),
-            ),
-          ],
+        decoration: welcomeBackCardDecoration(
+          context,
+          primaryColor: primaryColor,
+          secondaryColor: secondaryColor,
+          radius: cornerRadius + 4,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,

@@ -38,6 +38,8 @@ class StudioRepository {
 
   DocumentReference<Map<String, dynamic>> get appConfigRef =>
       FirestorePaths.churchAppConfig(firestore, churchId);
+  DocumentReference<Map<String, dynamic>> get churchRef =>
+      firestore.collection('churches').doc(churchId);
   DocumentReference<Map<String, dynamic>> get aboutRef =>
       FirestorePaths.churchAboutDoc(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get bibleSwipeRef =>
@@ -265,16 +267,26 @@ class StudioRepository {
     required String values,
   }) async {
     final batch = firestore.batch();
+    final syncedChurchTitle =
+        title.trim().isNotEmpty ? title.trim() : churchAppTitle.trim();
 
     batch.set(
         aboutRef,
         {
-          'title': title,
+          'title': syncedChurchTitle,
           'tagline': tagline,
           'description': description,
           'mission': mission,
           'community': community,
           'values': values,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true));
+
+    batch.set(
+        churchRef,
+        {
+          'name': syncedChurchTitle,
           'updatedAt': FieldValue.serverTimestamp(),
         },
         SetOptions(merge: true));

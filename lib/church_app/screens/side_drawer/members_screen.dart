@@ -129,6 +129,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         ],
                       ),
                       child: AppTextField(
+                        variant: AppTextFieldVariant.search,
                         controller: _searchController,
                         onChanged: (value) {
                           setState(() {
@@ -556,7 +557,7 @@ class _FamilyGroupsView extends StatelessWidget {
   }
 }
 
-class _MemberTile extends ConsumerWidget {
+class _MemberTile extends ConsumerStatefulWidget {
   const _MemberTile({
     required this.member,
     required this.isAdmin,
@@ -570,8 +571,24 @@ class _MemberTile extends ConsumerWidget {
   final bool showBirthdayAction;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final trailing = showBirthdayAction
+  ConsumerState<_MemberTile> createState() => _MemberTileState();
+}
+
+class _MemberTileState extends ConsumerState<_MemberTile> {
+  bool? _approvedOverride;
+  bool _isUpdatingApproval = false;
+
+  @override
+  void didUpdateWidget(covariant _MemberTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.member.approved != widget.member.approved) {
+      _approvedOverride = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trailing = widget.showBirthdayAction
         ? TextButton(
             onPressed: () {
               showModalBottomSheet<void>(
@@ -579,7 +596,7 @@ class _MemberTile extends ConsumerWidget {
                 isScrollControlled: true,
                 builder: (_) => FractionallySizedBox(
                   heightFactor: 0.95,
-                  child: BirthdayPostComposerModal(member: member),
+                  child: BirthdayPostComposerModal(member: widget.member),
                 ),
               );
             },
@@ -587,28 +604,32 @@ class _MemberTile extends ConsumerWidget {
               context.t('common.send', fallback: 'Send'),
             ),
           )
-        : (isAdmin && member.uid != currentUid)
+        : (widget.isAdmin && widget.member.uid != widget.currentUid)
             ? Switch(
-                value: member.approved,
-                onChanged: (val) async {
-                  final churchId =
-                      await ref.read(currentChurchIdProvider.future);
-                  if (churchId == null) return;
+                value: _approvedOverride ?? widget.member.approved,
+                onChanged: _isUpdatingApproval
+                    ? null
+                    : (val) async {
+                        setState(() {
+                          _isUpdatingApproval = true;
+                          _approvedOverride = val;
+                        });
 
-                  final repo = MembersRepository(
-                    firestore: ref.read(firestoreProvider),
-                    churchId: churchId,
-                  );
+                        final success = await _updateMemberApproval(
+                          context,
+                          ref,
+                          userId: widget.member.uid,
+                          value: val,
+                        );
 
-                  await repo.approveMember(member.uid, val);
-                  await logChurchAnalyticsEvent(
-                    ref,
-                    name: val ? 'member_approved' : 'member_rejected',
-                    parameters: {
-                      'member_id': member.uid,
-                    },
-                  );
-                },
+                        if (!mounted) return;
+                        setState(() {
+                          _isUpdatingApproval = false;
+                          if (!success) {
+                            _approvedOverride = widget.member.approved;
+                          }
+                        });
+                      },
               )
             : null;
 
@@ -616,16 +637,18 @@ class _MemberTile extends ConsumerWidget {
       onTap: () => _showMemberDetailsSheet(
         context,
         ref,
-        member,
-        isAdmin: isAdmin,
-        currentUid: currentUid,
+        widget.member,
+        isAdmin: widget.isAdmin,
+        currentUid: widget.currentUid,
       ),
       leading: CircleAvatar(
         child: Text(
-          member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
+          widget.member.name.isNotEmpty
+              ? widget.member.name[0].toUpperCase()
+              : '?',
         ),
       ),
-      title: Text(member.name),
+      title: Text(widget.member.name),
       trailing: trailing,
     );
   }
@@ -655,6 +678,13 @@ Future<void> _showMemberDetailsSheet(
     isScrollControlled: true,
     showDragHandle: true,
     builder: (context) {
+      final churchId = ref.read(currentChurchIdProvider).asData?.value;
+      final repo = churchId == null
+          ? null
+          : MembersRepository(
+              firestore: ref.read(firestoreProvider),
+              churchId: churchId,
+            );
       final brightness = Theme.of(context).brightness;
       final dragHandleColor =
           brightness == Brightness.dark ? Colors.white : Colors.black;
@@ -667,666 +697,718 @@ Future<void> _showMemberDetailsSheet(
         ),
         child: FractionallySizedBox(
           heightFactor: 0.9,
-          child: StatefulBuilder(
-            builder: (context, setModalState) => SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  20 + MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          child: Text(
-                            member.name.isNotEmpty
-                                ? member.name[0].toUpperCase()
-                                : '?',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _valueOrFallback(context, member.name),
-                                style: theme.textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatCategory(context, member.category),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              MemberSinceChip(date: member.createdAt),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (canApproveMember)
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          context.t(
-                            'members.approve_member',
-                            fallback: 'Approve member',
-                          ),
-                        ),
-                        subtitle: Text(
-                          approvedValue
-                              ? context.t('common.approved',
-                                  fallback: 'Approved')
-                              : context.t(
-                                  'common.pending_approval',
-                                  fallback: 'Pending approval',
-                                ),
-                        ),
-                        value: approvedValue,
-                        onChanged: (val) async {
-                          final churchId =
-                              await ref.read(currentChurchIdProvider.future);
-                          if (churchId == null) return;
+          child: StreamBuilder<AppUser?>(
+            stream: repo?.watchMemberById(member.uid),
+            initialData: member,
+            builder: (context, snapshot) {
+              final currentMember = snapshot.data ?? member;
+              approvedValue = currentMember.approved == approvedValue
+                  ? approvedValue
+                  : currentMember.approved;
 
-                          final repo = MembersRepository(
-                            firestore: ref.read(firestoreProvider),
-                            churchId: churchId,
-                          );
-
-                          await repo.approveMember(member.uid, val);
-                          await logChurchAnalyticsEvent(
-                            ref,
-                            name: val ? 'member_approved' : 'member_rejected',
-                            parameters: {
-                              'member_id': member.uid,
-                            },
-                          );
-                          setModalState(() {
-                            approvedValue = val;
-                          });
-                        },
-                      ),
-                    const SizedBox(height: 20),
-                    _MemberDetailSection(
-                      title: context.t(
-                        'members.basic_details_title',
-                        fallback: 'Basic Details',
-                      ),
-                      initiallyExpanded: true,
-                      child: Column(
-                        children: [
-                          _MemberDetailRow(
-                            icon: Icons.badge_outlined,
-                            label: context.t('members.name_label',
-                                fallback: 'Name'),
-                            value: _valueOrFallback(context, member.name),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.phone_outlined,
-                            label: context.t('members.phone_label',
-                                fallback: 'Phone'),
-                            value: _valueOrFallback(context, member.phone),
-                            onActionTap: member.phone.trim().isEmpty
-                                ? null
-                                : () => launchPhoneCall(context, member.phone),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.contact_phone_outlined,
-                            label: context.t(
-                              'members.contact_label',
-                              fallback: 'Contact',
-                            ),
-                            value: _valueOrFallback(context, member.contact),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.person_outline,
-                            label: context.t(
-                              'members.gender_label',
-                              fallback: 'Gender',
-                            ),
-                            value: _valueOrFallback(
-                              context,
-                              _formatCategory(context, member.gender),
-                            ),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.email_outlined,
-                            label: context.t('members.email_label',
-                                fallback: 'Email'),
-                            value: _valueOrFallback(context, member.email),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.cake_outlined,
-                            label: context.t(
-                              'members.date_of_birth_label',
-                              fallback: 'Date of Birth',
-                            ),
-                            value: _formatDob(context, member.dob),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.category_outlined,
-                            label: context.t(
-                              'members.category_label',
-                              fallback: 'Category',
-                            ),
-                            value: _valueOrFallback(
-                              context,
-                              _formatCategory(context, member.category),
-                            ),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.favorite_border,
-                            label: context.t(
-                              'members.marital_status_label',
-                              fallback: 'Marital Status',
-                            ),
-                            value: _valueOrFallback(
-                              context,
-                              _formatCategory(context, member.maritalStatus),
-                            ),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.celebration_outlined,
-                            label: context.t(
-                              'members.wedding_day_label',
-                              fallback: 'Wedding Day',
-                            ),
-                            value: _formatDob(context, member.weddingDay),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.family_restroom_outlined,
-                            label: context.t(
-                              'members.family_id_label',
-                              fallback: 'Family ID',
-                            ),
-                            value: _valueOrFallback(context, member.familyId),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.location_on_outlined,
-                            label: context.t(
-                              'members.address_label',
-                              fallback: 'Address',
-                            ),
-                            value: _valueOrFallback(context, member.address),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isAdmin)
-                      _MemberDetailSection(
-                        title: context.t(
-                          'members.extended_information_title',
-                          fallback: 'Extended Information',
-                        ),
-                        child: Column(
-                          children: [
-                            _MemberDetailRow(
-                              icon: Icons.account_balance_wallet_outlined,
-                              label: context.t(
-                                'members.financial_stability_label',
-                                fallback: 'Financial Stability',
-                              ),
-                              value: member.financialStabilityRating == 0
-                                  ? context.t(
-                                      'members.financial_not_rated',
-                                      fallback: 'Not rated',
-                                    )
-                                  : '${member.financialStabilityRating}/5',
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.volunteer_activism_outlined,
-                              label: context.t(
-                                'members.financial_support_required',
-                                fallback: 'Financial Support Required',
-                              ),
-                              value: member.financialSupportRequired
-                                  ? context.t('common.yes', fallback: 'Yes')
-                                  : context.t('common.no', fallback: 'No'),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.school_outlined,
-                              label: context.t(
-                                'members.educational_qualification',
-                                fallback: 'Educational Qualification',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.educationalQualification,
-                              ),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.auto_awesome_outlined,
-                              label: context.t(
-                                'members.talents_and_gifts',
-                                fallback: 'Talents & Gifts',
-                              ),
-                              value: member.talentsAndGifts.isEmpty
-                                  ? context.t(
-                                      'common.not_provided',
-                                      fallback: 'Not provided',
-                                    )
-                                  : member.talentsAndGifts.join(', '),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.sticky_note_2_outlined,
-                              label: context.t(
-                                'members.additional_notes_label',
-                                fallback: 'Additional Notes',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.additionalNotes,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    _MemberDetailSection(
-                      title: context.t(
-                        'members.church_records_title',
-                        fallback: 'Church Records',
+              return StatefulBuilder(
+                builder: (context, setModalState) {
+                  return SafeArea(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        8,
+                        20,
+                        20 + MediaQuery.of(context).viewInsets.bottom,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (!isAdmin) ...[
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer
-                                    .withValues(alpha: 0.45),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.18),
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                child: Text(
+                                  currentMember.name.isNotEmpty
+                                      ? currentMember.name[0].toUpperCase()
+                                      : '?',
                                 ),
                               ),
-                              child: Text(
-                                context.t(
-                                  'members.church_records_contact_banner',
-                                  fallback:
-                                      'Please contact Church Pastor for change in details',
-                                ),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                          _MemberDetailRow(
-                            icon: Icons.water_drop_outlined,
-                            label: context.t(
-                              'members.solemnized_baptism_label',
-                              fallback: 'Solemnized Baptism',
-                            ),
-                            value: member.solemnizedBaptism
-                                ? context.t('common.yes', fallback: 'Yes')
-                                : context.t('common.no', fallback: 'No'),
-                          ),
-                          if (member.solemnizedBaptism) ...[
-                            _MemberDetailRow(
-                              icon: Icons.event_outlined,
-                              label: context.t(
-                                'members.baptism_date_label',
-                                fallback: 'Baptism Date',
-                              ),
-                              value: _formatDob(context, member.baptismDate),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.confirmation_number_outlined,
-                              label: context.t(
-                                'members.baptism_certificate_number_label',
-                                fallback: 'Baptism Certificate Number',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.baptismCertificateNumber,
-                              ),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.church_outlined,
-                              label: context.t(
-                                'members.baptism_church_name_label',
-                                fallback: 'Church Name',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.baptismChurchName,
-                              ),
-                            ),
-                            _MemberDetailRow(
-                              icon: Icons.person_2_outlined,
-                              label: context.t(
-                                'members.baptism_pastor_name_label',
-                                fallback: 'Pastor Name',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.baptismPastorName,
-                              ),
-                            ),
-                          ],
-                          if (member.maritalStatus.trim().toLowerCase() ==
-                              'married') ...[
-                            _MemberDetailRow(
-                              icon: Icons.favorite_outline,
-                              label: context.t(
-                                'members.marriage_solemnization_title',
-                                fallback: 'Marriage Solemnization',
-                              ),
-                              value: _valueOrFallback(
-                                context,
-                                member.marriageSolemnizationChurchType ==
-                                            'current_church' &&
-                                        member.marriageSolemnizationChurchName
-                                            .trim()
-                                            .isEmpty
-                                    ? context.t(
-                                        'members.current_church_option',
-                                        fallback: 'Current Church',
-                                      )
-                                    : member.marriageSolemnizationChurchName,
-                              ),
-                            ),
-                          ],
-                          _MemberDetailRow(
-                            icon: Icons.badge_outlined,
-                            label: context.t(
-                              'members.membership_current_status_label',
-                              fallback: 'Membership Current Status',
-                            ),
-                            value: _valueOrFallback(
-                              context,
-                              _formatCategory(
-                                context,
-                                member.membershipCurrentStatus
-                                    .replaceAll('_', ' '),
-                              ),
-                            ),
-                          ),
-                          _MemberDetailRow(
-                            icon: Icons.notes_outlined,
-                            label: context.t(
-                              'members.membership_notes_label',
-                              fallback: 'Additional Note',
-                            ),
-                            value: _valueOrFallback(
-                              context,
-                              member.membershipNotes,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isAdmin)
-                      _MemberDetailSection(
-                        title: context.t(
-                          'members.church_groups_title',
-                          fallback: 'Church Directory',
-                        ),
-                        child: member.churchGroupIds.isEmpty
-                            ? Text(
-                                context.t(
-                                  'members.no_church_groups_assigned',
-                                  fallback: 'No church groups assigned',
-                                ),
-                                style: theme.textTheme.bodyMedium,
-                              )
-                            : Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: member.churchGroupIds
-                                    .map(
-                                      (groupId) => Chip(
-                                        label: Text(churchGroupLabel(groupId)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _valueOrFallback(
+                                          context, currentMember.name),
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatCategory(
+                                          context, currentMember.category),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                    )
-                                    .toList(),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    MemberSinceChip(
+                                        date: currentMember.createdAt),
+                                  ],
+                                ),
                               ),
-                      ),
-                    if (canEditMember) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final selectedChurch =
-                                ref.read(selectedChurchProvider);
-                            final currentChurchId =
-                                await ref.read(currentChurchIdProvider.future);
-                            final availableChurches =
-                                ref.read(churchesProvider).asData?.value ??
-                                    const <Church>[];
-                            final currentChurch = selectedChurch ??
-                                (currentChurchId == null
-                                    ? null
-                                    : availableChurches
-                                        .cast<Church?>()
-                                        .firstWhere(
-                                          (church) =>
-                                              church?.id == currentChurchId,
-                                          orElse: () => null,
-                                        ));
+                            ],
+                          ),
+                          if (canApproveMember)
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                context.t(
+                                  'members.approve_member',
+                                  fallback: 'Approve member',
+                                ),
+                              ),
+                              subtitle: Text(
+                                approvedValue
+                                    ? context.t('common.approved',
+                                        fallback: 'Approved')
+                                    : context.t(
+                                        'common.pending_approval',
+                                        fallback: 'Pending approval',
+                                      ),
+                              ),
+                              value: approvedValue,
+                              onChanged: (val) async {
+                                setModalState(() {
+                                  approvedValue = val;
+                                });
 
-                            if (currentChurch == null || !context.mounted)
-                              return;
-                            final shouldCreateLoginFirst = member.email
-                                    .trim()
-                                    .isEmpty
-                                ? await showDialog<bool>(
-                                      context: context,
-                                      builder: (dialogContext) => AlertDialog(
-                                        title: Text(
-                                          context.t(
-                                            'members.create_church_connect_account',
-                                            fallback:
-                                                'Create Church Tree account?',
-                                          ),
-                                        ),
-                                        content: Text(
-                                          context.t(
-                                            'members.create_church_connect_account_message',
-                                            fallback:
-                                                'This member does not have a Church Tree account yet. Do you want to create it first?',
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(dialogContext)
-                                                    .pop(false),
-                                            child: Text(
-                                              context.t(
-                                                'common.no',
-                                                fallback: 'No',
+                                final success = await _updateMemberApproval(
+                                  context,
+                                  ref,
+                                  userId: member.uid,
+                                  value: val,
+                                );
+
+                                if (!success && context.mounted) {
+                                  setModalState(() {
+                                    approvedValue = currentMember.approved;
+                                  });
+                                }
+                              },
+                            ),
+                          const SizedBox(height: 20),
+                          _MemberDetailSection(
+                            title: context.t(
+                              'members.basic_details_title',
+                              fallback: 'Basic Details',
+                            ),
+                            initiallyExpanded: true,
+                            child: Column(
+                              children: [
+                                _MemberDetailRow(
+                                  icon: Icons.badge_outlined,
+                                  label: context.t('members.name_label',
+                                      fallback: 'Name'),
+                                  value: _valueOrFallback(
+                                      context, currentMember.name),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.phone_outlined,
+                                  label: context.t('members.phone_label',
+                                      fallback: 'Phone'),
+                                  value: _valueOrFallback(
+                                      context, currentMember.phone),
+                                  onActionTap:
+                                      currentMember.phone.trim().isEmpty
+                                          ? null
+                                          : () => launchPhoneCall(
+                                                context,
+                                                currentMember.phone,
                                               ),
-                                            ),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(dialogContext)
-                                                    .pop(true),
-                                            child: Text(
-                                              context.t(
-                                                'common.yes',
-                                                fallback: 'Yes',
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ) ??
-                                    false
-                                : false;
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                            if (shouldCreateLoginFirst) {
-                              await logChurchAnalyticsEvent(
-                                ref,
-                                name: 'member_edit_started',
-                                parameters: {
-                                  'member_id': member.uid,
-                                  'with_auth_setup': true,
-                                },
-                              );
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => CreateAuthAccountScreen(
-                                    adminCreateMode: true,
-                                    churchId: currentChurch.id,
-                                    churchName: currentChurch.name,
-                                    churchLogo: currentChurch.logo,
-                                    existingMember: member,
-                                    continueToEditAfterCreate: true,
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.contact_phone_outlined,
+                                  label: context.t(
+                                    'members.contact_label',
+                                    fallback: 'Contact',
+                                  ),
+                                  value: _valueOrFallback(
+                                      context, currentMember.contact),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.person_outline,
+                                  label: context.t(
+                                    'members.gender_label',
+                                    fallback: 'Gender',
+                                  ),
+                                  value: _valueOrFallback(
+                                    context,
+                                    _formatCategory(
+                                        context, currentMember.gender),
                                   ),
                                 ),
-                              );
-                              return;
-                            }
-                            await logChurchAnalyticsEvent(
-                              ref,
-                              name: 'member_edit_started',
-                              parameters: {
-                                'member_id': member.uid,
-                                'with_auth_setup': false,
-                              },
-                            );
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => LoginRequestScreen(
-                                  churchId: currentChurch.id,
-                                  churchName: currentChurch.name,
-                                  churchLogo: currentChurch.logo,
-                                  adminCreateMode: true,
-                                  existingMember: member,
+                                _MemberDetailRow(
+                                  icon: Icons.email_outlined,
+                                  label: context.t('members.email_label',
+                                      fallback: 'Email'),
+                                  value: _valueOrFallback(
+                                      context, currentMember.email),
                                 ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit_outlined),
-                          label: Text(
-                            context.t(
-                              'members.edit_member',
-                              fallback: 'Edit Member',
+                                _MemberDetailRow(
+                                  icon: Icons.cake_outlined,
+                                  label: context.t(
+                                    'members.date_of_birth_label',
+                                    fallback: 'Date of Birth',
+                                  ),
+                                  value: _formatDob(context, currentMember.dob),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.category_outlined,
+                                  label: context.t(
+                                    'members.category_label',
+                                    fallback: 'Category',
+                                  ),
+                                  value: _valueOrFallback(
+                                    context,
+                                    _formatCategory(
+                                        context, currentMember.category),
+                                  ),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.favorite_border,
+                                  label: context.t(
+                                    'members.marital_status_label',
+                                    fallback: 'Marital Status',
+                                  ),
+                                  value: _valueOrFallback(
+                                    context,
+                                    _formatCategory(
+                                      context,
+                                      currentMember.maritalStatus,
+                                    ),
+                                  ),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.celebration_outlined,
+                                  label: context.t(
+                                    'members.wedding_day_label',
+                                    fallback: 'Wedding Day',
+                                  ),
+                                  value: _formatDob(
+                                      context, currentMember.weddingDay),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.family_restroom_outlined,
+                                  label: context.t(
+                                    'members.family_id_label',
+                                    fallback: 'Family ID',
+                                  ),
+                                  value: _valueOrFallback(
+                                      context, currentMember.familyId),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.location_on_outlined,
+                                  label: context.t(
+                                    'members.address_label',
+                                    fallback: 'Address',
+                                  ),
+                                  value: _valueOrFallback(
+                                      context, currentMember.address),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                    if (canDelete) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final shouldDelete = await showDialog<bool>(
-                              context: context,
-                              builder: (dialogContext) => AlertDialog(
-                                title: Text(
-                                  context.t(
-                                    'members.delete_title',
-                                    fallback: 'Delete member?',
+                          if (isAdmin)
+                            _MemberDetailSection(
+                              title: context.t(
+                                'members.extended_information_title',
+                                fallback: 'Extended Information',
+                              ),
+                              child: Column(
+                                children: [
+                                  _MemberDetailRow(
+                                    icon: Icons.account_balance_wallet_outlined,
+                                    label: context.t(
+                                      'members.financial_stability_label',
+                                      fallback: 'Financial Stability',
+                                    ),
+                                    value: currentMember
+                                                .financialStabilityRating ==
+                                            0
+                                        ? context.t(
+                                            'members.financial_not_rated',
+                                            fallback: 'Not rated',
+                                          )
+                                        : '${currentMember.financialStabilityRating}/5',
                                   ),
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                content: Text(
-                                  context.t(
-                                    'members.delete_message',
-                                    fallback:
-                                        'This will remove the member from this church.',
+                                  _MemberDetailRow(
+                                    icon: Icons.volunteer_activism_outlined,
+                                    label: context.t(
+                                      'members.financial_support_required',
+                                      fallback: 'Financial Support Required',
+                                    ),
+                                    value:
+                                        currentMember.financialSupportRequired
+                                            ? context.t('common.yes',
+                                                fallback: 'Yes')
+                                            : context.t('common.no',
+                                                fallback: 'No'),
                                   ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(false),
-                                    child: Text(
-                                      context.t(
-                                        'settings.cancel',
-                                        fallback: 'Cancel',
-                                      ),
+                                  _MemberDetailRow(
+                                    icon: Icons.school_outlined,
+                                    label: context.t(
+                                      'members.educational_qualification',
+                                      fallback: 'Educational Qualification',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      currentMember.educationalQualification,
                                     ),
                                   ),
-                                  FilledButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(true),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.error,
+                                  _MemberDetailRow(
+                                    icon: Icons.auto_awesome_outlined,
+                                    label: context.t(
+                                      'members.talents_and_gifts',
+                                      fallback: 'Talents & Gifts',
                                     ),
-                                    child: Text(
-                                      context.t(
-                                        'common.delete',
-                                        fallback: 'Delete',
-                                      ),
+                                    value: currentMember.talentsAndGifts.isEmpty
+                                        ? context.t(
+                                            'common.not_provided',
+                                            fallback: 'Not provided',
+                                          )
+                                        : currentMember.talentsAndGifts
+                                            .join(', '),
+                                  ),
+                                  _MemberDetailRow(
+                                    icon: Icons.sticky_note_2_outlined,
+                                    label: context.t(
+                                      'members.additional_notes_label',
+                                      fallback: 'Additional Notes',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      currentMember.additionalNotes,
                                     ),
                                   ),
                                 ],
                               ),
-                            );
+                            ),
+                          _MemberDetailSection(
+                            title: context.t(
+                              'members.church_records_title',
+                              fallback: 'Church Records',
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (!isAdmin) ...[
+                                  Container(
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer
+                                          .withValues(alpha: 0.45),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.18),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      context.t(
+                                        'members.church_records_contact_banner',
+                                        fallback:
+                                            'Please contact Church Pastor for change in details',
+                                      ),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                _MemberDetailRow(
+                                  icon: Icons.water_drop_outlined,
+                                  label: context.t(
+                                    'members.solemnized_baptism_label',
+                                    fallback: 'Solemnized Baptism',
+                                  ),
+                                  value: member.solemnizedBaptism
+                                      ? context.t('common.yes', fallback: 'Yes')
+                                      : context.t('common.no', fallback: 'No'),
+                                ),
+                                if (member.solemnizedBaptism) ...[
+                                  _MemberDetailRow(
+                                    icon: Icons.event_outlined,
+                                    label: context.t(
+                                      'members.baptism_date_label',
+                                      fallback: 'Baptism Date',
+                                    ),
+                                    value:
+                                        _formatDob(context, member.baptismDate),
+                                  ),
+                                  _MemberDetailRow(
+                                    icon: Icons.confirmation_number_outlined,
+                                    label: context.t(
+                                      'members.baptism_certificate_number_label',
+                                      fallback: 'Baptism Certificate Number',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      member.baptismCertificateNumber,
+                                    ),
+                                  ),
+                                  _MemberDetailRow(
+                                    icon: Icons.church_outlined,
+                                    label: context.t(
+                                      'members.baptism_church_name_label',
+                                      fallback: 'Church Name',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      member.baptismChurchName,
+                                    ),
+                                  ),
+                                  _MemberDetailRow(
+                                    icon: Icons.person_2_outlined,
+                                    label: context.t(
+                                      'members.baptism_pastor_name_label',
+                                      fallback: 'Pastor Name',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      member.baptismPastorName,
+                                    ),
+                                  ),
+                                ],
+                                if (member.maritalStatus.trim().toLowerCase() ==
+                                    'married') ...[
+                                  _MemberDetailRow(
+                                    icon: Icons.favorite_outline,
+                                    label: context.t(
+                                      'members.marriage_solemnization_title',
+                                      fallback: 'Marriage Solemnization',
+                                    ),
+                                    value: _valueOrFallback(
+                                      context,
+                                      member.marriageSolemnizationChurchType ==
+                                                  'current_church' &&
+                                              member
+                                                  .marriageSolemnizationChurchName
+                                                  .trim()
+                                                  .isEmpty
+                                          ? context.t(
+                                              'members.current_church_option',
+                                              fallback: 'Current Church',
+                                            )
+                                          : member
+                                              .marriageSolemnizationChurchName,
+                                    ),
+                                  ),
+                                ],
+                                _MemberDetailRow(
+                                  icon: Icons.badge_outlined,
+                                  label: context.t(
+                                    'members.membership_current_status_label',
+                                    fallback: 'Membership Current Status',
+                                  ),
+                                  value: _valueOrFallback(
+                                    context,
+                                    _formatCategory(
+                                      context,
+                                      member.membershipCurrentStatus
+                                          .replaceAll('_', ' '),
+                                    ),
+                                  ),
+                                ),
+                                _MemberDetailRow(
+                                  icon: Icons.notes_outlined,
+                                  label: context.t(
+                                    'members.membership_notes_label',
+                                    fallback: 'Additional Note',
+                                  ),
+                                  value: _valueOrFallback(
+                                    context,
+                                    member.membershipNotes,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isAdmin)
+                            _MemberDetailSection(
+                              title: context.t(
+                                'members.church_groups_title',
+                                fallback: 'Church Directory',
+                              ),
+                              child: member.churchGroupIds.isEmpty
+                                  ? Text(
+                                      context.t(
+                                        'members.no_church_groups_assigned',
+                                        fallback: 'No church groups assigned',
+                                      ),
+                                      style: theme.textTheme.bodyMedium,
+                                    )
+                                  : Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: member.churchGroupIds
+                                          .map(
+                                            (groupId) => Chip(
+                                              label: Text(
+                                                  churchGroupLabel(groupId)),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                            ),
+                          if (canEditMember) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final selectedChurch =
+                                      ref.read(selectedChurchProvider);
+                                  final currentChurchId = await ref
+                                      .read(currentChurchIdProvider.future);
+                                  final availableChurches = ref
+                                          .read(churchesProvider)
+                                          .asData
+                                          ?.value ??
+                                      const <Church>[];
+                                  final currentChurch = selectedChurch ??
+                                      (currentChurchId == null
+                                          ? null
+                                          : availableChurches
+                                              .cast<Church?>()
+                                              .firstWhere(
+                                                (church) =>
+                                                    church?.id ==
+                                                    currentChurchId,
+                                                orElse: () => null,
+                                              ));
 
-                            if (shouldDelete != true) return;
-
-                            final churchId =
-                                await ref.read(currentChurchIdProvider.future);
-                            if (churchId == null) return;
-
-                            final repo = MembersRepository(
-                              firestore: ref.read(firestoreProvider),
-                              churchId: churchId,
-                            );
-
-                            await repo.deleteMember(member.uid);
-                            await logChurchAnalyticsEvent(
-                              ref,
-                              name: 'member_deleted',
-                              parameters: {
-                                'member_id': member.uid,
-                              },
-                            );
-
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
+                                  if (currentChurch == null ||
+                                      !context.mounted) {
+                                    return;
+                                  }
+                                  final shouldCreateLoginFirst = member.email
+                                          .trim()
+                                          .isEmpty
+                                      ? await showDialog<bool>(
+                                            context: context,
+                                            builder: (dialogContext) =>
+                                                AlertDialog(
+                                              title: Text(
+                                                context.t(
+                                                  'members.create_church_connect_account',
+                                                  fallback:
+                                                      'Create Church Tree account?',
+                                                ),
+                                              ),
+                                              content: Text(
+                                                context.t(
+                                                  'members.create_church_connect_account_message',
+                                                  fallback:
+                                                      'This member does not have a Church Tree account yet. Do you want to create it first?',
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                          dialogContext)
+                                                      .pop(false),
+                                                  child: Text(
+                                                    context.t(
+                                                      'common.no',
+                                                      fallback: 'No',
+                                                    ),
+                                                  ),
+                                                ),
+                                                FilledButton(
+                                                  onPressed: () => Navigator.of(
+                                                          dialogContext)
+                                                      .pop(true),
+                                                  child: Text(
+                                                    context.t(
+                                                      'common.yes',
+                                                      fallback: 'Yes',
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ) ??
+                                          false
+                                      : false;
+                                  if (!context.mounted) return;
+                                  Navigator.of(context).pop();
+                                  if (shouldCreateLoginFirst) {
+                                    await logChurchAnalyticsEvent(
+                                      ref,
+                                      name: 'member_edit_started',
+                                      parameters: {
+                                        'member_id': member.uid,
+                                        'with_auth_setup': true,
+                                      },
+                                    );
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => CreateAuthAccountScreen(
+                                          adminCreateMode: true,
+                                          churchId: currentChurch.id,
+                                          churchName: currentChurch.name,
+                                          churchLogo: currentChurch.logo,
+                                          existingMember: member,
+                                          continueToEditAfterCreate: true,
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  await logChurchAnalyticsEvent(
+                                    ref,
+                                    name: 'member_edit_started',
+                                    parameters: {
+                                      'member_id': member.uid,
+                                      'with_auth_setup': false,
+                                    },
+                                  );
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => LoginRequestScreen(
+                                        churchId: currentChurch.id,
+                                        churchName: currentChurch.name,
+                                        churchLogo: currentChurch.logo,
+                                        adminCreateMode: true,
+                                        existingMember: member,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.edit_outlined),
+                                label: Text(
                                   context.t(
-                                    'members.delete_success',
-                                    fallback: 'Member deleted',
+                                    'members.edit_member',
+                                    fallback: 'Edit Member',
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.delete_outline),
-                          label: Text(
-                            context.t(
-                              'common.delete',
-                              fallback: 'Delete',
                             ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.error,
-                            side: BorderSide(color: theme.colorScheme.error),
-                          ),
-                        ),
+                          ],
+                          if (canDelete) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final shouldDelete = await showDialog<bool>(
+                                    context: context,
+                                    builder: (dialogContext) => AlertDialog(
+                                      title: Text(
+                                        context.t(
+                                          'members.delete_title',
+                                          fallback: 'Delete member?',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                      content: Text(
+                                        context.t(
+                                          'members.delete_message',
+                                          fallback:
+                                              'This will remove the member from this church.',
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext)
+                                                  .pop(false),
+                                          child: Text(
+                                            context.t(
+                                              'settings.cancel',
+                                              fallback: 'Cancel',
+                                            ),
+                                          ),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext)
+                                                  .pop(true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                theme.colorScheme.error,
+                                          ),
+                                          child: Text(
+                                            context.t(
+                                              'common.delete',
+                                              fallback: 'Delete',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (shouldDelete != true) return;
+
+                                  final churchId = await ref
+                                      .read(currentChurchIdProvider.future);
+                                  if (churchId == null) return;
+
+                                  final repo = MembersRepository(
+                                    firestore: ref.read(firestoreProvider),
+                                    churchId: churchId,
+                                  );
+
+                                  await repo.deleteMember(member.uid);
+                                  await logChurchAnalyticsEvent(
+                                    ref,
+                                    name: 'member_deleted',
+                                    parameters: {
+                                      'member_id': member.uid,
+                                    },
+                                  );
+
+                                  if (!context.mounted) return;
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        context.t(
+                                          'members.delete_success',
+                                          fallback: 'Member deleted',
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.delete_outline),
+                                label: Text(
+                                  context.t(
+                                    'common.delete',
+                                    fallback: 'Delete',
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: theme.colorScheme.error,
+                                  side: BorderSide(
+                                      color: theme.colorScheme.error),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ),
       );
@@ -1391,6 +1473,48 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
   }
 
   return entries;
+}
+
+Future<bool> _updateMemberApproval(
+  BuildContext context,
+  WidgetRef ref, {
+  required String userId,
+  required bool value,
+}) async {
+  try {
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (churchId == null) return false;
+
+    final repo = MembersRepository(
+      firestore: ref.read(firestoreProvider),
+      churchId: churchId,
+    );
+
+    await repo.approveMember(userId, value);
+    await logChurchAnalyticsEvent(
+      ref,
+      name: value ? 'member_approved' : 'member_rejected',
+      parameters: {
+        'member_id': userId,
+      },
+    );
+    ref.invalidate(membersProvider);
+    return true;
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.t(
+              'members.approval_update_failed',
+              fallback: 'Could not update member approval. Please try again.',
+            ),
+          ),
+        ),
+      );
+    }
+    return false;
+  }
 }
 
 String _formatFamilyHeader(BuildContext context, String familyId) {

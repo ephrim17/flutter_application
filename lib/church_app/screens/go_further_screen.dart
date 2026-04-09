@@ -96,6 +96,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                 ],
               ),
               child: AppTextField(
+                variant: AppTextFieldVariant.search,
                 controller: _searchController,
                 onChanged: (value) {
                   setState(() {

@@ -14,20 +14,10 @@ class _DashboardHeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final secondaryText = onSurface.withValues(alpha: 0.78);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryText = onPrimary.withValues(alpha: 0.88);
     return Container(
-      decoration: carouselBoxDecoration(context).copyWith(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.15),
-            theme.colorScheme.secondary.withValues(alpha: 0.09),
-            theme.colorScheme.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      decoration: welcomeBackCardDecoration(context),
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,8 +31,11 @@ class _DashboardHeroSection extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  color: Colors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -50,13 +43,13 @@ class _DashboardHeroSection extends StatelessWidget {
                     Icon(
                       Icons.admin_panel_settings_outlined,
                       size: 16,
-                      color: theme.colorScheme.primary,
+                      color: onPrimary.withValues(alpha: 0.95),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Admin Dashboard',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.primary,
+                        color: onPrimary.withValues(alpha: 0.96),
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -67,13 +60,16 @@ class _DashboardHeroSection extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.11),
+                  color: Colors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
                 ),
                 child: Text(
                   isLoading ? 'Refreshing...' : 'Live church snapshot',
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.green.shade800,
+                    color: onPrimary.withValues(alpha: 0.96),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -82,9 +78,9 @@ class _DashboardHeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            churchTitle,
+            churchTitle.trim().isEmpty ? 'Church' : 'Church $churchTitle',
             style: theme.textTheme.headlineMedium?.copyWith(
-              color: onSurface,
+              color: onPrimary,
               fontWeight: FontWeight.w900,
               height: 1.05,
             ),
@@ -138,20 +134,20 @@ class _DashboardHeroChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = theme.colorScheme.onSurface;
+    final textColor = theme.colorScheme.onPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: Colors.white.withValues(alpha: 0.14),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+          color: Colors.white.withValues(alpha: 0.18),
         ),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          Icon(icon, size: 18, color: textColor),
           const SizedBox(width: 8),
           Text(
             label,
@@ -210,6 +206,67 @@ class _DashboardSectionCard extends StatelessWidget {
   }
 }
 
+class _DashboardBirthdaySection extends StatelessWidget {
+  const _DashboardBirthdaySection({
+    required this.members,
+  });
+
+  final List<AppUser> members;
+
+  @override
+  Widget build(BuildContext context) {
+    if (members.isEmpty) {
+      return const _DashboardEmptyState(
+        title: 'No birthdays today',
+        subtitle: 'When a member has a birthday today, it will show up here.',
+      );
+    }
+
+    return Column(
+      children: members.map((member) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: carouselBoxDecoration(context),
+          child: ListTile(
+            onTap: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => FractionallySizedBox(
+                  heightFactor: 0.95,
+                  child: BirthdayPostComposerModal(member: member),
+                ),
+              );
+            },
+            leading: CircleAvatar(
+              child: Text(
+                member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
+              ),
+            ),
+            title: Text(member.name),
+            subtitle: Text(_birthdayDashboardLabel(member.dob)),
+            trailing: const Icon(Icons.celebration_outlined),
+          ),
+        );
+      }).toList(growable: false),
+    );
+  }
+}
+
+String _birthdayDashboardLabel(DateTime? dob) {
+  final age = _dashboardBirthdayAge(dob);
+  if (age == null) {
+    return 'Birthday today';
+  }
+  return 'Turning $age today';
+}
+
+int? _dashboardBirthdayAge(DateTime? dob) {
+  if (dob == null) return null;
+  final now = DateTime.now();
+  return now.year - dob.year;
+}
+
 class _DashboardMemberJoinHistory extends StatelessWidget {
   const _DashboardMemberJoinHistory({
     required this.summary,
@@ -258,109 +315,6 @@ class _DashboardMemberJoinHistory extends StatelessWidget {
         _DashboardStatRow(
           label: 'Joined this year',
           value: '${summary.joinedThisYear} members',
-        ),
-      ],
-    );
-  }
-}
-
-class _DashboardExecutiveGrid extends StatelessWidget {
-  const _DashboardExecutiveGrid({
-    required this.attentionNow,
-    required this.recentChanges,
-    required this.healthSignals,
-  });
-
-  final Widget attentionNow;
-  final Widget recentChanges;
-  final Widget healthSignals;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 860;
-
-        if (!isWide) {
-          return Column(
-            children: [
-              attentionNow,
-              const SizedBox(height: 18),
-              recentChanges,
-              const SizedBox(height: 18),
-              healthSignals,
-            ],
-          );
-        }
-
-        return Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: attentionNow),
-                const SizedBox(width: 18),
-                Expanded(child: recentChanges),
-              ],
-            ),
-            const SizedBox(height: 18),
-            healthSignals,
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _DashboardAttentionPanel extends StatelessWidget {
-  const _DashboardAttentionPanel({
-    required this.pendingApprovals,
-    required this.expiringPrayers,
-    required this.announcements,
-    required this.events,
-  });
-
-  final int pendingApprovals;
-  final List<PrayerRequest> expiringPrayers;
-  final List<Announcement> announcements;
-  final List<Event> events;
-
-  @override
-  Widget build(BuildContext context) {
-    final contentGapCount =
-        (announcements.isEmpty ? 1 : 0) + (events.isEmpty ? 1 : 0);
-    return Column(
-      children: [
-        _DashboardSignalTile(
-          title: 'Pending approvals',
-          value: pendingApprovals.toString(),
-          tone: pendingApprovals == 0
-              ? _SignalTone.healthy
-              : _SignalTone.attention,
-          caption: pendingApprovals == 0
-              ? 'No one is waiting for review.'
-              : 'Members are waiting for an admin decision.',
-        ),
-        const SizedBox(height: 12),
-        _DashboardSignalTile(
-          title: 'Prayers expiring this week',
-          value: expiringPrayers.length.toString(),
-          tone: expiringPrayers.isEmpty
-              ? _SignalTone.healthy
-              : _SignalTone.attention,
-          caption: expiringPrayers.isEmpty
-              ? 'Nothing urgent is about to expire.'
-              : 'Prayer follow-up may be needed soon.',
-        ),
-        const SizedBox(height: 12),
-        _DashboardSignalTile(
-          title: 'Content gaps',
-          value: contentGapCount.toString(),
-          tone:
-              contentGapCount == 0 ? _SignalTone.healthy : _SignalTone.warning,
-          caption: contentGapCount == 0
-              ? 'Announcements and events are both live.'
-              : 'One or more public-facing sections feel empty.',
         ),
       ],
     );
@@ -430,9 +384,43 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
         ? 100
         : ((state.metrics.approvedMembers / state.metrics.memberCount) * 100)
             .round();
+    final contentGapCount =
+        (state.announcements.isEmpty ? 1 : 0) + (state.events.isEmpty ? 1 : 0);
 
     return Column(
       children: [
+        _DashboardSignalTile(
+          title: 'Pending approvals',
+          value: state.memberMetrics.pendingApprovals.toString(),
+          tone: state.memberMetrics.pendingApprovals == 0
+              ? _SignalTone.healthy
+              : _SignalTone.attention,
+          caption: state.memberMetrics.pendingApprovals == 0
+              ? 'No one is waiting for review.'
+              : 'Members are waiting for an admin decision.',
+        ),
+        const SizedBox(height: 12),
+        _DashboardSignalTile(
+          title: 'Prayers expiring this week',
+          value: state.expiringPrayers.length.toString(),
+          tone: state.expiringPrayers.isEmpty
+              ? _SignalTone.healthy
+              : _SignalTone.attention,
+          caption: state.expiringPrayers.isEmpty
+              ? 'Nothing urgent is about to expire.'
+              : 'Prayer follow-up may be needed soon.',
+        ),
+        const SizedBox(height: 12),
+        _DashboardSignalTile(
+          title: 'Content gaps',
+          value: contentGapCount.toString(),
+          tone:
+              contentGapCount == 0 ? _SignalTone.healthy : _SignalTone.warning,
+          caption: contentGapCount == 0
+              ? 'Announcements and events are both live.'
+              : 'One or more public-facing sections feel empty.',
+        ),
+        const SizedBox(height: 14),
         _DashboardHealthRow(
           label: 'Approval health',
           value: '$approvalRate%',
@@ -455,6 +443,21 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
           label: 'Prayer urgency',
           value: '${state.expiringPrayers.length} urgent',
           healthy: state.expiringPrayers.length <= 2,
+        ),
+        const SizedBox(height: 18),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'What Changed Recently',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _DashboardRecentChangesPanel(
+          recentMembers: state.memberMetrics.recentMembers,
+          recentJoinCount: state.memberMetrics.recentJoinCount7d,
         ),
       ],
     );

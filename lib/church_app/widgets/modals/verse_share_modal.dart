@@ -1372,13 +1372,11 @@ class _VerseShareModalState extends State<VerseShareModal> {
             ),
           ],
           const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            value: rule.fontStyleIndex,
-            decoration: InputDecoration(
-              labelText: context.t(
-                'verse_share.highlight_font',
-                fallback: 'Highlight Font',
-              ),
+          AppDropdownField<int>(
+            initialValue: rule.fontStyleIndex,
+            labelText: context.t(
+              'verse_share.highlight_font',
+              fallback: 'Highlight Font',
             ),
             items: List.generate(fontStyleOptions.length, (index) {
               final option = fontStyleOptions[index];

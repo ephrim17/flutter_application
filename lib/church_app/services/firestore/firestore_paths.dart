@@ -49,6 +49,7 @@ class FirestorePaths {
   static const groups = 'groups';
   static const notificationRequests = 'notification_requests';
   static const dashboardMetrics = 'dashboard_metrics';
+  static const equipments = 'equipments';
 
   /// Church document
   static DocumentReference churchDoc(
@@ -117,6 +118,13 @@ class FirestorePaths {
     String churchId,
   ) {
     return churchDoc(firestore, churchId).collection(dashboardMetrics);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchEquipments(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return churchDoc(firestore, churchId).collection(equipments);
   }
 
   static DocumentReference<Map<String, dynamic>> churchDashboardMetricDoc(

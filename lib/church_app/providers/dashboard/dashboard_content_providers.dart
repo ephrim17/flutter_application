@@ -1,4 +1,5 @@
 import 'package:flutter_application/church_app/models/app_config_model.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/app_config_repository.dart';
 import 'package:flutter_application/church_app/services/home_section/announcements_repository.dart';
 import 'package:flutter_application/church_app/services/home_section/events_repository.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/services/side_drawer/prayer_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,4 +70,17 @@ final dashboardAppConfigProvider = FutureProvider<AppConfig>((ref) async {
     churchId: churchId,
   );
   return repo.getAppConfigOnce();
+});
+
+final dashboardMembersProvider = FutureProvider<List<AppUser>>((ref) async {
+  final churchId = await ref.watch(currentChurchIdProvider.future);
+  if (churchId == null || churchId.trim().isEmpty) {
+    return const <AppUser>[];
+  }
+
+  final repo = MembersRepository(
+    firestore: ref.read(firestoreProvider),
+    churchId: churchId,
+  );
+  return repo.getMembersOnce();
 });

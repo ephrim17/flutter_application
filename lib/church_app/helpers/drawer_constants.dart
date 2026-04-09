@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/equipment_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/studio_screen
 enum DrawerMenuItem {
   //events,
   studio,
+  equipment,
   churchGroups,
   prayerRequest,
   members,
@@ -27,6 +29,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return 'Events';
       case DrawerMenuItem.studio:
         return 'Studio';
+      case DrawerMenuItem.equipment:
+        return 'Equipment';
       case DrawerMenuItem.churchGroups:
         return 'Church Directory';
       case DrawerMenuItem.prayerRequest:
@@ -50,6 +54,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return Icons.event;
       case DrawerMenuItem.studio:
         return Icons.design_services_outlined;
+      case DrawerMenuItem.equipment:
+        return Icons.inventory_2_outlined;
       case DrawerMenuItem.churchGroups:
         return Icons.groups_2_outlined;
       case DrawerMenuItem.prayerRequest:
@@ -73,6 +79,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return const EventsScreen();
       case DrawerMenuItem.studio:
         return const StudioScreen();
+      case DrawerMenuItem.equipment:
+        return const EquipmentScreen();
       case DrawerMenuItem.churchGroups:
         return const ChurchGroupsScreen();
       case DrawerMenuItem.prayerRequest:
@@ -93,6 +101,7 @@ extension DrawerMenuItemX on DrawerMenuItem {
   bool get adminOnly {
     switch (this) {
       case DrawerMenuItem.studio:
+      case DrawerMenuItem.equipment:
         return true;
       case DrawerMenuItem.churchGroups:
         return false;

@@ -42,79 +42,66 @@ class SettingsScreen extends ConsumerWidget {
           text: ref.t('settings.title', fallback: 'Settings'),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.secondary.withValues(alpha: 0.04),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Scrollbar(
-          thumbVisibility: true,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [
-              _SettingsHeroCard(
-                userAsync: userAsync,
-                churchName: selectedChurch?.name ?? '',
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            _SettingsHeroCard(
+              userAsync: userAsync,
+              churchName: selectedChurch?.name ?? '',
+            ),
+            const SizedBox(height: 18),
+            _SettingsSectionLabel(
+              title: ref.t('settings.profile_title', fallback: 'Profile'),
+              subtitle: ref.t(
+                'settings.profile_subtitle',
+                fallback: 'Your identity and personal details.',
               ),
-              const SizedBox(height: 18),
-              _SettingsSectionLabel(
-                title: ref.t('settings.profile_title', fallback: 'Profile'),
-                subtitle: ref.t(
-                  'settings.profile_subtitle',
-                  fallback: 'Your identity and personal details.',
-                ),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _EditProfileSection(),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _SettingsSectionLabel(
+              title:
+                  ref.t('settings.preferences_title', fallback: 'Preferences'),
+              subtitle: ref.t(
+                'settings.preferences_subtitle',
+                fallback: 'Appearance, notifications, and reminders.',
               ),
-              const SizedBox(height: 10),
-              const _SettingsGroupCard(
-                children: [
-                  _EditProfileSection(),
-                ],
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _AppearanceSection(),
+                _PushNotificationSection(),
+                _PrayerReminderSection(),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _SettingsSectionLabel(
+              title: ref.t('settings.account_title', fallback: 'Account'),
+              subtitle: ref.t(
+                'settings.account_subtitle',
+                fallback: 'Manage local data and sign out safely.',
               ),
-              const SizedBox(height: 18),
-              _SettingsSectionLabel(
-                title: ref.t('settings.preferences_title',
-                    fallback: 'Preferences'),
-                subtitle: ref.t(
-                  'settings.preferences_subtitle',
-                  fallback: 'Appearance, notifications, and reminders.',
-                ),
-              ),
-              const SizedBox(height: 10),
-              const _SettingsGroupCard(
-                children: [
-                  _AppearanceSection(),
-                  _PushNotificationSection(),
-                  _PrayerReminderSection(),
-                ],
-              ),
-              const SizedBox(height: 18),
-              _SettingsSectionLabel(
-                title: ref.t('settings.account_title', fallback: 'Account'),
-                subtitle: ref.t(
-                  'settings.account_subtitle',
-                  fallback: 'Manage local data and sign out safely.',
-                ),
-              ),
-              const SizedBox(height: 10),
-              const _SettingsGroupCard(
-                children: [
-                  _StorageSection(),
-                  _LogoutSection(),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const PraiseTheLordCard(),
-              const SizedBox(height: 10),
-              const CopyrightWidget(),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _StorageSection(),
+                _LogoutSection(),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const PraiseTheLordCard(),
+            const SizedBox(height: 10),
+            const CopyrightWidget(),
+          ],
         ),
       ),
     );
@@ -133,22 +120,11 @@ class _SettingsHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
+    final onPrimary = theme.colorScheme.onPrimary;
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: carouselBoxDecoration(context).copyWith(
-        gradient: LinearGradient(
-          colors: [
-            primary.withValues(alpha: 0.14),
-            secondary.withValues(alpha: 0.08),
-            theme.colorScheme.surface,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      decoration: welcomeBackCardDecoration(context),
       child: userAsync.when(
         loading: () => const SizedBox(
           height: 112,
@@ -161,13 +137,14 @@ class _SettingsHeroCard extends StatelessWidget {
               'Settings',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
+                color: onPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Manage your app preferences and account details.',
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                color: onPrimary.withValues(alpha: 0.88),
               ),
             ),
           ],
@@ -195,15 +172,17 @@ class _SettingsHeroCard extends StatelessWidget {
                     width: 64,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: primary.withValues(alpha: 0.14),
-                      border: Border.all(color: primary.withValues(alpha: 0.2)),
+                      color: Colors.white.withValues(alpha: 0.14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       initials.isEmpty ? 'CT' : initials,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: primary,
+                        color: onPrimary,
                       ),
                     ),
                   ),
@@ -219,6 +198,7 @@ class _SettingsHeroCard extends StatelessWidget {
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w900,
                             height: 1.05,
+                            color: onPrimary,
                           ),
                         ),
                         if (email.isNotEmpty) ...[
@@ -228,8 +208,7 @@ class _SettingsHeroCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
+                              color: onPrimary.withValues(alpha: 0.88),
                             ),
                           ),
                         ],
@@ -269,21 +248,25 @@ class _SettingsHeroChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.78),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+          color: Colors.white.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          Icon(icon, size: 16, color: theme.colorScheme.onPrimary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -1167,23 +1150,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
-              decoration: carouselBoxDecoration(context).copyWith(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.12),
-                    Theme.of(context)
-                        .colorScheme
-                        .secondary
-                        .withValues(alpha: 0.06),
-                    Theme.of(context).colorScheme.surface,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              decoration: welcomeBackCardDecoration(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1192,6 +1159,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         fallback: 'Edit Profile'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                   ),
                   const SizedBox(height: 6),
@@ -1204,8 +1172,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.7),
+                              .onPrimary
+                              .withValues(alpha: 0.88),
                         ),
                   ),
                 ],

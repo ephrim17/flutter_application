@@ -40,6 +40,12 @@ class MembersRepository extends ChurchScopedRepository {
     return snapshot.data();
   }
 
+  Stream<AppUser?> watchMemberById(String userId) {
+    return collectionRef().doc(userId).snapshots().map((snapshot) {
+      return snapshot.data();
+    });
+  }
+
   Future<List<AppUser>> getMembersByFamilyIds(List<String> familyIds) async {
     final normalizedIds = familyIds
         .map((item) => item.trim())

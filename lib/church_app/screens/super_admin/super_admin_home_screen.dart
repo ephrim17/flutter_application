@@ -215,6 +215,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                   decoration: carouselBoxDecoration(context),
                                   padding: const EdgeInsets.all(16),
                                   child: AppTextField(
+                                    variant: AppTextFieldVariant.search,
                                     controller: _searchController,
                                     onChanged: (value) {
                                       setState(() {
