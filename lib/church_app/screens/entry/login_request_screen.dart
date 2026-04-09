@@ -1739,7 +1739,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               child: _StepShell(
                                 title: context.t(
                                   'members.church_groups_title',
-                                  fallback: 'Church Directory',
+                                  fallback: 'Church Groups',
                                 ),
                                 subtitle: context.t(
                                   'members.church_groups_subtitle',

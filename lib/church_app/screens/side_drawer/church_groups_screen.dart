@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -22,6 +25,9 @@ class ChurchGroupsScreen extends ConsumerStatefulWidget {
 
 class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     with TickerProviderStateMixin {
+  static const _pastorsGroupId = 'pastors';
+  static const _financeGroupId = 'finance';
+
   late TabController _tabController;
 
   @override
@@ -102,13 +108,28 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     BuildContext context,
     ChurchGroupDefinition group,
   ) async {
+    final isAdmin = ref.read(isAdminProvider);
+    final currentUser = ref.read(appUserProvider).value;
+    if (!_canManageGroupMembership(
+      group: group,
+      isAdmin: isAdmin,
+      currentUser: currentUser,
+    )) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            group.id == _financeGroupId
+                ? 'Only admins in the Pastors group can manage Finance members.'
+                : 'You do not have permission to manage this group.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final repo = await _membersRepository();
     if (repo == null) return;
-
-    final members = await repo.getMembersOnce();
-    final availableMembers = members
-        .where((member) => !member.churchGroupIds.contains(group.id))
-        .toList();
 
     if (!context.mounted) return;
 
@@ -120,77 +141,28 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
         return FractionallySizedBox(
           heightFactor: 0.9,
           child: SafeArea(
-            child: availableMembers.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context
-                              .t('groups.add_to_group',
-                                  fallback: 'Add to {group}')
-                              .replaceAll('{group}', group.label),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          context.t(
-                            'groups.all_members_assigned',
-                            fallback:
-                                'All members are already assigned to this group.',
-                          ),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
+            child: _AddGroupMembersSheet(
+              group: group,
+              repository: repo,
+              onAddMember: (member) async {
+                await _addMemberToGroup(member, group);
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      context
+                          .t(
+                            'groups.member_added',
+                            fallback: '{member} added to {group}',
+                          )
+                          .replaceAll('{member}', member.name)
+                          .replaceAll('{group}', group.label),
                     ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: availableMembers.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final member = availableMembers[index];
-                      return Container(
-                        decoration: carouselBoxDecoration(context),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            child: Text(
-                              member.name.isNotEmpty
-                                  ? member.name[0].toUpperCase()
-                                  : '?',
-                            ),
-                          ),
-                          title: Text(member.name),
-                          subtitle: Text(
-                            [
-                              if (member.phone.trim().isNotEmpty) member.phone,
-                              if (member.email.trim().isNotEmpty) member.email,
-                            ].join(' • '),
-                          ),
-                          trailing: const Icon(Icons.add_circle_outline),
-                          onTap: () async {
-                            await _addMemberToGroup(member, group);
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context
-                                      .t(
-                                        'groups.member_added',
-                                        fallback: '{member} added to {group}',
-                                      )
-                                      .replaceAll('{member}', member.name)
-                                      .replaceAll('{group}', group.label),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
                   ),
+                );
+              },
+            ),
           ),
         );
       },
@@ -257,6 +229,26 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     );
   }
 
+  Future<void> _showGroupPickerSheet(
+    BuildContext context,
+    List<ChurchGroupDefinition> groups,
+  ) async {
+    final selectedGroup = await showModalBottomSheet<ChurchGroupDefinition>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _GroupPickerSheet(
+        groups: groups,
+        selectedGroupId: groups[_tabController.index].id,
+      ),
+    );
+
+    if (selectedGroup == null || !mounted) return;
+    final nextIndex = groups.indexWhere((item) => item.id == selectedGroup.id);
+    if (nextIndex < 0 || nextIndex == _tabController.index) return;
+    _tabController.animateTo(nextIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
@@ -274,7 +266,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
       return Scaffold(
         appBar: AppBar(
           title: AppBarTitle(
-            text: context.t('groups.title', fallback: 'Church Directory'),
+            text: context.t('groups.title', fallback: 'Church Groups'),
           ),
         ),
         body: Center(
@@ -294,14 +286,19 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     }
 
     final currentGroup = visibleGroups[_tabController.index];
+    final canManageCurrentGroup = _canManageGroupMembership(
+      group: currentGroup,
+      isAdmin: isAdmin,
+      currentUser: currentUser,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('groups.title', fallback: 'Church Directory'),
+          text: context.t('groups.title', fallback: 'Church Groups'),
         ),
         actions: [
-          if (isAdmin)
+          if (canManageCurrentGroup)
             IconButton(
               tooltip: context
                   .t('groups.add_to_group', fallback: 'Add to {group}')
@@ -310,40 +307,444 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
               icon: const Icon(Icons.person_add_alt_1_outlined),
             ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              dividerColor: Colors.transparent,
-              tabs: [
-                for (final group in visibleGroups) Tab(text: group.label),
-              ],
-            ),
-          ),
-        ),
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-            child: _CurrentGroupSummary(group: currentGroup),
+            child: _GroupOverviewCard(
+              currentGroup: currentGroup,
+              totalGroupCount: visibleGroups.length,
+              onOpenAllGroups: () =>
+                  _showGroupPickerSheet(context, visibleGroups),
+            ),
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: _GroupMembersTab(
+              group: currentGroup,
+              onMemberTap: _canManageGroupMembership(
+                group: currentGroup,
+                isAdmin: isAdmin,
+                currentUser: currentUser,
+              )
+                  ? (member) =>
+                      _showMemberActionsSheet(context, member, currentGroup)
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _canManageGroupMembership({
+    required ChurchGroupDefinition group,
+    required bool isAdmin,
+    required AppUser? currentUser,
+  }) {
+    if (!isAdmin) return false;
+    if (group.id != _financeGroupId) return true;
+    return currentUser?.churchGroupIds.contains(_pastorsGroupId) ?? false;
+  }
+}
+
+class _AddGroupMembersSheet extends StatefulWidget {
+  const _AddGroupMembersSheet({
+    required this.group,
+    required this.repository,
+    required this.onAddMember,
+  });
+
+  final ChurchGroupDefinition group;
+  final MembersRepository repository;
+  final Future<void> Function(AppUser member) onAddMember;
+
+  @override
+  State<_AddGroupMembersSheet> createState() => _AddGroupMembersSheetState();
+}
+
+class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  final List<AppUser> _members = <AppUser>[];
+  final Set<String> _memberIds = <String>{};
+  final Set<String> _busyMemberIds = <String>{};
+  Timer? _debounce;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String _query = '';
+  DocumentSnapshot<AppUser>? _lastDocument;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMembers(reset: true);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMembers({required bool reset}) async {
+    if (_isLoadingMore) return;
+
+    if (reset) {
+      setState(() {
+        _isLoading = true;
+        _hasMore = true;
+        _lastDocument = null;
+        _members.clear();
+        _memberIds.clear();
+      });
+    } else {
+      if (!_hasMore) return;
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
+
+    try {
+      var page = await widget.repository.fetchMembersPage(
+        query: _query,
+        startAfter: reset ? null : _lastDocument,
+      );
+
+      final nextMembers = <AppUser>[];
+      while (true) {
+        for (final member in page.members) {
+          if (member.churchGroupIds.contains(widget.group.id)) {
+            continue;
+          }
+          if (_memberIds.add(member.uid)) {
+            nextMembers.add(member);
+          }
+        }
+
+        final enoughResults = nextMembers.length >= 12 || !page.hasMore;
+        if (enoughResults) {
+          _lastDocument = page.lastDocument;
+          _hasMore = page.hasMore;
+          break;
+        }
+
+        page = await widget.repository.fetchMembersPage(
+          query: _query,
+          startAfter: page.lastDocument,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _members.addAll(nextMembers);
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+        _hasMore = false;
+      });
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
+      setState(() {
+        _query = value.trim();
+      });
+      _loadMembers(reset: true);
+    });
+  }
+
+  Future<void> _handleAdd(AppUser member) async {
+    setState(() {
+      _busyMemberIds.add(member.uid);
+    });
+    try {
+      await widget.onAddMember(member);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busyMemberIds.remove(member.uid);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context
+                .t('groups.add_to_group', fallback: 'Add to {group}')
+                .replaceAll('{group}', widget.group.label),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Search by name, email, or phone. Members already in this group are hidden for faster selection.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Search members',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        _onSearchChanged('');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _members.isEmpty
+                    ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: carouselBoxDecoration(context),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'No available members found',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _query.isEmpty
+                                  ? context.t(
+                                      'groups.all_members_assigned',
+                                      fallback:
+                                          'All members are already assigned to this group.',
+                                    )
+                                  : 'Try a different search term.',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _members.length + (_hasMore ? 1 : 0),
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          if (index >= _members.length) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Center(
+                                child: TextButton.icon(
+                                  onPressed: _isLoadingMore
+                                      ? null
+                                      : () => _loadMembers(reset: false),
+                                  icon: _isLoadingMore
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.expand_more_rounded),
+                                  label: Text(
+                                    _isLoadingMore
+                                        ? 'Loading more...'
+                                        : 'Load more',
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          final member = _members[index];
+                          final isBusy = _busyMemberIds.contains(member.uid);
+                          return Container(
+                            decoration: carouselBoxDecoration(context),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                child: Text(
+                                  member.name.isNotEmpty
+                                      ? member.name[0].toUpperCase()
+                                      : '?',
+                                ),
+                              ),
+                              title: Text(
+                                member.name.trim().isEmpty
+                                    ? 'Unnamed member'
+                                    : member.name,
+                              ),
+                              subtitle: Text(
+                                [
+                                  if (member.phone.trim().isNotEmpty)
+                                    member.phone,
+                                  if (member.email.trim().isNotEmpty)
+                                    member.email,
+                                ].join(' • '),
+                              ),
+                              trailing: FilledButton.tonalIcon(
+                                onPressed:
+                                    isBusy ? null : () => _handleAdd(member),
+                                icon: isBusy
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.add_rounded),
+                                label: const Text('Add'),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupOverviewCard extends ConsumerWidget {
+  const _GroupOverviewCard({
+    required this.currentGroup,
+    required this.totalGroupCount,
+    required this.onOpenAllGroups,
+  });
+
+  final ChurchGroupDefinition currentGroup;
+  final int totalGroupCount;
+  final VoidCallback onOpenAllGroups;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final membersAsync = ref.watch(churchGroupMembersProvider(currentGroup.id));
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      decoration: carouselBoxDecoration(context),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Current Group',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.66),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currentGroup.label,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: onOpenAllGroups,
+                icon: const Icon(Icons.swap_horiz_rounded),
+                label: const Text('Change'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          membersAsync.when(
+            loading: () => const SizedBox(
+              height: 24,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (_, __) => Text(
+              context.t(
+                'groups.group_load_failed',
+                fallback: 'Unable to load this group right now.',
+              ),
+              style: theme.textTheme.bodyMedium,
+            ),
+            data: (members) => Text(
+              '${members.length} member${members.length == 1 ? '' : 's'} in this group',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.76),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
               children: [
-                for (final group in visibleGroups)
-                  _GroupMembersTab(
-                    group: group,
-                    onMemberTap: isAdmin
-                        ? (member) =>
-                            _showMemberActionsSheet(context, member, group)
-                        : null,
+                Icon(
+                  Icons.groups_2_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Browsing 1 of $totalGroupCount groups. Use Change to open the full list.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.74),
+                      height: 1.3,
+                    ),
                   ),
+                ),
               ],
             ),
           ),
@@ -353,62 +754,138 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
   }
 }
 
-class _CurrentGroupSummary extends ConsumerWidget {
-  const _CurrentGroupSummary({
-    required this.group,
+class _GroupPickerSheet extends StatefulWidget {
+  const _GroupPickerSheet({
+    required this.groups,
+    required this.selectedGroupId,
   });
 
-  final ChurchGroupDefinition group;
+  final List<ChurchGroupDefinition> groups;
+  final String selectedGroupId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final membersAsync = ref.watch(churchGroupMembersProvider(group.id));
+  State<_GroupPickerSheet> createState() => _GroupPickerSheetState();
+}
 
-    return Container(
-      width: double.infinity,
-      decoration: carouselBoxDecoration(context),
-      padding: const EdgeInsets.all(16),
-      child: membersAsync.when(
-        loading: () => const SizedBox(
-          height: 48,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        error: (_, __) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              group.label,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              context.t(
-                'groups.group_load_failed',
-                fallback: 'Unable to load this group right now.',
+class _GroupPickerSheetState extends State<_GroupPickerSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filteredGroups = widget.groups.where((group) {
+      return group.label.toLowerCase().contains(_query.toLowerCase());
+    }).toList(growable: false);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Browse Groups',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-              style: Theme.of(context).textTheme.bodyMedium,
+              IconButton(
+                tooltip: 'Close',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Pick a group from one simple list.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
             ),
-          ],
-        ),
-        data: (members) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              group.label,
-              style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _query = value.trim()),
+            decoration: InputDecoration(
+              hintText: 'Search groups',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              context
-                  .t(
-                    'groups.group_member_count',
-                    fallback: '{count} members in this group',
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: filteredGroups.isEmpty
+                ? Center(
+                    child: Text(
+                      'No groups match your search.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   )
-                  .replaceAll('{count}', members.length.toString()),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+                : ListView.separated(
+                    itemCount: filteredGroups.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final group = filteredGroups[index];
+                      final isSelected = group.id == widget.selectedGroupId;
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(cornerRadius),
+                          onTap: () => Navigator.of(context).pop(group),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: carouselBoxDecoration(context),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    group.label,
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: theme.colorScheme.primary,
+                                  )
+                                else
+                                  const Icon(Icons.chevron_right_rounded),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

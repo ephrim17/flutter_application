@@ -35,6 +35,33 @@ class MembersRepository extends ChurchScopedRepository {
     return members;
   }
 
+  Future<MemberSearchPage> fetchMembersPage({
+    String query = '',
+    int limit = 25,
+    DocumentSnapshot<AppUser>? startAfter,
+  }) async {
+    final normalizedQuery = query.trim();
+    final searchField = _searchFieldForQuery(normalizedQuery);
+
+    Query<AppUser> queryRef = collectionRef().orderBy(searchField).limit(limit);
+
+    if (normalizedQuery.isNotEmpty) {
+      queryRef =
+          queryRef.startAt([normalizedQuery]).endAt(['$normalizedQuery\uf8ff']);
+    }
+
+    if (startAfter != null) {
+      queryRef = queryRef.startAfterDocument(startAfter);
+    }
+
+    final snapshot = await queryRef.get();
+    return MemberSearchPage(
+      members: snapshot.docs.map((doc) => doc.data()).toList(growable: false),
+      lastDocument: snapshot.docs.isEmpty ? null : snapshot.docs.last,
+      hasMore: snapshot.docs.length == limit,
+    );
+  }
+
   Future<AppUser?> getMemberById(String userId) async {
     final snapshot = await collectionRef().doc(userId).get();
     return snapshot.data();
@@ -448,4 +475,24 @@ class MembersRepository extends ChurchScopedRepository {
       }
     }
   }
+
+  String _searchFieldForQuery(String query) {
+    if (query.contains('@')) return 'email';
+    if (RegExp(r'^[\d+\-\s()]+$').hasMatch(query) && query.length >= 3) {
+      return 'phone';
+    }
+    return 'name';
+  }
+}
+
+class MemberSearchPage {
+  const MemberSearchPage({
+    required this.members,
+    required this.lastDocument,
+    required this.hasMore,
+  });
+
+  final List<AppUser> members;
+  final DocumentSnapshot<AppUser>? lastDocument;
+  final bool hasMore;
 }

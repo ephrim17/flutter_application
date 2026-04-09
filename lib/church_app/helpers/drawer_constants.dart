@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/bible_book_sc
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/financial_dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
@@ -13,6 +14,7 @@ enum DrawerMenuItem {
   //events,
   studio,
   equipment,
+  financialDashboard,
   churchGroups,
   prayerRequest,
   members,
@@ -31,8 +33,10 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return 'Studio';
       case DrawerMenuItem.equipment:
         return 'Equipment';
+      case DrawerMenuItem.financialDashboard:
+        return 'Financial Dashboard';
       case DrawerMenuItem.churchGroups:
-        return 'Church Directory';
+        return 'Church Groups';
       case DrawerMenuItem.prayerRequest:
         return 'Prayer Request';
       case DrawerMenuItem.about:
@@ -56,6 +60,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return Icons.design_services_outlined;
       case DrawerMenuItem.equipment:
         return Icons.inventory_2_outlined;
+      case DrawerMenuItem.financialDashboard:
+        return Icons.account_balance_wallet_outlined;
       case DrawerMenuItem.churchGroups:
         return Icons.groups_2_outlined;
       case DrawerMenuItem.prayerRequest:
@@ -81,6 +87,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return const StudioScreen();
       case DrawerMenuItem.equipment:
         return const EquipmentScreen();
+      case DrawerMenuItem.financialDashboard:
+        return const FinancialDashboardScreen();
       case DrawerMenuItem.churchGroups:
         return const ChurchGroupsScreen();
       case DrawerMenuItem.prayerRequest:
@@ -103,6 +111,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.studio:
       case DrawerMenuItem.equipment:
         return true;
+      case DrawerMenuItem.financialDashboard:
+        return false;
       case DrawerMenuItem.churchGroups:
         return false;
       case DrawerMenuItem.prayerRequest:

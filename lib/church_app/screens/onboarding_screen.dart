@@ -77,7 +77,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final totalPages = pages.length + 2;
+              final totalPages = pages.length + 1;
               final isLast = _currentIndex == totalPages - 1;
 
               return SafeArea(
@@ -85,8 +85,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
                   child: Column(
                     children: [
-                      _OnboardingHeader(onSkip: _completeOnboarding),
-                      const SizedBox(height: 18),
                       Expanded(
                         child: PageView.builder(
                           controller: _controller,
@@ -96,13 +94,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           },
                           itemBuilder: (context, index) {
                             if (index == pages.length) {
-                              return _LastOnboardingPage(
-                                accent: accent,
-                                actionColor: actionColor,
-                              );
-                            }
-
-                            if (index == pages.length + 1) {
                               return const _PraiseTheLordPage();
                             }
 
@@ -162,32 +153,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-class _OnboardingHeader extends StatelessWidget {
-  const _OnboardingHeader({required this.onSkip});
-
-  final VoidCallback onSkip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Spacer(),
-        TextButton(
-          onPressed: onSkip,
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFA178FA),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          child: const Text('Skip'),
-        ),
-      ],
-    );
-  }
-}
-
 class _OnboardingContentPage extends StatelessWidget {
   const _OnboardingContentPage({
     required this.title,
@@ -201,8 +166,6 @@ class _OnboardingContentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featureItems = _extractFeatureItems(description);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 720;
@@ -248,98 +211,6 @@ class _OnboardingContentPage extends StatelessWidget {
                           color: const Color(0xFF8B889F),
                           fontWeight: FontWeight.w500,
                         ),
-                  ),
-                  if (featureItems.isNotEmpty) ...[
-                    const SizedBox(height: 22),
-                    for (final item in featureItems)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _FeatureRow(
-                          text: item,
-                          accent: accent,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _LastOnboardingPage extends StatelessWidget {
-  const _LastOnboardingPage({
-    required this.accent,
-    required this.actionColor,
-  });
-
-  final Color accent;
-  final Color actionColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxHeight < 720;
-
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: compact ? 10 : 18,
-                bottom: 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: _HeroTile(
-                      size: compact ? 220 : 270,
-                      title: 'praise encouragement prayer',
-                      accent: actionColor,
-                    ),
-                  ),
-                  SizedBox(height: compact ? 28 : 38),
-                  Text(
-                    'Stay encouraged every day',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontSize: compact ? 36 : 42,
-                          height: 1.06,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF6C6A83),
-                          letterSpacing: -1.2,
-                        ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Carry a gentle rhythm of scripture, prayer, and uplifting moments right from the first launch.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: 18,
-                          height: 1.45,
-                          color: const Color(0xFF8B889F),
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                  const SizedBox(height: 22),
-                  _FeatureRow(
-                    text: 'Daily words of encouragement',
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    text: 'A calmer, clearer first experience',
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    text: 'Designed for quick access and focus',
-                    accent: accent,
                   ),
                 ],
               ),
@@ -673,48 +544,6 @@ _HeroIconSet _heroIconForTitle(String title) {
   );
 }
 
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({
-    required this.text,
-    required this.accent,
-  });
-
-  final String text;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          height: 28,
-          width: 28,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.check_rounded,
-            size: 18,
-            color: accent,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF7D7A93),
-                ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _PageDots extends StatelessWidget {
   const _PageDots({
     required this.count,
@@ -807,24 +636,4 @@ class _PrimaryActionButton extends StatelessWidget {
       ),
     );
   }
-}
-
-List<String> _extractFeatureItems(String description) {
-  final parts = description
-      .split(RegExp(r'[.,\n]'))
-      .map((part) => part.trim())
-      .where((part) => part.length >= 8 && part.length <= 38)
-      .toList();
-
-  final uniqueParts = <String>[];
-  for (final part in parts) {
-    if (!uniqueParts.contains(part)) {
-      uniqueParts.add(part);
-    }
-    if (uniqueParts.length == 3) {
-      break;
-    }
-  }
-
-  return uniqueParts;
 }

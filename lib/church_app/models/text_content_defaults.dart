@@ -114,8 +114,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.login_fetch_user_failed': 'Unable to fetch logged in user',
   'auth.welcome_back_heading': 'Welcome back',
   'auth.create_account_heading': 'Create your Church Tree account',
-  'auth.login_subtitle':
-      'Sign in with your Church Tree account to continue.',
+  'auth.login_subtitle': 'Sign in with your Church Tree account to continue.',
   'auth.register_subtitle':
       'Create your Church Tree first, then request access to your church.',
   'auth.login_toggle_register': 'Need a new Church Tree account? Register',
@@ -365,7 +364,7 @@ const Map<String, String> defaultChurchTextContents = {
   'members.extended_information_title': 'Extended Information',
   'members.extended_information_subtitle':
       'Capture financial, educational and gifting details.',
-  'members.church_groups_title': 'Church Directory',
+  'members.church_groups_title': 'Church Groups',
 
   // For You / Featured
   'for_you.featured.plan_badge': 'Challenge Yourself to do',

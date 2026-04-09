@@ -1,0 +1,33 @@
+{
+  "name": "firebase_storage",
+  "version": "13.0.6",
+  "summary": "Flutter plugin for Firebase Cloud Storage, a powerful, simple, and cost-effective object storage service for Android and iOS.",
+  "description": "Flutter plugin for Firebase Cloud Storage, a powerful, simple, and cost-effective object storage service for Android and iOS.",
+  "homepage": "https://firebase.google.com/docs/storage/flutter/start",
+  "license": {
+    "file": "../LICENSE"
+  },
+  "authors": "The Chromium Authors",
+  "source": {
+    "path": "."
+  },
+  "source_files": "firebase_storage/Sources/firebase_storage/**/*.{h,m,swift}",
+  "public_header_files": "firebase_storage/Sources/firebase_storage/include/*.h",
+  "swift_versions": "5.0",
+  "platforms": {
+    "ios": "15.0"
+  },
+  "dependencies": {
+    "Flutter": [],
+    "firebase_core": [],
+    "Firebase/Storage": [
+      "12.9.0"
+    ]
+  },
+  "static_framework": true,
+  "pod_target_xcconfig": {
+    "GCC_PREPROCESSOR_DEFINITIONS": "LIBRARY_VERSION=\\\"13.0.6\\\" LIBRARY_NAME=\\\"flutter-fire-gcs\\\"",
+    "DEFINES_MODULE": "YES"
+  },
+  "swift_version": "5.0"
+}

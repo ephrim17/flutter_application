@@ -68,8 +68,15 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(appUserProvider);
     final isAdmin = ref.watch(isAdminProvider);
+    final canAccessFinanceDashboard =
+        ref.watch(financeDashboardAccessProvider);
     final items = DrawerMenuItem.values
-        .where((item) => isAdmin || !item.adminOnly)
+        .where((item) {
+          if (item == DrawerMenuItem.financialDashboard) {
+            return canAccessFinanceDashboard;
+          }
+          return isAdmin || !item.adminOnly;
+        })
         .toList();
 
     return Drawer(

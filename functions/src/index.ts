@@ -8,6 +8,11 @@ import {
 } from "firebase-functions/v2/firestore";
 import {defineSecret, defineString} from "firebase-functions/params";
 import nodemailer from "nodemailer";
+export {
+  deleteFinancialTransaction,
+  getFinancialTransactions,
+  upsertFinancialTransaction,
+} from "./financial";
 
 admin.initializeApp();
 
@@ -292,6 +297,7 @@ export const processQueuedChurchNotification = onDocumentCreated(
     }
   },
 );
+
 
 export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
   {

@@ -1140,7 +1140,7 @@ Future<void> _showMemberDetailsSheet(
                             _MemberDetailSection(
                               title: context.t(
                                 'members.church_groups_title',
-                                fallback: 'Church Directory',
+                                fallback: 'Church Groups',
                               ),
                               child: member.churchGroupIds.isEmpty
                                   ? Text(
