@@ -19,6 +19,7 @@ Future<T?> showAppModalBottomSheet<T>({
   AnimationController? transitionAnimationController,
   Offset? anchorPoint,
   bool? useSafeArea,
+  double heightFactor = 0.9,
 }) {
   return material.showModalBottomSheet<T>(
     context: context,
@@ -40,7 +41,7 @@ Future<T?> showAppModalBottomSheet<T>({
     builder: (context) {
       final child = _unwrapExistingFractionalSheet(builder(context));
       return FractionallySizedBox(
-        heightFactor: 0.9,
+        heightFactor: heightFactor,
         child: Stack(
           children: [
             Positioned.fill(child: child),

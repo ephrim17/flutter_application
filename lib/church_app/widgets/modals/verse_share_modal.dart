@@ -141,88 +141,103 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   @override
   Widget build(BuildContext context) {
-    final sheetHeight = MediaQuery.of(context).size.height * 0.92;
-    final height =
-        format == ShareFormat.square ? sheetHeight * 0.34 : sheetHeight * 0.46;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final sheetHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : MediaQuery.of(context).size.height * 0.9;
+        final previewHeight = format == ShareFormat.square
+            ? sheetHeight * 0.34
+            : sheetHeight * 0.46;
 
-    return DefaultTabController(
-      length: 3,
-      child: Container(
-        height: sheetHeight,
-        decoration: carouselBoxDecoration(context),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              height: 4,
-              width: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: backgroundType == BackgroundType.color
-                    ? backgroundColor
-                    : (selectedImage == null ? Colors.grey.shade300 : null),
-              ),
-            ),
-            const SizedBox(height: 16),
-            RepaintBoundary(
-              key: _previewKey,
-              child: _buildPreview(height),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: TabBar(
-                  dividerColor: Colors.transparent,
-                  tabs: [
-                    Tab(
-                      text: context.t('verse_share.layout', fallback: 'Layout'),
-                    ),
-                    Tab(
-                      text: context.t('verse_share.style', fallback: 'Style'),
-                    ),
-                    Tab(
-                      text: context.t('verse_share.footer', fallback: 'Footer'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TabBarView(
-                  children: [
-                    _buildLayoutTab(),
-                    _buildStyleTab(),
-                    _buildFooterTab(),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: SafeArea(
-                top: false,
-                child: ElevatedButton(
-                  onPressed: downloadImage,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                  ),
-                  child: Text(
-                    context.t('common.download', fallback: 'Download'),
+        return DefaultTabController(
+          length: 3,
+          child: Container(
+            height: sheetHeight,
+            decoration: carouselBoxDecoration(context),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  height: 4,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: backgroundType == BackgroundType.color
+                        ? backgroundColor
+                        : (selectedImage == null ? Colors.grey.shade300 : null),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                RepaintBoundary(
+                  key: _previewKey,
+                  child: _buildPreview(previewHeight),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: TabBar(
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        Tab(
+                          text: context.t(
+                            'verse_share.layout',
+                            fallback: 'Layout',
+                          ),
+                        ),
+                        Tab(
+                          text:
+                              context.t('verse_share.style', fallback: 'Style'),
+                        ),
+                        Tab(
+                          text: context.t(
+                            'verse_share.footer',
+                            fallback: 'Footer',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TabBarView(
+                      children: [
+                        _buildLayoutTab(),
+                        _buildStyleTab(),
+                        _buildFooterTab(),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: SafeArea(
+                    top: false,
+                    child: ElevatedButton(
+                      onPressed: downloadImage,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 56),
+                      ),
+                      child: Text(
+                        context.t('common.download', fallback: 'Download'),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

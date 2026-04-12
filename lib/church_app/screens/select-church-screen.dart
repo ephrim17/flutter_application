@@ -589,6 +589,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: Colors.transparent,
+      heightFactor: 0.5,
       builder: (context) {
         final theme = Theme.of(context);
         return Material(
@@ -599,123 +600,120 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           clipBehavior: Clip.antiAlias,
           child: SafeArea(
             top: false,
-            child: FractionallySizedBox(
-              heightFactor: 0.5,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  20 + MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ChurchLogoAvatar(
-                          logo: church.logo,
-                          size: 52,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                church.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 6)
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Expanded(
-                      child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                24,
+                20,
+                20 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ChurchLogoAvatar(
+                        logo: church.logo,
+                        size: 52,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _ChurchDetailRow(
-                              icon: Icons.person_outline,
-                              label: context.t(
-                                'church.detail_pastor',
-                                fallback: 'Pastor',
+                            Text(
+                              church.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
-                              value: _valueOrFallback(church.pastorName),
                             ),
-                            _ChurchDetailRow(
-                              icon: Icons.email_outlined,
-                              label: context.t(
-                                'church.detail_email',
-                                fallback: 'Email',
-                              ),
-                              value: _valueOrFallback(church.email),
-                            ),
-                            _ChurchDetailRow(
-                              icon: Icons.phone_outlined,
-                              label: context.t(
-                                'church.detail_contact',
-                                fallback: 'Contact',
-                              ),
-                              value: _valueOrFallback(church.contact),
-                              onActionTap: church.contact.trim().isEmpty
-                                  ? null
-                                  : () =>
-                                      launchPhoneCall(context, church.contact),
-                            ),
-                            _ChurchDetailRow(
-                              icon: Icons.location_on_outlined,
-                              label: context.t(
-                                'church.detail_address',
-                                fallback: 'Address',
-                              ),
-                              value: _valueOrFallback(church.address),
-                            ),
+                            const SizedBox(height: 6)
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SolidButton(
-                      label: isMemberChurch
-                          ? context.t(
-                              'church.select_action',
-                              fallback: 'Select Church',
-                            )
-                          : context.t(
-                              'auth.request_access',
-                              fallback: 'Request Access',
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _ChurchDetailRow(
+                            icon: Icons.person_outline,
+                            label: context.t(
+                              'church.detail_pastor',
+                              fallback: 'Pastor',
                             ),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        if (!parentContext.mounted) return;
-                        if (isMemberChurch) {
-                          _handleContinue(parentContext, church);
-                          return;
-                        }
-
-                        Navigator.of(parentContext).push(
-                          MaterialPageRoute(
-                            builder: (_) => LoginRequestScreen(
-                              churchId: church.id,
-                              churchName: church.name,
-                              churchLogo: church.logo,
-                            ),
+                            value: _valueOrFallback(church.pastorName),
                           ),
-                        );
-                      },
+                          _ChurchDetailRow(
+                            icon: Icons.email_outlined,
+                            label: context.t(
+                              'church.detail_email',
+                              fallback: 'Email',
+                            ),
+                            value: _valueOrFallback(church.email),
+                          ),
+                          _ChurchDetailRow(
+                            icon: Icons.phone_outlined,
+                            label: context.t(
+                              'church.detail_contact',
+                              fallback: 'Contact',
+                            ),
+                            value: _valueOrFallback(church.contact),
+                            onActionTap: church.contact.trim().isEmpty
+                                ? null
+                                : () =>
+                                    launchPhoneCall(context, church.contact),
+                          ),
+                          _ChurchDetailRow(
+                            icon: Icons.location_on_outlined,
+                            label: context.t(
+                              'church.detail_address',
+                              fallback: 'Address',
+                            ),
+                            value: _valueOrFallback(church.address),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 10),
+                  SolidButton(
+                    label: isMemberChurch
+                        ? context.t(
+                            'church.select_action',
+                            fallback: 'Select Church',
+                          )
+                        : context.t(
+                            'auth.request_access',
+                            fallback: 'Request Access',
+                          ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (!parentContext.mounted) return;
+                      if (isMemberChurch) {
+                        _handleContinue(parentContext, church);
+                        return;
+                      }
+
+                      Navigator.of(parentContext).push(
+                        MaterialPageRoute(
+                          builder: (_) => LoginRequestScreen(
+                            churchId: church.id,
+                            churchName: church.name,
+                            churchLogo: church.logo,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ),
