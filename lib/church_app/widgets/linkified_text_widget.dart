@@ -21,7 +21,7 @@ class LinkifiedText extends StatefulWidget {
 
 class _LinkifiedTextState extends State<LinkifiedText> {
   static final RegExp _urlPattern = RegExp(
-    r'((https?:\/\/|www\.)[^\s]+)',
+    r'((https?:\/\/|www\.)[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?)',
     caseSensitive: false,
   );
 
@@ -74,18 +74,22 @@ class _LinkifiedTextState extends State<LinkifiedText> {
       }
 
       final rawUrl = match.group(0)!;
-      final uri = _normalizeUri(rawUrl);
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () => _openLink(uri);
+      final linkText = _cleanUrl(rawUrl);
+      final trailingText = rawUrl.substring(linkText.length);
+      final uri = _normalizeUri(linkText);
+      final recognizer = TapGestureRecognizer()..onTap = () => _openLink(uri);
       _recognizers.add(recognizer);
 
       spans.add(
         TextSpan(
-          text: rawUrl,
+          text: linkText,
           style: linkStyle,
           recognizer: recognizer,
         ),
       );
+      if (trailingText.isNotEmpty) {
+        spans.add(TextSpan(text: trailingText));
+      }
 
       start = match.end;
     }
@@ -98,11 +102,16 @@ class _LinkifiedTextState extends State<LinkifiedText> {
   }
 
   Uri _normalizeUri(String rawUrl) {
-    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
-      return Uri.parse(rawUrl);
+    final normalized = rawUrl.trim();
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return Uri.parse(normalized);
     }
 
-    return Uri.parse('https://$rawUrl');
+    return Uri.parse('https://$normalized');
+  }
+
+  String _cleanUrl(String rawUrl) {
+    return rawUrl.trim().replaceAll(RegExp(r'[),.!?;:]+$'), '');
   }
 
   Future<void> _openLink(Uri uri) async {

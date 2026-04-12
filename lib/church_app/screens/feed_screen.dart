@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -240,7 +241,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         'scope': isGlobal ? 'global' : 'church',
       },
     );
-    await showModalBottomSheet(
+    await showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => FractionallySizedBox(

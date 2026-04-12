@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
@@ -17,7 +18,7 @@ Future<void> showTodayBirthdaysModal(
   BuildContext context, {
   required List<AppUser> members,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (_) => FractionallySizedBox(
@@ -97,7 +98,7 @@ class _TodayBirthdaysModal extends StatelessWidget {
                               Text(_formatBirthdayMoment(context, member.dob)),
                           trailing: FilledButton(
                             onPressed: () {
-                              showModalBottomSheet<void>(
+                              showAppModalBottomSheet<void>(
                                 context: context,
                                 isScrollControlled: true,
                                 builder: (_) => FractionallySizedBox(

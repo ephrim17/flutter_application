@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -322,7 +323,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   }
 
   Future<void> _showCreateMemberOptions(Church selectedChurch) async {
-    await showModalBottomSheet<void>(
+    await showAppModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (context) {
@@ -591,7 +592,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
     final trailing = widget.showBirthdayAction
         ? TextButton(
             onPressed: () {
-              showModalBottomSheet<void>(
+              showAppModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
                 builder: (_) => FractionallySizedBox(
@@ -673,7 +674,7 @@ Future<void> _showMemberDetailsSheet(
   final canEditMember = isAdmin;
   final canApproveMember = isAdmin && member.uid != currentUid;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,

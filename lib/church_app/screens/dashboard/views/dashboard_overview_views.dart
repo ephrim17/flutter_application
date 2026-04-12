@@ -229,7 +229,7 @@ class _DashboardBirthdaySection extends StatelessWidget {
           decoration: carouselBoxDecoration(context),
           child: ListTile(
             onTap: () {
-              showModalBottomSheet<void>(
+              showAppModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
                 builder: (_) => FractionallySizedBox(

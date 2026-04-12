@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -133,7 +134,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
 
     if (!context.mounted) return;
 
-    await showModalBottomSheet<void>(
+    await showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -174,7 +175,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     ChurchGroupMember member,
     ChurchGroupDefinition group,
   ) async {
-    final shouldRemove = await showModalBottomSheet<bool>(
+    final shouldRemove = await showAppModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
       builder: (context) {
@@ -233,7 +234,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     BuildContext context,
     List<ChurchGroupDefinition> groups,
   ) async {
-    final selectedGroup = await showModalBottomSheet<ChurchGroupDefinition>(
+    final selectedGroup = await showAppModalBottomSheet<ChurchGroupDefinition>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -794,22 +795,11 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Browse Groups',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Close',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
+          Text(
+            'Browse Groups',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           Text(

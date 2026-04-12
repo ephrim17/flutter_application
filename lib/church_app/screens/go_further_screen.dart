@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
@@ -296,7 +297,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
   }
 
   Future<void> _showChurchDetails(Church church) {
-    return showModalBottomSheet<void>(
+    return showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
@@ -396,7 +397,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
   }
 
   Future<void> _showChurchDiscoveryEditor(Church church) {
-    return showModalBottomSheet<void>(
+    return showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => _ChurchDiscoveryEditorSheet(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +22,7 @@ Future<void> showUserQuickCardWithChurch(
   final theme = Theme.of(context);
   final subtitle = showCategory ? _formatCategory(user.category) : '';
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,

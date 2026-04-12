@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -24,7 +25,8 @@ class FavoritesScreen extends ConsumerWidget {
           child: CircularProgressIndicator(),
         ),
         error: (error, stack) => Center(
-          child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $error"),
+          child: Text(
+              "${context.t('common.error_prefix', fallback: 'Error')}: $error"),
         ),
         data: (verses) {
           if (verses.isEmpty) {
@@ -72,8 +74,8 @@ class FavoritesScreen extends ConsumerWidget {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -101,12 +103,12 @@ class FavoritesScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                        verse['reference'] ?? '',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
+                            verse['reference'] ?? '',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
                           Spacer(),
                           InkWell(
                             onTap: () async {
@@ -115,7 +117,8 @@ class FavoritesScreen extends ConsumerWidget {
                                 verse: verse,
                               );
                             },
-                            child: Icon(Icons.share, color: Theme.of(context).colorScheme.secondary),
+                            child: Icon(Icons.share,
+                                color: Theme.of(context).colorScheme.secondary),
                           ),
                         ],
                       ),
@@ -132,12 +135,11 @@ class FavoritesScreen extends ConsumerWidget {
   }
 }
 
-
 void showLanguageShareOptions(
   BuildContext context, {
   required Map<String, dynamic> verse,
 }) {
-  showModalBottomSheet(
+  showAppModalBottomSheet(
     context: context,
     builder: (_) {
       return SafeArea(
@@ -147,7 +149,8 @@ void showLanguageShareOptions(
             ListTile(
               //leading: const Icon(Icons.language),
               title: Text(
-                context.t('favorites.share_english', fallback: 'Share in English'),
+                context.t('favorites.share_english',
+                    fallback: 'Share in English'),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -177,6 +180,7 @@ void showLanguageShareOptions(
     },
   );
 }
+
 Future<void> _shareVerse({
   required String text,
   required String reference,

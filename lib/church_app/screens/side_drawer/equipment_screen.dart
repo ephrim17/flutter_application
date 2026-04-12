@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/equipment_item_model.dart';
@@ -476,7 +477,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   }
 
   Future<void> _showAddEquipmentSheet(BuildContext context) async {
-    final form = await showModalBottomSheet<EquipmentFormData>(
+    final form = await showAppModalBottomSheet<EquipmentFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => const _AddEquipmentSheet(),
@@ -500,7 +501,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   }
 
   void _showEquipmentDetails(BuildContext context, EquipmentItem item) {
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -597,7 +598,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     BuildContext context,
     EquipmentItem item,
   ) async {
-    final form = await showModalBottomSheet<EquipmentFormData>(
+    final form = await showAppModalBottomSheet<EquipmentFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _AddEquipmentSheet(existingItem: item),
@@ -656,7 +657,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   }
 
   void _showBillPreview(BuildContext context, EquipmentItem item) {
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -670,7 +671,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     required String subtitle,
     required List<_SummaryDetailEntry> entries,
   }) {
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,

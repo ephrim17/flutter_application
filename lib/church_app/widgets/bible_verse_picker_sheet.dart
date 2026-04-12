@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
@@ -28,7 +29,7 @@ Future<void> showBibleVersePickerSheet(
     required int verse,
   }) onSave,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -139,7 +140,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   }
 
   Future<void> _pickBook() async {
-    final pickedBook = await showModalBottomSheet<BibleBook>(
+    final pickedBook = await showAppModalBottomSheet<BibleBook>(
       context: context,
       showDragHandle: true,
       builder: (context) {
@@ -180,7 +181,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   Future<void> _pickChapter() async {
     if (_isLoadingStructure) return;
 
-    final pickedChapter = await showModalBottomSheet<int>(
+    final pickedChapter = await showAppModalBottomSheet<int>(
       context: context,
       showDragHandle: true,
       builder: (context) {
@@ -220,7 +221,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   Future<void> _pickVerse() async {
     if (_isLoadingStructure) return;
 
-    final pickedVerse = await showModalBottomSheet<int>(
+    final pickedVerse = await showAppModalBottomSheet<int>(
       context: context,
       showDragHandle: true,
       builder: (context) {

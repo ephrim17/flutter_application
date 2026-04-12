@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -583,7 +584,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     required bool isMemberChurch,
   }) {
     final parentContext = context;
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,

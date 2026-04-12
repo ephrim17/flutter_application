@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
@@ -2987,7 +2988,7 @@ Future<void> _showAboutEditor(
       TextEditingController(text: (initialData['values'] ?? '') as String);
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -3152,7 +3153,7 @@ Future<void> _showPastorEditor(
   PickedImageData? selectedImage;
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -3376,7 +3377,7 @@ Future<void> _showFooterContactEditor(
   var isActive = (data['isActive'] ?? true) as bool;
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -3525,7 +3526,7 @@ Future<void> _showFooterSocialEditor(
   var isActive = (data['isActive'] ?? true) as bool;
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -3674,7 +3675,7 @@ Future<void> _showEventEditor(
   DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -3969,7 +3970,7 @@ Future<void> _showAnnouncementEditor(
   DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -4255,7 +4256,7 @@ Future<void> _showArticleEditor(
       TextEditingController(text: (data['content'] ?? '') as String);
   var isSaving = false;
 
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) {

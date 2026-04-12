@@ -556,7 +556,7 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
   List<DashboardFamilyBucket> families,
 ) {
   var query = '';
-  return showModalBottomSheet<DashboardFamilyBucket>(
+  return showAppModalBottomSheet<DashboardFamilyBucket>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,

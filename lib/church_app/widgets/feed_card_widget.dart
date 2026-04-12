@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_application/church_app/widgets/linkified_text_widget.dar
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FeedCard extends ConsumerWidget {
   final FeedPost post;
@@ -42,6 +44,9 @@ class FeedCard extends ConsumerWidget {
     final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
     final theme = Theme.of(context);
     final hasImage = (post.imageUrl ?? '').trim().isNotEmpty;
+    final youtubePreview = _YoutubePreviewData.fromText(
+      '${post.title}\n${post.description}',
+    );
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -169,6 +174,10 @@ class FeedCard extends ConsumerWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
                   ),
                 ],
+                if (youtubePreview != null) ...[
+                  const SizedBox(height: 12),
+                  _YoutubePreviewCard(preview: youtubePreview),
+                ],
               ],
             ),
           ),
@@ -192,7 +201,8 @@ class FeedCard extends ConsumerWidget {
         'scope': isGlobal ? 'global' : 'church',
       },
     );
-    await showModalBottomSheet(
+    if (!context.mounted) return;
+    await showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => CreatePostModal(
@@ -399,6 +409,171 @@ class FeedCard extends ConsumerWidget {
 
     if (!doc.exists) return null;
     return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+  }
+}
+
+class _YoutubePreviewCard extends StatelessWidget {
+  const _YoutubePreviewCard({required this.preview});
+
+  final _YoutubePreviewData preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openYoutubeLink(context),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.18),
+            ),
+            color: theme.colorScheme.surface,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  ShimmerImage(
+                    imageUrl: preview.thumbnailUrl,
+                    aspectRatio: 16 / 9,
+                    borderRadius: 0,
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    height: 54,
+                    width: 54,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.ondemand_video_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Watch on YouTube',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.open_in_new_rounded, size: 18),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openYoutubeLink(BuildContext context) async {
+    final launched = await launchUrl(
+      preview.url,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open YouTube link')),
+      );
+    }
+  }
+}
+
+class _YoutubePreviewData {
+  const _YoutubePreviewData({
+    required this.url,
+    required this.videoId,
+  });
+
+  final Uri url;
+  final String videoId;
+
+  String get thumbnailUrl =>
+      'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+
+  static final RegExp _urlPattern = RegExp(
+    r'((https?:\/\/|www\.)[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?)',
+    caseSensitive: false,
+  );
+
+  static _YoutubePreviewData? fromText(String text) {
+    for (final match in _urlPattern.allMatches(text)) {
+      final rawUrl = _cleanUrl(match.group(0) ?? '');
+      final uri = _normalizeUri(rawUrl);
+      if (uri == null) continue;
+      final videoId = _extractVideoId(uri);
+      if (videoId == null) continue;
+      return _YoutubePreviewData(url: uri, videoId: videoId);
+    }
+    return null;
+  }
+
+  static String _cleanUrl(String rawUrl) {
+    return rawUrl.trim().replaceAll(RegExp(r'[),.!?;:]+$'), '');
+  }
+
+  static Uri? _normalizeUri(String rawUrl) {
+    if (rawUrl.trim().isEmpty) return null;
+    final withScheme =
+        rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+            ? rawUrl
+            : 'https://$rawUrl';
+    return Uri.tryParse(withScheme);
+  }
+
+  static String? _extractVideoId(Uri uri) {
+    final host = uri.host.toLowerCase().replaceFirst('www.', '');
+    if (host == 'youtu.be') {
+      return _normalizeVideoId(
+          uri.pathSegments.isEmpty ? '' : uri.pathSegments.first);
+    }
+    if (host == 'youtube.com' || host == 'm.youtube.com') {
+      final watchId = uri.queryParameters['v'];
+      if (watchId != null) return _normalizeVideoId(watchId);
+      if (uri.pathSegments.isNotEmpty &&
+          (uri.pathSegments.first == 'shorts' ||
+              uri.pathSegments.first == 'embed') &&
+          uri.pathSegments.length > 1) {
+        return _normalizeVideoId(uri.pathSegments[1]);
+      }
+    }
+    return null;
+  }
+
+  static String? _normalizeVideoId(String value) {
+    final match = RegExp(r'^[A-Za-z0-9_-]{11}$').firstMatch(value.trim());
+    return match?.group(0);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -43,7 +44,7 @@ class DailyVerseCard extends ConsumerWidget {
     required String text,
     required String reference,
   }) {
-    return showModalBottomSheet(
+    return showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

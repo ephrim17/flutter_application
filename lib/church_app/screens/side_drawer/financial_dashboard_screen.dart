@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/church_transaction_model.dart';
@@ -595,11 +596,13 @@ class _FinancialDashboardScreenState
     BuildContext context, {
     required String currentUserName,
   }) async {
-    final form = await showModalBottomSheet<ChurchTransactionFormData>(
+    final form = await showAppModalBottomSheet<ChurchTransactionFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _TransactionFormSheet(
         initialRecordedBy: currentUserName,
+        categoryOptions:
+            ref.read(financialDashboardViewModelProvider).categories,
       ),
     );
 
@@ -622,7 +625,7 @@ class _FinancialDashboardScreenState
   }
 
   void _showTransactionDetails(BuildContext context, ChurchTransaction item) {
-    showModalBottomSheet<void>(
+    showAppModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
@@ -715,12 +718,14 @@ class _FinancialDashboardScreenState
     BuildContext context,
     ChurchTransaction item,
   ) async {
-    final form = await showModalBottomSheet<ChurchTransactionFormData>(
+    final form = await showAppModalBottomSheet<ChurchTransactionFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _TransactionFormSheet(
         existingItem: item,
         initialRecordedBy: item.recordedBy,
+        categoryOptions:
+            ref.read(financialDashboardViewModelProvider).categories,
       ),
     );
 
@@ -1684,10 +1689,12 @@ class _TransactionFormSheet extends StatefulWidget {
   const _TransactionFormSheet({
     this.existingItem,
     required this.initialRecordedBy,
+    required this.categoryOptions,
   });
 
   final ChurchTransaction? existingItem;
   final String initialRecordedBy;
+  final List<String> categoryOptions;
 
   @override
   State<_TransactionFormSheet> createState() => _TransactionFormSheetState();
@@ -1697,10 +1704,11 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  late final TextEditingController _categoryController;
   late final TextEditingController _paymentMethodController;
   late final TextEditingController _referenceController;
   late final TextEditingController _amountController;
+  late final List<String> _categoryOptions;
+  late String _selectedCategory;
   late DateTime _selectedDate;
   late ChurchTransactionType _selectedType;
   late ChurchTransactionStatus _selectedStatus;
@@ -1712,8 +1720,13 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
     _titleController = TextEditingController(text: item?.title ?? '');
     _descriptionController =
         TextEditingController(text: item?.description ?? '');
-    _categoryController =
-        TextEditingController(text: item?.category ?? 'Tithe');
+    _selectedCategory = item?.category.trim().isNotEmpty == true
+        ? item!.category.trim()
+        : 'Tithe';
+    _categoryOptions = _buildCategoryOptions(
+      options: widget.categoryOptions,
+      selectedCategory: _selectedCategory,
+    );
     _paymentMethodController =
         TextEditingController(text: item?.paymentMethod ?? 'Cash');
     _referenceController = TextEditingController(text: item?.reference ?? '');
@@ -1730,7 +1743,6 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _categoryController.dispose();
     _paymentMethodController.dispose();
     _referenceController.dispose();
     _amountController.dispose();
@@ -1831,14 +1843,21 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: AppTextField(
-                        controller: _categoryController,
-                        label: 'Category',
-                        hintText: 'Tithe',
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'Enter a category'
-                                : null,
+                      child: AppDropdownField<String>(
+                        labelText: 'Category',
+                        initialValue: _selectedCategory,
+                        items: _categoryOptions
+                            .map(
+                              (value) => DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _selectedCategory = value);
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1934,7 +1953,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
         id: widget.existingItem?.id,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
-        category: _categoryController.text.trim(),
+        category: _selectedCategory.trim(),
         paymentMethod: _paymentMethodController.text.trim(),
         reference: _referenceController.text.trim(),
         recordedBy: widget.initialRecordedBy.trim(),
@@ -1966,6 +1985,22 @@ String _sortLabel(TransactionSortOption value) {
     case TransactionSortOption.amountLowToHigh:
       return 'Amount low to high';
   }
+}
+
+List<String> _buildCategoryOptions({
+  required List<String> options,
+  required String selectedCategory,
+}) {
+  final values = <String>{
+    ...options
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty && item != 'All categories'),
+    if (selectedCategory.trim().isNotEmpty) selectedCategory.trim(),
+  }.toList()
+    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  if (values.isEmpty) return const <String>['Tithe'];
+  return values;
 }
 
 Color _typeColor(ChurchTransactionType type) {

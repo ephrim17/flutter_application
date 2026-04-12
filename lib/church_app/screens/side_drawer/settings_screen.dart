@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
@@ -461,7 +462,7 @@ class _EditProfileSection extends ConsumerWidget {
             'settings.edit_profile_subtitle',
             fallback: 'Update phone number, birthday, address, and location.',
           ),
-          onTap: () => showModalBottomSheet<void>(
+          onTap: () => showAppModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
             builder: (_) => _EditProfileSheet(user: user),

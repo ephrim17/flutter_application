@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -69,7 +70,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
               'segment': segment.name,
             },
           );
-          showModalBottomSheet(
+          showAppModalBottomSheet(
             context: context,
             isScrollControlled: true,
             builder: (_) => const AddPrayerModal(),
@@ -158,7 +159,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
                                 'segment': segment.name,
                               },
                             );
-                            showModalBottomSheet(
+                            showAppModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
                               builder: (_) => AddPrayerModal(existing: prayer),
@@ -197,7 +198,7 @@ Future<void> _showPrayerDetailsSheet(
   BuildContext context,
   PrayerRequest prayer,
 ) {
-  return showModalBottomSheet<void>(
+  return showAppModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
     builder: (_) => SafeArea(
