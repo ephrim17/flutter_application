@@ -33,42 +33,44 @@ Future<T?> showAppModalBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
-    showDragHandle: showDragHandle ?? false,
+    showDragHandle: false,
     routeSettings: routeSettings,
     transitionAnimationController: transitionAnimationController,
     anchorPoint: anchorPoint,
     useSafeArea: useSafeArea ?? false,
     builder: (context) {
       final child = _unwrapExistingFractionalSheet(builder(context));
-      const closeButtonLaneHeight = 72.0;
+      final shouldShowGrabHandle = showDragHandle ?? true;
+      final handleLaneHeight = shouldShowGrabHandle ? 36.0 : 0.0;
       return FractionallySizedBox(
         heightFactor: heightFactor,
         child: Stack(
           children: [
             Positioned.fill(
-              top: closeButtonLaneHeight,
+              top: handleLaneHeight,
               child: child,
             ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: SafeArea(
-                minimum: const EdgeInsets.only(top: 4, right: 4),
-                child: Material(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withValues(alpha: 0.92),
-                  shape: const CircleBorder(),
-                  elevation: 2,
-                  child: IconButton(
-                    tooltip: 'Close',
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.close_rounded),
+            if (shouldShowGrabHandle)
+              Positioned(
+                top: 12,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      width: 56,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       );

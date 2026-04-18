@@ -4,7 +4,8 @@ import 'package:flutter_application/church_app/services/home_section/announcemen
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final announcementsProvider = StreamProvider<List<Announcement>>((ref) {
+final announcementsProvider =
+    StreamProvider.autoDispose<List<Announcement>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
@@ -18,7 +19,7 @@ final announcementsProvider = StreamProvider<List<Announcement>>((ref) {
 
       return repo.watchAllActive(
         now: DateTime.now(),
-        limit: 100,
+        limit: 12,
       );
     },
     loading: () => const Stream.empty(),

@@ -46,6 +46,12 @@ type FinancialSetupResponse = {
   ledgers: Record<string, unknown>[];
 };
 
+type FinancialTransactionPageResponse = {
+  transactions: FinancialTransactionResponse[];
+  nextCursor: Record<string, unknown> | null;
+  hasMore: boolean;
+};
+
 export const getFinancialSetup = onCall(
   {
     region: "us-central1",
@@ -197,28 +203,56 @@ export const getFinancialTransactions = onCall(
     region: "us-central1",
     secrets: [financialMasterKey],
   },
-  async (request) => {
+  async (request): Promise<FinancialTransactionPageResponse> => {
     const churchId = readUnknownString(request.data?.churchId);
+    const requestedLimit = readUnknownInteger(request.data?.limit);
+    const cursorUpdatedAtMillis = readUnknownInteger(
+      request.data?.cursorUpdatedAtMillis,
+    );
+    const cursorId = readUnknownString(request.data?.cursorId);
     const email = normalizeEmail(request.auth?.token.email ?? "");
     const uid = readUnknownString(request.auth?.uid);
     ensureAuthenticated(email);
     await ensureFinanceGroupMember(churchId, uid, email);
 
-    const snapshot = await admin.firestore()
+    const pageSize = clampNumber(requestedLimit, 1, 50, 25);
+    let query = admin.firestore()
       .collection("churches")
       .doc(churchId)
       .collection("financial_transactions")
       .orderBy("updatedAt", "desc")
-      .get();
+      .orderBy(admin.firestore.FieldPath.documentId(), "desc")
+      .limit(pageSize + 1);
 
-    const transactions = await Promise.all(snapshot.docs.map(async (doc) => {
+    if (cursorUpdatedAtMillis > 0 && cursorId.length > 0) {
+      query = query.startAfter(
+        admin.firestore.Timestamp.fromMillis(cursorUpdatedAtMillis),
+        cursorId,
+      );
+    }
+
+    const snapshot = await query.get();
+    const pageDocs = snapshot.docs.slice(0, pageSize);
+
+    const transactions = await Promise.all(pageDocs.map(async (doc) => {
       return decodeFinancialTransactionDoc(
         doc,
         financialMasterKey.value(),
       );
     }));
+    const lastDoc = pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : null;
+    const lastUpdatedAt = lastDoc ?
+      readUnknownDate(lastDoc.data().updatedAt) :
+      null;
 
-    return {transactions};
+    return {
+      transactions,
+      hasMore: snapshot.docs.length > pageSize,
+      nextCursor: lastDoc && lastUpdatedAt ? {
+        id: lastDoc.id,
+        updatedAtMillis: lastUpdatedAt.getTime(),
+      } : null,
+    };
   },
 );
 
@@ -742,4 +776,14 @@ function readUnknownNumber(value: unknown): number {
     return Number.parseFloat(value.trim() || "0") || 0;
   }
   return 0;
+}
+
+function clampNumber(
+  value: number,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (!Number.isFinite(value) || value <= 0) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
 }

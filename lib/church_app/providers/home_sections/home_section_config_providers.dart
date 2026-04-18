@@ -5,7 +5,7 @@ import 'package:flutter_application/church_app/services/home_section/home_sectio
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final homeSectionConfigsProvider =
-    StreamProvider<List<HomeSectionConfigModel>>((ref) {
+    StreamProvider.autoDispose<List<HomeSectionConfigModel>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(

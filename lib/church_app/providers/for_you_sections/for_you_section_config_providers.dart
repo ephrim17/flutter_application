@@ -5,7 +5,7 @@ import 'package:flutter_application/church_app/services/for_you_section/for_you_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final forYouSectionConfigsProvider =
-    StreamProvider<List<ForYouSectionConfigModel>>((ref) {
+    StreamProvider.autoDispose<List<ForYouSectionConfigModel>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(

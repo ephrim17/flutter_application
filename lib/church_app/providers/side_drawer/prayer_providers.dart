@@ -23,7 +23,7 @@ final prayerRepositoryProvider = Provider.autoDispose<PrayerRepository>((ref) {
 });
 
 final myPrayerRequestsProvider =
-    StreamProvider<List<PrayerRequest>>((ref) {
+    StreamProvider.autoDispose<List<PrayerRequest>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
@@ -41,7 +41,8 @@ final myPrayerRequestsProvider =
   );
 });
 
-final allPrayerRequestsProvider = StreamProvider<List<PrayerRequest>>((ref) {
+final allPrayerRequestsProvider =
+    StreamProvider.autoDispose<List<PrayerRequest>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(

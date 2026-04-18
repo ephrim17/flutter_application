@@ -93,33 +93,6 @@ bool _isFeatureEnabled(AppConfig config, String key) {
   }
 }
 
-List<Widget> _featureChips(BuildContext context, AppConfig config) {
-  final enabledFeatures = _superAdminFeatureSpecs
-      .where((item) => _isFeatureEnabled(config, item.key))
-      .toList(growable: false);
-
-  if (enabledFeatures.isEmpty) {
-    return [
-      _AdminChip(
-        label: 'No modules enabled',
-        backgroundColor:
-            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.5),
-        foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-      ),
-    ];
-  }
-
-  return enabledFeatures
-      .map(
-        (item) => _AdminChip(
-          label: item.label,
-          backgroundColor: item.color.withValues(alpha: 0.12),
-          foregroundColor: item.color,
-        ),
-      )
-      .toList(growable: false);
-}
-
 class SuperAdminHomeScreen extends ConsumerStatefulWidget {
   const SuperAdminHomeScreen({super.key});
 
@@ -435,7 +408,6 @@ class _SuperAdminChurchTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPublicRegistration = church.registrationSource == 'public';
     final config = ref.watch(churchAppConfigProvider(church.id)).asData?.value;
 
     return Container(
@@ -507,25 +479,6 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                   );
                 },
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _AdminChip(
-                label: isPublicRegistration
-                    ? 'Created by Public'
-                    : 'Created by Super Admin',
-                backgroundColor: isPublicRegistration
-                    ? Colors.blue.shade50
-                    : Colors.purple.shade50,
-                foregroundColor: isPublicRegistration
-                    ? Colors.blue.shade800
-                    : Colors.purple.shade800,
-              ),
-              if (config != null) ..._featureChips(context, config),
             ],
           ),
           if (config != null) ...[
@@ -882,34 +835,4 @@ class _FeatureToggleSpec {
   final String label;
   final IconData icon;
   final Color color;
-}
-
-class _AdminChip extends StatelessWidget {
-  const _AdminChip({
-    required this.label,
-    required this.backgroundColor,
-    required this.foregroundColor,
-  });
-
-  final String label;
-  final Color backgroundColor;
-  final Color foregroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: foregroundColor,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
-  }
 }

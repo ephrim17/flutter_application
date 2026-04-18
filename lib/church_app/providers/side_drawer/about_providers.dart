@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/about_repository.dart';
 
-final aboutProvider = StreamProvider<AboutModel?>((ref) async* {
+final aboutProvider = StreamProvider.autoDispose<AboutModel?>((ref) async* {
   final churchId = await ref.watch(currentChurchIdProvider.future);
 
   if (churchId == null) {

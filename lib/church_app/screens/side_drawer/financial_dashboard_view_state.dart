@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/church_transaction_model.dart';
+import 'package:flutter_application/church_app/services/side_drawer/financial_dashboard_repository.dart';
 
 const String allTypesFilter = 'All types';
 const String allStatusFilter = 'All status';
@@ -21,6 +22,9 @@ class FinancialDashboardViewState {
     required this.transactions,
     required this.setup,
     required this.isSubmitting,
+    required this.isLoadingMoreTransactions,
+    required this.hasMoreRemoteTransactions,
+    required this.nextTransactionCursor,
     required this.query,
     required this.selectedType,
     required this.selectedStatus,
@@ -118,6 +122,9 @@ class FinancialDashboardViewState {
   final List<ChurchTransaction> transactions;
   final FinanceSetup setup;
   final bool isSubmitting;
+  final bool isLoadingMoreTransactions;
+  final bool hasMoreRemoteTransactions;
+  final FinancialTransactionCursor? nextTransactionCursor;
   final String query;
   final String selectedType;
   final String selectedStatus;
@@ -153,6 +160,9 @@ class FinancialDashboardViewState {
       transactions: const <ChurchTransaction>[],
       setup: FinanceSetup.empty(),
       isSubmitting: false,
+      isLoadingMoreTransactions: false,
+      hasMoreRemoteTransactions: false,
+      nextTransactionCursor: null,
       query: '',
       selectedType: allTypesFilter,
       selectedStatus: allStatusFilter,
@@ -209,7 +219,8 @@ class FinancialDashboardViewState {
       .toList(growable: false);
 
   bool get hasMoreVisibleTransactions =>
-      filteredTransactionCount > pagedTransactions.length;
+      filteredTransactionCount > pagedTransactions.length ||
+      hasMoreRemoteTransactions;
 
   List<ChurchTransaction> get pagedTransactions {
     final end = visibleTransactionCount.clamp(0, filteredTransactions.length);
@@ -222,6 +233,10 @@ class FinancialDashboardViewState {
     List<ChurchTransaction>? transactions,
     FinanceSetup? setup,
     bool? isSubmitting,
+    bool? isLoadingMoreTransactions,
+    bool? hasMoreRemoteTransactions,
+    FinancialTransactionCursor? nextTransactionCursor,
+    bool clearNextTransactionCursor = false,
     String? query,
     String? selectedType,
     String? selectedStatus,
@@ -237,6 +252,13 @@ class FinancialDashboardViewState {
       transactions: transactions ?? this.transactions,
       setup: setup ?? this.setup,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      isLoadingMoreTransactions:
+          isLoadingMoreTransactions ?? this.isLoadingMoreTransactions,
+      hasMoreRemoteTransactions:
+          hasMoreRemoteTransactions ?? this.hasMoreRemoteTransactions,
+      nextTransactionCursor: clearNextTransactionCursor
+          ? null
+          : nextTransactionCursor ?? this.nextTransactionCursor,
       query: query ?? this.query,
       selectedType: selectedType ?? this.selectedType,
       selectedStatus: selectedStatus ?? this.selectedStatus,

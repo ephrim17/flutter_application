@@ -92,21 +92,39 @@ class FinancialDashboardRepository {
     });
   }
 
-  Future<List<ChurchTransaction>> fetchTransactions(String churchId) async {
+  Future<FinancialTransactionPage> fetchTransactionsPage(
+    String churchId, {
+    int limit = 25,
+    FinancialTransactionCursor? cursor,
+  }) async {
     final callable = functions.httpsCallable('getFinancialTransactions');
     final response = await callable.call(<String, dynamic>{
       'churchId': churchId,
+      'limit': limit,
+      if (cursor != null) ...{
+        'cursorId': cursor.id,
+        'cursorUpdatedAtMillis': cursor.updatedAtMillis,
+      },
     });
 
     final data = Map<String, dynamic>.from(response.data as Map);
     final rawItems = (data['transactions'] as List?) ?? const [];
-    return rawItems
-        .map(
-          (item) => _deserializeTransaction(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList(growable: false);
+    final rawCursor = data['nextCursor'];
+    return FinancialTransactionPage(
+      transactions: rawItems
+          .map(
+            (item) => _deserializeTransaction(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList(growable: false),
+      hasMore: data['hasMore'] == true,
+      nextCursor: rawCursor is Map
+          ? FinancialTransactionCursor.fromMap(
+              Map<String, dynamic>.from(rawCursor),
+            )
+          : null,
+    );
   }
 
   Future<void> createTransaction({
@@ -225,5 +243,40 @@ class FinancialDashboardRepository {
     }
     return byKey.values.toList(growable: false)
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+}
+
+class FinancialTransactionPage {
+  const FinancialTransactionPage({
+    required this.transactions,
+    required this.hasMore,
+    required this.nextCursor,
+  });
+
+  final List<ChurchTransaction> transactions;
+  final bool hasMore;
+  final FinancialTransactionCursor? nextCursor;
+
+  static const empty = FinancialTransactionPage(
+    transactions: <ChurchTransaction>[],
+    hasMore: false,
+    nextCursor: null,
+  );
+}
+
+class FinancialTransactionCursor {
+  const FinancialTransactionCursor({
+    required this.id,
+    required this.updatedAtMillis,
+  });
+
+  final String id;
+  final int updatedAtMillis;
+
+  factory FinancialTransactionCursor.fromMap(Map<String, dynamic> map) {
+    return FinancialTransactionCursor(
+      id: (map['id'] ?? '').toString(),
+      updatedAtMillis: (map['updatedAtMillis'] as num?)?.toInt() ?? 0,
+    );
   }
 }

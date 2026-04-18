@@ -4,8 +4,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_prov
 import 'package:flutter_application/church_app/services/home_section/events_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final eventsProvider = StreamProvider<List<Event>>((ref) {
-
+final eventsProvider = StreamProvider.autoDispose<List<Event>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
@@ -18,6 +17,7 @@ final eventsProvider = StreamProvider<List<Event>>((ref) {
 
       return repo.watchAllActive(
         now: DateTime.now(),
+        limit: 12,
       );
     },
     loading: () => const Stream.empty(),

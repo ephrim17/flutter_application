@@ -562,7 +562,8 @@ class _FinancialDashboardScreenState
                               padding: const EdgeInsets.only(top: 14),
                               child: Center(
                                 child: FilledButton.tonalIcon(
-                                  onPressed: state.isSubmitting
+                                  onPressed: state.isSubmitting ||
+                                          state.isLoadingMoreTransactions
                                       ? null
                                       : () {
                                           ref
@@ -572,9 +573,19 @@ class _FinancialDashboardScreenState
                                               )
                                               .showMoreTransactions();
                                         },
-                                  icon: const Icon(Icons.expand_more_rounded),
+                                  icon: state.isLoadingMoreTransactions
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.expand_more_rounded),
                                   label: Text(
-                                    'Load ${FinancialDashboardViewState.defaultVisibleTransactionCount} more',
+                                    state.isLoadingMoreTransactions
+                                        ? 'Loading records'
+                                        : 'Load ${FinancialDashboardViewState.defaultVisibleTransactionCount} more',
                                   ),
                                 ),
                               ),

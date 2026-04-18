@@ -10,12 +10,11 @@ class AnnouncementsRepository extends ChurchScopedRepository {
   });
 
   CollectionReference<Announcement> collectionRef() {
-    return 
-        FirestorePaths.churchAnnouncements(firestore, churchId)
+    return FirestorePaths.churchAnnouncements(firestore, churchId)
         .withConverter<Announcement>(
-          fromFirestore: (snap, _) => Announcement.fromFirestore(snap),
-          toFirestore: (a, _) => a.toMap(),
-        );
+      fromFirestore: (snap, _) => Announcement.fromFirestore(snap),
+      toFirestore: (a, _) => a.toMap(),
+    );
   }
 
   Stream<List<Announcement>> watchActiveForBanner({
@@ -25,6 +24,7 @@ class AnnouncementsRepository extends ChurchScopedRepository {
     return collectionRef()
         .where('isActive', isEqualTo: true)
         .orderBy('priority')
+        .limit(limit * 3)
         .snapshots()
         .map(
           (s) => s.docs
@@ -46,6 +46,7 @@ class AnnouncementsRepository extends ChurchScopedRepository {
     return collectionRef()
         .where('isActive', isEqualTo: true)
         .orderBy('priority')
+        .limit(limit * 3)
         .snapshots()
         .map(
           (s) => s.docs
@@ -67,13 +68,15 @@ class AnnouncementsRepository extends ChurchScopedRepository {
     final snapshot = await collectionRef()
         .where('isActive', isEqualTo: true)
         .orderBy('priority')
+        .limit(limit * 3)
         .get();
 
     return snapshot.docs
         .map((doc) => doc.data())
         .where(
           (announcement) =>
-              announcement.expiryAt == null || announcement.expiryAt!.isAfter(now),
+              announcement.expiryAt == null ||
+              announcement.expiryAt!.isAfter(now),
         )
         .take(limit)
         .toList(growable: false);

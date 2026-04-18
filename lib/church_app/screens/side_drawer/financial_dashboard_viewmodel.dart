@@ -18,19 +18,22 @@ final financialSetupProvider = FutureProvider<FinanceSetup>((ref) async {
 });
 
 final financialTransactionsProvider =
-    FutureProvider<List<ChurchTransaction>>((ref) async {
+    FutureProvider<FinancialTransactionPage>((ref) async {
   final hasFinanceAccess = ref.watch(financeDashboardAccessProvider);
   if (!hasFinanceAccess) {
-    return const <ChurchTransaction>[];
+    return FinancialTransactionPage.empty;
   }
 
   final churchId = await ref.watch(currentChurchIdProvider.future);
   if (churchId == null || churchId.trim().isEmpty) {
-    return const <ChurchTransaction>[];
+    return FinancialTransactionPage.empty;
   }
 
   final repository = ref.watch(financialDashboardRepositoryProvider);
-  return repository.fetchTransactions(churchId);
+  return repository.fetchTransactionsPage(
+    churchId,
+    limit: FinancialDashboardViewState.defaultVisibleTransactionCount,
+  );
 });
 
 final financialDashboardViewModelProvider =
@@ -56,13 +59,16 @@ class FinancialDashboardViewModel
       },
     );
 
-    ref.listen<AsyncValue<List<ChurchTransaction>>>(
+    ref.listen<AsyncValue<FinancialTransactionPage>>(
       financialTransactionsProvider,
       (_, next) {
-        final items = next.asData?.value;
-        if (items == null) return;
+        final page = next.asData?.value;
+        if (page == null) return;
         state = state.copyWith(
-          transactions: items,
+          transactions: page.transactions,
+          hasMoreRemoteTransactions: page.hasMore,
+          nextTransactionCursor: page.nextCursor,
+          clearNextTransactionCursor: page.nextCursor == null,
           visibleTransactionCount:
               FinancialDashboardViewState.defaultVisibleTransactionCount,
         );
@@ -130,7 +136,55 @@ class FinancialDashboardViewModel
     );
   }
 
-  void showMoreTransactions() {
+  Future<void> showMoreTransactions() async {
+    if (!state.hasMoreVisibleTransactions) return;
+
+    if (state.filteredTransactionCount > state.pagedTransactions.length) {
+      state = state.copyWith(
+        visibleTransactionCount: state.visibleTransactionCount +
+            FinancialDashboardViewState.defaultVisibleTransactionCount,
+      );
+      return;
+    }
+
+    if (!state.hasMoreRemoteTransactions ||
+        state.nextTransactionCursor == null ||
+        state.isLoadingMoreTransactions) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingMoreTransactions: true);
+    try {
+      final churchId = await _readChurchId();
+      final page = await ref
+          .read(financialDashboardRepositoryProvider)
+          .fetchTransactionsPage(
+            churchId,
+            limit: FinancialDashboardViewState.defaultVisibleTransactionCount,
+            cursor: state.nextTransactionCursor,
+          );
+
+      final merged = <String, ChurchTransaction>{
+        for (final item in state.transactions) item.id: item,
+        for (final item in page.transactions) item.id: item,
+      }.values.toList(growable: false);
+
+      state = state.copyWith(
+        transactions: merged,
+        hasMoreRemoteTransactions: page.hasMore,
+        nextTransactionCursor: page.nextCursor,
+        clearNextTransactionCursor: page.nextCursor == null,
+        visibleTransactionCount: state.visibleTransactionCount +
+            FinancialDashboardViewState.defaultVisibleTransactionCount,
+        isLoadingMoreTransactions: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoadingMoreTransactions: false);
+      rethrow;
+    }
+  }
+
+  void showMoreLoadedTransactions() {
     state = state.copyWith(
       visibleTransactionCount: state.visibleTransactionCount +
           FinancialDashboardViewState.defaultVisibleTransactionCount,
@@ -264,10 +318,14 @@ class FinancialDashboardViewModel
 
   Future<void> _reloadTransactions() async {
     ref.invalidate(financialTransactionsProvider);
-    final items = await ref.read(financialTransactionsProvider.future);
+    final page = await ref.read(financialTransactionsProvider.future);
     state = state.copyWith(
       isSubmitting: false,
-      transactions: items,
+      transactions: page.transactions,
+      hasMoreRemoteTransactions: page.hasMore,
+      nextTransactionCursor: page.nextCursor,
+      clearNextTransactionCursor: page.nextCursor == null,
+      isLoadingMoreTransactions: false,
       visibleTransactionCount:
           FinancialDashboardViewState.defaultVisibleTransactionCount,
     );

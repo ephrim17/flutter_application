@@ -9,7 +9,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final swipeVersesProvider =
-    FutureProvider<List<Map<String, String>>>((ref) async {
+    FutureProvider.autoDispose<List<Map<String, String>>>((ref) async {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
@@ -39,12 +39,9 @@ final swipeVersesProvider =
 
       if (!enabled || canUseCache) {
         if (cachedData != null) {
-          print("<<<FETCH FROM LOCAL >>>");
           return cachedData;
         }
       }
-
-      print("<<<FETCH FROM FIRESTORE >>>");
 
       final refs = await swipeRepo.fetchVerseRefs();
       final List<Map<String, String>> verses = [];
@@ -81,8 +78,7 @@ final swipeVersesProvider =
   );
 });
 
-Future<List<Map<String, String>>?> loadSwipeCache(
-    String churchId) async {
+Future<List<Map<String, String>>?> loadSwipeCache(String churchId) async {
   final prefs = await SharedPreferences.getInstance();
   final raw = prefs.getString(_swipeCacheKey(churchId));
   if (raw == null) return null;
@@ -109,10 +105,8 @@ Future<void> saveSwipeCache({
   required int version,
 }) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(
-      _swipeCacheKey(churchId), jsonEncode(verses));
-  await prefs.setInt(
-      _swipeVersionKey(churchId), version);
+  await prefs.setString(_swipeCacheKey(churchId), jsonEncode(verses));
+  await prefs.setInt(_swipeVersionKey(churchId), version);
 }
 
 Future<int?> getCachedVersion(String churchId) async {
@@ -120,8 +114,7 @@ Future<int?> getCachedVersion(String churchId) async {
   return prefs.getInt(_swipeVersionKey(churchId));
 }
 
-String _swipeCacheKey(String churchId) =>
-    'bible_swipe_cached_verses_$churchId';
+String _swipeCacheKey(String churchId) => 'bible_swipe_cached_verses_$churchId';
 
 String _swipeVersionKey(String churchId) =>
     'bible_swipe_cache_version_$churchId';

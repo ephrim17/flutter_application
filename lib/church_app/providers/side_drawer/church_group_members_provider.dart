@@ -4,8 +4,8 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final churchGroupMembersProvider =
-    StreamProvider.family<List<ChurchGroupMember>, String>((ref, groupId) {
+final churchGroupMembersProvider = StreamProvider.autoDispose
+    .family<List<ChurchGroupMember>, String>((ref, groupId) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(

@@ -4,9 +4,9 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/services/for_you_section/article_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final articlesProvider = StreamProvider<List<Article>>((ref) {
+final articlesProvider = StreamProvider.autoDispose<List<Article>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
-  
+
   return churchIdAsync.when(
     data: (churchId) {
       if (churchId == null) {
@@ -18,7 +18,7 @@ final articlesProvider = StreamProvider<List<Article>>((ref) {
         churchId: churchId,
       );
 
-      return repo.watchAll(limit: 100);
+      return repo.watchAll(limit: 20);
     },
     loading: () => const Stream.empty(),
     error: (_, __) => const Stream.empty(),

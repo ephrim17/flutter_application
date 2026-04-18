@@ -5,9 +5,8 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/footer/footer_fetcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 final footerContactsProvider =
-    StreamProvider<List<ContactItem>>((ref) {
+    StreamProvider.autoDispose<List<ContactItem>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
@@ -27,7 +26,7 @@ final footerContactsProvider =
 });
 
 final footerSocialIconsProvider =
-    StreamProvider<List<SocialIconModel>>((ref) {
+    StreamProvider.autoDispose<List<SocialIconModel>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(
