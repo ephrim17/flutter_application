@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -38,22 +37,6 @@ class DailyVerseSection implements MasterSection {
 
 class DailyVerseCard extends ConsumerWidget {
   const DailyVerseCard({super.key});
-
-  Future<void> showVerseShareModal(
-    BuildContext context, {
-    required String text,
-    required String reference,
-  }) {
-    return showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => VerseShareModal(
-        text: text,
-        reference: reference,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

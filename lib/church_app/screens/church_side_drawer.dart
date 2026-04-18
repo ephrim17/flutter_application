@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -68,16 +69,17 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(appUserProvider);
     final isAdmin = ref.watch(isAdminProvider);
-    final canAccessFinanceDashboard =
-        ref.watch(financeDashboardAccessProvider);
-    final items = DrawerMenuItem.values
-        .where((item) {
-          if (item == DrawerMenuItem.financialDashboard) {
-            return canAccessFinanceDashboard;
-          }
-          return isAdmin || !item.adminOnly;
-        })
-        .toList();
+    final config = ref.watch(appConfigProvider).asData?.value;
+    final canAccessFinanceDashboard = ref.watch(financeDashboardAccessProvider);
+    final items = DrawerMenuItem.values.where((item) {
+      if (config != null && !item.isEnabledBy(config)) {
+        return false;
+      }
+      if (item == DrawerMenuItem.financialDashboard) {
+        return canAccessFinanceDashboard;
+      }
+      return isAdmin || !item.adminOnly;
+    }).toList();
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

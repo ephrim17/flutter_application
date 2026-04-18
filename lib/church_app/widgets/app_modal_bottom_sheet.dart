@@ -40,11 +40,15 @@ Future<T?> showAppModalBottomSheet<T>({
     useSafeArea: useSafeArea ?? false,
     builder: (context) {
       final child = _unwrapExistingFractionalSheet(builder(context));
+      const closeButtonLaneHeight = 72.0;
       return FractionallySizedBox(
         heightFactor: heightFactor,
         child: Stack(
           children: [
-            Positioned.fill(child: child),
+            Positioned.fill(
+              top: closeButtonLaneHeight,
+              child: child,
+            ),
             Positioned(
               top: 8,
               right: 8,

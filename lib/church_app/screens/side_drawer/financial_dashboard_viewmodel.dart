@@ -6,6 +6,17 @@ import 'package:flutter_application/church_app/screens/side_drawer/financial_das
 import 'package:flutter_application/church_app/services/side_drawer/financial_dashboard_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final financialSetupProvider = FutureProvider<FinanceSetup>((ref) async {
+  final hasFinanceAccess = ref.watch(financeDashboardAccessProvider);
+  if (!hasFinanceAccess) return FinanceSetup.empty();
+
+  final churchId = await ref.watch(currentChurchIdProvider.future);
+  if (churchId == null || churchId.trim().isEmpty) return FinanceSetup.empty();
+
+  final repository = ref.watch(financialDashboardRepositoryProvider);
+  return repository.fetchSetup(churchId);
+});
+
 final financialTransactionsProvider =
     FutureProvider<List<ChurchTransaction>>((ref) async {
   final hasFinanceAccess = ref.watch(financeDashboardAccessProvider);
@@ -35,6 +46,15 @@ class FinancialDashboardViewModel
     final church = ref.watch(selectedChurchProvider);
     final churchName =
         church?.name.trim().isNotEmpty == true ? church!.name.trim() : 'Church';
+
+    ref.listen<AsyncValue<FinanceSetup>>(
+      financialSetupProvider,
+      (_, next) {
+        final setup = next.asData?.value;
+        if (setup == null) return;
+        state = state.copyWith(setup: setup);
+      },
+    );
 
     ref.listen<AsyncValue<List<ChurchTransaction>>>(
       financialTransactionsProvider,
@@ -103,6 +123,13 @@ class FinancialDashboardViewModel
     );
   }
 
+  void setDayBookRange(DateTime startDate, DateTime endDate) {
+    state = state.copyWith(
+      dayBookStartDate: startDate,
+      dayBookEndDate: endDate,
+    );
+  }
+
   void showMoreTransactions() {
     state = state.copyWith(
       visibleTransactionCount: state.visibleTransactionCount +
@@ -110,25 +137,74 @@ class FinancialDashboardViewModel
     );
   }
 
-  Future<void> addTransaction(ChurchTransactionFormData form) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || churchId.trim().isEmpty) {
-      throw StateError('No church selected.');
+  Future<void> saveConfig(FinanceConfig config) async {
+    final churchId = await _readChurchId();
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await ref
+          .read(financialDashboardRepositoryProvider)
+          .saveConfig(churchId: churchId, config: config);
+      await _reloadSetup();
+      state = state.copyWith(isSubmitting: false);
+    } catch (_) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
     }
+  }
 
+  Future<void> upsertBank(FinanceBankAccount bank) async {
+    final churchId = await _readChurchId();
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await ref
+          .read(financialDashboardRepositoryProvider)
+          .upsertBank(churchId: churchId, bank: bank);
+      await _reloadSetup();
+      state = state.copyWith(isSubmitting: false);
+    } catch (_) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    }
+  }
+
+  Future<void> deleteBank(FinanceBankAccount bank) async {
+    final churchId = await _readChurchId();
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await ref
+          .read(financialDashboardRepositoryProvider)
+          .deleteBank(churchId: churchId, bank: bank);
+      await _reloadSetup();
+      state = state.copyWith(isSubmitting: false);
+    } catch (_) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    }
+  }
+
+  Future<void> upsertLedger(FinanceLedger ledger) async {
+    final churchId = await _readChurchId();
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await ref
+          .read(financialDashboardRepositoryProvider)
+          .upsertLedger(churchId: churchId, ledger: ledger);
+      await _reloadSetup();
+      state = state.copyWith(isSubmitting: false);
+    } catch (_) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    }
+  }
+
+  Future<void> addTransaction(ChurchTransactionFormData form) async {
+    final churchId = await _readChurchId();
     state = state.copyWith(isSubmitting: true);
     try {
       await ref
           .read(financialDashboardRepositoryProvider)
           .createTransaction(churchId: churchId, form: form);
-      ref.invalidate(financialTransactionsProvider);
-      final items = await ref.read(financialTransactionsProvider.future);
-      state = state.copyWith(
-        isSubmitting: false,
-        transactions: items,
-        visibleTransactionCount:
-            FinancialDashboardViewState.defaultVisibleTransactionCount,
-      );
+      await _reloadTransactions();
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -136,24 +212,13 @@ class FinancialDashboardViewModel
   }
 
   Future<void> updateTransaction(ChurchTransactionFormData form) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || churchId.trim().isEmpty) {
-      throw StateError('No church selected.');
-    }
-
+    final churchId = await _readChurchId();
     state = state.copyWith(isSubmitting: true);
     try {
       await ref
           .read(financialDashboardRepositoryProvider)
           .updateTransaction(churchId: churchId, form: form);
-      ref.invalidate(financialTransactionsProvider);
-      final items = await ref.read(financialTransactionsProvider.future);
-      state = state.copyWith(
-        isSubmitting: false,
-        transactions: items,
-        visibleTransactionCount:
-            FinancialDashboardViewState.defaultVisibleTransactionCount,
-      );
+      await _reloadTransactions();
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -161,24 +226,13 @@ class FinancialDashboardViewModel
   }
 
   Future<void> deleteTransaction(ChurchTransaction item) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || churchId.trim().isEmpty) {
-      throw StateError('No church selected.');
-    }
-
+    final churchId = await _readChurchId();
     state = state.copyWith(isSubmitting: true);
     try {
       await ref
           .read(financialDashboardRepositoryProvider)
           .deleteTransaction(churchId: churchId, item: item);
-      ref.invalidate(financialTransactionsProvider);
-      final items = await ref.read(financialTransactionsProvider.future);
-      state = state.copyWith(
-        isSubmitting: false,
-        transactions: items,
-        visibleTransactionCount:
-            FinancialDashboardViewState.defaultVisibleTransactionCount,
-      );
+      await _reloadTransactions();
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -186,7 +240,36 @@ class FinancialDashboardViewModel
   }
 
   Future<void> refresh() async {
+    ref.invalidate(financialSetupProvider);
     ref.invalidate(financialTransactionsProvider);
-    await ref.read(financialTransactionsProvider.future);
+    await Future.wait([
+      ref.read(financialSetupProvider.future),
+      ref.read(financialTransactionsProvider.future),
+    ]);
+  }
+
+  Future<String> _readChurchId() async {
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (churchId == null || churchId.trim().isEmpty) {
+      throw StateError('No church selected.');
+    }
+    return churchId;
+  }
+
+  Future<void> _reloadSetup() async {
+    ref.invalidate(financialSetupProvider);
+    final setup = await ref.read(financialSetupProvider.future);
+    state = state.copyWith(setup: setup);
+  }
+
+  Future<void> _reloadTransactions() async {
+    ref.invalidate(financialTransactionsProvider);
+    final items = await ref.read(financialTransactionsProvider.future);
+    state = state.copyWith(
+      isSubmitting: false,
+      transactions: items,
+      visibleTransactionCount:
+          FinancialDashboardViewState.defaultVisibleTransactionCount,
+    );
   }
 }

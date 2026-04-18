@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
+import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -43,6 +44,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   bool _enabled = true;
   bool _setupChurchAccount = true;
   bool _isSubmitting = false;
+  bool _featuresHydrated = false;
+  late Map<String, bool> _featureFlags;
   PickedImageData? _logoImage;
   PickedImageData? _pastorPhotoImage;
   late String _existingLogoUrl;
@@ -59,6 +62,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     final church = widget.church;
     _existingLogoUrl = church?.logo ?? '';
     _existingPastorPhotoUrl = church?.pastorPhoto ?? '';
+    _featureFlags = SuperAdminChurchService.normalizeFeatureFlags(
+      const <String, bool>{},
+    );
 
     if (church != null) {
       _nameController.text = church.name;
@@ -99,11 +105,18 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
 
   bool get _showsAdminInputs => !_isEditMode;
 
-  List<String> get _stepTitles => const <String>[
-        'Church Details',
-        'Pastor Details',
-        'Admin Details',
-      ];
+  List<String> get _stepTitles => _isPublicRegistrationMode
+      ? const <String>[
+          'Church Details',
+          'Pastor Details',
+          'Admin Details',
+        ]
+      : const <String>[
+          'Church Details',
+          'Pastor Details',
+          'Admin Details',
+          'Feature Access',
+        ];
 
   double get _stepProgress => (_currentStep + 1) / _stepTitles.length;
 
@@ -381,6 +394,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             existingPastorPhotoUrl: _existingPastorPhotoUrl,
             logoImage: _logoImage,
             pastorPhotoImage: _pastorPhotoImage,
+            features: _featureFlags,
           ),
         );
 
@@ -426,6 +440,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           adminName: enteredAdminName,
           adminEmail: createdAdminEmail ?? enteredAdminEmail,
           adminPhone: enteredAdminPhone,
+          features: _featureFlags,
         ),
       );
 
@@ -520,6 +535,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             : _setupChurchAccount && !_isPublicRegistrationMode
                 ? 'Add the initial admin who will receive account access for this church.'
                 : 'Save the initial admin details even if account setup is being deferred.';
+      case 3:
+        return 'Choose which modules this church can see and use.';
       default:
         return '';
     }
@@ -533,6 +550,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         return _buildPastorDetailsStep(context);
       case 2:
         return _buildAdminDetailsStep(context);
+      case 3:
+        return _buildFeatureAccessStep(context);
       default:
         return const SizedBox.shrink();
     }
@@ -791,8 +810,122 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     );
   }
 
+  Widget _buildFeatureAccessStep(BuildContext context) {
+    final featureItems = const <_FeatureFlagSpec>[
+      _FeatureFlagSpec(
+        key: 'dashboardEnabled',
+        title: 'Admin Dashboard',
+        subtitle: 'Shows the dashboard tab for admins.',
+        icon: Icons.dashboard_customize_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'financialDashboardEnabled',
+        title: 'Financial Dashboard',
+        subtitle: 'Shows finance in the sidebar for finance group members.',
+        icon: Icons.account_balance_wallet_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'equipmentEnabled',
+        title: 'Equipment',
+        subtitle: 'Shows equipment inventory for admins.',
+        icon: Icons.inventory_2_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'studioEnabled',
+        title: 'Studio',
+        subtitle: 'Allows admins to manage app content and settings.',
+        icon: Icons.design_services_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'membersEnabled',
+        title: 'Members',
+        subtitle: 'Allows member directory and member flows.',
+        icon: Icons.people_outline,
+      ),
+      _FeatureFlagSpec(
+        key: 'eventsEnabled',
+        title: 'Events',
+        subtitle: 'Allows events content and event dashboard sections.',
+        icon: Icons.event_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'globalFeedEnabled',
+        title: 'Global Feed',
+        subtitle: 'Allows global feed content for this church.',
+        icon: Icons.feed_outlined,
+      ),
+      _FeatureFlagSpec(
+        key: 'bibleSwipeFetchEnabled',
+        title: 'Bible Swipe',
+        subtitle: 'Allows swipe verse content fetching.',
+        icon: Icons.menu_book_outlined,
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Feature flags',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Turn modules on only for churches that should use them.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 14),
+        ...featureItems.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: SwitchListTile.adaptive(
+              value: _featureFlags[item.key] ?? false,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              secondary: Icon(item.icon),
+              title: Text(item.title),
+              subtitle: Text(item.subtitle),
+              onChanged: _isSubmitting
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _featureFlags[item.key] = value;
+                      });
+                    },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isEditMode) {
+      final config =
+          ref.watch(churchAppConfigProvider(widget.church!.id)).asData?.value;
+      if (!_featuresHydrated && config != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _featuresHydrated) return;
+          setState(() {
+            _featureFlags = SuperAdminChurchService.normalizeFeatureFlags({
+              'membersEnabled': config.membersEnabled,
+              'eventsEnabled': config.eventsEnabled,
+              'dashboardEnabled': config.dashboardEnabled,
+              'financialDashboardEnabled': config.financialDashboardEnabled,
+              'equipmentEnabled': config.equipmentEnabled,
+              'studioEnabled': config.studioEnabled,
+              'globalFeedEnabled': config.globalFeedEnabled,
+              'bibleSwipeFetchEnabled': config.bibleSwipeFetchEnabled,
+            });
+            _featuresHydrated = true;
+          });
+        });
+      }
+    }
+
     return PopScope(
       canPop: !_isSubmitting,
       child: Scaffold(
@@ -1134,6 +1267,20 @@ class _ChurchFlowHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FeatureFlagSpec {
+  const _FeatureFlagSpec({
+    required this.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String key;
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }
 
 class _ChurchStepShell extends StatelessWidget {

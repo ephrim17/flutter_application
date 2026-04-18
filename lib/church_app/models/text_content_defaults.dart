@@ -541,7 +541,7 @@ const Map<String, String> defaultChurchTextContents = {
   'birthday.post_wish': 'Post Birthday Wish',
 
   // Verse share
-  'verse_share.layout': 'Layout',
+  'verse_share.layout': 'Edit',
   'verse_share.style': 'Style',
   'verse_share.footer': 'Footer',
   'verse_share.format': 'Format',

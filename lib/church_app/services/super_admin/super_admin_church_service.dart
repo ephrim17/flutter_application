@@ -22,6 +22,7 @@ class CreateChurchInput {
     this.adminName,
     this.adminEmail,
     this.adminPhone,
+    this.features = const <String, bool>{},
   });
 
   final String churchId;
@@ -39,6 +40,7 @@ class CreateChurchInput {
   final String? adminName;
   final String? adminEmail;
   final String? adminPhone;
+  final Map<String, bool> features;
 }
 
 class UpdateChurchInput {
@@ -54,6 +56,7 @@ class UpdateChurchInput {
     required this.existingPastorPhotoUrl,
     this.logoImage,
     this.pastorPhotoImage,
+    this.features = const <String, bool>{},
   });
 
   final String churchId;
@@ -67,6 +70,7 @@ class UpdateChurchInput {
   final String existingPastorPhotoUrl;
   final PickedImageData? logoImage;
   final PickedImageData? pastorPhotoImage;
+  final Map<String, bool> features;
 }
 
 class SuperAdminChurchService {
@@ -97,6 +101,24 @@ class SuperAdminChurchService {
     'John 3:16',
     'Romans 8:28',
   ];
+
+  static const Map<String, bool> defaultFeatureFlags = <String, bool>{
+    'membersEnabled': true,
+    'eventsEnabled': true,
+    'dashboardEnabled': true,
+    'financialDashboardEnabled': false,
+    'equipmentEnabled': false,
+    'studioEnabled': true,
+    'globalFeedEnabled': true,
+    'bibleSwipeFetchEnabled': true,
+  };
+
+  static Map<String, bool> normalizeFeatureFlags(Map<String, bool> features) {
+    return <String, bool>{
+      ...defaultFeatureFlags,
+      ...features,
+    };
+  }
 
   Future<bool> churchExists(String churchId) async {
     final doc =
@@ -178,9 +200,7 @@ class SuperAdminChurchService {
       {
         'admins': adminEmails,
         'features': {
-          'membersEnabled': true,
-          'eventsEnabled': true,
-          'bibleSwipeFetchEnabled': true,
+          ...normalizeFeatureFlags(input.features),
           'bibleSwipeVersion': 1,
         },
         'dailyVerse': {
@@ -455,6 +475,7 @@ class SuperAdminChurchService {
           'church_tab.app_title': input.name.trim(),
         },
         'churchLogo': logoUrl,
+        'features': normalizeFeatureFlags(input.features),
       },
       SetOptions(merge: true),
     );
@@ -535,6 +556,21 @@ class SuperAdminChurchService {
       churchName: churchName,
       fallbackEmail: fallbackEmail,
       enabled: enabled,
+    );
+  }
+
+  Future<void> updateChurchFeature({
+    required String churchId,
+    required String featureKey,
+    required bool enabled,
+  }) async {
+    await FirestorePaths.churchAppConfig(_firestore, churchId.trim()).set(
+      {
+        'features': {
+          featureKey.trim(): enabled,
+        },
+      },
+      SetOptions(merge: true),
     );
   }
 

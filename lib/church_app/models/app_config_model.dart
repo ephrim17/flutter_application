@@ -5,6 +5,9 @@ class AppConfig {
   final bool membersEnabled;
   final bool eventsEnabled;
   final bool dashboardEnabled;
+  final bool financialDashboardEnabled;
+  final bool equipmentEnabled;
+  final bool studioEnabled;
   final bool globalFeedEnabled;
   final bool bibleSwipeFetchEnabled;
   final int bibleSwipeFetchVersion;
@@ -28,6 +31,9 @@ class AppConfig {
       required this.membersEnabled,
       required this.eventsEnabled,
       required this.dashboardEnabled,
+      required this.financialDashboardEnabled,
+      required this.equipmentEnabled,
+      required this.studioEnabled,
       required this.globalFeedEnabled,
       required this.onboardingTitle,
       required this.onboardingSubtitle,
@@ -52,6 +58,9 @@ class AppConfig {
       membersEnabled: false,
       eventsEnabled: false,
       dashboardEnabled: false,
+      financialDashboardEnabled: false,
+      equipmentEnabled: false,
+      studioEnabled: false,
       globalFeedEnabled: false,
       onboardingTitle: '',
       onboardingSubtitle: '',
@@ -83,6 +92,10 @@ class AppConfig {
       superAdminDisabled: data['superAdminDisabled'] as bool? ?? false,
       membersEnabled: data['features']?['membersEnabled'] ?? false,
       dashboardEnabled: data['features']?['dashboardEnabled'] ?? false,
+      financialDashboardEnabled:
+          features['financialDashboardEnabled'] as bool? ?? false,
+      equipmentEnabled: features['equipmentEnabled'] as bool? ?? false,
+      studioEnabled: features['studioEnabled'] as bool? ?? true,
       globalFeedEnabled: data['features']?['globalFeedEnabled'] ?? false,
       bibleSwipeFetchEnabled:
           data['features']?['bibleSwipeFetchEnabled'] ?? false,

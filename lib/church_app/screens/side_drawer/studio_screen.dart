@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/providers/authentication/admin_pr
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
+import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -585,6 +586,7 @@ class _StudioToolCard extends ConsumerWidget {
             'option': item.title,
           },
         );
+        if (!context.mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => _StudioToolScreen(
@@ -1021,6 +1023,11 @@ class _ConfigVerseEditor extends ConsumerWidget {
       ),
       data: (config) {
         final verseRef = configSelector(config);
+        final versePreview = BibleRepository().getVerse(
+          book: verseRef.book,
+          chapter: verseRef.chapter,
+          verse: verseRef.verse,
+        );
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -1034,26 +1041,93 @@ class _ConfigVerseEditor extends ConsumerWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
-                      '${verseRef.book}:${verseRef.chapter}:${verseRef.verse}',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      'Pick the exact Bible verse users will see. Use the button below to change book, chapter, or verse number.',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => showBibleVersePickerSheet(
-                        context,
-                        title: title,
-                        initialBook: verseRef.book,
-                        initialChapter: verseRef.chapter,
-                        initialVerse: verseRef.verse,
-                        onSave: onSave,
-                      ),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(
-                        '${context.t('studio.edit_item_prefix', fallback: 'Edit')} $title',
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _StudioInlineStatusChip(
+                          label: verseRef.book,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        _StudioInlineStatusChip(
+                          label: 'Chapter ${verseRef.chapter}',
+                          color: Colors.teal,
+                        ),
+                        _StudioInlineStatusChip(
+                          label: 'Verse ${verseRef.verse}',
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<Map<String, String>>(
+                      future: versePreview,
+                      builder: (context, snapshot) {
+                        final verseText =
+                            snapshot.data?['english'] ?? 'Loading verse...';
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                verseText,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.35,
+                                    ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                '${verseRef.book} ${verseRef.chapter}:${verseRef.verse}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => showBibleVersePickerSheet(
+                          context,
+                          title: title,
+                          initialBook: verseRef.book,
+                          initialChapter: verseRef.chapter,
+                          initialVerse: verseRef.verse,
+                          onSave: onSave,
+                        ),
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Change book / chapter / verse'),
                       ),
                     ),
                   ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
@@ -122,6 +123,26 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.about:
       case DrawerMenuItem.settings:
         return false;
+    }
+  }
+
+  bool isEnabledBy(AppConfig config) {
+    switch (this) {
+      case DrawerMenuItem.studio:
+        return config.studioEnabled;
+      case DrawerMenuItem.equipment:
+        return config.equipmentEnabled;
+      case DrawerMenuItem.financialDashboard:
+        return config.financialDashboardEnabled;
+      case DrawerMenuItem.members:
+        return config.membersEnabled;
+      case DrawerMenuItem.churchGroups:
+      case DrawerMenuItem.prayerRequest:
+      case DrawerMenuItem.favorites:
+      case DrawerMenuItem.holyBible:
+      case DrawerMenuItem.about:
+      case DrawerMenuItem.settings:
+        return true;
     }
   }
 }

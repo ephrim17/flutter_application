@@ -9,8 +9,13 @@ import {
 import {defineSecret, defineString} from "firebase-functions/params";
 import nodemailer from "nodemailer";
 export {
+  deleteFinancialBank,
   deleteFinancialTransaction,
+  getFinancialSetup,
   getFinancialTransactions,
+  saveFinancialConfig,
+  upsertFinancialBank,
+  upsertFinancialLedger,
   upsertFinancialTransaction,
 } from "./financial";
 

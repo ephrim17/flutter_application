@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/church_transaction_model.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/financial_dashboard_view_state.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/financial_dashboard_viewmodel.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,7 +98,7 @@ class _FinancialDashboardScreenState
                               title: 'Total Income',
                               value: _currency(state.totalIncome),
                               subtitle:
-                                  '${state.transactions.where((item) => item.type == ChurchTransactionType.income).length} income records',
+                                  '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.income).length} income records',
                               icon: Icons.arrow_downward_rounded,
                               accent: const Color(0xFF28A26A),
                             ),
@@ -102,25 +106,23 @@ class _FinancialDashboardScreenState
                               title: 'Total Expenses',
                               value: _currency(state.totalExpense),
                               subtitle:
-                                  '${state.transactions.where((item) => item.type == ChurchTransactionType.expense).length} expense records',
+                                  '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.expense).length} expense records',
                               icon: Icons.arrow_upward_rounded,
                               accent: const Color(0xFFD66C4A),
                             ),
                             _FinanceSummaryCard(
-                              title: 'Current Balance',
-                              value: _currency(state.netBalance),
-                              subtitle: state.netBalance >= 0
-                                  ? 'Healthy runway'
-                                  : 'Needs attention',
-                              icon: Icons.account_balance_wallet_outlined,
+                              title: 'Bank Balance',
+                              value: _currency(state.bankBalance),
+                              subtitle:
+                                  '${state.setup.banks.length} bank account${state.setup.banks.length == 1 ? '' : 's'} configured',
+                              icon: Icons.account_balance_outlined,
                               accent: const Color(0xFF5878F0),
                             ),
                             _FinanceSummaryCard(
-                              title: 'Pending Review',
-                              value: _currency(state.pendingAmount),
-                              subtitle:
-                                  '${state.pendingCount} pending transaction${state.pendingCount == 1 ? '' : 's'}',
-                              icon: Icons.pending_actions_outlined,
+                              title: 'Cash in Hand',
+                              value: _currency(state.cashInHand),
+                              subtitle: state.setup.config.currentFinancialYear,
+                              icon: Icons.payments_outlined,
                               accent: const Color(0xFF8C5AF7),
                             ),
                           ],
@@ -132,15 +134,26 @@ class _FinancialDashboardScreenState
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
+                    child: _FinanceSetupCard(
+                      setup: state.setup,
+                      onEditConfig: () => _showConfigSheet(context),
+                      onAddBank: () => _showBankSheet(context),
+                      onAddLedger: () => _showLedgerSheet(context),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  sliver: SliverToBoxAdapter(
                     child: _DashboardSectionCard(
-                      title: 'Category Dashboards',
+                      title: 'Ledger Dashboards',
                       subtitle:
                           'Track how each finance bucket is performing across recorded transactions.',
                       child: state.categorySummaries.isEmpty
                           ? const _FinanceEmptyState(
-                              title: 'No category data yet',
+                              title: 'No ledger data yet',
                               subtitle:
-                                  'Recorded transactions will automatically build category dashboards here.',
+                                  'Recorded transactions will automatically build ledger dashboards here.',
                             )
                           : LayoutBuilder(
                               builder: (context, constraints) {
@@ -163,7 +176,7 @@ class _FinancialDashboardScreenState
                                   itemBuilder: (context, index) {
                                     final summary =
                                         state.categorySummaries[index];
-                                    return _CategoryDashboardTile(
+                                    return _LedgerDashboardTile(
                                         summary: summary);
                                   },
                                 );
@@ -183,6 +196,26 @@ class _FinancialDashboardScreenState
                         summaries: state.monthlySummaries,
                       ),
                     ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: _DashboardSectionCard(
+                      title: 'Day Book',
+                      subtitle:
+                          'Daily income and expense movement for the selected financial year.',
+                      child: _DayBookSection(
+                        state: state,
+                        onPickRange: () => _pickDayBookRange(context),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: _AccountingReportsSection(state: state),
                   ),
                 ),
                 SliverPadding(
@@ -228,7 +261,7 @@ class _FinancialDashboardScreenState
                             onChanged: viewModel.setQuery,
                             decoration: InputDecoration(
                               hintText:
-                                  'Search by title, category, payment method, reference, or recorder...',
+                                  'Search by title, ledger, party, payment method, reference, or recorder...',
                               prefixIcon: Padding(
                                 padding:
                                     const EdgeInsets.only(left: 10, right: 6),
@@ -316,7 +349,7 @@ class _FinancialDashboardScreenState
                                     ),
                                     const SizedBox(height: 12),
                                     AppDropdownField<String>(
-                                      labelText: 'Category',
+                                      labelText: 'Ledger',
                                       initialValue: state.selectedCategory,
                                       items: state.categories
                                           .map(
@@ -394,7 +427,7 @@ class _FinancialDashboardScreenState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: AppDropdownField<String>(
-                                      labelText: 'Category',
+                                      labelText: 'Ledger',
                                       initialValue: state.selectedCategory,
                                       items: state.categories
                                           .map(
@@ -596,13 +629,24 @@ class _FinancialDashboardScreenState
     BuildContext context, {
     required String currentUserName,
   }) async {
+    final type = await showAppModalBottomSheet<ChurchTransactionType>(
+      context: context,
+      isScrollControlled: true,
+      heightFactor: 0.5,
+      builder: (_) => const _TransactionTypePickerSheet(),
+    );
+    if (type == null || !context.mounted) return;
+
+    final state = ref.read(financialDashboardViewModelProvider);
     final form = await showAppModalBottomSheet<ChurchTransactionFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _TransactionFormSheet(
+        initialType: type,
         initialRecordedBy: currentUserName,
-        categoryOptions:
-            ref.read(financialDashboardViewModelProvider).categories,
+        setup: state.setup,
+        ledgers: state.ledgers,
+        onPickPartyName: _pickPartyName,
       ),
     );
 
@@ -653,12 +697,47 @@ class _FinancialDashboardScreenState
                     children: [
                       _TypePill(type: item.type),
                       _StatusPill(status: item.status),
-                      _MetaPill(label: item.category),
+                      _MetaPill(label: item.ledgerName),
                     ],
                   ),
                   const SizedBox(height: 18),
                   _DetailRow(label: 'Amount', value: _currency(item.amount)),
                   _DetailRow(label: 'Date', value: _date(item.transactionDate)),
+                  _DetailRow(
+                    label: 'Voucher',
+                    value: item.voucherNumber.trim().isEmpty
+                        ? item.voucherType.label
+                        : '${item.voucherType.label} • ${item.voucherNumber}',
+                  ),
+                  _DetailRow(
+                    label: 'Debit',
+                    value: item.debitLedgerName.trim().isEmpty
+                        ? (item.type == ChurchTransactionType.income
+                            ? item.paymentMethod
+                            : item.ledgerName)
+                        : item.debitLedgerName,
+                  ),
+                  _DetailRow(
+                    label: 'Credit',
+                    value: item.creditLedgerName.trim().isEmpty
+                        ? (item.type == ChurchTransactionType.income
+                            ? item.ledgerName
+                            : item.paymentMethod)
+                        : item.creditLedgerName,
+                  ),
+                  _DetailRow(
+                    label: 'Party Name',
+                    value: item.partyName.trim().isEmpty
+                        ? 'Not provided'
+                        : item.partyName,
+                  ),
+                  _DetailRow(label: 'Ledger', value: item.ledgerName),
+                  _DetailRow(
+                    label: 'Ledger Group',
+                    value: item.ledgerGroup.trim().isEmpty
+                        ? 'Not provided'
+                        : item.ledgerGroup,
+                  ),
                   _DetailRow(
                       label: 'Payment Method', value: item.paymentMethod),
                   _DetailRow(
@@ -718,14 +797,17 @@ class _FinancialDashboardScreenState
     BuildContext context,
     ChurchTransaction item,
   ) async {
+    final state = ref.read(financialDashboardViewModelProvider);
     final form = await showAppModalBottomSheet<ChurchTransactionFormData>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _TransactionFormSheet(
         existingItem: item,
+        initialType: item.type,
         initialRecordedBy: item.recordedBy,
-        categoryOptions:
-            ref.read(financialDashboardViewModelProvider).categories,
+        setup: state.setup,
+        ledgers: state.ledgers,
+        onPickPartyName: _pickPartyName,
       ),
     );
 
@@ -744,6 +826,99 @@ class _FinancialDashboardScreenState
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${form.title} updated.')),
+    );
+  }
+
+  Future<void> _showConfigSheet(BuildContext context) async {
+    final state = ref.read(financialDashboardViewModelProvider);
+    final config = await showAppModalBottomSheet<FinanceConfig>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FinanceConfigSheet(config: state.setup.config),
+    );
+    if (config == null || !context.mounted) return;
+    try {
+      await ref
+          .read(financialDashboardViewModelProvider.notifier)
+          .saveConfig(config);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to save finance settings: $error')),
+      );
+    }
+  }
+
+  Future<void> _showBankSheet(BuildContext context) async {
+    final bank = await showAppModalBottomSheet<FinanceBankAccount>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _BankAccountSheet(),
+    );
+    if (bank == null || !context.mounted) return;
+    try {
+      await ref
+          .read(financialDashboardViewModelProvider.notifier)
+          .upsertBank(bank);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to save bank account: $error')),
+      );
+    }
+  }
+
+  Future<void> _showLedgerSheet(BuildContext context) async {
+    final ledger = await showAppModalBottomSheet<FinanceLedger>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _LedgerSheet(),
+    );
+    if (ledger == null || !context.mounted) return;
+    try {
+      await ref
+          .read(financialDashboardViewModelProvider.notifier)
+          .upsertLedger(ledger);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to save ledger: $error')),
+      );
+    }
+  }
+
+  Future<void> _pickDayBookRange(BuildContext context) async {
+    final state = ref.read(financialDashboardViewModelProvider);
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: DateTimeRange(
+        start: state.dayBookStartDate,
+        end: state.dayBookEndDate,
+      ),
+    );
+    if (picked == null) return;
+    ref.read(financialDashboardViewModelProvider.notifier).setDayBookRange(
+          picked.start,
+          picked.end,
+        );
+  }
+
+  Future<String?> _pickPartyName(BuildContext context) async {
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    if (churchId == null || churchId.trim().isEmpty || !context.mounted) {
+      return null;
+    }
+    return showAppModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _MemberPartyPickerSheet(
+        repository: MembersRepository(
+          firestore: FirebaseFirestore.instance,
+          churchId: churchId,
+        ),
+      ),
     );
   }
 
@@ -840,6 +1015,450 @@ class _FinancialHeroCard extends StatelessWidget {
             style: theme.textTheme.bodyLarge?.copyWith(
               color: onPrimary.withValues(alpha: 0.88),
               height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinanceSetupCard extends StatelessWidget {
+  const _FinanceSetupCard({
+    required this.setup,
+    required this.onEditConfig,
+    required this.onAddBank,
+    required this.onAddLedger,
+  });
+
+  final FinanceSetup setup;
+  final VoidCallback onEditConfig;
+  final VoidCallback onAddBank;
+  final VoidCallback onAddLedger;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final config = setup.config;
+    return _DashboardSectionCard(
+      title: 'Config Settings',
+      subtitle:
+          'Trust details, financial year, bank accounts, and custom ledgers.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _MetaPill(
+                label: config.trustName.trim().isEmpty
+                    ? 'Trust name not set'
+                    : config.trustName,
+              ),
+              _MetaPill(label: 'FY ${config.currentFinancialYear}'),
+              _MetaPill(label: '${setup.banks.length} bank accounts'),
+              _MetaPill(label: '${setup.ledgers.length} ledgers'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: onEditConfig,
+                icon: const Icon(Icons.tune_rounded),
+                label: const Text('Edit Config'),
+              ),
+              OutlinedButton.icon(
+                onPressed: onAddBank,
+                icon: const Icon(Icons.account_balance_outlined),
+                label: const Text('Add Bank'),
+              ),
+              OutlinedButton.icon(
+                onPressed: onAddLedger,
+                icon: const Icon(Icons.book_outlined),
+                label: const Text('Add Ledger'),
+              ),
+            ],
+          ),
+          if (setup.banks.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Bank Accounts',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...setup.banks.take(3).map(
+                  (bank) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _DetailRow(
+                      label: bank.accountName,
+                      value: bank.branchDetails.trim().isEmpty
+                          ? bank.accountNumber
+                          : '${bank.accountNumber} • ${bank.branchDetails}',
+                    ),
+                  ),
+                ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DayBookSection extends StatelessWidget {
+  const _DayBookSection({
+    required this.state,
+    required this.onPickRange,
+  });
+
+  final FinancialDashboardViewState state;
+  final VoidCallback onPickRange;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _TrendMetricPill(
+              label: 'Income',
+              value: _currency(state.dayBookIncome),
+              color: const Color(0xFF28A26A),
+            ),
+            _TrendMetricPill(
+              label: 'Expense',
+              value: _currency(state.dayBookExpense),
+              color: const Color(0xFFD66C4A),
+            ),
+            _TrendMetricPill(
+              label: 'Closing',
+              value: _currency(state.dayBookClosingBalance),
+              color: theme.colorScheme.primary,
+            ),
+            OutlinedButton.icon(
+              onPressed: onPickRange,
+              icon: const Icon(Icons.date_range_outlined),
+              label: Text('${_shortDate(state.dayBookStartDate)} - '
+                  '${_shortDate(state.dayBookEndDate)}'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (state.dayBookTransactions.isEmpty)
+          const _FinanceEmptyState(
+            title: 'No day book entries',
+            subtitle: 'Pick another date range or add a transaction.',
+          )
+        else
+          ...state.dayBookTransactions.take(12).map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _DayBookRow(item: item),
+                ),
+              ),
+      ],
+    );
+  }
+}
+
+class _DayBookRow extends StatelessWidget {
+  const _DayBookRow({required this.item});
+
+  final ChurchTransaction item;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _typeColor(item.type);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_shortDate(item.transactionDate)} • ${item.type.label}',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: color,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.ledgerName,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.partyName.trim().isEmpty ? 'No party' : item.partyName} • ${item.paymentMethod}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Text(
+            _currency(item.amount),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountingReportsSection extends StatelessWidget {
+  const _AccountingReportsSection({required this.state});
+
+  final FinancialDashboardViewState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashboardSectionCard(
+      title: 'Accounting Reports',
+      subtitle:
+          'Tally-style essentials generated from every debit and credit entry.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _TrendMetricPill(
+                label: 'Trial Dr',
+                value: _currency(state.trialDebitTotal),
+                color: const Color(0xFF28A26A),
+              ),
+              _TrendMetricPill(
+                label: 'Trial Cr',
+                value: _currency(state.trialCreditTotal),
+                color: const Color(0xFFD66C4A),
+              ),
+              _TrendMetricPill(
+                label: 'Difference',
+                value: _currency(
+                  (state.trialDebitTotal - state.trialCreditTotal).abs(),
+                ),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _MiniReportCard(
+            title: 'Trial Balance',
+            subtitle: 'Every ledger should balance debit and credit totals.',
+            emptyTitle: 'No trial balance yet',
+            emptySubtitle: 'Record transactions to generate trial balance.',
+            child: Column(
+              children: state.trialBalanceRows
+                  .take(8)
+                  .map((row) => _TrialBalanceTile(row: row))
+                  .toList(growable: false),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _MiniReportCard(
+            title: 'Cash Book',
+            subtitle: 'Cash in hand movement from receipts and payments.',
+            emptyTitle: 'No cash entries yet',
+            emptySubtitle: 'Cash transactions will appear here.',
+            child: Column(
+              children: state.cashBookRows
+                  .take(6)
+                  .map((row) => _LedgerStatementTile(row: row))
+                  .toList(growable: false),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _MiniReportCard(
+            title: 'Bank Book',
+            subtitle: 'Bank-account movement across configured accounts.',
+            emptyTitle: 'No bank entries yet',
+            emptySubtitle: 'Bank transactions will appear here.',
+            child: Column(
+              children: state.bankBookRows
+                  .take(6)
+                  .map((row) => _LedgerStatementTile(row: row))
+                  .toList(growable: false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniReportCard extends StatelessWidget {
+  const _MiniReportCard({
+    required this.title,
+    required this.subtitle,
+    required this.emptyTitle,
+    required this.emptySubtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final String emptyTitle;
+  final String emptySubtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEmpty = child is Column && (child as Column).children.isEmpty;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isEmpty)
+            _FinanceEmptyState(title: emptyTitle, subtitle: emptySubtitle)
+          else
+            child,
+        ],
+      ),
+    );
+  }
+}
+
+class _TrialBalanceTile extends StatelessWidget {
+  const _TrialBalanceTile({required this.row});
+
+  final TrialBalanceRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row.ledgerName,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  row.ledgerGroup,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'Dr ${_currency(row.debit)}',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: const Color(0xFF28A26A),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Cr ${_currency(row.credit)}',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: const Color(0xFFD66C4A),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LedgerStatementTile extends StatelessWidget {
+  const _LedgerStatementTile({required this.row});
+
+  final LedgerStatementRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_shortDate(row.transaction.transactionDate)} • '
+                  '${row.transaction.title}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  '${row.ledgerName} • Balance ${_currency(row.runningBalance)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            row.debit > 0
+                ? 'Dr ${_currency(row.debit)}'
+                : 'Cr ${_currency(row.credit)}',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: row.debit > 0
+                  ? const Color(0xFF28A26A)
+                  : const Color(0xFFD66C4A),
             ),
           ),
         ],
@@ -996,8 +1615,8 @@ class _DashboardSectionCard extends StatelessWidget {
   }
 }
 
-class _CategoryDashboardTile extends StatelessWidget {
-  const _CategoryDashboardTile({required this.summary});
+class _LedgerDashboardTile extends StatelessWidget {
+  const _LedgerDashboardTile({required this.summary});
 
   final FinancialCategorySummary summary;
 
@@ -1349,6 +1968,67 @@ class _TrendMetricPill extends StatelessWidget {
   }
 }
 
+class _DebitCreditPreview extends StatelessWidget {
+  const _DebitCreditPreview({
+    required this.debitLedger,
+    required this.creditLedger,
+    required this.voucherType,
+  });
+
+  final String debitLedger;
+  final String creditLedger;
+  final ChurchVoucherType voucherType;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${voucherType.label} voucher',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Debit: $debitLedger',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Credit: $creditLedger',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'We post this automatically. No accounting knowledge needed.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TransactionListPerformanceHint extends StatelessWidget {
   const _TransactionListPerformanceHint({
     required this.totalTransactions,
@@ -1473,7 +2153,7 @@ class _TransactionListCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.description.trim().isEmpty
-                          ? '${item.category} • ${item.paymentMethod}'
+                          ? '${item.ledgerName} • ${item.paymentMethod}'
                           : item.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -1492,7 +2172,7 @@ class _TransactionListCard extends StatelessWidget {
                         _TypePill(type: item.type),
                         _StatusPill(status: item.status),
                         _MetaPill(label: _date(item.transactionDate)),
-                        _MetaPill(label: item.category),
+                        _MetaPill(label: item.ledgerName),
                       ],
                     ),
                   ],
@@ -1685,16 +2365,520 @@ class _FinanceEmptyState extends StatelessWidget {
   }
 }
 
+class _TransactionTypePickerSheet extends StatelessWidget {
+  const _TransactionTypePickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'What are we recording?',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use plain choices. We will create the debit and credit entry.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: 18),
+            _TransactionTypeOption(
+              icon: Icons.arrow_downward_rounded,
+              title: 'Money received',
+              subtitle: 'Receipt voucher: cash/bank Dr, income ledger Cr',
+              color: const Color(0xFF28A26A),
+              onTap: () => Navigator.of(context).pop(
+                ChurchTransactionType.income,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _TransactionTypeOption(
+              icon: Icons.arrow_upward_rounded,
+              title: 'Money paid',
+              subtitle: 'Payment voucher: expense ledger Dr, cash/bank Cr',
+              color: const Color(0xFFD66C4A),
+              onTap: () => Navigator.of(context).pop(
+                ChurchTransactionType.expense,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionTypeOption extends StatelessWidget {
+  const _TransactionTypeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: carouselBoxDecoration(context),
+          child: Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: color),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FinanceConfigSheet extends StatefulWidget {
+  const _FinanceConfigSheet({required this.config});
+
+  final FinanceConfig config;
+
+  @override
+  State<_FinanceConfigSheet> createState() => _FinanceConfigSheetState();
+}
+
+class _FinanceConfigSheetState extends State<_FinanceConfigSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _trustNameController;
+  late final TextEditingController _registrationController;
+  late final TextEditingController _panController;
+  late final TextEditingController _mainAccountController;
+  late final TextEditingController _branchController;
+  late final TextEditingController _yearController;
+
+  @override
+  void initState() {
+    super.initState();
+    final config = widget.config;
+    _trustNameController = TextEditingController(text: config.trustName);
+    _registrationController =
+        TextEditingController(text: config.registrationNumber);
+    _panController = TextEditingController(text: config.panNumber);
+    _mainAccountController =
+        TextEditingController(text: config.mainBankAccountNumber);
+    _branchController = TextEditingController(text: config.bankBranchDetails);
+    _yearController = TextEditingController(text: config.currentFinancialYear);
+  }
+
+  @override
+  void dispose() {
+    _trustNameController.dispose();
+    _registrationController.dispose();
+    _panController.dispose();
+    _mainAccountController.dispose();
+    _branchController.dispose();
+    _yearController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 18, 20, bottomInset + 24),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                AppTextField(
+                  controller: _trustNameController,
+                  label: 'Trust / Account Name',
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _registrationController,
+                  label: 'Trust Registration Number',
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _panController,
+                  label: 'Trust PAN Number',
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _mainAccountController,
+                  label: 'Main Bank Account Number',
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _branchController,
+                  label: 'Bank Branch Details',
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _yearController,
+                  label: 'Current Financial Year',
+                  hintText: '2025-2026',
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _submit,
+                    child: const Text('Save Config'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(
+      FinanceConfig(
+        trustName: _trustNameController.text.trim(),
+        registrationNumber: _registrationController.text.trim(),
+        panNumber: _panController.text.trim(),
+        mainBankAccountNumber: _mainAccountController.text.trim(),
+        bankBranchDetails: _branchController.text.trim(),
+        currentFinancialYear: _yearController.text.trim(),
+      ),
+    );
+  }
+}
+
+class _BankAccountSheet extends StatefulWidget {
+  const _BankAccountSheet();
+
+  @override
+  State<_BankAccountSheet> createState() => _BankAccountSheetState();
+}
+
+class _BankAccountSheetState extends State<_BankAccountSheet> {
+  final _nameController = TextEditingController();
+  final _numberController = TextEditingController();
+  final _branchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _numberController.dispose();
+    _branchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 18, 20, bottomInset + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(
+              controller: _nameController,
+              label: 'Bank Account Name',
+            ),
+            const SizedBox(height: 12),
+            AppTextField(
+              controller: _numberController,
+              label: 'Account Number',
+            ),
+            const SizedBox(height: 12),
+            AppTextField(
+              controller: _branchController,
+              label: 'Branch Details',
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text('Save Bank'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(
+      FinanceBankAccount(
+        id: _slug(name),
+        accountName: name,
+        accountNumber: _numberController.text.trim(),
+        branchDetails: _branchController.text.trim(),
+        isPrimary: false,
+      ),
+    );
+  }
+}
+
+class _LedgerSheet extends StatefulWidget {
+  const _LedgerSheet();
+
+  @override
+  State<_LedgerSheet> createState() => _LedgerSheetState();
+}
+
+class _LedgerSheetState extends State<_LedgerSheet> {
+  final _nameController = TextEditingController();
+  String _selectedGroup = financeLedgerGroups.first;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 18, 20, bottomInset + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(
+              controller: _nameController,
+              label: 'Ledger Name',
+            ),
+            const SizedBox(height: 12),
+            AppDropdownField<String>(
+              labelText: 'Ledger Group',
+              initialValue: _selectedGroup,
+              items: financeLedgerGroups
+                  .map(
+                    (group) => DropdownMenuItem<String>(
+                      value: group,
+                      child: Text(group),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _selectedGroup = value);
+              },
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text('Save Ledger'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(
+      FinanceLedger(
+        id: _slug(name),
+        name: name,
+        group: _selectedGroup,
+      ),
+    );
+  }
+}
+
+class _MemberPartyPickerSheet extends StatefulWidget {
+  const _MemberPartyPickerSheet({required this.repository});
+
+  final MembersRepository repository;
+
+  @override
+  State<_MemberPartyPickerSheet> createState() =>
+      _MemberPartyPickerSheetState();
+}
+
+class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
+  final _queryController = TextEditingController();
+  final List<AppUser> _members = <AppUser>[];
+  DocumentSnapshot<AppUser>? _lastDocument;
+  bool _isLoading = false;
+  bool _hasMore = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMembers(reset: true);
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        child: Column(
+          children: [
+            AppTextField(
+              variant: AppTextFieldVariant.search,
+              controller: _queryController,
+              onChanged: (_) => _loadMembers(reset: true),
+              decoration: InputDecoration(
+                hintText: 'Search members',
+                prefixIcon: const Icon(Icons.search_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.primary.withValues(alpha: 0.06),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: _isLoading && _members.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: _members.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= _members.length) {
+                          return Center(
+                            child: TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _loadMembers(reset: false),
+                              child: Text(_isLoading
+                                  ? 'Loading...'
+                                  : 'Load more members'),
+                            ),
+                          );
+                        }
+                        final member = _members[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.primary
+                                .withValues(alpha: 0.12),
+                            child: Icon(
+                              Icons.person_outline_rounded,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          title: Text(member.name),
+                          subtitle: Text(member.email),
+                          onTap: () => Navigator.of(context).pop(member.name),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadMembers({required bool reset}) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final page = await widget.repository.fetchMembersPage(
+        query: _queryController.text,
+        startAfter: reset ? null : _lastDocument,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (reset) _members.clear();
+        _members.addAll(page.members);
+        _lastDocument = page.lastDocument;
+        _hasMore = page.hasMore;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+}
+
 class _TransactionFormSheet extends StatefulWidget {
   const _TransactionFormSheet({
     this.existingItem,
+    required this.initialType,
     required this.initialRecordedBy,
-    required this.categoryOptions,
+    required this.setup,
+    required this.ledgers,
+    required this.onPickPartyName,
   });
 
   final ChurchTransaction? existingItem;
+  final ChurchTransactionType initialType;
   final String initialRecordedBy;
-  final List<String> categoryOptions;
+  final FinanceSetup setup;
+  final List<FinanceLedger> ledgers;
+  final Future<String?> Function(BuildContext context) onPickPartyName;
 
   @override
   State<_TransactionFormSheet> createState() => _TransactionFormSheetState();
@@ -1704,13 +2888,15 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  late final TextEditingController _paymentMethodController;
+  late final TextEditingController _partyNameController;
   late final TextEditingController _referenceController;
   late final TextEditingController _amountController;
-  late final List<String> _categoryOptions;
-  late String _selectedCategory;
+  late final List<FinanceLedger> _ledgerOptions;
+  late FinanceLedger _selectedLedger;
+  late String _selectedPaymentMethod;
   late DateTime _selectedDate;
   late ChurchTransactionType _selectedType;
+  late ChurchVoucherType _selectedVoucherType;
   late ChurchTransactionStatus _selectedStatus;
 
   @override
@@ -1720,22 +2906,25 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
     _titleController = TextEditingController(text: item?.title ?? '');
     _descriptionController =
         TextEditingController(text: item?.description ?? '');
-    _selectedCategory = item?.category.trim().isNotEmpty == true
-        ? item!.category.trim()
-        : 'Tithe';
-    _categoryOptions = _buildCategoryOptions(
-      options: widget.categoryOptions,
-      selectedCategory: _selectedCategory,
+    _partyNameController = TextEditingController(text: item?.partyName ?? '');
+    _ledgerOptions = _buildLedgerOptions(widget.ledgers, item?.ledgerName);
+    _selectedLedger = _ledgerOptions.firstWhere(
+      (ledger) => ledger.name == (item?.ledgerName ?? ''),
+      orElse: () => _ledgerOptions.first,
     );
-    _paymentMethodController =
-        TextEditingController(text: item?.paymentMethod ?? 'Cash');
+    _selectedPaymentMethod =
+        _normalizePaymentMethod(item?.paymentMethod ?? 'Cash', widget.setup);
     _referenceController = TextEditingController(text: item?.reference ?? '');
     _amountController = TextEditingController(
       text:
           item != null && item.amount > 0 ? item.amount.toStringAsFixed(2) : '',
     );
     _selectedDate = item?.transactionDate ?? DateTime.now();
-    _selectedType = item?.type ?? ChurchTransactionType.income;
+    _selectedType = item?.type ?? widget.initialType;
+    _selectedVoucherType = item?.voucherType ??
+        (_selectedType == ChurchTransactionType.income
+            ? ChurchVoucherType.receipt
+            : ChurchVoucherType.payment);
     _selectedStatus = item?.status ?? ChurchTransactionStatus.cleared;
   }
 
@@ -1743,7 +2932,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _paymentMethodController.dispose();
+    _partyNameController.dispose();
     _referenceController.dispose();
     _amountController.dispose();
     super.dispose();
@@ -1761,59 +2950,45 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.existingItem == null
-                      ? 'Add Transaction'
-                      : 'Edit Transaction',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Capture income and expenses clearly so admins can keep church finances accurate.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.72),
-                      ),
-                ),
-                const SizedBox(height: 18),
                 AppTextField(
                   controller: _titleController,
-                  label: 'Title',
-                  hintText: 'Sunday service offering',
+                  label: _selectedVoucherType == ChurchVoucherType.receipt
+                      ? 'Income title'
+                      : 'Expense title',
+                  hintText: _selectedType == ChurchTransactionType.income
+                      ? 'Sunday service offering'
+                      : 'Electricity bill',
                   validator: (value) => value == null || value.trim().isEmpty
                       ? 'Enter a title'
                       : null,
                 ),
                 const SizedBox(height: 12),
-                AppTextField(
-                  controller: _descriptionController,
-                  label: 'Description',
-                  hintText: 'Add optional notes',
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: AppDropdownField<ChurchTransactionType>(
-                        labelText: 'Type',
-                        initialValue: _selectedType,
-                        items: ChurchTransactionType.values
-                            .map(
-                              (value) =>
-                                  DropdownMenuItem<ChurchTransactionType>(
-                                value: value,
-                                child: Text(value.label),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _selectedType = value);
+                      child: AppTextField(
+                        controller: _partyNameController,
+                        label: _selectedType == ChurchTransactionType.expense
+                            ? 'Party Name *'
+                            : 'Party Name',
+                        hintText: 'Member or vendor name',
+                        suffixIcon: IconButton(
+                          tooltip: 'Select member',
+                          onPressed: () async {
+                            final name = await widget.onPickPartyName(context);
+                            if (name == null || name.trim().isEmpty) return;
+                            setState(() {
+                              _partyNameController.text = name.trim();
+                            });
+                          },
+                          icon: const Icon(Icons.person_search_outlined),
+                        ),
+                        validator: (value) {
+                          if (_selectedType == ChurchTransactionType.expense &&
+                              (value == null || value.trim().isEmpty)) {
+                            return 'Party name is required';
+                          }
+                          return null;
                         },
                       ),
                     ),
@@ -1840,13 +3015,38 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                _DebitCreditPreview(
+                  debitLedger: _debitLedgerName(),
+                  creditLedger: _creditLedgerName(),
+                  voucherType: _selectedVoucherType,
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
+                      child: AppDropdownField<FinanceLedger>(
+                        labelText: 'Ledger',
+                        initialValue: _selectedLedger,
+                        items: _ledgerOptions
+                            .map(
+                              (value) => DropdownMenuItem<FinanceLedger>(
+                                value: value,
+                                child: Text('${value.name} • ${value.group}'),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _selectedLedger = value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: AppDropdownField<String>(
-                        labelText: 'Category',
-                        initialValue: _selectedCategory,
-                        items: _categoryOptions
+                        labelText: 'Payment Method',
+                        initialValue: _selectedPaymentMethod,
+                        items: _paymentMethods(widget.setup)
                             .map(
                               (value) => DropdownMenuItem<String>(
                                 value: value,
@@ -1856,20 +3056,8 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                             .toList(growable: false),
                         onChanged: (value) {
                           if (value == null) return;
-                          setState(() => _selectedCategory = value);
+                          setState(() => _selectedPaymentMethod = value);
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppTextField(
-                        controller: _paymentMethodController,
-                        label: 'Payment Method',
-                        hintText: 'Cash / Transfer / POS',
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'Enter a payment method'
-                                : null,
                       ),
                     ),
                   ],
@@ -1915,6 +3103,13 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                   label: 'Reference',
                   hintText: 'Receipt / bank reference / cheque no.',
                 ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _descriptionController,
+                  label: 'Notes',
+                  hintText: 'Optional notes',
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
@@ -1953,8 +3148,22 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
         id: widget.existingItem?.id,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
-        category: _selectedCategory.trim(),
-        paymentMethod: _paymentMethodController.text.trim(),
+        category: _selectedLedger.name.trim(),
+        ledgerId: _selectedLedger.id.trim(),
+        ledgerGroup: _selectedLedger.group.trim(),
+        partyName: _partyNameController.text.trim(),
+        paymentMethod: _selectedPaymentMethod.trim(),
+        bankAccountId: _bankAccountIdForPayment(
+          _selectedPaymentMethod,
+          widget.setup,
+        ),
+        financialYear: widget.setup.config.currentFinancialYear,
+        voucherType: _selectedVoucherType,
+        debitLedgerId: _debitLedgerId(),
+        debitLedgerName: _debitLedgerName(),
+        creditLedgerId: _creditLedgerId(),
+        creditLedgerName: _creditLedgerName(),
+        voucherNumber: widget.existingItem?.voucherNumber ?? '',
         reference: _referenceController.text.trim(),
         recordedBy: widget.initialRecordedBy.trim(),
         amount: double.parse(_amountController.text.trim()),
@@ -1964,6 +3173,47 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
       ),
     );
   }
+
+  String _paymentLedgerName() {
+    return _selectedPaymentMethod.trim().isEmpty
+        ? 'Cash'
+        : _selectedPaymentMethod.trim();
+  }
+
+  String _paymentLedgerId() {
+    final bankId =
+        _bankAccountIdForPayment(_selectedPaymentMethod, widget.setup);
+    if (bankId.isNotEmpty) return bankId;
+    return 'cash';
+  }
+
+  String _debitLedgerName() {
+    if (_selectedVoucherType == ChurchVoucherType.receipt) {
+      return _paymentLedgerName();
+    }
+    return _selectedLedger.name;
+  }
+
+  String _creditLedgerName() {
+    if (_selectedVoucherType == ChurchVoucherType.receipt) {
+      return _selectedLedger.name;
+    }
+    return _paymentLedgerName();
+  }
+
+  String _debitLedgerId() {
+    if (_selectedVoucherType == ChurchVoucherType.receipt) {
+      return _paymentLedgerId();
+    }
+    return _selectedLedger.id;
+  }
+
+  String _creditLedgerId() {
+    if (_selectedVoucherType == ChurchVoucherType.receipt) {
+      return _selectedLedger.id;
+    }
+    return _paymentLedgerId();
+  }
 }
 
 String _currency(double value) {
@@ -1972,6 +3222,22 @@ String _currency(double value) {
 
 String _date(DateTime value) {
   return DateFormat('MMMM d, y').format(value);
+}
+
+String _shortDate(DateTime value) {
+  return DateFormat('MMM d, y').format(value);
+}
+
+String _slug(String value) {
+  final normalized = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-|-$'), '');
+  if (normalized.isEmpty) {
+    return DateTime.now().millisecondsSinceEpoch.toString();
+  }
+  return normalized;
 }
 
 String _sortLabel(TransactionSortOption value) {
@@ -1987,20 +3253,53 @@ String _sortLabel(TransactionSortOption value) {
   }
 }
 
-List<String> _buildCategoryOptions({
-  required List<String> options,
-  required String selectedCategory,
-}) {
-  final values = <String>{
-    ...options
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty && item != 'All categories'),
-    if (selectedCategory.trim().isNotEmpty) selectedCategory.trim(),
-  }.toList()
-    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+List<FinanceLedger> _buildLedgerOptions(
+  List<FinanceLedger> ledgers,
+  String? selectedLedger,
+) {
+  final byName = <String, FinanceLedger>{};
+  for (final ledger in defaultFinanceLedgers) {
+    byName[ledger.name.toLowerCase()] = ledger;
+  }
+  for (final ledger in ledgers) {
+    if (ledger.name.trim().isEmpty) continue;
+    byName[ledger.name.toLowerCase()] = ledger;
+  }
+  if (selectedLedger != null && selectedLedger.trim().isNotEmpty) {
+    byName.putIfAbsent(
+      selectedLedger.trim().toLowerCase(),
+      () => FinanceLedger(
+        id: selectedLedger.trim().toLowerCase(),
+        name: selectedLedger.trim(),
+        group: 'Indirect Income',
+      ),
+    );
+  }
+  return byName.values.toList(growable: false)
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+}
 
-  if (values.isEmpty) return const <String>['Tithe'];
-  return values;
+List<String> _paymentMethods(FinanceSetup setup) {
+  return <String>{
+    'Cash',
+    ...setup.banks
+        .map((bank) => bank.accountName.trim())
+        .where((name) => name.isNotEmpty),
+  }.toList(growable: false);
+}
+
+String _normalizePaymentMethod(String value, FinanceSetup setup) {
+  final options = _paymentMethods(setup);
+  final normalized = value.trim();
+  if (options.contains(normalized)) return normalized;
+  return 'Cash';
+}
+
+String _bankAccountIdForPayment(String paymentMethod, FinanceSetup setup) {
+  for (final bank in setup.banks) {
+    if (bank.accountName.trim() == paymentMethod.trim()) return bank.id;
+  }
+  return '';
 }
 
 Color _typeColor(ChurchTransactionType type) {

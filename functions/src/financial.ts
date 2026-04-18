@@ -17,6 +17,18 @@ type FinancialTransactionResponse = {
   title: string;
   description: string;
   category: string;
+  ledgerName: string;
+  ledgerId: string;
+  ledgerGroup: string;
+  partyName: string;
+  bankAccountId: string;
+  financialYear: string;
+  voucherType: string;
+  debitLedgerId: string;
+  debitLedgerName: string;
+  creditLedgerId: string;
+  creditLedgerName: string;
+  voucherNumber: string;
   paymentMethod: string;
   reference: string;
   recordedBy: string;
@@ -27,6 +39,158 @@ type FinancialTransactionResponse = {
   createdAtMillis: number | null;
   updatedAtMillis: number | null;
 };
+
+type FinancialSetupResponse = {
+  config: Record<string, unknown>;
+  banks: Record<string, unknown>[];
+  ledgers: Record<string, unknown>[];
+};
+
+export const getFinancialSetup = onCall(
+  {
+    region: "us-central1",
+    secrets: [financialMasterKey],
+  },
+  async (request): Promise<FinancialSetupResponse> => {
+    const churchId = readUnknownString(request.data?.churchId);
+    const email = normalizeEmail(request.auth?.token.email ?? "");
+    const uid = readUnknownString(request.auth?.uid);
+    ensureAuthenticated(email);
+    await ensureFinanceGroupMember(churchId, uid, email);
+
+    const firestore = admin.firestore();
+    const churchRef = firestore.collection("churches").doc(churchId);
+    const [configDoc, banksSnapshot, ledgersSnapshot] = await Promise.all([
+      churchRef.collection("finance_config").doc("main").get(),
+      churchRef.collection("banks").get(),
+      churchRef.collection("ledgers").get(),
+    ]);
+
+    const config = configDoc.exists ?
+      decodeOptionalFinancialPayload(
+        configDoc.data(),
+        financialMasterKey.value(),
+      ) :
+      {};
+    const banks = await Promise.all(banksSnapshot.docs.map(async (doc) => ({
+      id: doc.id,
+      ...decodeOptionalFinancialPayload(doc.data(), financialMasterKey.value()),
+    })));
+    const ledgers = await Promise.all(ledgersSnapshot.docs.map(async (doc) => ({
+      id: doc.id,
+      ...decodeOptionalFinancialPayload(doc.data(), financialMasterKey.value()),
+    })));
+
+    return {config, banks, ledgers};
+  },
+);
+
+export const saveFinancialConfig = onCall(
+  {
+    region: "us-central1",
+    secrets: [financialMasterKey],
+  },
+  async (request) => {
+    const churchId = readUnknownString(request.data?.churchId);
+    const email = normalizeEmail(request.auth?.token.email ?? "");
+    const uid = readUnknownString(request.auth?.uid);
+    ensureAuthenticated(email);
+    await ensureFinanceGroupMember(churchId, uid, email);
+
+    const config = normalizeFinancialConfigInput(request.data?.config);
+    await admin.firestore()
+      .collection("churches")
+      .doc(churchId)
+      .collection("finance_config")
+      .doc("main")
+      .set(encryptedWriteData(config), {merge: true});
+
+    return {success: true};
+  },
+);
+
+export const upsertFinancialBank = onCall(
+  {
+    region: "us-central1",
+    secrets: [financialMasterKey],
+  },
+  async (request) => {
+    const churchId = readUnknownString(request.data?.churchId);
+    const bankId = sanitizeDocumentId(request.data?.bankId);
+    const email = normalizeEmail(request.auth?.token.email ?? "");
+    const uid = readUnknownString(request.auth?.uid);
+    ensureAuthenticated(email);
+    await ensureFinanceGroupMember(churchId, uid, email);
+
+    const bank = normalizeFinancialBankInput(request.data?.bank);
+    const docId = bankId.length > 0 ?
+      bankId :
+      sanitizeDocumentId(bank["accountName"]);
+    await admin.firestore()
+      .collection("churches")
+      .doc(churchId)
+      .collection("banks")
+      .doc(docId)
+      .set(encryptedWriteData(bank), {merge: true});
+
+    return {id: docId};
+  },
+);
+
+export const deleteFinancialBank = onCall(
+  {
+    region: "us-central1",
+  },
+  async (request) => {
+    const churchId = readUnknownString(request.data?.churchId);
+    const bankId = sanitizeDocumentId(request.data?.bankId);
+    const email = normalizeEmail(request.auth?.token.email ?? "");
+    const uid = readUnknownString(request.auth?.uid);
+    ensureAuthenticated(email);
+    await ensureFinanceGroupMember(churchId, uid, email);
+
+    if (bankId.length === 0) {
+      throw new HttpsError("invalid-argument", "Missing bank id.");
+    }
+
+    await admin.firestore()
+      .collection("churches")
+      .doc(churchId)
+      .collection("banks")
+      .doc(bankId)
+      .delete();
+
+    return {success: true};
+  },
+);
+
+export const upsertFinancialLedger = onCall(
+  {
+    region: "us-central1",
+    secrets: [financialMasterKey],
+  },
+  async (request) => {
+    const churchId = readUnknownString(request.data?.churchId);
+    const ledgerId = sanitizeDocumentId(request.data?.ledgerId);
+    const email = normalizeEmail(request.auth?.token.email ?? "");
+    const uid = readUnknownString(request.auth?.uid);
+    ensureAuthenticated(email);
+    await ensureFinanceGroupMember(churchId, uid, email);
+
+    const ledger = normalizeFinancialLedgerInput(request.data?.ledger);
+    const docId = ledgerId.length > 0 ?
+      ledgerId :
+      sanitizeDocumentId(ledger["name"]);
+    await admin.firestore()
+      .collection("churches")
+      .doc(churchId)
+      .collection("ledgers")
+      .doc(docId)
+      .set(encryptedWriteData(ledger), {merge: true});
+
+    return {id: docId};
+  },
+);
 
 export const getFinancialTransactions = onCall(
   {
@@ -95,6 +259,18 @@ export const upsertFinancialTransaction = onCall(
       title: admin.firestore.FieldValue.delete(),
       description: admin.firestore.FieldValue.delete(),
       category: admin.firestore.FieldValue.delete(),
+      ledgerName: admin.firestore.FieldValue.delete(),
+      ledgerId: admin.firestore.FieldValue.delete(),
+      ledgerGroup: admin.firestore.FieldValue.delete(),
+      partyName: admin.firestore.FieldValue.delete(),
+      bankAccountId: admin.firestore.FieldValue.delete(),
+      financialYear: admin.firestore.FieldValue.delete(),
+      voucherType: admin.firestore.FieldValue.delete(),
+      debitLedgerId: admin.firestore.FieldValue.delete(),
+      debitLedgerName: admin.firestore.FieldValue.delete(),
+      creditLedgerId: admin.firestore.FieldValue.delete(),
+      creditLedgerName: admin.firestore.FieldValue.delete(),
+      voucherNumber: admin.firestore.FieldValue.delete(),
       paymentMethod: admin.firestore.FieldValue.delete(),
       reference: admin.firestore.FieldValue.delete(),
       recordedBy: admin.firestore.FieldValue.delete(),
@@ -194,7 +370,9 @@ function normalizeFinancialTransactionInput(
 ): Record<string, unknown> {
   const raw = value as Record<string, unknown> | undefined;
   const title = readUnknownString(raw?.title);
-  const category = readUnknownString(raw?.category);
+  const category = readUnknownString(raw?.ledgerName).length > 0 ?
+    readUnknownString(raw?.ledgerName) :
+    readUnknownString(raw?.category);
   const paymentMethod = readUnknownString(raw?.paymentMethod);
   const type = readUnknownString(raw?.type).toLowerCase();
   const status = readUnknownString(raw?.status).toLowerCase();
@@ -236,6 +414,18 @@ function normalizeFinancialTransactionInput(
     title,
     description: readUnknownString(raw?.description),
     category,
+    ledgerName: category,
+    ledgerId: readUnknownString(raw?.ledgerId),
+    ledgerGroup: readUnknownString(raw?.ledgerGroup),
+    partyName: readUnknownString(raw?.partyName),
+    bankAccountId: readUnknownString(raw?.bankAccountId),
+    financialYear: readUnknownString(raw?.financialYear),
+    voucherType: readUnknownString(raw?.voucherType),
+    debitLedgerId: readUnknownString(raw?.debitLedgerId),
+    debitLedgerName: readUnknownString(raw?.debitLedgerName),
+    creditLedgerId: readUnknownString(raw?.creditLedgerId),
+    creditLedgerName: readUnknownString(raw?.creditLedgerName),
+    voucherNumber: readUnknownString(raw?.voucherNumber),
     paymentMethod,
     reference: readUnknownString(raw?.reference),
     recordedBy: readUnknownString(raw?.recordedBy),
@@ -292,6 +482,18 @@ function buildFinancialTransactionResponse(
     title: readUnknownString(payload.title),
     description: readUnknownString(payload.description),
     category: readUnknownString(payload.category),
+    ledgerName: readUnknownString(payload.ledgerName),
+    ledgerId: readUnknownString(payload.ledgerId),
+    ledgerGroup: readUnknownString(payload.ledgerGroup),
+    partyName: readUnknownString(payload.partyName),
+    bankAccountId: readUnknownString(payload.bankAccountId),
+    financialYear: readUnknownString(payload.financialYear),
+    voucherType: readUnknownString(payload.voucherType),
+    debitLedgerId: readUnknownString(payload.debitLedgerId),
+    debitLedgerName: readUnknownString(payload.debitLedgerName),
+    creditLedgerId: readUnknownString(payload.creditLedgerId),
+    creditLedgerName: readUnknownString(payload.creditLedgerName),
+    voucherNumber: readUnknownString(payload.voucherNumber),
     paymentMethod: readUnknownString(payload.paymentMethod),
     reference: readUnknownString(payload.reference),
     recordedBy: readUnknownString(payload.recordedBy),
@@ -312,6 +514,18 @@ function normalizeLegacyFinancialPayload(
     title: readUnknownString(data.title),
     description: readUnknownString(data.description),
     category: readUnknownString(data.category),
+    ledgerName: readUnknownString(data.ledgerName),
+    ledgerId: readUnknownString(data.ledgerId),
+    ledgerGroup: readUnknownString(data.ledgerGroup),
+    partyName: readUnknownString(data.partyName),
+    bankAccountId: readUnknownString(data.bankAccountId),
+    financialYear: readUnknownString(data.financialYear),
+    voucherType: readUnknownString(data.voucherType),
+    debitLedgerId: readUnknownString(data.debitLedgerId),
+    debitLedgerName: readUnknownString(data.debitLedgerName),
+    creditLedgerId: readUnknownString(data.creditLedgerId),
+    creditLedgerName: readUnknownString(data.creditLedgerName),
+    voucherNumber: readUnknownString(data.voucherNumber),
     paymentMethod: readUnknownString(data.paymentMethod),
     reference: readUnknownString(data.reference),
     recordedBy: readUnknownString(data.recordedBy),
@@ -344,6 +558,18 @@ async function migrateLegacyFinancialTransaction(
     title: admin.firestore.FieldValue.delete(),
     description: admin.firestore.FieldValue.delete(),
     category: admin.firestore.FieldValue.delete(),
+    ledgerName: admin.firestore.FieldValue.delete(),
+    ledgerId: admin.firestore.FieldValue.delete(),
+    ledgerGroup: admin.firestore.FieldValue.delete(),
+    partyName: admin.firestore.FieldValue.delete(),
+    bankAccountId: admin.firestore.FieldValue.delete(),
+    financialYear: admin.firestore.FieldValue.delete(),
+    voucherType: admin.firestore.FieldValue.delete(),
+    debitLedgerId: admin.firestore.FieldValue.delete(),
+    debitLedgerName: admin.firestore.FieldValue.delete(),
+    creditLedgerId: admin.firestore.FieldValue.delete(),
+    creditLedgerName: admin.firestore.FieldValue.delete(),
+    voucherNumber: admin.firestore.FieldValue.delete(),
     paymentMethod: admin.firestore.FieldValue.delete(),
     reference: admin.firestore.FieldValue.delete(),
     recordedBy: admin.firestore.FieldValue.delete(),
@@ -352,6 +578,78 @@ async function migrateLegacyFinancialTransaction(
     status: admin.firestore.FieldValue.delete(),
     transactionDate: admin.firestore.FieldValue.delete(),
   }, {merge: true});
+}
+
+function normalizeFinancialConfigInput(
+  value: unknown,
+): Record<string, unknown> {
+  const raw = value as Record<string, unknown> | undefined;
+  return {
+    trustName: readUnknownString(raw?.trustName),
+    registrationNumber: readUnknownString(raw?.registrationNumber),
+    panNumber: readUnknownString(raw?.panNumber),
+    mainBankAccountNumber: readUnknownString(raw?.mainBankAccountNumber),
+    bankBranchDetails: readUnknownString(raw?.bankBranchDetails),
+    currentFinancialYear: readUnknownString(raw?.currentFinancialYear),
+  };
+}
+
+function normalizeFinancialBankInput(value: unknown): Record<string, unknown> {
+  const raw = value as Record<string, unknown> | undefined;
+  const accountName = readUnknownString(raw?.accountName);
+  if (accountName.length === 0) {
+    throw new HttpsError("invalid-argument", "Bank account name is required.");
+  }
+  return {
+    accountName,
+    accountNumber: readUnknownString(raw?.accountNumber),
+    branchDetails: readUnknownString(raw?.branchDetails),
+    isPrimary: raw?.isPrimary === true,
+  };
+}
+
+function normalizeFinancialLedgerInput(
+  value: unknown,
+): Record<string, unknown> {
+  const raw = value as Record<string, unknown> | undefined;
+  const name = readUnknownString(raw?.name);
+  if (name.length === 0) {
+    throw new HttpsError("invalid-argument", "Ledger name is required.");
+  }
+  return {
+    name,
+    group: readUnknownString(raw?.group),
+    isSystem: raw?.isSystem === true,
+  };
+}
+
+function encryptedWriteData(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    payload: encryptFinancialPayload(payload, financialMasterKey.value()),
+    encryption: "aes-256-gcm",
+    schemaVersion: 1,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+}
+
+function decodeOptionalFinancialPayload(
+  data: Record<string, unknown> | undefined,
+  secret: string,
+): Record<string, unknown> {
+  if (!data) return {};
+  if (isEncryptedPayload(data.payload)) {
+    return decryptFinancialPayload(data.payload, secret);
+  }
+  return data;
+}
+
+function sanitizeDocumentId(value: unknown): string {
+  return readUnknownString(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function isEncryptedPayload(value: unknown): value is Record<string, unknown> {
