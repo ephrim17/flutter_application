@@ -170,13 +170,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
           icon: const Icon(Icons.close_rounded),
         ),
         title: const Text('Verse Story Editor'),
-        actions: [
-          IconButton(
-            tooltip: context.t('common.download', fallback: 'Download'),
-            onPressed: _isDownloading ? null : downloadImage,
-            icon: const Icon(Icons.download_rounded),
-          ),
-        ],
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -186,7 +179,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 : MediaQuery.of(context).size.height;
             final panelHeight = screenHeight * _editorPanelFraction;
             final bottomReserve =
-                (_editorPanelVisible ? panelHeight : 54.0) + 80.0;
+                _editorPanelVisible ? panelHeight + 24.0 : 54.0 + 80.0;
             final previewHeight =
                 math.max(240.0, screenHeight - bottomReserve - 18.0);
 
@@ -206,7 +199,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   curve: Curves.easeOutCubic,
                   left: 0,
                   right: 0,
-                  bottom: _editorPanelVisible ? 76 : -panelHeight,
+                  bottom: _editorPanelVisible ? 12 : -panelHeight,
                   child: _buildInlineEditorPanel(
                     height: panelHeight,
                     screenHeight: screenHeight,
@@ -220,21 +213,22 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   bottom: _editorPanelVisible ? -68 : 76,
                   child: _buildCollapsedEditorButton(),
                 ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 12,
-                  child: ElevatedButton.icon(
-                    onPressed: _isDownloading ? null : downloadImage,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 56),
-                    ),
-                    icon: const Icon(Icons.download_rounded),
-                    label: Text(
-                      context.t('common.download', fallback: 'Download'),
+                if (!_editorPanelVisible)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                    child: ElevatedButton.icon(
+                      onPressed: _isDownloading ? null : downloadImage,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 56),
+                      ),
+                      icon: const Icon(Icons.download_rounded),
+                      label: Text(
+                        context.t('common.download', fallback: 'Download'),
+                      ),
                     ),
                   ),
-                ),
               ],
             );
           },
