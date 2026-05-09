@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
@@ -17,9 +18,10 @@ class ForYouScreen extends ConsumerWidget {
     final sectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
 
     return sectionConfigsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Center(
-        child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+        child:
+            Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
       ),
       data: (configs) {
         final registry = ForYouSectionRegistry.all();
@@ -36,7 +38,7 @@ class ForYouScreen extends ConsumerWidget {
 
         final slivers = <Widget>[];
 
-          for (final ordered in activeSections) {
+        for (final ordered in activeSections) {
           final spacing = spacingForOrder(ordered.order);
 
           // 🔹 Add spacing BEFORE section if needed
@@ -53,9 +55,7 @@ class ForYouScreen extends ConsumerWidget {
           );
         }
 
-        return CustomScrollView(
-            slivers: slivers
-        );
+        return CustomScrollView(slivers: slivers);
       },
     );
   }

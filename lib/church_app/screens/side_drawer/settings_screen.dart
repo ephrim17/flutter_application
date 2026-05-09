@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
@@ -129,7 +130,7 @@ class _SettingsHeroCard extends StatelessWidget {
       child: userAsync.when(
         loading: () => const SizedBox(
           height: 112,
-          child: Center(child: CircularProgressIndicator()),
+          child: Center(child: AppLoadingIndicator()),
         ),
         error: (_, __) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,6 +538,9 @@ class _AppearanceSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final systemBrightness = MediaQuery.platformBrightnessOf(context);
+    final isDarkModeEnabled = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system && systemBrightness == Brightness.dark);
 
     return _SettingsTile(
       icon: Icons.dark_mode_outlined,
@@ -546,7 +550,7 @@ class _AppearanceSection extends ConsumerWidget {
         fallback: 'Switch between a lighter and darker app appearance.',
       ),
       trailing: Switch(
-        value: themeMode == ThemeMode.dark,
+        value: isDarkModeEnabled,
         onChanged: (value) {
           ref.read(themeProvider.notifier).toggle(value);
         },

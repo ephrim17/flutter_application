@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -55,7 +56,8 @@ List<Widget> buildContacts(
 }
 
 Future<void> onContactTap(BuildContext context, ContactItem contact) async {
-  final raw = (contact.action.isNotEmpty ? contact.action : contact.label).trim();
+  final raw =
+      (contact.action.isNotEmpty ? contact.action : contact.label).trim();
   if (raw.isEmpty) return;
 
   final uri = buildContactUri(contact.type, raw);
@@ -113,7 +115,7 @@ class FooterContactsWidget extends ConsumerWidget {
         ),
         Row(
           children: contactsAsync.when(
-            loading: () => const [CircularProgressIndicator()],
+            loading: () => const [AppLoadingIndicator(size: 64)],
             error: (e, _) => [
               Text(
                 '${context.t('common.error_prefix', fallback: 'Error')}: $e',

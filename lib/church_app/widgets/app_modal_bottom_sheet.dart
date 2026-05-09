@@ -39,39 +39,53 @@ Future<T?> showAppModalBottomSheet<T>({
     anchorPoint: anchorPoint,
     useSafeArea: useSafeArea ?? false,
     builder: (context) {
+      final theme = Theme.of(context);
+      final bottomSheetTheme = theme.bottomSheetTheme;
+      final effectiveHandleLaneColor = backgroundColor == Colors.transparent
+          ? theme.scaffoldBackgroundColor
+          : backgroundColor ??
+              bottomSheetTheme.modalBackgroundColor ??
+              bottomSheetTheme.backgroundColor ??
+              theme.colorScheme.surface;
       final child = _unwrapExistingFractionalSheet(builder(context));
       final shouldShowGrabHandle = showDragHandle ?? true;
       final handleLaneHeight = shouldShowGrabHandle ? 36.0 : 0.0;
       return FractionallySizedBox(
         heightFactor: heightFactor,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              top: handleLaneHeight,
-              child: child,
-            ),
-            if (shouldShowGrabHandle)
-              Positioned(
-                top: 12,
-                left: 0,
-                right: 0,
-                child: IgnorePointer(
-                  child: Center(
-                    child: Container(
-                      width: 56,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.72),
-                        borderRadius: BorderRadius.circular(999),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(28),
+          ),
+          child: ColoredBox(
+            color: effectiveHandleLaneColor,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  top: handleLaneHeight,
+                  child: child,
+                ),
+                if (shouldShowGrabHandle)
+                  Positioned(
+                    top: 12,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      child: Center(
+                        child: Container(
+                          width: 56,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       );
     },

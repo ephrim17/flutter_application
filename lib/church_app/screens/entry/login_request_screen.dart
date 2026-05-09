@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -372,8 +373,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
               fallback: 'Name must be at least 3 characters',
             );
           }
-          final phoneRegex = RegExp(r'^[6-9]\d{9}$');
-          if (!phoneRegex.hasMatch(contact)) {
+          if (!InputValidators.isValidIndianPhone(contact)) {
             return context.t(
               'auth.phone_invalid',
               fallback: 'Enter a valid 10-digit phone number',
@@ -473,8 +473,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             fallback: 'Name must be at least 3 characters',
           );
         }
-        final phoneRegex = RegExp(r'^[6-9]\d{9}$');
-        if (!phoneRegex.hasMatch(phone)) {
+        if (!InputValidators.isValidIndianPhone(phone)) {
           return context.t(
             'auth.phone_invalid',
             fallback: 'Enter a valid 10-digit phone number',
@@ -653,6 +652,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             'member_id': widget.existingMember?.uid ?? widget.targetUid,
           },
         );
+        if (!mounted) return;
         Navigator.of(context).pop();
         return;
       }
@@ -685,6 +685,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             registrationSource: 'super_admin',
           );
           ref.invalidate(currentChurchIdProvider);
+          if (!mounted) return;
           unawaited(
             syncNotificationTopicIfAuthorized(
               ProviderScope.containerOf(context, listen: false),
@@ -812,13 +813,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       );
       ref.invalidate(currentChurchIdProvider);
       ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;
+      if (!mounted) return;
       unawaited(
         syncNotificationTopicIfAuthorized(
           ProviderScope.containerOf(context, listen: false),
         ),
       );
 
-      if (!mounted) return;
       final createdUser = AppUser(
         uid: firebaseUser!.uid,
         name: _nameController.text.trim(),

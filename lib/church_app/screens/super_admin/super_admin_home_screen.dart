@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/screens/super_admin/create_church
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
@@ -167,9 +168,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
             children: [
               Expanded(
                 child: churchesAsync.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  loading: () => const Center(child: AppLoadingIndicator()),
                   error: (error, _) => Center(
                     child: Text(
                       '${context.t('common.error_prefix', fallback: 'Error')}: $error',

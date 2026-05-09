@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
@@ -22,13 +23,13 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
         ),
       ),
       body: versesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoadingIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
         data: (verses) {
           final highlights = ref.watch(favoritesProvider).maybeWhen(
-            data: (h) => h,
-            orElse: () => [],
-          );
+                data: (h) => h,
+                orElse: () => [],
+              );
           return PageView.builder(
             scrollDirection: Axis.vertical,
             itemCount: verses.length,
@@ -38,10 +39,12 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
               // Parse reference: e.g. "Genesis 1:1"
               final parts = reference.split(' ');
               final book = parts.first;
-              final chapterVerse = parts.length > 1 ? parts.last.split(':') : ['1', '1'];
+              final chapterVerse =
+                  parts.length > 1 ? parts.last.split(':') : ['1', '1'];
               final chapter = int.tryParse(chapterVerse[0]) ?? 1;
               final verseNumber = int.tryParse(chapterVerse[1]) ?? 1;
-              final isHighlighted = highlights.any((verse) => (verse['reference'] ?? '') == reference);
+              final isHighlighted = highlights
+                  .any((verse) => (verse['reference'] ?? '') == reference);
 
               return Padding(
                 padding: const EdgeInsets.all(24),
@@ -57,11 +60,14 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: Icon(
-                            isHighlighted ? Icons.favorite : Icons.favorite_border,
+                            isHighlighted
+                                ? Icons.favorite
+                                : Icons.favorite_border,
                             color: isHighlighted ? Colors.red : Colors.grey,
                           ),
                           onPressed: () async {
-                            await toggleGlobalHighlight(book, chapter, verseNumber);
+                            await toggleGlobalHighlight(
+                                book, chapter, verseNumber);
                             ref.invalidate(favoritesProvider);
                           },
                         ),

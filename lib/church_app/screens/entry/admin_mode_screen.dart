@@ -22,6 +22,7 @@ class AdminModeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final selectedChurch = ref.watch(selectedChurchProvider);
     final configAsync = ref.watch(appConfigProvider);
     final churchName = configAsync.maybeWhen(
@@ -43,7 +44,7 @@ class AdminModeScreen extends ConsumerWidget {
                 '{churchName}', churchName.isEmpty ? 'the church' : churchName);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -51,27 +52,27 @@ class AdminModeScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.construction_rounded,
                   size: 54,
-                  color: Colors.black87,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 20),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'You can log out and check again later.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.black54,
-                      ),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                  ),
                 ),
                 const SizedBox(height: 28),
                 OutlinedButton.icon(
@@ -81,8 +82,11 @@ class AdminModeScreen extends ConsumerWidget {
                     context.t('admin_mode.okay', fallback: 'Okay'),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    side: const BorderSide(color: Colors.black26),
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.22),
+                    ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 22,
                       vertical: 14,

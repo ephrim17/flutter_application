@@ -11,6 +11,7 @@ import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_mode_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
 import 'package:flutter_application/church_app/widgets/pending_approval_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,11 +73,12 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     // Show loading while onboarding check is pending
     if (_showOnboarding == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppSplashScreen()),
       );
     }
     // Show onboarding if not completed
     if (_showOnboarding!) {
+      _syncPreflowTheme(true);
       return OnboardingScreen(onComplete: _onOnboardingComplete);
     }
 
@@ -97,20 +99,20 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
     if (firebaseUser != null && isSuperAdminAsync.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppSplashScreen()),
       );
     }
 
     if (isSuperAdmin) {
       if (superAdminSession.isLoading) {
         return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(child: AppSplashScreen()),
         );
       }
       if (superAdminSession.uid != firebaseUser.uid) {
         _syncSuperAdminSessionForUser(firebaseUser.uid);
         return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(child: AppSplashScreen()),
         );
       }
       if (superAdminSession.mode == null) {

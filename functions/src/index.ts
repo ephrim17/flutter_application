@@ -45,6 +45,16 @@ type TopicNotificationPayload = {
   topic: string;
 };
 
+type FeedPostNotificationPayload = {
+  churchId: string;
+  feedId: string;
+  authorId: string;
+  authorTitle: string;
+  authorBody: string;
+  memberTitle: string;
+  memberBody: string;
+};
+
 type DashboardPreviewMemberPayload = {
   uid: string;
   name: string;
@@ -242,6 +252,49 @@ async function sendTopicNotification(
   });
 }
 
+async function sendFeedPostNotification(
+  payload: FeedPostNotificationPayload,
+): Promise<number> {
+  const usersSnapshot = await admin.firestore()
+    .collection("churches")
+    .doc(payload.churchId)
+    .collection("users")
+    .get();
+
+  const messages: admin.messaging.Message[] = [];
+  const seenTokens = new Set<string>();
+
+  usersSnapshot.docs.forEach((doc) => {
+    const token = readUnknownString(doc.data().authToken);
+    if (!token || seenTokens.has(token)) return;
+    seenTokens.add(token);
+
+    const isAuthor = doc.id == payload.authorId;
+    messages.push({
+      token,
+      notification: {
+        title: isAuthor ? payload.authorTitle : payload.memberTitle,
+        body: isAuthor ? payload.authorBody : payload.memberBody,
+      },
+      data: {
+        kind: "feed_post_created",
+        churchId: payload.churchId,
+        feedId: payload.feedId,
+        authorId: payload.authorId,
+      },
+    });
+  });
+
+  let successCount = 0;
+  for (let index = 0; index < messages.length; index += 500) {
+    const batch = messages.slice(index, index + 500);
+    const response = await admin.messaging().sendEach(batch);
+    successCount += response.successCount;
+  }
+
+  return successCount;
+}
+
 export const processQueuedChurchNotification = onDocumentCreated(
   {
     document: "churches/{churchId}/notification_requests/{notificationId}",
@@ -261,6 +314,9 @@ export const processQueuedChurchNotification = onDocumentCreated(
     const title = readUnknownString(data.title);
     const body = readUnknownString(data.body);
     const topic = readUnknownString(data.topic);
+    const kind = readUnknownString(data.kind);
+    const feedId = readUnknownString(data.feedId);
+    const authorId = readUnknownString(data.authorId);
 
     if (!title || !body || !topic) {
       await snapshot.ref.update({
@@ -272,12 +328,24 @@ export const processQueuedChurchNotification = onDocumentCreated(
     }
 
     try {
-      await sendTopicNotification({title, body, topic});
+      const sentCount =
+        kind == "feed_post_created" && authorId ?
+          await sendFeedPostNotification({
+            churchId: event.params.churchId,
+            feedId: feedId || snapshot.id,
+            authorId,
+            authorTitle: "Your post is live",
+            authorBody: "Your feed post was published successfully.",
+            memberTitle: title,
+            memberBody: body,
+          }) :
+          (await sendTopicNotification({title, body, topic}), null);
 
       await snapshot.ref.update({
         status: "sent",
         sentAt: admin.firestore.FieldValue.serverTimestamp(),
         processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(sentCount == null ? {} : {sentCount}),
         error: admin.firestore.FieldValue.delete(),
       });
 

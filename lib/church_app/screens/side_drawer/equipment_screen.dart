@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/equipment_item_model.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_view_state.dart';
@@ -389,7 +392,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
               if (equipmentItemsAsync.isLoading && equipmentState.items.isEmpty)
                 const SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: AppLoadingIndicator()),
                 )
               else if (equipmentItemsAsync.hasError &&
                   equipmentState.items.isEmpty)
@@ -814,9 +817,7 @@ class _BillPreviewSheet extends StatelessWidget {
                             fit: BoxFit.contain,
                             loadingBuilder: (context, child, progress) {
                               if (progress == null) return child;
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
+                              return const Center(child: AppLoadingIndicator());
                             },
                             errorBuilder: (_, __, ___) =>
                                 const _BillPreviewFallback(
@@ -1476,11 +1477,14 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
                 validator: (value) {
                   if ((value ?? '').trim().isEmpty) {
                     return 'Enter the amount';
                   }
-                  if (double.tryParse(value!.trim()) == null) {
+                  if (InputValidators.parsePositiveAmount(value!) == null) {
                     return 'Enter a valid amount';
                   }
                   return null;
@@ -1567,6 +1571,9 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
+    final amount =
+        InputValidators.parsePositiveAmount(_amountController.text.trim());
+    if (amount == null) return;
     Navigator.of(context).pop(
       EquipmentFormData(
         id: widget.existingItem?.id,
@@ -1578,7 +1585,7 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
             ? 'No additional notes added yet.'
             : _descriptionController.text.trim(),
         purchaseDate: _purchaseDate,
-        amount: double.parse(_amountController.text.trim()),
+        amount: amount,
         billImage: _billImage,
         existingBillUrl: widget.existingItem?.billUrl ?? '',
         existingBillFileName: widget.existingItem?.billFileName ?? '',

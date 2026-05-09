@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
@@ -64,7 +65,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
     final width = MediaQuery.of(context).size.width;
 
     return swipeVersesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verses) {
         final verse =

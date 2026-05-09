@@ -490,7 +490,7 @@ class _DashboardSelectedGroupDetailsState
                         loading: () => const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           child: Center(
-                            child: CircularProgressIndicator(),
+                            child: AppLoadingIndicator(size: 72),
                           ),
                         ),
                         error: (_, __) => const _DashboardEmptyState(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -45,7 +46,7 @@ class DailyVerseCard extends ConsumerWidget {
     final width = MediaQuery.of(context).size.width;
 
     return dailyVerseAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verse) {
         final verseText =

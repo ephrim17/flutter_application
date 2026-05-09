@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart' show favoritesProvider, toggleGlobalHighlight;
+import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart'
+    show favoritesProvider, toggleGlobalHighlight;
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
@@ -69,7 +71,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: AppLoadingIndicator()),
           );
         }
 
@@ -172,7 +174,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: AppLoadingIndicator()),
           );
         }
 
@@ -237,9 +239,9 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
             : allChapters.sublist(widget.startChapterIndex);
 
         final highlights = ref.watch(favoritesProvider).maybeWhen(
-          data: (h) => h,
-          orElse: () => [],
-        );
+              data: (h) => h,
+              orElse: () => [],
+            );
 
         return Scaffold(
           appBar: BibleReaderAppBar(
@@ -280,15 +282,18 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
               final chapter = chapters[chapterIndex];
               final verses = chapter['verses'] as List<dynamic>;
 
-              final actualChapterIndex = widget.startChapterIndex + chapterIndex;
+              final actualChapterIndex =
+                  widget.startChapterIndex + chapterIndex;
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: verses.length,
                 itemBuilder: (_, index) {
                   final verse = verses[index];
-                  final reference = "${widget.book.key} ${actualChapterIndex + 1}:${verse['verse']}";
-                  final isHighlighted = highlights.any((v) => (v['reference'] ?? '') == reference);
+                  final reference =
+                      "${widget.book.key} ${actualChapterIndex + 1}:${verse['verse']}";
+                  final isHighlighted = highlights
+                      .any((v) => (v['reference'] ?? '') == reference);
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -304,13 +309,13 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                         Expanded(
                           child: InkWell(
                             onTap: () async {
-                            await toggleGlobalHighlight(
-                              widget.book.key,
-                              actualChapterIndex + 1,
-                              int.parse(verse['verse'].toString()),
-                            );
-                            ref.invalidate(favoritesProvider);
-                          },
+                              await toggleGlobalHighlight(
+                                widget.book.key,
+                                actualChapterIndex + 1,
+                                int.parse(verse['verse'].toString()),
+                              );
+                              ref.invalidate(favoritesProvider);
+                            },
                             child: BibleVerseItemWidget(
                               verseNumber: verse['verse'].toString(),
                               versePrimary: verse['text']['tamil'],
@@ -318,7 +323,6 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                             ),
                           ),
                         ),
-                       
                       ],
                     ),
                   );

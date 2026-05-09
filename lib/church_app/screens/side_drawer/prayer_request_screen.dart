@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
@@ -70,6 +71,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
               'segment': segment.name,
             },
           );
+          if (!context.mounted) return;
           showAppModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -78,7 +80,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
         },
       ),
       body: prayersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoadingIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
         data: (prayers) {
           if (prayers.isEmpty) {
@@ -159,6 +161,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
                                 'segment': segment.name,
                               },
                             );
+                            if (!context.mounted) return;
                             showAppModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
@@ -306,6 +309,13 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
   }
 
   @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
 
@@ -425,56 +435,75 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
     }
 
     setState(() => _isLoading = true);
+    try {
+      final currentChurchId = await ref.read(currentChurchIdProvider.future);
 
-    final currentChurchId = await ref.read(currentChurchIdProvider.future);
+      if (widget.existing == null) {
+        await ref.read(prayerRepositoryProvider).addPrayer(
+              title: _titleCtrl.text.trim(),
+              description: _descCtrl.text.trim(),
+              isAnonymous: _isAnonymous,
+              expiryDate: _expiryDate!,
+            );
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'prayer_request_created',
+          parameters: {
+            if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
+              'church_id': currentChurchId,
+            'is_anonymous': _isAnonymous.toString(),
+          },
+        );
+      } else {
+        await ref.read(prayerRepositoryProvider).updatePrayer(
+              prayerId: widget.existing!.id,
+              title: _titleCtrl.text.trim(),
+              description: _descCtrl.text.trim(),
+              isAnonymous: _isAnonymous,
+              expiryDate: _expiryDate!,
+            );
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'prayer_request_updated',
+          parameters: {
+            if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
+              'church_id': currentChurchId,
+            'prayer_id': widget.existing!.id,
+            'is_anonymous': _isAnonymous.toString(),
+          },
+        );
+      }
 
-    if (widget.existing == null) {
-      await ref.read(prayerRepositoryProvider).addPrayer(
-            title: _titleCtrl.text.trim(),
-            description: _descCtrl.text.trim(),
-            isAnonymous: _isAnonymous,
-            expiryDate: _expiryDate!,
-          );
-      await FirebaseAnalytics.instance.logEvent(
-        name: 'prayer_request_created',
-        parameters: {
-          if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
-            'church_id': currentChurchId,
-          'is_anonymous': _isAnonymous.toString(),
-        },
-      );
-    } else {
-      await ref.read(prayerRepositoryProvider).updatePrayer(
-            prayerId: widget.existing!.id,
-            title: _titleCtrl.text.trim(),
-            description: _descCtrl.text.trim(),
-            isAnonymous: _isAnonymous,
-            expiryDate: _expiryDate!,
-          );
-      await FirebaseAnalytics.instance.logEvent(
-        name: 'prayer_request_updated',
-        parameters: {
-          if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
-            'church_id': currentChurchId,
-          'prayer_id': widget.existing!.id,
-          'is_anonymous': _isAnonymous.toString(),
-        },
-      );
-    }
+      if (!mounted) return;
 
-    if (!mounted) return;
+      Navigator.pop(context);
 
-    Navigator.pop(context);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.t(
-            'prayer.saved_success',
-            fallback: 'Prayer request saved successfully',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.t(
+              'prayer.saved_success',
+              fallback: 'Prayer request saved successfully',
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', '').trim().isEmpty
+                ? context.t(
+                    'common.unknown_error',
+                    fallback: 'An unknown error occurred.',
+                  )
+                : e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

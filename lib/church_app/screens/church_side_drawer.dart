@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
@@ -87,7 +88,7 @@ class AppDrawer extends ConsumerWidget {
         children: [
           userAsync.when(
             loading: () => const DrawerHeader(
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: AppLoadingIndicator()),
             ),
             error: (_, __) => DrawerHeader(
               child: Text(

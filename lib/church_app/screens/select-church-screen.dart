@@ -22,6 +22,8 @@ import 'package:flutter_application/church_app/services/firestore/firestore_path
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
@@ -151,9 +153,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (_) => const Center(child: AppLoadingIndicator()),
     );
 
     try {
@@ -297,13 +297,14 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                             child: ClipOval(
                               child: SizedBox.expand(
                                 child: Image.asset(
-                                  'assets/images/appLogo.png',
+                                  'assets/images/churchTreeLogo.png',
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                           ),
                         ),
+                        const AppLogoText(loop: false),
                         const SizedBox(height: 24),
                         Container(
                           decoration: carouselBoxDecoration(context),
@@ -416,9 +417,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       return Container(
         decoration: carouselBoxDecoration(context),
         padding: const EdgeInsets.all(24),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Center(child: AppLoadingIndicator()),
       );
     }
 
@@ -589,7 +588,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: Colors.transparent,
-      heightFactor: 0.5,
+      heightFactor: 0.65,
       builder: (context) {
         final theme = Theme.of(context);
         return Material(

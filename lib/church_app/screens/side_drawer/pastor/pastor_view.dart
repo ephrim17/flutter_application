@@ -135,33 +135,33 @@ class _PastorCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (pastor.primary) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.22),
-                        ),
-                      ),
-                      child: Text(
-                        'Main',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //     horizontal: 10,
+                    //     vertical: 5,
+                    //   ),
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.white.withValues(alpha: 0.18),
+                    //     borderRadius: BorderRadius.circular(999),
+                    //     border: Border.all(
+                    //       color: Colors.white.withValues(alpha: 0.22),
+                    //     ),
+                    //   ),
+                    //   child: Text(
+                    //     'Main',
+                    //     style: textTheme.labelMedium?.copyWith(
+                    //       color: Colors.white,
+                    //       fontWeight: FontWeight.w700,
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 10),
                   ],
                   Text(
                     pastor.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleLarge?.copyWith(
+                    style: textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       height: 1.05,

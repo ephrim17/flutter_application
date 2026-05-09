@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/event_providers.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -26,11 +27,10 @@ class EventsScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: asyncEvents.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: AppLoadingIndicator()),
               error: (e, _) => Center(
-                child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+                child: Text(
+                    "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
               ),
               data: (items) => EventsFullList(items),
             ),

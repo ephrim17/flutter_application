@@ -157,7 +157,7 @@ enum DashboardMemberChartMode {
     'Understand how many profiles are registered as families or individuals.',
   ),
   solemnized(
-    'Marriage View',
+    'Solemnized View',
     'See how many members are solemnized across the recorded membership base.',
   );
 

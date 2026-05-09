@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/onboarding_provider.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
@@ -36,117 +37,109 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(onboardingPagesProvider);
     final theme = Theme.of(context);
-    final accent = const Color(0xFF5B7CFA);
-    final actionColor = const Color(0xFF8C5AF7);
-    final surface = const Color(0xFFF8F7FD);
+    final buttonColor = theme.colorScheme.primary;
+    final buttonTextColor = theme.colorScheme.onPrimary;
+    final accent = buttonColor;
+    final gradientColors = [
+      theme.colorScheme.primary.withValues(alpha: 0.16),
+      theme.scaffoldBackgroundColor,
+      theme.scaffoldBackgroundColor,
+    ];
 
-    return Theme(
-      data: theme.copyWith(
-        scaffoldBackgroundColor: surface,
-        colorScheme: theme.colorScheme.copyWith(
-          primary: accent,
-          secondary: actionColor,
-          surface: surface,
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: gradientColors,
+          ),
         ),
-      ),
-      child: Scaffold(
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFF9F8FE),
-                Color(0xFFF3F4FB),
-                Color(0xFFF7F6FC),
-              ],
+        child: pagesAsync.when(
+          loading: () => const Center(child: AppLoadingIndicator()),
+          error: (e, _) => Center(
+            child: Text(
+              "${context.t('common.error_prefix', fallback: 'Error')}: $e",
             ),
           ),
-          child: pagesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Text(
-                "${context.t('common.error_prefix', fallback: 'Error')}: $e",
-              ),
-            ),
-            data: (pages) {
-              if (pages.isEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _completeOnboarding();
-                });
-                return const Center(child: CircularProgressIndicator());
-              }
+          data: (pages) {
+            if (pages.isEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _completeOnboarding();
+              });
+              return const Center(child: AppLoadingIndicator());
+            }
 
-              final totalPages = pages.length + 1;
-              final isLast = _currentIndex == totalPages - 1;
+            final totalPages = pages.length + 1;
+            final isLast = _currentIndex == totalPages - 1;
 
-              return SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: PageView.builder(
-                          controller: _controller,
-                          itemCount: totalPages,
-                          onPageChanged: (index) {
-                            setState(() => _currentIndex = index);
-                          },
-                          itemBuilder: (context, index) {
-                            if (index == pages.length) {
-                              return const _PraiseTheLordPage();
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _controller,
+                        itemCount: totalPages,
+                        onPageChanged: (index) {
+                          setState(() => _currentIndex = index);
+                        },
+                        itemBuilder: (context, index) {
+                          if (index == pages.length) {
+                            return const _PraiseTheLordPage();
+                          }
+
+                          final page = pages[index];
+                          return _OnboardingContentPage(
+                            title: page.title,
+                            description: page.description,
+                            accent: accent,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PageDots(
+                            count: totalPages,
+                            currentIndex: _currentIndex,
+                            activeColor: accent,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        _PrimaryActionButton(
+                          label: isLast
+                              ? context.t(
+                                  'onboarding.get_started',
+                                  fallback: 'Get Started',
+                                )
+                              : context.t(
+                                  'onboarding.next',
+                                  fallback: 'Next',
+                                ),
+                          color: buttonColor,
+                          foregroundColor: buttonTextColor,
+                          onPressed: () {
+                            if (isLast) {
+                              _completeOnboarding();
+                            } else {
+                              _controller.nextPage(
+                                duration: const Duration(milliseconds: 320),
+                                curve: Curves.easeOutCubic,
+                              );
                             }
-
-                            final page = pages[index];
-                            return _OnboardingContentPage(
-                              title: page.title,
-                              description: page.description,
-                              accent: accent,
-                            );
                           },
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PageDots(
-                              count: totalPages,
-                              currentIndex: _currentIndex,
-                              activeColor: accent,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          _PrimaryActionButton(
-                            label: isLast
-                                ? context.t(
-                                    'onboarding.get_started',
-                                    fallback: 'Get Started',
-                                  )
-                                : context.t(
-                                    'onboarding.next',
-                                    fallback: 'Next',
-                                  ),
-                            color: actionColor,
-                            onPressed: () {
-                              if (isLast) {
-                                _completeOnboarding();
-                              } else {
-                                _controller.nextPage(
-                                  duration: const Duration(milliseconds: 320),
-                                  curve: Curves.easeOutCubic,
-                                );
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -198,8 +191,8 @@ class _OnboardingContentPage extends StatelessWidget {
                           fontSize: compact ? 38 : 44,
                           height: 1.05,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF6C6A83),
-                          letterSpacing: -1.3,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          letterSpacing: 0,
                         ),
                   ),
                   const SizedBox(height: 14),
@@ -208,7 +201,10 @@ class _OnboardingContentPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontSize: 18,
                           height: 1.45,
-                          color: const Color(0xFF8B889F),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.72),
                           fontWeight: FontWeight.w500,
                         ),
                   ),
@@ -571,7 +567,10 @@ class _PageDots extends StatelessWidget {
             decoration: BoxDecoration(
               color: isActive
                   ? activeColor
-                  : const Color(0xFFDCCFF9).withValues(alpha: 0.8),
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.20),
               borderRadius: BorderRadius.circular(999),
             ),
           );
@@ -585,52 +584,31 @@ class _PrimaryActionButton extends StatelessWidget {
   const _PrimaryActionButton({
     required this.label,
     required this.color,
+    required this.foregroundColor,
     required this.onPressed,
   });
 
   final String label;
   final Color color;
+  final Color foregroundColor;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          colors: [
-            color,
-            color.withValues(alpha: 0.86),
-          ],
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: foregroundColor,
+          padding: const EdgeInsets.symmetric(horizontal: 22),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.26),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        height: 48,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            shadowColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(horizontal: 22),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-            ),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

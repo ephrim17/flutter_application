@@ -5,6 +5,8 @@ class PreflowColors {
 
   static const background = Color(0xFFF5F2FA);
   static const card = Color.fromARGB(255, 255, 255, 255);
+  static const darkBackground = Color(0xFF101512);
+  static const darkCard = Color(0xFF1A211C);
   static const accent = Color.fromARGB(255, 39, 121, 34);
 
   static const lightText = Colors.black;

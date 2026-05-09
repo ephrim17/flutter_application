@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
@@ -218,7 +219,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                 paginationState.churches.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: AppLoadingIndicator()),
               )
             else if (paginationState.errorMessage != null &&
                 paginationState.churches.isEmpty)
@@ -262,7 +263,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
               }),
             if (paginationState.isLoadingMore) ...[
               const SizedBox(height: 14),
-              const Center(child: CircularProgressIndicator()),
+              const Center(child: AppLoadingIndicator()),
             ],
           ],
         ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/church_transaction_model.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -500,7 +502,7 @@ class _FinancialDashboardScreenState
                 if (transactionsAsync.isLoading && state.transactions.isEmpty)
                   const SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(child: AppLoadingIndicator()),
                   )
                 else if (transactionsAsync.hasError &&
                     state.transactions.isEmpty)
@@ -2812,7 +2814,7 @@ class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
             const SizedBox(height: 14),
             Expanded(
               child: _isLoading && _members.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: AppLoadingIndicator())
                   : ListView.builder(
                       itemCount: _members.length + (_hasMore ? 1 : 0),
                       itemBuilder: (context, index) {
@@ -2902,6 +2904,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
   late final TextEditingController _partyNameController;
   late final TextEditingController _referenceController;
   late final TextEditingController _amountController;
+  late final TextEditingController _dateController;
   late final List<FinanceLedger> _ledgerOptions;
   late FinanceLedger _selectedLedger;
   late String _selectedPaymentMethod;
@@ -2931,6 +2934,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
           item != null && item.amount > 0 ? item.amount.toStringAsFixed(2) : '',
     );
     _selectedDate = item?.transactionDate ?? DateTime.now();
+    _dateController = TextEditingController(text: _date(_selectedDate));
     _selectedType = item?.type ?? widget.initialType;
     _selectedVoucherType = item?.voucherType ??
         (_selectedType == ChurchTransactionType.income
@@ -2946,6 +2950,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
     _partyNameController.dispose();
     _referenceController.dispose();
     _amountController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -3087,8 +3092,10 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                         ],
                         validator: (value) {
-                          final amount = double.tryParse((value ?? '').trim());
-                          if (amount == null || amount <= 0) {
+                          if (InputValidators.parsePositiveAmount(
+                                value ?? '',
+                              ) ==
+                              null) {
                             return 'Enter a valid amount';
                           }
                           return null;
@@ -3099,8 +3106,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                     Expanded(
                       child: AppTextField(
                         label: 'Date',
-                        controller:
-                            TextEditingController(text: _date(_selectedDate)),
+                        controller: _dateController,
                         readOnly: true,
                         onTap: _pickDate,
                         suffixIcon: const Icon(Icons.calendar_today_outlined),
@@ -3149,11 +3155,17 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked == null) return;
-    setState(() => _selectedDate = picked);
+    setState(() {
+      _selectedDate = picked;
+      _dateController.text = _date(picked);
+    });
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    final amount =
+        InputValidators.parsePositiveAmount(_amountController.text.trim());
+    if (amount == null) return;
     Navigator.of(context).pop(
       ChurchTransactionFormData(
         id: widget.existingItem?.id,
@@ -3177,7 +3189,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
         voucherNumber: widget.existingItem?.voucherNumber ?? '',
         reference: _referenceController.text.trim(),
         recordedBy: widget.initialRecordedBy.trim(),
-        amount: double.parse(_amountController.text.trim()),
+        amount: amount,
         type: _selectedType,
         status: _selectedStatus,
         transactionDate: _selectedDate,

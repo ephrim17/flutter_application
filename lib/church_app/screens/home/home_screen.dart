@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -121,7 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userAsync = ref.watch(appUserProvider);
 
     return sectionConfigsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Center(
         child:
             Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),

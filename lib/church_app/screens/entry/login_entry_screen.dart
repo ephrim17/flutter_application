@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -26,9 +27,7 @@ import 'package:flutter_application/church_app/services/notification_service.dar
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
-class LoginScreen extends ConsumerWidget {
-  //const LoginScreen({super.key});
-
+class LoginScreen extends ConsumerStatefulWidget {
   final String churchId;
   final String churchName;
   final String churchLogo;
@@ -39,6 +38,28 @@ class LoginScreen extends ConsumerWidget {
     required this.churchName,
     this.churchLogo = '',
   });
+
+  @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _passCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailCtrl = TextEditingController();
+    _passCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
 
   Future<bool> _showRegisterPrompt(BuildContext context) async {
     return await showDialog<bool>(
@@ -91,10 +112,7 @@ class LoginScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final emailCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-
+  Widget build(BuildContext context) {
     final isLoading = ref.watch(logginAccessLoadingProvider);
 
     return Scaffold(
@@ -116,12 +134,12 @@ class LoginScreen extends ConsumerWidget {
               children: [
                 const SizedBox(height: 12),
                 ChurchLogoAvatar(
-                  logo: churchLogo,
+                  logo: widget.churchLogo,
                   size: 84,
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  churchName,
+                  widget.churchName,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -135,7 +153,7 @@ class LoginScreen extends ConsumerWidget {
                     children: [
                       /// 📧 Email
                       AppTextField(
-                        controller: emailCtrl,
+                        controller: _emailCtrl,
                         decoration: InputDecoration(
                           labelText: context.t(
                             'auth.email_label',
@@ -147,7 +165,7 @@ class LoginScreen extends ConsumerWidget {
 
                       /// 🔑 Password
                       AppTextField(
-                        controller: passCtrl,
+                        controller: _passCtrl,
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: context.t(
@@ -166,9 +184,9 @@ class LoginScreen extends ConsumerWidget {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) => ForgotPasswordScreen(
-                                        churchName: churchName,
-                                        churchLogo: churchLogo,
-                                        initialEmail: emailCtrl.text.trim(),
+                                        churchName: widget.churchName,
+                                        churchLogo: widget.churchLogo,
+                                        initialEmail: _emailCtrl.text.trim(),
                                       ),
                                     ),
                                   );
@@ -194,8 +212,8 @@ class LoginScreen extends ConsumerWidget {
                   onPressed: isLoading
                       ? null
                       : () async {
-                          final email = emailCtrl.text.trim();
-                          final password = passCtrl.text;
+                          final email = _emailCtrl.text.trim();
+                          final password = _passCtrl.text;
 
                           if (email.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +223,20 @@ class LoginScreen extends ConsumerWidget {
                                     'auth.login_screen_email_required',
                                     fallback:
                                         'Please enter your email address.',
+                                  ),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (!InputValidators.isValidEmail(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  context.t(
+                                    'auth.email_invalid',
+                                    fallback: 'Please enter a valid email.',
                                   ),
                                 ),
                               ),
@@ -245,7 +277,7 @@ class LoginScreen extends ConsumerWidget {
 
                             final userDoc = await FirestorePaths.churchUserDoc(
                               ref.read(firestoreProvider),
-                              churchId,
+                              widget.churchId,
                               firebaseUser.uid,
                             ).get();
 
@@ -266,9 +298,9 @@ class LoginScreen extends ConsumerWidget {
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                   builder: (_) => LoginRequestScreen(
-                                    churchId: churchId,
-                                    churchName: churchName,
-                                    churchLogo: churchLogo,
+                                    churchId: widget.churchId,
+                                    churchName: widget.churchName,
+                                    churchLogo: widget.churchLogo,
                                   ),
                                 ),
                               );
@@ -282,14 +314,14 @@ class LoginScreen extends ConsumerWidget {
                                 !appUser.approved;
                             ref.read(selectedChurchProvider.notifier).state =
                                 Church(
-                              id: churchId,
-                              name: churchName,
+                              id: widget.churchId,
+                              name: widget.churchName,
                               address: '',
                               contact: '',
                               email: '',
                               pastorName: '',
                               pastorPhoto: '',
-                              logo: churchLogo,
+                              logo: widget.churchLogo,
                               enabled: true,
                               registrationSource: 'super_admin',
                             );
@@ -305,9 +337,10 @@ class LoginScreen extends ConsumerWidget {
                             await FirebaseAnalytics.instance.logEvent(
                               name: 'login_success',
                               parameters: {
-                                'church_id': churchId,
+                                'church_id': widget.churchId,
                               },
                             );
+                            if (!context.mounted) return;
 
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
@@ -344,7 +377,7 @@ class LoginScreen extends ConsumerWidget {
                             final userExistsInChurch =
                                 await _churchUserExistsByEmail(
                               ref,
-                              churchId: churchId,
+                              churchId: widget.churchId,
                               email: email,
                             );
 
@@ -358,9 +391,9 @@ class LoginScreen extends ConsumerWidget {
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                   builder: (_) => LoginRequestScreen(
-                                    churchId: churchId,
-                                    churchName: churchName,
-                                    churchLogo: churchLogo,
+                                    churchId: widget.churchId,
+                                    churchName: widget.churchName,
+                                    churchLogo: widget.churchLogo,
                                   ),
                                 ),
                               );
@@ -374,6 +407,7 @@ class LoginScreen extends ConsumerWidget {
                             ref
                                 .read(logginAccessLoadingProvider.notifier)
                                 .state = false;
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(e.toString())),
                             );

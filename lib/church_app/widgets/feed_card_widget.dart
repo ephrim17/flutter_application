@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/providers/authentication/admin_pr
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
+import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -44,7 +45,7 @@ class FeedCard extends ConsumerWidget {
     final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
     final theme = Theme.of(context);
     final hasImage = (post.imageUrl ?? '').trim().isNotEmpty;
-    final youtubePreview = _YoutubePreviewData.fromText(
+    final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
       '${post.title}\n${post.description}',
     );
 
@@ -160,8 +161,8 @@ class FeedCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                Text(
-                  post.title,
+                LinkifiedText(
+                  text: post.title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     height: 1.2,
@@ -415,7 +416,7 @@ class FeedCard extends ConsumerWidget {
 class _YoutubePreviewCard extends StatelessWidget {
   const _YoutubePreviewCard({required this.preview});
 
-  final _YoutubePreviewData preview;
+  final YoutubePreviewData preview;
 
   @override
   Widget build(BuildContext context) {
@@ -507,73 +508,6 @@ class _YoutubePreviewCard extends StatelessWidget {
         const SnackBar(content: Text('Unable to open YouTube link')),
       );
     }
-  }
-}
-
-class _YoutubePreviewData {
-  const _YoutubePreviewData({
-    required this.url,
-    required this.videoId,
-  });
-
-  final Uri url;
-  final String videoId;
-
-  String get thumbnailUrl =>
-      'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
-
-  static final RegExp _urlPattern = RegExp(
-    r'((https?:\/\/|www\.)[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?)',
-    caseSensitive: false,
-  );
-
-  static _YoutubePreviewData? fromText(String text) {
-    for (final match in _urlPattern.allMatches(text)) {
-      final rawUrl = _cleanUrl(match.group(0) ?? '');
-      final uri = _normalizeUri(rawUrl);
-      if (uri == null) continue;
-      final videoId = _extractVideoId(uri);
-      if (videoId == null) continue;
-      return _YoutubePreviewData(url: uri, videoId: videoId);
-    }
-    return null;
-  }
-
-  static String _cleanUrl(String rawUrl) {
-    return rawUrl.trim().replaceAll(RegExp(r'[),.!?;:]+$'), '');
-  }
-
-  static Uri? _normalizeUri(String rawUrl) {
-    if (rawUrl.trim().isEmpty) return null;
-    final withScheme =
-        rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
-            ? rawUrl
-            : 'https://$rawUrl';
-    return Uri.tryParse(withScheme);
-  }
-
-  static String? _extractVideoId(Uri uri) {
-    final host = uri.host.toLowerCase().replaceFirst('www.', '');
-    if (host == 'youtu.be') {
-      return _normalizeVideoId(
-          uri.pathSegments.isEmpty ? '' : uri.pathSegments.first);
-    }
-    if (host == 'youtube.com' || host == 'm.youtube.com') {
-      final watchId = uri.queryParameters['v'];
-      if (watchId != null) return _normalizeVideoId(watchId);
-      if (uri.pathSegments.isNotEmpty &&
-          (uri.pathSegments.first == 'shorts' ||
-              uri.pathSegments.first == 'embed') &&
-          uri.pathSegments.length > 1) {
-        return _normalizeVideoId(uri.pathSegments[1]);
-      }
-    }
-    return null;
-  }
-
-  static String? _normalizeVideoId(String value) {
-    final match = RegExp(r'^[A-Za-z0-9_-]{11}$').firstMatch(value.trim());
-    return match?.group(0);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/home_sections/promise_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -40,7 +41,7 @@ class PromiseVerseCard extends ConsumerWidget {
     final promiseWordAsync = ref.watch(promiseWordProviderLocal);
 
     return promiseWordAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Text(e.toString()),
       data: (verse) {
         final screenWidth = MediaQuery.sizeOf(context).width;

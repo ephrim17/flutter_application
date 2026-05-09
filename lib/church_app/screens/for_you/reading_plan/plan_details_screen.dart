@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/reading_plan_progress_provider.dart';
@@ -46,9 +47,9 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
         title: AppBarTitle(text: _readingPlan?.month ?? "${widget.month} Plan"),
       ),
       body: _readingPlan == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator())
           : progressState.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: AppLoadingIndicator()),
               error: (e, _) => Center(child: Text("Error: $e")),
               data: (completedDays) {
                 final totalDays = _readingPlan!.days.length;

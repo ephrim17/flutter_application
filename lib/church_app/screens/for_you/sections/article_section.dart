@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/models/for_you_section_models/art
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/card_Link_button_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
@@ -25,41 +26,41 @@ class ArticleSection implements MasterSection {
     return [
       SliverToBoxAdapter(
         child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              SectionHeader(
-                text: context.t(
-                  'for_you.article.section_title',
-                  fallback: 'Article Notes',
-                ),
-                padding: 16.0,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+            SectionHeader(
+              text: context.t(
+                'for_you.article.section_title',
+                fallback: 'Article Notes',
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: CardLinkButtonWidget(
-                  title: 'Browse Article notes and open the full message.',
-                  buttonText: 'View Articles',
-                  iconStyle: Icon(
-                    Icons.menu_book_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ArticleListScreen(),
-                      ),
-                    );
-                  },
+              padding: 16.0,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: CardLinkButtonWidget(
+                title: 'Browse Article notes and open the full message.',
+                buttonText: 'View Articles',
+                iconStyle: Icon(
+                  Icons.menu_book_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
                 ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ArticleListScreen(),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 10),
-              //const ArticleSectionWidget(),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            //const ArticleSectionWidget(),
+          ],
+        ),
       ),
     ];
   }
@@ -75,7 +76,7 @@ class ArticleSectionWidget extends ConsumerWidget {
     return articlesAsync.when(
       loading: () => const Padding(
         padding: EdgeInsets.all(16),
-        child: CircularProgressIndicator(),
+        child: Center(child: AppLoadingIndicator(size: 72)),
       ),
       error: (e, _) => Text(
         '${context.t('common.error_prefix', fallback: 'Error')}: $e',
@@ -139,24 +140,24 @@ class ArticleCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ArticleDetailPage(article: article),
-                  ),
-                );
-              },
-              child: ColorText(badgeText: "Read More", fontSize: 13,)
-              ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ArticleDetailPage(article: article),
+                    ),
+                  );
+                },
+                child: ColorText(
+                  badgeText: "Read More",
+                  fontSize: 13,
+                )),
           ],
         ),
       ),
     );
   }
 }
-
 
 class ArticleDetailPage extends StatelessWidget {
   final Article article;

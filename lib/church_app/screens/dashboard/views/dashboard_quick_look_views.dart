@@ -15,7 +15,7 @@ class _DashboardPrayerQuickLook extends StatelessWidget {
         prayers.where((prayer) => prayer.isAnonymous).toList(growable: false);
 
     if (isLoading && prayers.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator());
     }
     if (prayers.isEmpty) {
       return const _DashboardEmptyState(
@@ -137,7 +137,7 @@ class _DashboardAnnouncementQuickLook extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading && announcements.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator());
     }
     if (announcements.isEmpty) {
       return const _DashboardEmptyState(
@@ -182,7 +182,7 @@ class _DashboardEventQuickLook extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading && events.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator());
     }
     if (events.isEmpty) {
       return const _DashboardEmptyState(

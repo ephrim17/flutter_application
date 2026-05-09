@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -292,7 +293,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         fallback: 'Please enter the church email',
       );
     }
-    if (!RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(email)) {
+    if (!InputValidators.isValidEmail(email)) {
       return context.t(
         'auth.email_address_invalid',
         fallback: 'Please enter a valid email address',
@@ -313,7 +314,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         fallback: 'Please enter the admin email',
       );
     }
-    if (!RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(adminEmail)) {
+    if (!InputValidators.isValidEmail(adminEmail)) {
       return context.t(
         'auth.email_address_invalid',
         fallback: 'Please enter a valid email address',

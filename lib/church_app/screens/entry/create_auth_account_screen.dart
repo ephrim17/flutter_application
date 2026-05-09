@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -85,8 +86,7 @@ class _CreateAuthAccountScreenState
           fallback: 'Please enter your email');
     }
 
-    final emailRegex = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
-    if (!emailRegex.hasMatch(email)) {
+    if (!InputValidators.isValidEmail(email)) {
       return context.t(
         'auth.email_address_invalid',
         fallback: 'Please enter a valid email address',

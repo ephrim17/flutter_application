@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -218,7 +219,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           ),
         ),
         body: membersAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: AppLoadingIndicator()),
           error: (_, __) => Center(
             child: Text(
               context.t('members.error_loading',

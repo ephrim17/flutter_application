@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -58,7 +59,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
     return churchIdAsync.when(
       loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppLoadingIndicator()),
       ),
       error: (error, _) => Scaffold(
         appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
@@ -1016,7 +1017,7 @@ class _ConfigVerseEditor extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
 
     return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
             '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
@@ -1156,7 +1157,7 @@ class _ThemeEditor extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
 
     return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
           '${context.t('common.error_prefix', fallback: 'Error')}: $error',
@@ -1635,7 +1636,7 @@ class _AboutEditor extends ConsumerWidget {
           );
         }
         if (!initialSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoadingIndicator());
         }
 
         return StreamBuilder<Map<String, dynamic>?>(
@@ -2026,7 +2027,7 @@ class _FooterCollectionCard extends StatelessWidget {
             );
           }
           if (!initialSnapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: AppLoadingIndicator());
           }
 
           return StreamBuilder<
@@ -2594,7 +2595,7 @@ class _AdminsEditor extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
 
     return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
             '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
@@ -2736,7 +2737,7 @@ class _PromptSheetEditor extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
 
     return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
             '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
@@ -2763,7 +2764,7 @@ class _AdminModeEditor extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
 
     return configAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
           '${context.t('common.error_prefix', fallback: 'Error')}: $error',
@@ -4435,9 +4436,7 @@ Future<void> _runWithBlockingLoader(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(
-      child: CircularProgressIndicator(),
-    ),
+    builder: (_) => const Center(child: AppLoadingIndicator()),
   );
 
   try {

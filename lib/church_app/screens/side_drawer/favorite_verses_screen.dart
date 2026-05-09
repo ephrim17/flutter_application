@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.da
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,9 +22,7 @@ class FavoritesScreen extends ConsumerWidget {
         ),
       ),
       body: favoritesAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: AppLoadingIndicator()),
         error: (error, stack) => Center(
           child: Text(
               "${context.t('common.error_prefix', fallback: 'Error')}: $error"),

@@ -26,6 +26,7 @@ const AndroidNotificationChannel _churchMessageChannel =
 bool _notificationPresentationInitialized = false;
 bool _notificationListenersAttached = false;
 bool _notificationInitialMessageHandled = false;
+Future<void>? _activeNotificationSetup;
 
 Future<void> initializeNotificationPresentation() async {
   if (_notificationPresentationInitialized || kIsWeb) {
@@ -100,6 +101,27 @@ Future<void> handleNotificationSetup({
     return;
   }
 
+  final activeSetup = _activeNotificationSetup;
+  if (activeSetup != null) {
+    return activeSetup;
+  }
+
+  final setup = _runNotificationSetup(
+    context: context,
+    container: container,
+    promptIfNeeded: promptIfNeeded,
+  );
+  _activeNotificationSetup = setup.whenComplete(() {
+    _activeNotificationSetup = null;
+  });
+  return _activeNotificationSetup!;
+}
+
+Future<void> _runNotificationSetup({
+  required BuildContext context,
+  required ProviderContainer container,
+  required bool promptIfNeeded,
+}) async {
   final messaging = FirebaseMessaging.instance;
 
   try {

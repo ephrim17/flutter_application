@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen_view_state.dart';
@@ -20,7 +21,7 @@ class AboutScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(),
       body: aboutStateAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoadingIndicator()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

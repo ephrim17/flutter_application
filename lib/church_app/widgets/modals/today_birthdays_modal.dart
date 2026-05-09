@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
@@ -371,7 +372,7 @@ class _BirthdayPostComposerModalState
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
-                  child: CircularProgressIndicator(),
+                  child: AppLoadingIndicator(size: 72),
                 ),
               ),
               error: (error, _) => Padding(

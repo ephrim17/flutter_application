@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -529,7 +530,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
           const SizedBox(height: 14),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: AppLoadingIndicator())
                 : _members.isEmpty
                     ? Container(
                         width: double.infinity,
@@ -895,7 +896,7 @@ class _GroupMembersTab extends ConsumerWidget {
     final membersAsync = ref.watch(churchGroupMembersProvider(group.id));
 
     return membersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoadingIndicator()),
       error: (_, __) => Center(
         child: Text(
           context

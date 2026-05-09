@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LinkifiedText extends StatefulWidget {
@@ -20,11 +21,6 @@ class LinkifiedText extends StatefulWidget {
 }
 
 class _LinkifiedTextState extends State<LinkifiedText> {
-  static final RegExp _urlPattern = RegExp(
-    r'((https?:\/\/|www\.)[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?)',
-    caseSensitive: false,
-  );
-
   final List<TapGestureRecognizer> _recognizers = [];
 
   @override
@@ -49,7 +45,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
           decoration: TextDecoration.underline,
         );
 
-    if (!_urlPattern.hasMatch(widget.text)) {
+    if (!FeedLinkUtils.hasLinks(widget.text)) {
       return Text(
         widget.text,
         style: defaultStyle,
@@ -68,27 +64,24 @@ class _LinkifiedTextState extends State<LinkifiedText> {
     final spans = <InlineSpan>[];
     var start = 0;
 
-    for (final match in _urlPattern.allMatches(text)) {
+    for (final match in FeedLinkUtils.linkMatches(text)) {
       if (match.start > start) {
         spans.add(TextSpan(text: text.substring(start, match.start)));
       }
 
-      final rawUrl = match.group(0)!;
-      final linkText = _cleanUrl(rawUrl);
-      final trailingText = rawUrl.substring(linkText.length);
-      final uri = _normalizeUri(linkText);
-      final recognizer = TapGestureRecognizer()..onTap = () => _openLink(uri);
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () => _openLink(match.uri);
       _recognizers.add(recognizer);
 
       spans.add(
         TextSpan(
-          text: linkText,
+          text: match.linkText,
           style: linkStyle,
           recognizer: recognizer,
         ),
       );
-      if (trailingText.isNotEmpty) {
-        spans.add(TextSpan(text: trailingText));
+      if (match.trailingText.isNotEmpty) {
+        spans.add(TextSpan(text: match.trailingText));
       }
 
       start = match.end;
@@ -99,19 +92,6 @@ class _LinkifiedTextState extends State<LinkifiedText> {
     }
 
     return spans;
-  }
-
-  Uri _normalizeUri(String rawUrl) {
-    final normalized = rawUrl.trim();
-    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
-      return Uri.parse(normalized);
-    }
-
-    return Uri.parse('https://$normalized');
-  }
-
-  String _cleanUrl(String rawUrl) {
-    return rawUrl.trim().replaceAll(RegExp(r'[),.!?;:]+$'), '');
   }
 
   Future<void> _openLink(Uri uri) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -65,7 +66,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     return churchAsync.when(
       loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppLoadingIndicator()),
       ),
       error: (error, stack) => Scaffold(
         body: Center(
@@ -115,8 +116,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   child: Container(
                     decoration: carouselBoxDecoration(context),
                     child: TabBar(
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.start,
+                      isScrollable: globalFeedEnabled,
+                      tabAlignment: globalFeedEnabled
+                          ? TabAlignment.start
+                          : TabAlignment.fill,
                       dividerColor: Colors.transparent,
                       onTap: (index) {
                         setState(() {
@@ -124,7 +127,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         });
                       },
                       tabs: [
-                        const Tab(text: 'Your Church'),
+                        Tab(
+                          child: Align(
+                            alignment: globalFeedEnabled
+                                ? Alignment.center
+                                : Alignment.centerLeft,
+                            child: const Text('Your Church'),
+                          ),
+                        ),
                         if (globalFeedEnabled)
                           const Tab(text: "What's happening in other churches"),
                       ],
@@ -162,7 +172,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       BuildContext context, String churchId, FeedPaginationState feedState,
       {required bool isGlobal}) {
     if (feedState.isInitialLoading && feedState.posts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator());
     }
 
     if (feedState.errorMessage != null && feedState.posts.isEmpty) {
@@ -215,7 +225,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           if (index >= feedState.posts.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: AppLoadingIndicator()),
             );
           }
 
@@ -241,6 +251,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         'scope': isGlobal ? 'global' : 'church',
       },
     );
+    if (!context.mounted) return;
+
     await showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,

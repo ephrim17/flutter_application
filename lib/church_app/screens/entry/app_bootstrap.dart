@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
@@ -23,7 +24,10 @@ class AppBootstrap extends ConsumerStatefulWidget {
 }
 
 class _AppBootstrapState extends ConsumerState<AppBootstrap> {
+  static const _minimumSplashDuration = Duration(seconds: 3);
+
   String? _lastDailyStreakSyncKey;
+  bool _minimumSplashElapsed = false;
 
   bool _isSameDay(DateTime first, DateTime second) {
     return first.year == second.year &&
@@ -63,6 +67,13 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
   @override
   void initState() {
     super.initState();
+    Future<void>.delayed(_minimumSplashDuration, () {
+      if (!mounted) return;
+      setState(() {
+        _minimumSplashElapsed = true;
+      });
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = await ref.read(getCurrentUserProvider.future);
       if (user != null) {
@@ -95,9 +106,10 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     final forcePreflowTheme = ref.watch(forcePreflowThemeProvider);
     final themeMode = ref.watch(themeProvider);
 
-    return configAsync.when(
-      loading: () => MaterialApp(
+    if (!_minimumSplashElapsed) {
+      return MaterialApp(
         navigatorObservers: [analyticsObserver],
+        themeMode: themeMode,
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
@@ -109,17 +121,21 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         darkTheme: _buildTheme(
           context: context,
           brightness: Brightness.dark,
-          bgColor: PreflowColors.background,
-          cardColor: PreflowColors.card,
+          bgColor: PreflowColors.darkBackground,
+          cardColor: PreflowColors.darkCard,
           primaryColor: PreflowColors.accent,
           secondaryColor: PreflowColors.accent,
         ),
         home: const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(child: AppSplashScreen()),
         ),
-      ),
-      error: (_, __) => MaterialApp(
+      );
+    }
+
+    return configAsync.when(
+      loading: () => MaterialApp(
         navigatorObservers: [analyticsObserver],
+        themeMode: themeMode,
         theme: _buildTheme(
           context: context,
           brightness: Brightness.light,
@@ -131,8 +147,31 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         darkTheme: _buildTheme(
           context: context,
           brightness: Brightness.dark,
+          bgColor: PreflowColors.darkBackground,
+          cardColor: PreflowColors.darkCard,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
+        ),
+        home: const Scaffold(
+          body: Center(child: AppSplashScreen()),
+        ),
+      ),
+      error: (_, __) => MaterialApp(
+        navigatorObservers: [analyticsObserver],
+        themeMode: themeMode,
+        theme: _buildTheme(
+          context: context,
+          brightness: Brightness.light,
           bgColor: PreflowColors.background,
           cardColor: PreflowColors.card,
+          primaryColor: PreflowColors.accent,
+          secondaryColor: PreflowColors.accent,
+        ),
+        darkTheme: _buildTheme(
+          context: context,
+          brightness: Brightness.dark,
+          bgColor: PreflowColors.darkBackground,
+          cardColor: PreflowColors.darkCard,
           primaryColor: PreflowColors.accent,
           secondaryColor: PreflowColors.accent,
         ),
@@ -157,6 +196,10 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
             : PreflowColors.background;
         final cardColor =
             useChurchTheme ? config.cardColorHex.toColor() : PreflowColors.card;
+        final darkBgColor =
+            useChurchTheme ? Colors.black : PreflowColors.darkBackground;
+        final darkCardColor =
+            useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.darkCard;
         final primaryColor = useChurchTheme
             ? config.primaryColorHex.toColor()
             : PreflowColors.accent;
@@ -178,9 +221,8 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
           darkTheme: _buildTheme(
             context: context,
             brightness: Brightness.dark,
-            bgColor: useChurchTheme ? Colors.black : PreflowColors.background,
-            cardColor:
-                useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.card,
+            bgColor: darkBgColor,
+            cardColor: darkCardColor,
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
@@ -209,6 +251,8 @@ ThemeData _buildTheme({
       : PreflowColors.lightMutedText;
   final inputColor =
       usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
+  final errorColor =
+      usesDarkSurface ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A);
 
   return ThemeData(
     brightness: brightness,
@@ -222,6 +266,8 @@ ThemeData _buildTheme({
       secondary: secondaryColor,
       brightness: brightness,
       surface: cardColor,
+      error: errorColor,
+      onError: Colors.white,
       onPrimary: buttonForegroundColor,
       onSecondary: buttonForegroundColor,
       onSurface: textColor,
@@ -316,7 +362,7 @@ ThemeData _buildTheme({
       hintStyle: TextStyle(color: inputColor),
       prefixIconColor: inputColor,
       suffixIconColor: inputColor,
-      errorStyle: const TextStyle(color: Colors.white70),
+      errorStyle: TextStyle(color: errorColor),
       enabledBorder: UnderlineInputBorder(
         borderSide: BorderSide(color: inputColor),
       ),
@@ -402,7 +448,7 @@ ThemeData _buildTheme({
             color: mutedTextColor,
           ),
           labelLarge: GoogleFonts.anekTamil(
-            color: buttonForegroundColor,
+            color: textColor,
           ),
           labelMedium: GoogleFonts.anekTamil(
             color: mutedTextColor,
