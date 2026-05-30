@@ -105,7 +105,6 @@ flutter:
      - assets/images/quiz-logo.png
      - assets/images/
      - assets/json/
-     - assets/bible/
      - assets/lottie/
 
   # An image asset can refer to one or more resolution-specific "variants", see

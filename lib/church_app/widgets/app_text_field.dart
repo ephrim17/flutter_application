@@ -34,7 +34,10 @@ InputDecoration appTextFieldDecoration(
     );
   }
 
-  const borderColor = Color(0xFFE0D6FB);
+  final isDark = theme.brightness == Brightness.dark;
+  final borderColor = isDark
+      ? theme.colorScheme.onSurface.withAlpha(0x26)
+      : const Color(0xFFE0D6FB);
   final primary = theme.colorScheme.primary;
   const fieldRadius = Radius.circular(28);
 
@@ -47,7 +50,7 @@ InputDecoration appTextFieldDecoration(
 
   return InputDecoration(
     filled: true,
-    fillColor: Colors.white,
+    fillColor: isDark ? theme.colorScheme.surface : Colors.white,
     hintText: hintText,
     labelText: labelText,
     suffixIcon: suffixIcon,
@@ -59,7 +62,7 @@ InputDecoration appTextFieldDecoration(
     contentPadding: contentPadding ??
         const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
     hintStyle: theme.textTheme.titleMedium?.copyWith(
-      color: const Color(0xFF858197),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
       fontWeight: FontWeight.w400,
     ),
     labelStyle: theme.textTheme.titleSmall?.copyWith(
@@ -188,7 +191,7 @@ class AppTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       enabled: enabled,
       style: theme.textTheme.titleMedium?.copyWith(
-        color: const Color(0xFF23212D),
+        color: theme.colorScheme.onSurface,
         fontWeight: FontWeight.w500,
       ),
     );
@@ -202,7 +205,7 @@ class AppTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withValues(alpha: 0.04),
+            color: theme.colorScheme.primary.withAlpha(10),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -258,12 +261,10 @@ class AppDropdownField<T> extends StatelessWidget {
             errorBorder: InputBorder.none,
             focusedErrorBorder: InputBorder.none,
             disabledBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 22),
           ),
-          borderRadius: BorderRadius.circular(cornerRadius),
-          dropdownColor: Theme.of(context).cardTheme.color,
           items: items,
           onChanged: enabled ? onChanged : null,
+          iconEnabledColor: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );

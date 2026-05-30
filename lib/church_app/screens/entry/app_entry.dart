@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/admin_mode_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
@@ -44,6 +46,26 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       final notifier = ref.read(forcePreflowThemeProvider.notifier);
       if (notifier.state != enabled) {
         notifier.state = enabled;
+      }
+    });
+  }
+
+  void _restoreSelectedChurchIfNeeded() {
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (selectedChurch != null) return;
+
+    final churchId = ref.watch(currentChurchIdProvider).value;
+    if (churchId == null || churchId.trim().isEmpty) return;
+
+    final churchAsync = ref.watch(churchByIdProvider(churchId));
+    final church = churchAsync.value;
+    if (church == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final notifier = ref.read(selectedChurchProvider.notifier);
+      if (notifier.state == null) {
+        notifier.state = church;
       }
     });
   }
@@ -152,8 +174,10 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     }
     if (!user.approved) {
       _syncPreflowTheme(true);
+      _restoreSelectedChurchIfNeeded();
       return const PendingApprovalWidget();
     }
+    _restoreSelectedChurchIfNeeded();
     if (appConfig?.superAdminDisabled == true) {
       _syncPreflowTheme(true);
       return AdminModeScreen(

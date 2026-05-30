@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/bible_library_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
@@ -101,7 +101,7 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.members:
         return MembersScreen();
       case DrawerMenuItem.holyBible:
-        return BibleBookScreen();
+        return const BibleLibraryScreen();
       case DrawerMenuItem.settings:
         return const SettingsScreen();
     }

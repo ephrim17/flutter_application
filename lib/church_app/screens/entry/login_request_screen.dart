@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -669,6 +670,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
             existingDoc.id,
             existingDoc.data() as Map<String, dynamic>,
           );
+          await ChurchLocalStorage().saveChurch(
+            id: widget.churchId,
+            name: widget.churchName,
+            logo: widget.churchLogo,
+          );
+          if (!mounted) return;
           ref.read(forcePreflowThemeProvider.notifier).state =
               !appUser.approved;
 
@@ -799,6 +806,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         return;
       }
 
+      await ChurchLocalStorage().saveChurch(
+        id: widget.churchId,
+        name: widget.churchName,
+        logo: widget.churchLogo,
+      );
+      if (!mounted) return;
       ref.read(selectedChurchProvider.notifier).state = Church(
         id: widget.churchId,
         name: widget.churchName,

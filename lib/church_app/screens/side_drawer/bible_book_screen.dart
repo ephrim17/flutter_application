@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
+import 'package:flutter_application/church_app/models/bible_version_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart'
     show favoritesProvider, toggleGlobalHighlight;
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
@@ -12,7 +13,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 class BibleBookScreen extends StatelessWidget {
-  const BibleBookScreen({super.key});
+  const BibleBookScreen({
+    super.key,
+    required this.version,
+    this.requireDownloaded = true,
+  });
+
+  final BibleVersion version;
+  final bool requireDownloaded;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +42,11 @@ class BibleBookScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ChapterScreen(book: book),
+                  builder: (_) => ChapterScreen(
+                    book: book,
+                    version: version,
+                    requireDownloaded: requireDownloaded,
+                  ),
                 ),
               );
             },
@@ -46,9 +58,16 @@ class BibleBookScreen extends StatelessWidget {
 }
 
 class ChapterScreen extends StatefulWidget {
-  const ChapterScreen({super.key, required this.book});
+  const ChapterScreen({
+    super.key,
+    required this.book,
+    required this.version,
+    this.requireDownloaded = true,
+  });
 
   final BibleBook book;
+  final BibleVersion version;
+  final bool requireDownloaded;
 
   @override
   State<ChapterScreen> createState() => _ChapterScreenState();
@@ -61,7 +80,11 @@ class _ChapterScreenState extends State<ChapterScreen> {
   @override
   void initState() {
     super.initState();
-    _bookFuture = _repo.loadBook(widget.book.key);
+    _bookFuture = _repo.loadBook(
+      widget.book.key,
+      version: widget.version,
+      requireDownloaded: widget.requireDownloaded,
+    );
   }
 
   @override
@@ -117,6 +140,8 @@ class _ChapterScreenState extends State<ChapterScreen> {
                     MaterialPageRoute(
                       builder: (_) => VerseScreen(
                         book: widget.book,
+                        version: widget.version,
+                        requireDownloaded: widget.requireDownloaded,
                         startChapterIndex: index,
                       ),
                     ),
@@ -136,12 +161,16 @@ class _ChapterScreenState extends State<ChapterScreen> {
 
 class VerseScreen extends ConsumerStatefulWidget {
   final BibleBook book;
+  final BibleVersion? version;
+  final bool requireDownloaded;
   final int startChapterIndex;
   final int? endChapterIndex;
 
   const VerseScreen({
     super.key,
     required this.book,
+    this.version,
+    this.requireDownloaded = false,
     required this.startChapterIndex,
     this.endChapterIndex,
   });
@@ -163,7 +192,11 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     _pageController = PageController(
       initialPage: 0,
     );
-    _bookFuture = repo.loadBook(widget.book.key);
+    _bookFuture = repo.loadBook(
+      widget.book.key,
+      version: widget.version,
+      requireDownloaded: widget.requireDownloaded,
+    );
     chapterIndexText = (widget.startChapterIndex + 1).toString();
   }
 

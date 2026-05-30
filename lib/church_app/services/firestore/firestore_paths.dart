@@ -8,6 +8,7 @@ class FirestorePaths {
   static const users = 'users';
   static const globalFeeds = 'globalFeeds';
   static const mail = 'mail';
+  static const bibleVersions = 'bible_versions';
 
   //Section paths
   static const homeSections = 'home_sections';
@@ -51,6 +52,11 @@ class FirestorePaths {
   static const dashboardMetrics = 'dashboard_metrics';
   static const equipments = 'equipments';
   static const financialTransactions = 'financial_transactions';
+  static CollectionReference<Map<String, dynamic>> bibleVersionsCollection(
+    FirebaseFirestore firestore,
+  ) {
+    return firestore.collection(bibleVersions);
+  }
 
   /// Church document
   static DocumentReference churchDoc(

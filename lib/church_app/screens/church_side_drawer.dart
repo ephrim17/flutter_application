@@ -18,7 +18,8 @@ class ChurchSideDrawer extends StatelessWidget {
     final items = DrawerMenuItem.values;
 
     return Drawer(
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
@@ -84,7 +85,8 @@ class AppDrawer extends ConsumerWidget {
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
           userAsync.when(
             loading: () => const DrawerHeader(
@@ -129,7 +131,6 @@ class AppDrawer extends ConsumerWidget {
               );
             },
           ),
-
           /// 🧭 Menu items
           ...items.map(
             (item) => ListTile(

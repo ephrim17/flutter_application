@@ -8,12 +8,14 @@ class ChurchLocalStorage {
   Future<void> saveChurch({
     required String id,
     required String name,
+    String logo = '',
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
     final data = jsonEncode({
       'id': id,
       'name': name,
+      'logo': logo,
     });
 
     await prefs.setString(_churchKey, data);

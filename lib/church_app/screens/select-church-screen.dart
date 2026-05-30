@@ -177,6 +177,12 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
               SuperAdminEntryMode.normal,
             );
         if (!context.mounted) return;
+        await ChurchLocalStorage().saveChurch(
+          id: selectedChurch.id,
+          name: selectedChurch.name,
+          logo: selectedChurch.logo,
+        );
+        if (!context.mounted) return;
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
         ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
         ref.invalidate(currentChurchIdProvider);

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -310,6 +311,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             final appUser = AppUser.fromJson(
                               userDoc.data() as Map<String, dynamic>,
                             );
+                            await ChurchLocalStorage().saveChurch(
+                              id: widget.churchId,
+                              name: widget.churchName,
+                              logo: widget.churchLogo,
+                            );
+                            if (!context.mounted) return;
                             ref.read(forcePreflowThemeProvider.notifier).state =
                                 !appUser.approved;
                             ref.read(selectedChurchProvider.notifier).state =
