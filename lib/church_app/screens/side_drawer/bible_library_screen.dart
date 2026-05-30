@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/bible_versions_provider.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_book_screen.dart';
@@ -354,15 +355,15 @@ class _BibleVersionTile extends StatelessWidget {
                     ? 'Downloaded'
                     : '${state.downloadedFiles}/${state.totalFiles} files';
 
-    return Card(
-      elevation: 0,
+    return Container(
+      decoration: carouselBoxDecoration(context),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
-      ),
+      // shape: RoundedRectangleBorder(
+      //   borderRadius: BorderRadius.circular(8),
+      //   side: BorderSide(
+      //     color: theme.dividerColor.withValues(alpha: 0.5),
+      //   ),
+      // ),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -377,9 +378,8 @@ class _BibleVersionTile extends StatelessWidget {
                     width: 52,
                     height: 52,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                    decoration: carouselBoxDecoration(
+                      context
                     ),
                     child: Text(
                       version.languageLabel,
