@@ -146,11 +146,17 @@ class FeedCard extends ConsumerWidget {
               ),
               child: Stack(
                 children: [
-                  ShimmerImage(
-                    imageUrl: post.imageUrl!,
-                    fit: BoxFit.cover,
-                    aspectRatio: 1,
-                    borderRadius: 22,
+                  InkWell(
+                    onTap: () => _openImagePreview(context, post.imageUrl!),
+                    child: Hero(
+                      tag: post.imageUrl!,
+                      child: ShimmerImage(
+                        imageUrl: post.imageUrl!,
+                        fit: BoxFit.cover,
+                        aspectRatio: 1,
+                        borderRadius: 22,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -410,6 +416,133 @@ class FeedCard extends ConsumerWidget {
 
     if (!doc.exists) return null;
     return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+  }
+
+  void _openImagePreview(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _FeedImagePreviewScreen(imageUrl: imageUrl),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+}
+
+class _FeedImagePreviewScreen extends StatefulWidget {
+  final String imageUrl;
+
+  const _FeedImagePreviewScreen({required this.imageUrl});
+
+  @override
+  State<_FeedImagePreviewScreen> createState() => _FeedImagePreviewScreenState();
+}
+
+class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
+  static const double _minScale = 1.0;
+  static const double _maxScale = 5.0;
+  double _currentScale = 1.0;
+  final TransformationController _controller = TransformationController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _setScale(double scale) {
+    final nextScale = scale.clamp(_minScale, _maxScale);
+    setState(() {
+      _currentScale = nextScale;
+      _controller.value = Matrix4.identity()..scale(nextScale);
+    });
+  }
+
+  void _zoomIn() => _setScale(_currentScale * 1.4);
+  void _zoomOut() => _setScale(_currentScale / 1.4);
+  void _resetZoom() => _setScale(1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(''),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Center(
+            child: Hero(
+              tag: widget.imageUrl,
+              child: InteractiveViewer(
+                transformationController: _controller,
+                minScale: _minScale,
+                maxScale: _maxScale,
+                panEnabled: true,
+                onInteractionUpdate: (details) {
+                  final scale = _controller.value.getMaxScaleOnAxis();
+                  setState(() {
+                    _currentScale = scale.clamp(_minScale, _maxScale);
+                  });
+                },
+                child: Image.network(
+                  widget.imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.white70,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 32,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  backgroundColor: Colors.white24,
+                  onPressed: _zoomIn,
+                  tooltip: 'Zoom in',
+                  child: const Icon(Icons.zoom_in, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.small(
+                  backgroundColor: Colors.white24,
+                  onPressed: _zoomOut,
+                  tooltip: 'Zoom out',
+                  child: const Icon(Icons.zoom_out, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.small(
+                  backgroundColor: Colors.white24,
+                  onPressed: _resetZoom,
+                  tooltip: 'Reset zoom',
+                  child: const Icon(Icons.refresh, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
