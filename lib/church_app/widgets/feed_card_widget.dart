@@ -485,15 +485,13 @@ class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
                 minScale: _minScale,
                 maxScale: _maxScale,
                 panEnabled: true,
-                onInteractionUpdate: (details) {
-                  final scale = _controller.value.getMaxScaleOnAxis();
-                  setState(() {
-                    _currentScale = scale.clamp(_minScale, _maxScale);
-                  });
-                },
+                boundaryMargin: const EdgeInsets.all(100),
+                constrained: false,
                 child: Image.network(
                   widget.imageUrl,
                   fit: BoxFit.contain,
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return const Center(
@@ -509,35 +507,6 @@ class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
                   ),
                 ),
               ),
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 32,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.small(
-                  backgroundColor: Colors.white24,
-                  onPressed: _zoomIn,
-                  tooltip: 'Zoom in',
-                  child: const Icon(Icons.zoom_in, color: Colors.white),
-                ),
-                const SizedBox(height: 10),
-                FloatingActionButton.small(
-                  backgroundColor: Colors.white24,
-                  onPressed: _zoomOut,
-                  tooltip: 'Zoom out',
-                  child: const Icon(Icons.zoom_out, color: Colors.white),
-                ),
-                const SizedBox(height: 10),
-                FloatingActionButton.small(
-                  backgroundColor: Colors.white24,
-                  onPressed: _resetZoom,
-                  tooltip: 'Reset zoom',
-                  child: const Icon(Icons.refresh, color: Colors.white),
-                ),
-              ],
             ),
           ),
         ],
