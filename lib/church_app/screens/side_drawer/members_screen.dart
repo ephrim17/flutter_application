@@ -77,6 +77,11 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
         .where((member) => _isBirthdayToday(member.dob))
         .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final todayAnniversaries = allMembers
+        .where((member) => _isAnniversaryToday(member.weddingDay))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final specialDayCount = todayBirthdays.length + todayAnniversaries.length;
 
     return DefaultTabController(
       length: 4,
@@ -207,8 +212,12 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         ),
                       ),
                       Tab(
-                        child: _BirthdayTabLabel(
-                          count: todayBirthdays.length,
+                        child: _CountBadgeTabLabel(
+                          label: context.t(
+                            'members.special_days_tab',
+                            fallback: 'Special Day',
+                          ),
+                          count: specialDayCount,
                         ),
                       ),
                     ],
@@ -302,15 +311,11 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         isAdmin: isAdmin,
                         currentUid: currentUid,
                       ),
-                      _MembersListView(
-                        members: todayBirthdays,
+                      _SpecialDaysView(
+                        birthdays: todayBirthdays,
+                        anniversaries: todayAnniversaries,
                         isAdmin: isAdmin,
                         currentUid: currentUid,
-                        emptyMessage: context.t(
-                          'members.no_birthdays_today',
-                          fallback: 'No birthdays today',
-                        ),
-                        showBirthdayAction: true,
                       ),
                     ],
                   ),
@@ -420,27 +425,21 @@ class _MembersListView extends StatelessWidget {
     required this.members,
     required this.isAdmin,
     required this.currentUid,
-    this.emptyMessage = '',
-    this.showBirthdayAction = false,
   });
 
   final List<AppUser> members;
   final bool isAdmin;
   final String? currentUid;
-  final String emptyMessage;
-  final bool showBirthdayAction;
 
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
       return Center(
         child: Text(
-          emptyMessage.isEmpty
-              ? context.t(
-                  'members.no_matching_members',
-                  fallback: 'No matching members',
-                )
-              : emptyMessage,
+          context.t(
+            'members.no_matching_members',
+            fallback: 'No matching members',
+          ),
         ),
       );
     }
@@ -452,18 +451,154 @@ class _MembersListView extends StatelessWidget {
           member: members[index],
           isAdmin: isAdmin,
           currentUid: currentUid,
-          showBirthdayAction: showBirthdayAction,
         );
       },
     );
   }
 }
 
-class _BirthdayTabLabel extends StatelessWidget {
-  const _BirthdayTabLabel({
+class _SpecialDaysView extends StatelessWidget {
+  const _SpecialDaysView({
+    required this.birthdays,
+    required this.anniversaries,
+    required this.isAdmin,
+    required this.currentUid,
+  });
+
+  final List<AppUser> birthdays;
+  final List<AppUser> anniversaries;
+  final bool isAdmin;
+  final String? currentUid;
+
+  @override
+  Widget build(BuildContext context) {
+    if (birthdays.isEmpty && anniversaries.isEmpty) {
+      return Center(
+        child: Text(
+          context.t(
+            'members.no_special_days_today',
+            fallback: 'No special days today',
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
+      children: [
+        _SpecialDaySection(
+          title: context.t('members.birthdays_tab', fallback: 'Birthdays'),
+          emptyMessage: context.t(
+            'members.no_birthdays_today',
+            fallback: 'No birthdays today',
+          ),
+          members: birthdays,
+          isAdmin: isAdmin,
+          currentUid: currentUid,
+          postType: SpecialPostType.birthday,
+        ),
+        _SpecialDaySection(
+          title: context.t(
+            'members.anniversaries_tab',
+            fallback: 'Anniversaries',
+          ),
+          emptyMessage: context.t(
+            'members.no_anniversaries_today',
+            fallback: 'No anniversaries today',
+          ),
+          members: anniversaries,
+          isAdmin: isAdmin,
+          currentUid: currentUid,
+          postType: SpecialPostType.anniversary,
+        ),
+      ],
+    );
+  }
+}
+
+class _SpecialDaySection extends StatelessWidget {
+  const _SpecialDaySection({
+    required this.title,
+    required this.emptyMessage,
+    required this.members,
+    required this.isAdmin,
+    required this.currentUid,
+    required this.postType,
+  });
+
+  final String title;
+  final String emptyMessage;
+  final List<AppUser> members;
+  final bool isAdmin;
+  final String? currentUid;
+  final SpecialPostType postType;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${members.length}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (members.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+              child: Text(emptyMessage),
+            )
+          else
+            ...members.map(
+              (member) => _MemberTile(
+                member: member,
+                isAdmin: isAdmin,
+                currentUid: currentUid,
+                specialPostType: postType,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CountBadgeTabLabel extends StatelessWidget {
+  const _CountBadgeTabLabel({
+    required this.label,
     required this.count,
   });
 
+  final String label;
   final int count;
 
   @override
@@ -474,7 +609,7 @@ class _BirthdayTabLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          context.t('members.birthdays_tab', fallback: 'Birthdays'),
+          label,
         ),
         if (count > 0) ...[
           const SizedBox(width: 6),
@@ -564,13 +699,13 @@ class _MemberTile extends ConsumerStatefulWidget {
     required this.member,
     required this.isAdmin,
     required this.currentUid,
-    this.showBirthdayAction = false,
+    this.specialPostType,
   });
 
   final AppUser member;
   final bool isAdmin;
   final String? currentUid;
-  final bool showBirthdayAction;
+  final SpecialPostType? specialPostType;
 
   @override
   ConsumerState<_MemberTile> createState() => _MemberTileState();
@@ -590,7 +725,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
 
   @override
   Widget build(BuildContext context) {
-    final trailing = widget.showBirthdayAction
+    final trailing = widget.specialPostType != null
         ? TextButton(
             onPressed: () {
               showAppModalBottomSheet<void>(
@@ -598,7 +733,10 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
                 isScrollControlled: true,
                 builder: (_) => FractionallySizedBox(
                   heightFactor: 0.95,
-                  child: BirthdayPostComposerModal(member: widget.member),
+                  child: BirthdayPostComposerModal(
+                    member: widget.member,
+                    type: widget.specialPostType!,
+                  ),
                 ),
               );
             },
@@ -1660,6 +1798,12 @@ bool _isBirthdayToday(DateTime? dob) {
   if (dob == null) return false;
   final now = DateTime.now();
   return dob.day == now.day && dob.month == now.month;
+}
+
+bool _isAnniversaryToday(DateTime? weddingDay) {
+  if (weddingDay == null) return false;
+  final now = DateTime.now();
+  return weddingDay.day == now.day && weddingDay.month == now.month;
 }
 
 String _formatCategory(BuildContext context, String category) {

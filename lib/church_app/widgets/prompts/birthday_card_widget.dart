@@ -178,11 +178,15 @@ class BirthdayBlessingCard extends StatelessWidget {
     super.key,
     required this.userName,
     required this.verse,
+    this.eyebrow = 'Celebrating You',
+    this.headline = 'Happy Birthday',
     this.backgroundImageBytes,
   });
 
   final String userName;
   final Map<String, String> verse;
+  final String eyebrow;
+  final String headline;
   final Uint8List? backgroundImageBytes;
 
   @override
@@ -235,9 +239,10 @@ class BirthdayBlessingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              "Celebrating You",
-              style: TextStyle(
+            Text(
+              eyebrow,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 14,
                 letterSpacing: 2.6,
                 fontWeight: FontWeight.w700,
@@ -245,9 +250,10 @@ class BirthdayBlessingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              "Happy Birthday",
-              style: TextStyle(
+            Text(
+              headline,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,

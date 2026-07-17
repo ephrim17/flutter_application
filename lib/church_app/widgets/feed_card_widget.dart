@@ -3,11 +3,12 @@ import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.da
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,20 +23,28 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FeedCard extends ConsumerWidget {
+  static final DateFormat _feedDateFormat = DateFormat('MMM d');
+  static final DateFormat _feedTimeFormat = DateFormat('h:mm a');
+
   final FeedPost post;
+  final String? currentUid;
+  final bool isAdmin;
   final bool isGlobal;
+  final ValueChanged<String>? onHashtagTap;
+  final VoidCallback? onPostChanged;
 
   const FeedCard({
     super.key,
     required this.post,
+    required this.currentUid,
+    required this.isAdmin,
     this.isGlobal = false,
+    this.onHashtagTap,
+    this.onPostChanged,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final firebaseUser = ref.watch(firebaseAuthProvider).currentUser;
-    final currentUid = firebaseUser?.uid;
-    final isAdmin = ref.watch(isAdminProvider);
     final postChurchId = post.churchId?.trim() ?? '';
     final isPostChurchAdmin = isGlobal && postChurchId.isNotEmpty
         ? ref.watch(churchAdminProvider(postChurchId))
@@ -43,6 +52,7 @@ class FeedCard extends ConsumerWidget {
 
     final isOwner = currentUid != null && currentUid == post.userId;
     final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
+    final canPin = canDelete;
     final theme = Theme.of(context);
     final hasImage = (post.imageUrl ?? '').trim().isNotEmpty;
     final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
@@ -61,9 +71,7 @@ class FeedCard extends ConsumerWidget {
               children: [
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
-                  onTap: isGlobal
-                      ? () => _showPostAuthorDetails(context, ref)
-                      : null,
+                  onTap: () => _showPostAuthorDetails(context, ref),
                   child: CircleAvatar(
                     radius: 21,
                     backgroundColor:
@@ -94,22 +102,42 @@ class FeedCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        humanFormatDate(post.createdAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            humanFormatDate(post.createdAt),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          if (post.isPinned)
+                            _PinnedBadge(
+                              label: ref.t(
+                                'feed.pinned_badge',
+                                fallback: 'Pinned',
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                if (isOwner || canDelete)
+                if (isOwner || canDelete || canPin)
                   PopupMenuButton<_FeedPostAction>(
                     icon: const Icon(Icons.more_horiz_rounded),
                     onSelected: (action) async {
                       switch (action) {
                         case _FeedPostAction.edit:
                           await _editPost(context, ref);
+                          break;
+                        case _FeedPostAction.pin:
+                          await _setPinnedPost(context, ref, pinned: true);
+                          break;
+                        case _FeedPostAction.unpin:
+                          await _setPinnedPost(context, ref, pinned: false);
                           break;
                         case _FeedPostAction.delete:
                           await _confirmAndDeletePost(context, ref);
@@ -122,6 +150,23 @@ class FeedCard extends ConsumerWidget {
                           value: _FeedPostAction.edit,
                           child: Text(
                             ref.t('feed.edit_post', fallback: 'Edit post'),
+                          ),
+                        ),
+                      if (canPin)
+                        PopupMenuItem(
+                          value: post.isPinned
+                              ? _FeedPostAction.unpin
+                              : _FeedPostAction.pin,
+                          child: Text(
+                            post.isPinned
+                                ? ref.t(
+                                    'feed.unpin_post',
+                                    fallback: 'Unpin post',
+                                  )
+                                : ref.t(
+                                    'feed.pin_post',
+                                    fallback: 'Pin post',
+                                  ),
                           ),
                         ),
                       if (canDelete)
@@ -169,6 +214,7 @@ class FeedCard extends ConsumerWidget {
                 const SizedBox(height: 12),
                 LinkifiedText(
                   text: post.title,
+                  onHashtagTap: onHashtagTap,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     height: 1.2,
@@ -178,6 +224,7 @@ class FeedCard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   LinkifiedText(
                     text: post.description,
+                    onHashtagTap: onHashtagTap,
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
                   ),
                 ],
@@ -194,8 +241,8 @@ class FeedCard extends ConsumerWidget {
   }
 
   String humanFormatDate(DateTime createdAt) {
-    final datePart = DateFormat('MMM d').format(createdAt);
-    final timePart = DateFormat('h:mm a').format(createdAt);
+    final datePart = _feedDateFormat.format(createdAt);
+    final timePart = _feedTimeFormat.format(createdAt);
     return "$datePart at $timePart";
   }
 
@@ -220,6 +267,42 @@ class FeedCard extends ConsumerWidget {
     );
 
     await _refreshFeed(ref);
+    onPostChanged?.call();
+  }
+
+  Future<void> _setPinnedPost(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool pinned,
+  }) async {
+    await ref.read(feedPostModalControllerProvider.notifier).setPinnedPost(
+          postId: post.id,
+          pinned: pinned,
+          isGlobal: isGlobal,
+        );
+
+    await logChurchAnalyticsEvent(
+      ref,
+      name: pinned ? 'feed_post_pinned' : 'feed_post_unpinned',
+      parameters: {
+        'post_id': post.id,
+        'scope': isGlobal ? 'global' : 'church',
+      },
+    );
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          pinned
+              ? ref.t('feed.post_pinned', fallback: 'Post pinned')
+              : ref.t('feed.post_unpinned', fallback: 'Post unpinned'),
+        ),
+      ),
+    );
+
+    await _refreshFeed(ref);
+    onPostChanged?.call();
   }
 
   Future<void> _confirmAndDeletePost(
@@ -285,6 +368,7 @@ class FeedCard extends ConsumerWidget {
     );
 
     await _refreshFeed(ref);
+    onPostChanged?.call();
   }
 
   Future<void> _refreshFeed(WidgetRef ref) async {
@@ -302,7 +386,10 @@ class FeedCard extends ConsumerWidget {
 
   Future<void> _showPostAuthorDetails(
       BuildContext context, WidgetRef ref) async {
-    final postChurchId = post.churchId?.trim() ?? '';
+    final currentChurchId = ref.read(currentChurchIdProvider).value;
+    final postChurchId = (post.churchId?.trim().isNotEmpty ?? false)
+        ? post.churchId!.trim()
+        : (!isGlobal ? currentChurchId?.trim() ?? '' : '');
     if (postChurchId.isEmpty) return;
     var churchName = post.churchName?.trim() ?? '';
     var churchPastorName = post.churchPastorName?.trim() ?? '';
@@ -325,6 +412,42 @@ class FeedCard extends ConsumerWidget {
           churchPastorName = church.pastorName;
         }
       }
+    }
+
+    if (!isGlobal) {
+      final user = await _loadAuthorFromChurch(ref, postChurchId) ??
+          AppUser(
+            uid: post.userId,
+            name: post.userName,
+            email: '',
+            role: 'user',
+            approved: true,
+            phone: '',
+            contact: '',
+            location: '',
+            address: '',
+            gender: '',
+            category: '',
+            familyId: '',
+            maritalStatus: '',
+            weddingDay: null,
+            financialStabilityRating: 0,
+            financialSupportRequired: false,
+            educationalQualification: '',
+            talentsAndGifts: const [],
+            churchGroupIds: const [],
+            authToken: '',
+            dob: null,
+          );
+
+      if (!context.mounted) return;
+      await showUserQuickCardWithChurch(
+        context,
+        user,
+        churchName: churchName,
+        churchPastorName: churchPastorName,
+      );
+      return;
     }
 
     if (!context.mounted) return;
@@ -434,13 +557,13 @@ class _FeedImagePreviewScreen extends StatefulWidget {
   const _FeedImagePreviewScreen({required this.imageUrl});
 
   @override
-  State<_FeedImagePreviewScreen> createState() => _FeedImagePreviewScreenState();
+  State<_FeedImagePreviewScreen> createState() =>
+      _FeedImagePreviewScreenState();
 }
 
 class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
   static const double _minScale = 1.0;
   static const double _maxScale = 5.0;
-  double _currentScale = 1.0;
   final TransformationController _controller = TransformationController();
 
   @override
@@ -448,18 +571,6 @@ class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
     _controller.dispose();
     super.dispose();
   }
-
-  void _setScale(double scale) {
-    final nextScale = scale.clamp(_minScale, _maxScale);
-    setState(() {
-      _currentScale = nextScale;
-      _controller.value = Matrix4.identity()..scale(nextScale);
-    });
-  }
-
-  void _zoomIn() => _setScale(_currentScale * 1.4);
-  void _zoomOut() => _setScale(_currentScale / 1.4);
-  void _resetZoom() => _setScale(1.0);
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +724,46 @@ class _YoutubePreviewCard extends StatelessWidget {
   }
 }
 
+class _PinnedBadge extends StatelessWidget {
+  const _PinnedBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final highlightColor = theme.colorScheme.secondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: highlightColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.push_pin_outlined,
+            size: 13,
+            color: highlightColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: highlightColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 enum _FeedPostAction {
   edit,
+  pin,
+  unpin,
   delete,
 }

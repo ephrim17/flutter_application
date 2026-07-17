@@ -124,13 +124,20 @@ class _TodayBirthdaysModal extends StatelessWidget {
   }
 }
 
+enum SpecialPostType {
+  birthday,
+  anniversary,
+}
+
 class BirthdayPostComposerModal extends ConsumerStatefulWidget {
   const BirthdayPostComposerModal({
     super.key,
     required this.member,
+    this.type = SpecialPostType.birthday,
   });
 
   final AppUser member;
+  final SpecialPostType type;
 
   @override
   ConsumerState<BirthdayPostComposerModal> createState() =>
@@ -150,13 +157,29 @@ class _BirthdayPostComposerModalState
   PickedImageData? _selectedBackgroundImage;
   bool _captureQueued = false;
 
+  bool get _isAnniversary => widget.type == SpecialPostType.anniversary;
+
+  String _textKey(String suffix) =>
+      '${_isAnniversary ? 'anniversary' : 'birthday'}.$suffix';
+
+  String get _occasionName => _isAnniversary ? 'Anniversary' : 'Birthday';
+
+  String get _cardEyebrow =>
+      _isAnniversary ? 'Celebrating Love' : 'Celebrating You';
+
+  String get _cardHeadline =>
+      _isAnniversary ? 'Happy Anniversary' : 'Happy Birthday';
+
   @override
   void initState() {
     super.initState();
-    _titleController.text =
-        buildBirthdayPostTitle(widget.member.name, widget.member.dob);
-    _descriptionController.text =
-        'Wishing ${widget.member.name} a joyful and blessed birthday.';
+    _titleController.text = _isAnniversary
+        ? buildAnniversaryPostTitle(
+            widget.member.name, widget.member.weddingDay)
+        : buildBirthdayPostTitle(widget.member.name, widget.member.dob);
+    _descriptionController.text = _isAnniversary
+        ? 'Wishing ${widget.member.name} a joyful and blessed wedding anniversary.'
+        : 'Wishing ${widget.member.name} a joyful and blessed birthday.';
   }
 
   @override
@@ -198,8 +221,8 @@ class _BirthdayPostComposerModalState
     await showBibleVersePickerSheet(
       context,
       title: context.t(
-        'birthday.change_verse',
-        fallback: 'Birthday Verse',
+        _textKey('change_verse'),
+        fallback: '$_occasionName Verse',
       ),
       initialBook: initialBook,
       initialChapter: initialChapter,
@@ -248,7 +271,8 @@ class _BirthdayPostComposerModalState
         setState(() {
           _generatedImage = PickedImageData(
             bytes: bytes,
-            name: 'birthday-${widget.member.uid}.png',
+            name:
+                '${_isAnniversary ? 'anniversary' : 'birthday'}-${widget.member.uid}.png',
           );
         });
       }
@@ -282,8 +306,8 @@ class _BirthdayPostComposerModalState
         SnackBar(
           content: Text(
             context.t(
-              'birthday.image_pending',
-              fallback: 'Birthday image is still being prepared',
+              _textKey('image_pending'),
+              fallback: '$_occasionName image is still being prepared',
             ),
           ),
         ),
@@ -327,7 +351,10 @@ class _BirthdayPostComposerModalState
             Row(
               children: [
                 Text(
-                  context.t('birthday.post_title', fallback: 'Birthday Post'),
+                  context.t(
+                    _textKey('post_title'),
+                    fallback: '$_occasionName Post',
+                  ),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
@@ -415,7 +442,7 @@ class _BirthdayPostComposerModalState
                           icon: const Icon(Icons.edit_outlined),
                           label: Text(
                             context.t(
-                              'birthday.change_verse',
+                              _textKey('change_verse'),
                               fallback: 'Change verse',
                             ),
                           ),
@@ -443,6 +470,8 @@ class _BirthdayPostComposerModalState
                       child: BirthdayBlessingCard(
                         userName: widget.member.name,
                         verse: _selectedVerse!,
+                        eyebrow: _cardEyebrow,
+                        headline: _cardHeadline,
                         backgroundImageBytes: _selectedBackgroundImage?.bytes,
                       ),
                     ),
@@ -463,8 +492,8 @@ class _BirthdayPostComposerModalState
                       )
                     : Text(
                         context.t(
-                          'birthday.post_wish',
-                          fallback: 'Post Birthday Wish',
+                          _textKey('post_wish'),
+                          fallback: 'Post $_occasionName Wish',
                         ),
                       ),
               ),
@@ -502,4 +531,30 @@ String _formatBirthdayMoment(BuildContext context, DateTime? dob) {
   final turningAge = now.year - dob.year;
 
   return '${context.t('birthday.turning_prefix', fallback: 'Turning')} $turningAge';
+}
+
+String buildAnniversaryPostTitle(String userName, DateTime? weddingDay) {
+  final years = birthdayAge(weddingDay);
+  if (years == null) {
+    return 'Happy Anniversary $userName';
+  }
+  return 'Happy ${_anniversaryOrdinal(years)} Anniversary $userName';
+}
+
+String _anniversaryOrdinal(int value) {
+  final mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) {
+    return '${value}th';
+  }
+
+  switch (value % 10) {
+    case 1:
+      return '${value}st';
+    case 2:
+      return '${value}nd';
+    case 3:
+      return '${value}rd';
+    default:
+      return '${value}th';
+  }
 }

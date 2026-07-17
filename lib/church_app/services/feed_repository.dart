@@ -49,6 +49,9 @@ class FeedRepository {
     DocumentSnapshot? startAfter,
     int limit = defaultFeedPageSize,
   }) async {
+    final pinnedPost = startAfter == null
+        ? await fetchPinnedPost(churchId: churchId, isGlobal: isGlobal)
+        : null;
     final snapshot = await _feedQuery(
       churchId: churchId,
       isGlobal: isGlobal,
@@ -58,7 +61,11 @@ class FeedRepository {
 
     final posts = snapshot.docs
         .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
+        .where((post) => post.id != pinnedPost?.id)
         .toList();
+    if (pinnedPost != null) {
+      posts.insert(0, pinnedPost);
+    }
 
     return FeedPageResult(
       posts: posts,
@@ -76,6 +83,93 @@ class FeedRepository {
         );
       }).toList();
     });
+  }
+
+  Future<FeedPost?> fetchPinnedPost({
+    String? churchId,
+    bool isGlobal = false,
+  }) async {
+    final collection = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore)
+        : FirestorePaths.feedCollection(_firestore, churchId!);
+
+    final snapshot = await collection
+        .where('isPinned', isEqualTo: true)
+        .limit(10)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) =>
+              snapshot.data() ?? <String, dynamic>{},
+          toFirestore: (value, _) => value,
+        )
+        .get();
+
+    final posts = snapshot.docs
+        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
+        .toList(growable: false);
+    final sortedPosts = sortFeedPosts(posts);
+    return sortedPosts.isEmpty ? null : sortedPosts.first;
+  }
+
+  Future<List<FeedPost>> fetchPostsByHashtag({
+    required String hashtag,
+    String? churchId,
+    bool isGlobal = false,
+    int limit = 100,
+  }) async {
+    final normalizedHashtag = normalizeHashtag(hashtag);
+    if (normalizedHashtag.isEmpty) return const [];
+
+    final collection = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore)
+        : FirestorePaths.feedCollection(_firestore, churchId!);
+
+    final snapshot = await collection
+        .where('hashtags', arrayContains: normalizedHashtag)
+        .limit(limit)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) =>
+              snapshot.data() ?? <String, dynamic>{},
+          toFirestore: (value, _) => value,
+        )
+        .get();
+
+    final posts = snapshot.docs
+        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
+        .toList(growable: false);
+
+    if (posts.isNotEmpty) {
+      return sortFeedPosts(posts);
+    }
+
+    return _fetchPostsByHashtagFromRecentText(
+      hashtag: normalizedHashtag,
+      churchId: churchId,
+      isGlobal: isGlobal,
+      limit: limit,
+    );
+  }
+
+  Future<List<FeedPost>> _fetchPostsByHashtagFromRecentText({
+    required String hashtag,
+    String? churchId,
+    required bool isGlobal,
+    required int limit,
+  }) async {
+    final snapshot = await _feedQuery(
+      churchId: churchId,
+      isGlobal: isGlobal,
+      limit: limit,
+    ).get();
+
+    final posts = snapshot.docs
+        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
+        .where(
+          (post) => extractHashtags('${post.title}\n${post.description}')
+              .contains(hashtag),
+        )
+        .toList(growable: false);
+
+    return sortFeedPosts(posts);
   }
 
   Reference _feedImageRef({
@@ -132,6 +226,9 @@ class FeedRepository {
           : null,
       'title': title,
       'description': description,
+      'hashtags': extractHashtags('$title\n$description'),
+      'isPinned': false,
+      'pinnedAt': null,
       'imageUrl': null,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -210,6 +307,7 @@ class FeedRepository {
     await docRef.update({
       'title': title,
       'description': description,
+      'hashtags': extractHashtags('$title\n$description'),
       'imageUrl': imageUrl,
       if (sharePersonalDetails != null)
         'sharePersonalDetails': sharePersonalDetails,
@@ -265,7 +363,80 @@ class FeedRepository {
 
     await docRef.delete();
   }
+
+  Future<void> setPinnedPost({
+    String? churchId,
+    required String postId,
+    required bool pinned,
+    bool isGlobal = false,
+  }) async {
+    final collection = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore)
+        : FirestorePaths.feedCollection(_firestore, churchId!);
+    final postRef = collection.doc(postId);
+
+    final batch = _firestore.batch();
+
+    if (pinned) {
+      final currentPinnedSnapshot =
+          await collection.where('isPinned', isEqualTo: true).limit(10).get();
+
+      for (final doc in currentPinnedSnapshot.docs) {
+        if (doc.id == postId) continue;
+        batch.update(doc.reference, {
+          'isPinned': false,
+          'pinnedAt': null,
+        });
+      }
+    }
+
+    batch.update(postRef, {
+      'isPinned': pinned,
+      'pinnedAt': pinned ? FieldValue.serverTimestamp() : null,
+    });
+    await batch.commit();
+  }
 }
+
+List<FeedPost> sortFeedPosts(Iterable<FeedPost> posts) {
+  final sorted = posts.toList(growable: false);
+  sorted.sort((a, b) {
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
+
+    final aPinnedAt = a.pinnedAt;
+    final bPinnedAt = b.pinnedAt;
+    if (aPinnedAt != null && bPinnedAt != null) {
+      return bPinnedAt.compareTo(aPinnedAt);
+    }
+
+    return b.createdAt.compareTo(a.createdAt);
+  });
+  return sorted;
+}
+
+List<String> extractHashtags(String text) {
+  return _hashtagPattern
+      .allMatches(text)
+      .map((match) => normalizeHashtag(match.group(1) ?? ''))
+      .where((tag) => tag.isNotEmpty)
+      .toSet()
+      .toList(growable: false);
+}
+
+String normalizeHashtag(String value) {
+  return value
+      .trim()
+      .replaceFirst(RegExp(r'^#+'), '')
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^\p{L}\p{M}\p{N}_]+', unicode: true), '');
+}
+
+final RegExp _hashtagPattern = RegExp(
+  r'(?:^|\s)#([\p{L}\p{M}\p{N}_]+)',
+  unicode: true,
+);
 
 SettableMetadata _metadataFor(String fileName) {
   final lower = fileName.toLowerCase();

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
-import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
@@ -14,8 +11,6 @@ import 'package:flutter_application/church_app/screens/for_you/for_you_screen.da
 import 'package:flutter_application/church_app/screens/go_further_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -28,44 +23,7 @@ class ChurchTabScreen extends ConsumerStatefulWidget {
 }
 
 class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
-  Widget? _activeScreen;
   int selectedIndex = 0;
-  String? _lastDailyStreakSyncKey;
-
-  bool _isSameDay(DateTime first, DateTime second) {
-    return first.year == second.year &&
-        first.month == second.month &&
-        first.day == second.day;
-  }
-
-  Future<void> _syncDailyStreakIfNeeded(AppUser user) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || !mounted) return;
-
-    final today = DateTime.now();
-    if (user.lastStreakRecordedAt != null &&
-        _isSameDay(user.lastStreakRecordedAt!, today)) {
-      return;
-    }
-
-    final syncKey =
-        '$churchId:${user.uid}:${today.year}-${today.month}-${today.day}';
-    if (_lastDailyStreakSyncKey == syncKey) return;
-
-    _lastDailyStreakSyncKey = syncKey;
-    final repository = ChurchUsersRepository(
-      firestore: ref.read(firestoreProvider),
-      churchId: churchId,
-    );
-
-    try {
-      await repository.updateDailyStreak(uid: user.uid);
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
-    } catch (_) {
-      _lastDailyStreakSyncKey = null;
-    }
-  }
 
   Future<void> setActiveScreen(int index) async {
     setState(() {
@@ -96,18 +54,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         container: ProviderScope.containerOf(context, listen: false),
         promptIfNeeded: true,
       );
-      final user = await ref.read(getCurrentUserProvider.future);
-      if (user != null) {
-        await _syncDailyStreakIfNeeded(user);
-      }
       await _logTabOpen(selectedIndex);
     });
-
-    ref.listenManual(appUserProvider, (previous, next) async {
-      final user = next.asData?.value;
-      if (user == null) return;
-      await _syncDailyStreakIfNeeded(user);
-    }, fireImmediately: true);
   }
 
   Future<void> _logTabOpen(int index) async {
@@ -166,7 +114,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     if (selectedIndex >= screens.length) {
       selectedIndex = 0;
     }
-    _activeScreen = screens[selectedIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -178,7 +125,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           maxWidth: MediaQuery.of(context).size.width * 0.68,
         ),
       ),
-      body: _activeScreen,
+      body: screens[selectedIndex],
       drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),

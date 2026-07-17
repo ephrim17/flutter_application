@@ -135,6 +135,28 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
       );
     });
   }
+
+  Future<void> setPinnedPost({
+    required String postId,
+    required bool pinned,
+    bool isGlobal = false,
+  }) async {
+    final churchAsync = _ref.read(currentChurchIdProvider);
+    final churchId = churchAsync.value;
+
+    if (!isGlobal && churchId == null) return;
+
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      await _repository.setPinnedPost(
+        churchId: churchId,
+        postId: postId,
+        pinned: pinned,
+        isGlobal: isGlobal,
+      );
+    });
+  }
 }
 
 PickedImageData? selectedImage;

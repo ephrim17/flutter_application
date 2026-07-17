@@ -16,6 +16,9 @@ class FeedPost {
   final DateTime? userDob;
   final String title;
   final String description;
+  final List<String> hashtags;
+  final bool isPinned;
+  final DateTime? pinnedAt;
   final String? imageUrl;
   final DateTime createdAt;
   final int likeCount;
@@ -37,6 +40,9 @@ class FeedPost {
     this.userDob,
     required this.title,
     required this.description,
+    this.hashtags = const [],
+    this.isPinned = false,
+    this.pinnedAt,
     this.imageUrl,
     required this.createdAt,
     required this.likeCount,
@@ -60,6 +66,9 @@ class FeedPost {
       userDob: _parseDate(json['userDob']),
       title: json['title'],
       description: json['description'],
+      hashtags: _parseStringList(json['hashtags']),
+      isPinned: json['isPinned'] ?? false,
+      pinnedAt: _parseDate(json['pinnedAt']),
       imageUrl: json['imageUrl'],
       createdAt: (json['createdAt'] as Timestamp).toDate(),
       likeCount: json['likeCount'] ?? 0,
@@ -71,5 +80,13 @@ class FeedPost {
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
     return null;
+  }
+
+  static List<String> _parseStringList(dynamic value) {
+    if (value is! Iterable) return const [];
+    return value
+        .map((item) => item.toString().trim().toLowerCase())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
   }
 }

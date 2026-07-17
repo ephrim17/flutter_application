@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_catalog.dart'
@@ -27,7 +28,7 @@ class BibleRepository {
         version: selectedVersion,
         requireDownloaded: requireDownloaded,
       );
-      return Map<String, dynamic>.from(json.decode(raw) as Map);
+      return compute(_decodeBookJson, raw);
     });
   }
 
@@ -82,3 +83,7 @@ class BibleRepository {
 }
 
 final bibleBooks = catalog.bibleBooks;
+
+Map<String, dynamic> _decodeBookJson(String raw) {
+  return Map<String, dynamic>.from(json.decode(raw) as Map);
+}
