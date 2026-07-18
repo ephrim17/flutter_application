@@ -127,7 +127,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 countStream:
                     repository.watchPastors().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
-                  title: ref.t('studio.tab_pastor', fallback: 'Pastor'),
                   stream: repository.watchPastors(),
                   addLabel: ref.t('studio.add_pastor', fallback: 'Add pastor'),
                   emptyText:
@@ -170,8 +169,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 countStream:
                     repository.watchAnnouncements().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
-                  title: ref.t('studio.tab_announcements',
-                      fallback: 'Announcements'),
                   stream: repository.watchAnnouncements(),
                   addLabel: ref.t('studio.add_announcement',
                       fallback: 'Add announcement'),
@@ -211,7 +208,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 countStream:
                     repository.watchEvents().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
-                  title: ref.t('studio.tab_events', fallback: 'Events'),
                   stream: repository.watchEvents(),
                   addLabel: ref.t('studio.add_event', fallback: 'Add event'),
                   emptyText:
@@ -230,12 +226,18 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   },
                   tileSubtitle: (data) {
                     final parts = <String>[
+                      if ((data['timing'] ?? '').toString().isNotEmpty)
+                        (data['timing'] ?? '').toString(),
                       if ((data['type'] ?? '').toString().isNotEmpty)
                         '${ref.t('studio.event_type_prefix', fallback: 'Type')}: ${data['type']}',
                       if ((data['contact'] ?? '').toString().isNotEmpty)
                         '${ref.t('studio.event_contact_prefix', fallback: 'Contact')}: ${data['contact']}',
                       if ((data['location'] ?? '').toString().isNotEmpty)
                         '${ref.t('studio.event_location_prefix', fallback: 'Location')}: ${data['location']}',
+                      if (data['isRecurring'] == true &&
+                          (data['recurrenceFrequency'] ?? '').toString() ==
+                              'weekly')
+                        'Repeats weekly',
                     ];
                     return parts.join('\n');
                   },
@@ -255,7 +257,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 countStream:
                     repository.watchArticles().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
-                  title: ref.t('studio.tab_articles', fallback: 'Articles'),
                   stream: repository.watchArticles(),
                   addLabel:
                       ref.t('studio.add_article', fallback: 'Add article'),
@@ -819,7 +820,6 @@ class _StudioCountPill extends StatelessWidget {
 
 class _CollectionEditor extends StatelessWidget {
   const _CollectionEditor({
-    required this.title,
     required this.stream,
     required this.addLabel,
     required this.emptyText,
@@ -831,7 +831,6 @@ class _CollectionEditor extends StatelessWidget {
     required this.onDelete,
   });
 
-  final String title;
   final Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> stream;
   final String addLabel;
   final String emptyText;
@@ -1040,13 +1039,6 @@ class _ConfigVerseEditor extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
                     Text(
                       'Pick the exact Bible verse users will see. Use the button below to change book, chapter, or verse number.',
                       style: Theme.of(context).textTheme.bodyMedium,
@@ -1260,11 +1252,6 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.t('studio.tab_theme', fallback: 'Theme'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
                 Text(
                   context.t(
                     'studio.theme_hint',
@@ -1664,11 +1651,6 @@ class _AboutEditor extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          context.t('studio.tab_about', fallback: 'About'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
                           context.t(
                             'studio.about_hint',
                             fallback:
@@ -1763,14 +1745,6 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.t(
-                        'studio.tab_bible_swipe',
-                        fallback: 'Bible Swipe',
-                      ),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
                     Text(
                       context.t(
                         'studio.bible_swipe_hint',
@@ -1904,11 +1878,6 @@ class _FooterEditor extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          context.t('studio.tab_footer', fallback: 'Footer'),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 12),
         _FooterCollectionCard(
           title: context.t(
             'studio.footer_contacts_title',
@@ -2168,12 +2137,6 @@ class _NotificationComposerState extends State<_NotificationComposer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.t('studio.notification_title',
-                      fallback: 'Church Topic Notification'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
                 Text(
                     '${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
                 const SizedBox(height: 16),
@@ -2652,11 +2615,6 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t('studio.tab_admins', fallback: 'Admins'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
                   context.t('studio.admins_hint',
                       fallback: 'Enter one admin email per line.'),
                 ),
@@ -2816,11 +2774,6 @@ class _AdminModeEditorFormState extends State<_AdminModeEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t('studio.tab_admin_mode', fallback: 'Admin Mode'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
                   context.t(
                     'studio.admin_mode_description',
                     fallback:
@@ -2952,11 +2905,6 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.t('studio.prompt_title', fallback: 'Important'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
                 Text(
                   context.t(
                     'studio.prompt_description',
@@ -3742,11 +3690,14 @@ Future<void> _showEventEditor(
       TextEditingController(text: (data['location'] ?? '') as String);
   final timingController =
       TextEditingController(text: (data['timing'] ?? '') as String);
+  DateTime? startAt = (data['startAt'] as Timestamp?)?.toDate();
   final expiryController = TextEditingController(
     text: _formatOptionalDateTime((data['expiryAt'] as Timestamp?)?.toDate()),
   );
   String type = (data['type'] ?? 'family') as String;
   bool isActive = (data['isActive'] ?? true) as bool;
+  bool repeatsWeekly = data['isRecurring'] == true &&
+      (data['recurrenceFrequency'] ?? '') == 'weekly';
   DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
   var isSaving = false;
 
@@ -3782,6 +3733,7 @@ Future<void> _showEventEditor(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
@@ -3790,6 +3742,7 @@ Future<void> _showEventEditor(
                     ),
                     maxLines: 3,
                   ),
+                  const SizedBox(height: 12),
                   AppDropdownField<String>(
                     initialValue: type,
                     labelText: context.t('studio.event_type', fallback: 'Type'),
@@ -3816,6 +3769,7 @@ Future<void> _showEventEditor(
                       }
                     },
                   ),
+                  const SizedBox(height: 12),
                   AppTextField(
                     controller: contactController,
                     decoration: InputDecoration(
@@ -3823,6 +3777,7 @@ Future<void> _showEventEditor(
                           fallback: 'Contact'),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   AppTextField(
                     controller: locationController,
                     decoration: InputDecoration(
@@ -3830,6 +3785,7 @@ Future<void> _showEventEditor(
                           fallback: 'Location'),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   AppTextField(
                     controller: timingController,
                     readOnly: true,
@@ -3846,6 +3802,7 @@ Future<void> _showEventEditor(
                                   : () {
                                       setState(() {
                                         timingController.clear();
+                                        startAt = null;
                                       });
                                     },
                               icon: const Icon(Icons.clear),
@@ -3857,7 +3814,7 @@ Future<void> _showEventEditor(
                                     final now = DateTime.now();
                                     final pickedDate = await showDatePicker(
                                       context: context,
-                                      initialDate: now,
+                                      initialDate: startAt ?? now,
                                       firstDate: DateTime(now.year - 1),
                                       lastDate: DateTime(now.year + 10),
                                     );
@@ -3868,25 +3825,24 @@ Future<void> _showEventEditor(
 
                                     final pickedTime = await showTimePicker(
                                       context: context,
-                                      initialTime: TimeOfDay.fromDateTime(now),
+                                      initialTime: TimeOfDay.fromDateTime(
+                                        startAt ?? now,
+                                      ),
                                     );
 
-                                    var formatted =
-                                        _formatHumanReadableDate(pickedDate);
-                                    if (pickedTime != null) {
-                                      final dateTime = DateTime(
-                                        pickedDate.year,
-                                        pickedDate.month,
-                                        pickedDate.day,
-                                        pickedTime.hour,
-                                        pickedTime.minute,
-                                      );
-                                      formatted =
-                                          '$formatted, ${DateFormat('h:mm a').format(dateTime)}';
-                                    }
+                                    final resolved = DateTime(
+                                      pickedDate.year,
+                                      pickedDate.month,
+                                      pickedDate.day,
+                                      pickedTime?.hour ?? 9,
+                                      pickedTime?.minute ?? 0,
+                                    );
+                                    final formatted =
+                                        _formatOptionalDateTime(resolved);
 
                                     if (!context.mounted) return;
                                     setState(() {
+                                      startAt = resolved;
                                       timingController.text = formatted;
                                     });
                                   },
@@ -3896,79 +3852,102 @@ Future<void> _showEventEditor(
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(context.t('common.active', fallback: 'Active')),
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
-                  AppTextField(
-                    controller: expiryController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.expiry_at_label',
-                        fallback: 'Expiry date & time',
+                  if (doc == null) ...[
+                    const SizedBox(height: 8),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Repeat weekly'),
+                      subtitle: const Text(
+                        'Cloud Functions will move this event to the next week automatically.',
                       ),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (expiryController.text.trim().isNotEmpty)
+                      value: repeatsWeekly,
+                      onChanged: (value) {
+                        setState(() {
+                          repeatsWeekly = value;
+                          if (value) {
+                            expiryAt = null;
+                            expiryController.clear();
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  if (!repeatsWeekly)
+                    AppTextField(
+                      controller: expiryController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: context.t(
+                          'studio.expiry_at_label',
+                          fallback: 'Expiry date & time',
+                        ),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (expiryController.text.trim().isNotEmpty)
+                              IconButton(
+                                onPressed: isSaving
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          expiryAt = null;
+                                          expiryController.clear();
+                                        });
+                                      },
+                                icon: const Icon(Icons.clear),
+                              ),
                             IconButton(
                               onPressed: isSaving
                                   ? null
-                                  : () {
+                                  : () async {
+                                      final now = DateTime.now();
+                                      final pickedDate = await showDatePicker(
+                                        context: context,
+                                        initialDate: expiryAt ?? now,
+                                        firstDate: DateTime(now.year - 1),
+                                        lastDate: DateTime(now.year + 10),
+                                      );
+                                      if (pickedDate == null ||
+                                          !context.mounted) {
+                                        return;
+                                      }
+
+                                      final pickedTime = await showTimePicker(
+                                        context: context,
+                                        initialTime: expiryAt == null
+                                            ? TimeOfDay.fromDateTime(now)
+                                            : TimeOfDay.fromDateTime(expiryAt!),
+                                      );
+
+                                      if (!context.mounted) return;
+                                      final resolved = DateTime(
+                                        pickedDate.year,
+                                        pickedDate.month,
+                                        pickedDate.day,
+                                        pickedTime?.hour ?? 23,
+                                        pickedTime?.minute ?? 59,
+                                      );
+
                                       setState(() {
-                                        expiryAt = null;
-                                        expiryController.clear();
+                                        expiryAt = resolved;
+                                        expiryController.text =
+                                            _formatOptionalDateTime(resolved);
                                       });
                                     },
-                              icon: const Icon(Icons.clear),
+                              icon: const Icon(Icons.event_outlined),
                             ),
-                          IconButton(
-                            onPressed: isSaving
-                                ? null
-                                : () async {
-                                    final now = DateTime.now();
-                                    final pickedDate = await showDatePicker(
-                                      context: context,
-                                      initialDate: expiryAt ?? now,
-                                      firstDate: DateTime(now.year - 1),
-                                      lastDate: DateTime(now.year + 10),
-                                    );
-                                    if (pickedDate == null ||
-                                        !context.mounted) {
-                                      return;
-                                    }
-
-                                    final pickedTime = await showTimePicker(
-                                      context: context,
-                                      initialTime: expiryAt == null
-                                          ? TimeOfDay.fromDateTime(now)
-                                          : TimeOfDay.fromDateTime(expiryAt!),
-                                    );
-
-                                    if (!context.mounted) return;
-                                    final resolved = DateTime(
-                                      pickedDate.year,
-                                      pickedDate.month,
-                                      pickedDate.day,
-                                      pickedTime?.hour ?? 23,
-                                      pickedTime?.minute ?? 59,
-                                    );
-
-                                    setState(() {
-                                      expiryAt = resolved;
-                                      expiryController.text =
-                                          _formatOptionalDateTime(resolved);
-                                    });
-                                  },
-                            icon: const Icon(Icons.event_outlined),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: isSaving
@@ -3976,6 +3955,29 @@ Future<void> _showEventEditor(
                         : () async {
                             setState(() => isSaving = true);
                             try {
+                              if (repeatsWeekly && startAt == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Choose the first event timing before enabling weekly repeat.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final recurringExpiryAt =
+                                  repeatsWeekly && startAt != null
+                                      ? DateTime(
+                                          startAt!.year,
+                                          startAt!.month,
+                                          startAt!.day,
+                                          23,
+                                          59,
+                                          59,
+                                          999,
+                                        )
+                                      : expiryAt;
                               final payload = {
                                 'title': titleController.text.trim(),
                                 'description':
@@ -3984,12 +3986,20 @@ Future<void> _showEventEditor(
                                 'contact': contactController.text.trim(),
                                 'location': locationController.text.trim(),
                                 'timing': timingController.text.trim(),
-                                'isActive': isActive,
-                                'expiryAt': expiryAt == null
+                                'startAt': startAt == null
                                     ? null
-                                    : Timestamp.fromDate(expiryAt!),
+                                    : Timestamp.fromDate(startAt!),
+                                'isActive': isActive,
+                                'expiryAt': recurringExpiryAt == null
+                                    ? null
+                                    : Timestamp.fromDate(recurringExpiryAt),
                               };
-                              if (doc == null) {
+                              if (doc == null && repeatsWeekly) {
+                                await repository.createWeeklyRecurringEvent(
+                                  eventData: payload,
+                                  startAt: startAt!,
+                                );
+                              } else if (doc == null) {
                                 await repository.createEvent(payload);
                               } else {
                                 await repository.updateEvent(doc.id, payload);
@@ -4446,18 +4456,6 @@ Future<void> _runWithBlockingLoader(
       Navigator.of(context, rootNavigator: true).pop();
     }
   }
-}
-
-String _formatHumanReadableDate(DateTime date) {
-  final day = date.day;
-  final suffix = switch (day) {
-    1 || 21 || 31 => 'st',
-    2 || 22 => 'nd',
-    3 || 23 => 'rd',
-    _ => 'th',
-  };
-
-  return '$day$suffix ${DateFormat('MMMM yyyy').format(date)}';
 }
 
 String _formatOptionalDateTime(DateTime? value) {

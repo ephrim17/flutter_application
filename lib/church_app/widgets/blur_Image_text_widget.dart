@@ -1,10 +1,16 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 
 class BlurImageTextContainer extends StatelessWidget {
-  const BlurImageTextContainer(this.imageUrl, this.title, this.description, this.color, this.typeLabel, {super.key});
+  const BlurImageTextContainer(
+    this.imageUrl,
+    this.title,
+    this.description,
+    this.color,
+    this.typeLabel, {
+    super.key,
+    this.dateTimeLabel,
+  });
   //final Event event;
 
   final String imageUrl;
@@ -12,6 +18,7 @@ class BlurImageTextContainer extends StatelessWidget {
   final String description;
   final Color color;
   final String typeLabel;
+  final String? dateTimeLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -29,22 +36,66 @@ class BlurImageTextContainer extends StatelessWidget {
             Positioned(
               top: 12,
               left: 12,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(cornerRadius),
-                ),
-                child: Text(
-                  typeLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+              right: 12,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(cornerRadius),
+                    ),
+                    child: Text(
+                      typeLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
-                ),
+                  if ((dateTimeLabel ?? '').trim().isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.56),
+                        borderRadius: BorderRadius.circular(cornerRadius),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              dateTimeLabel!.trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
 

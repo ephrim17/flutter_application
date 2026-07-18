@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/blur_Image_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class EventsScreen extends ConsumerWidget {
   const EventsScreen({super.key});
@@ -68,8 +69,17 @@ class EventsFullList extends StatelessWidget {
           items[i].description,
           items[i].type.badgeColor,
           items[i].type.label,
+          dateTimeLabel: _eventDateTimeLabel(items[i]),
         ),
       ),
     );
   }
+}
+
+String _eventDateTimeLabel(Event event) {
+  final startAt = event.startAt;
+  if (startAt != null) {
+    return DateFormat('d MMM, h:mm a').format(startAt);
+  }
+  return event.timing.trim();
 }

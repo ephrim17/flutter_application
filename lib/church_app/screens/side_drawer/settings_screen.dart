@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -82,6 +83,20 @@ class SettingsScreen extends ConsumerWidget {
                 _AppearanceSection(),
                 _PushNotificationSection(),
                 _PrayerReminderSection(),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _SettingsSectionLabel(
+              title: ref.t('settings.feedback_title', fallback: 'Feedback'),
+              subtitle: ref.t(
+                'settings.feedback_subtitle',
+                fallback: 'Share ideas that can make the app better.',
+              ),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _FeedbackSection(),
               ],
             ),
             const SizedBox(height: 18),
@@ -865,6 +880,227 @@ class _PrayerReminderSectionState
             ),
           ),
       ],
+    );
+  }
+}
+
+class _FeedbackSection extends ConsumerWidget {
+  const _FeedbackSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _SettingsTile(
+      icon: Icons.favorite_rounded,
+      iconColor: Colors.redAccent,
+      title: ref.t('settings.feedback_tile_title', fallback: 'Write Feedback'),
+      subtitle: ref.t(
+        'settings.feedback_tile_subtitle',
+        fallback: 'Suggest improvements or features you would like to see.',
+      ),
+      onTap: () => showAppModalBottomSheet<void>(
+        context: context,
+        heightFactor: 0.72,
+        builder: (_) => const _FeedbackSheet(),
+      ),
+    );
+  }
+}
+
+class _FeedbackSheet extends ConsumerStatefulWidget {
+  const _FeedbackSheet();
+
+  @override
+  ConsumerState<_FeedbackSheet> createState() => _FeedbackSheetState();
+}
+
+class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isSending = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final message = _controller.text.trim();
+    if (message.isEmpty || _isSending) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final churchId = await ref.read(currentChurchIdProvider.future);
+      final user = ref.read(appUserProvider).asData?.value;
+      final feedback = {
+        'message': message,
+        'userId': firebaseUser?.uid,
+        'userName': user?.name,
+        'userEmail': firebaseUser?.email ?? user?.email,
+        'churchId': churchId,
+        'status': 'new',
+        'source': 'settings',
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final firestore = ref.read(firestoreProvider);
+      if (churchId == null || churchId.trim().isEmpty) {
+        await firestore.collection('feedback').add(feedback);
+      } else {
+        await firestore
+            .collection('churches')
+            .doc(churchId)
+            .collection('feedback')
+            .add(feedback);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t('settings.feedback_sent', fallback: 'Feedback sent'),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.feedback_failed',
+              fallback: 'Unable to send feedback right now',
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canSend = _controller.text.trim().isNotEmpty && !_isSending;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        28,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.favorite_rounded,
+              color: Colors.redAccent,
+              size: 76,
+            ),
+            const SizedBox(height: 28),
+            Text(
+              ref.t(
+                'settings.feedback_sheet_title',
+                fallback: 'Your feedback matters',
+              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              ref.t(
+                'settings.feedback_sheet_subtitle',
+                fallback:
+                    'Help us improve Church Tree by suggesting features you would like to see next.',
+              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 30),
+            TextField(
+              controller: _controller,
+              minLines: 5,
+              maxLines: 7,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: ref.t(
+                  'settings.feedback_hint',
+                  fallback: 'Type your idea here...',
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(22),
+              ),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: FilledButton(
+                onPressed: canSend ? _send : null,
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  disabledBackgroundColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.34),
+                  disabledForegroundColor:
+                      theme.colorScheme.surface.withValues(alpha: 0.92),
+                ),
+                child: _isSending
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        ref.t('common.send', fallback: 'Send'),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: canSend
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.surface
+                                  .withValues(alpha: 0.92),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: _isSending ? null : () => Navigator.of(context).pop(),
+              child: Text(
+                ref.t('settings.not_now', fallback: 'Not now'),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

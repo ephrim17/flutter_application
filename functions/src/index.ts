@@ -7,6 +7,7 @@ import {
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 import {defineSecret, defineString} from "firebase-functions/params";
+import {onSchedule} from "firebase-functions/v2/scheduler";
 import nodemailer from "nodemailer";
 export {
   deleteFinancialBank,
@@ -75,6 +76,17 @@ type DashboardFamilyBucketPayload = {
   count: number;
   familyIds: string[];
 };
+
+type RecurringEventData = {
+  isRecurring?: boolean;
+  active?: boolean;
+  startAt?: admin.firestore.Timestamp;
+  recurrenceFrequency?: string;
+  recurrenceIntervalWeeks?: number;
+  recurrenceTimeZone?: string;
+};
+
+const recurringEventTimeZone = "Asia/Kolkata";
 
 export const sendQueuedSuperAdminMail = onDocumentCreated(
   {
@@ -422,6 +434,137 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     }
   },
 );
+
+export const advanceRecurringEventOnWrite = onDocumentWritten(
+  {
+    document: "churches/{churchId}/events/{eventId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const data = event.data?.after.data() as RecurringEventData | undefined;
+    if (!data || data.isRecurring !== true || data.active === false) return;
+
+    await advanceRecurringEventIfNeeded(
+      event.params.churchId,
+      event.params.eventId,
+      data,
+    );
+  },
+);
+
+export const advanceRecurringEventsHourly = onSchedule(
+  {
+    schedule: "every 1 hours",
+    region: "us-central1",
+    timeZone: recurringEventTimeZone,
+  },
+  async () => {
+    const firestore = admin.firestore();
+    const churchesSnapshot = await firestore.collection("churches").get();
+    let advancedEventCount = 0;
+
+    for (const churchDoc of churchesSnapshot.docs) {
+      const eventsSnapshot = await churchDoc.ref
+        .collection("events")
+        .where("isRecurring", "==", true)
+        .where("recurrenceFrequency", "==", "weekly")
+        .get();
+
+      for (const eventDoc of eventsSnapshot.docs) {
+        const didAdvance = await advanceRecurringEventIfNeeded(
+          churchDoc.id,
+          eventDoc.id,
+          eventDoc.data() as RecurringEventData,
+        );
+        if (didAdvance) advancedEventCount += 1;
+      }
+    }
+
+    logger.info("Advanced recurring events.", {advancedEventCount});
+  },
+);
+
+async function advanceRecurringEventIfNeeded(
+  churchId: string,
+  eventId: string,
+  data: RecurringEventData,
+): Promise<boolean> {
+  if (data.isRecurring !== true) return false;
+  if (data.recurrenceFrequency !== "weekly") return false;
+
+  const startAt = readUnknownDate(data.startAt);
+  if (startAt === null) {
+    logger.warn("Recurring event missing startAt.", {churchId, eventId});
+    return false;
+  }
+
+  const intervalWeeks = clampInteger(data.recurrenceIntervalWeeks, 1, 12, 1);
+  const timeZone =
+    readUnknownString(data.recurrenceTimeZone) || recurringEventTimeZone;
+  const now = new Date();
+  const nextStart = nextOccurrenceOnOrAfter(startAt, now, intervalWeeks);
+
+  if (nextStart.getTime() === startAt.getTime()) return false;
+
+  await admin.firestore()
+    .collection("churches")
+    .doc(churchId)
+    .collection("events")
+    .doc(eventId)
+    .set(
+      {
+        timing: formatEventTiming(nextStart, timeZone),
+        startAt: admin.firestore.Timestamp.fromDate(nextStart),
+        expiryAt: admin.firestore.Timestamp.fromDate(endOfDay(nextStart)),
+        recurrenceLastAdvancedAt:
+          admin.firestore.FieldValue.serverTimestamp(),
+      },
+      {merge: true},
+    );
+
+  return true;
+}
+
+function nextOccurrenceOnOrAfter(
+  startAt: Date,
+  target: Date,
+  intervalWeeks: number,
+): Date {
+  const intervalMs = intervalWeeks * 7 * 24 * 60 * 60 * 1000;
+  if (startAt.getTime() >= target.getTime()) return new Date(startAt);
+
+  const elapsed = target.getTime() - startAt.getTime();
+  const steps = Math.ceil(elapsed / intervalMs);
+  return new Date(startAt.getTime() + steps * intervalMs);
+}
+
+function endOfDay(value: Date): Date {
+  const date = new Date(value);
+  date.setHours(23, 59, 59, 999);
+  return date;
+}
+
+function formatEventTiming(value: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone,
+  }).format(value);
+}
+
+function clampInteger(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+  fallback: number,
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(maximum, Math.max(minimum, Math.trunc(value)));
+}
 
 /**
  * Normalizes the queued recipients into a unique lowercase email list.

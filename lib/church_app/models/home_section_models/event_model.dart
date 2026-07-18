@@ -8,6 +8,7 @@ class Event {
   final String contact;
   final String location;
   final String timing;
+  final DateTime? startAt;
   final EventType type;
   final bool isActive;
   final DateTime? expiryAt;
@@ -19,6 +20,7 @@ class Event {
     required this.contact,
     required this.location,
     required this.timing,
+    this.startAt,
     required this.type,
     required this.isActive,
     required this.expiryAt,
@@ -31,6 +33,8 @@ class Event {
     String? contact,
     String? location,
     String? timing,
+    DateTime? startAt,
+    bool clearStartAt = false,
     EventType? type,
     bool? isActive,
     DateTime? expiryAt,
@@ -43,6 +47,7 @@ class Event {
       contact: contact ?? this.contact,
       location: location ?? this.location,
       timing: timing ?? this.timing,
+      startAt: clearStartAt ? null : (startAt ?? this.startAt),
       type: type ?? this.type,
       isActive: isActive ?? this.isActive,
       expiryAt: clearExpiryAt ? null : (expiryAt ?? this.expiryAt),
@@ -56,7 +61,8 @@ class Event {
         'contact': contact,
         'location': location,
         'timing': timing,
-        'type': type, 
+        'startAt': startAt == null ? null : Timestamp.fromDate(startAt!),
+        'type': type,
         'isActive': isActive,
         'expiryAt': expiryAt == null ? null : Timestamp.fromDate(expiryAt!),
       };
@@ -72,7 +78,8 @@ class Event {
       contact: (data['contact'] ?? '') as String,
       location: (data['location'] ?? '') as String,
       timing: (data['timing'] ?? '') as String,
-      type: EventTypeX.fromString(data['type'] as String?), 
+      startAt: (data['startAt'] as Timestamp?)?.toDate(),
+      type: EventTypeX.fromString(data['type'] as String?),
       isActive: (data['isActive'] ?? true) as bool,
       expiryAt: (data['expiryAt'] as Timestamp?)?.toDate(),
     );

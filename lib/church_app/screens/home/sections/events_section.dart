@@ -11,6 +11,7 @@ import 'package:flutter_application/church_app/widgets/detail_widget.dart';
 import 'package:flutter_application/church_app/widgets/media_detail_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class EventsSection implements MasterSection {
   const EventsSection();
@@ -36,7 +37,8 @@ class EventsSection implements MasterSection {
                     ),
                 error: (e, _) => Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+                      child: Text(
+                          "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
                     ),
                 data: (items) => EventsList(items));
           },
@@ -120,6 +122,7 @@ class EventsCard extends ConsumerWidget {
             'source': 'home',
           },
         );
+        if (!context.mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) {
@@ -141,14 +144,13 @@ class EventsCard extends ConsumerWidget {
         badgeColor: a.type.badgeColor,
         title: a.title,
         body: a.description.trim().isEmpty ? a.timing : a.description,
+        trailingChip: _EventDateTimeChip(label: _eventDateTimeLabel(a)),
         topChild: Image.asset(
           a.type.imageAsset,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
-            color: Theme.of(context)
-                .colorScheme
-                .primary
-                .withValues(alpha: 0.08),
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
             alignment: Alignment.center,
             child: Icon(
               Icons.event_outlined,
@@ -160,4 +162,57 @@ class EventsCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _EventDateTimeChip extends StatelessWidget {
+  const _EventDateTimeChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (label.trim().isEmpty) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule_rounded,
+            size: 14,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _eventDateTimeLabel(Event event) {
+  final startAt = event.startAt;
+  if (startAt != null) {
+    return DateFormat('d MMM, h:mm a').format(startAt);
+  }
+  return event.timing.trim();
 }

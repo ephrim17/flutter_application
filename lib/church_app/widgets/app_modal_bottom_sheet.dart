@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material;
+import 'dart:ui';
 
 Future<T?> showAppModalBottomSheet<T>({
   required BuildContext context,
@@ -23,12 +24,12 @@ Future<T?> showAppModalBottomSheet<T>({
 }) {
   return material.showModalBottomSheet<T>(
     context: context,
-    backgroundColor: backgroundColor,
+    backgroundColor: Colors.transparent,
     elevation: elevation,
-    shape: shape,
-    clipBehavior: clipBehavior,
+    shape: shape ?? const RoundedRectangleBorder(),
+    clipBehavior: clipBehavior ?? Clip.none,
     constraints: constraints,
-    barrierColor: barrierColor,
+    barrierColor: barrierColor ?? Colors.black.withValues(alpha: 0.38),
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
@@ -41,49 +42,66 @@ Future<T?> showAppModalBottomSheet<T>({
     builder: (context) {
       final theme = Theme.of(context);
       final bottomSheetTheme = theme.bottomSheetTheme;
-      final effectiveHandleLaneColor = backgroundColor == Colors.transparent
-          ? theme.scaffoldBackgroundColor
-          : backgroundColor ??
-              bottomSheetTheme.modalBackgroundColor ??
-              bottomSheetTheme.backgroundColor ??
-              theme.colorScheme.surface;
+      final effectiveSheetColor = backgroundColor ??
+          bottomSheetTheme.modalBackgroundColor ??
+          bottomSheetTheme.backgroundColor ??
+          theme.colorScheme.surface;
       final child = _unwrapExistingFractionalSheet(builder(context));
       final shouldShowGrabHandle = showDragHandle ?? true;
       final handleLaneHeight = shouldShowGrabHandle ? 36.0 : 0.0;
-      return FractionallySizedBox(
-        heightFactor: heightFactor,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28),
-          ),
-          child: ColoredBox(
-            color: effectiveHandleLaneColor,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  top: handleLaneHeight,
-                  child: child,
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: FractionallySizedBox(
+            heightFactor: heightFactor,
+            alignment: Alignment.bottomCenter,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(34),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: effectiveSheetColor.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(34),
+                  border: Border.all(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.20),
+                      blurRadius: 38,
+                      offset: const Offset(0, 18),
+                    ),
+                  ],
                 ),
-                if (shouldShowGrabHandle)
-                  Positioned(
-                    top: 12,
-                    left: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      child: Center(
-                        child: Container(
-                          width: 56,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(999),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      top: handleLaneHeight,
+                      child: child,
+                    ),
+                    if (shouldShowGrabHandle)
+                      Positioned(
+                        top: 14,
+                        left: 0,
+                        right: 0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Container(
+                              width: 56,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.34),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

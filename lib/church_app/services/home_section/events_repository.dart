@@ -3,19 +3,18 @@ import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
-class EventsRepository extends ChurchScopedRepository{
+class EventsRepository extends ChurchScopedRepository {
   EventsRepository({
     required super.firestore,
     required super.churchId,
   });
 
- CollectionReference<Event> collectionRef() {
-    return
-      FirestorePaths.churchEvents(firestore, churchId)
+  CollectionReference<Event> collectionRef() {
+    return FirestorePaths.churchEvents(firestore, churchId)
         .withConverter<Event>(
-          fromFirestore: (snap, _) => Event.fromFirestore(snap),
-          toFirestore: (a, _) => a.toMap(),
-        );
+      fromFirestore: (snap, _) => Event.fromFirestore(snap),
+      toFirestore: (a, _) => a.toMap(),
+    );
   }
 
   Stream<List<Event>> watchActiveForBanner({
@@ -27,14 +26,12 @@ class EventsRepository extends ChurchScopedRepository{
         .limit(limit)
         .snapshots()
         .map(
-          (s) => s.docs
-              .map((d) => d.data())
-              .where(
-                (event) =>
-                    event.expiryAt == null || event.expiryAt!.isAfter(now),
-              )
-              .take(limit)
-              .toList(),
+          (s) => _sortEventsBySchedule(
+            s.docs.map((d) => d.data()).where(
+                  (event) =>
+                      event.expiryAt == null || event.expiryAt!.isAfter(now),
+                ),
+          ).take(limit).toList(),
         );
   }
 
@@ -47,14 +44,12 @@ class EventsRepository extends ChurchScopedRepository{
         .limit(limit)
         .snapshots()
         .map(
-          (s) => s.docs
-              .map((d) => d.data())
-              .where(
-                (event) =>
-                    event.expiryAt == null || event.expiryAt!.isAfter(now),
-              )
-              .take(limit)
-              .toList(),
+          (s) => _sortEventsBySchedule(
+            s.docs.map((d) => d.data()).where(
+                  (event) =>
+                      event.expiryAt == null || event.expiryAt!.isAfter(now),
+                ),
+          ).take(limit).toList(),
         );
   }
 
@@ -67,12 +62,23 @@ class EventsRepository extends ChurchScopedRepository{
         .limit(limit)
         .get();
 
-    return snapshot.docs
-        .map((doc) => doc.data())
-        .where(
-          (event) => event.expiryAt == null || event.expiryAt!.isAfter(now),
-        )
-        .take(limit)
-        .toList(growable: false);
+    return _sortEventsBySchedule(
+      snapshot.docs.map((doc) => doc.data()).where(
+            (event) => event.expiryAt == null || event.expiryAt!.isAfter(now),
+          ),
+    ).take(limit).toList(growable: false);
   }
+}
+
+List<Event> _sortEventsBySchedule(Iterable<Event> events) {
+  final sorted = events.toList(growable: false);
+  sorted.sort((a, b) {
+    final aDate = a.startAt ?? a.expiryAt;
+    final bDate = b.startAt ?? b.expiryAt;
+    if (aDate == null && bDate == null) return a.title.compareTo(b.title);
+    if (aDate == null) return 1;
+    if (bDate == null) return -1;
+    return aDate.compareTo(bDate);
+  });
+  return sorted;
 }

@@ -10,6 +10,7 @@ class MediaDetailCard extends StatelessWidget {
     required this.title,
     required this.body,
     this.badgeColor,
+    this.trailingChip,
   });
 
   final double height;
@@ -18,10 +19,12 @@ class MediaDetailCard extends StatelessWidget {
   final String title;
   final String body;
   final Color? badgeColor;
+  final Widget? trailingChip;
 
   @override
   Widget build(BuildContext context) {
-    final resolvedBadgeColor = badgeColor ?? Theme.of(context).colorScheme.primary;
+    final resolvedBadgeColor =
+        badgeColor ?? Theme.of(context).colorScheme.primary;
 
     return Container(
       width: double.infinity,
@@ -44,22 +47,22 @@ class MediaDetailCard extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxHeight < 150;
-                  final titleStyle = Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(
-                        fontSize: compact ? 22 : 26,
-                        fontWeight: FontWeight.w900,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        height: 1.08,
-                      );
-                  final bodyStyle = Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(
-                        fontSize: compact ? 15 : 16,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.70),
-                        height: 1.24,
-                      );
+                  final titleStyle =
+                      Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: compact ? 22 : 26,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.08,
+                          );
+                  final bodyStyle =
+                      Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: compact ? 15 : 16,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.70),
+                            height: 1.24,
+                          );
 
                   return Container(
                     width: double.infinity,
@@ -73,23 +76,34 @@ class MediaDetailCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: resolvedBadgeColor.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            badgeText,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: resolvedBadgeColor,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.4,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    resolvedBadgeColor.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                badgeText,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: resolvedBadgeColor,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.4,
+                                    ),
+                              ),
                             ),
-                          ),
+                            if (trailingChip != null) trailingChip!,
+                          ],
                         ),
                         SizedBox(height: compact ? 8 : 12),
                         Text(

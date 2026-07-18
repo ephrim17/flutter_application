@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/models/for_you_section_models/for
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:intl/intl.dart';
 
 class StudioRepository {
   StudioRepository({
@@ -160,6 +161,25 @@ class StudioRepository {
 
   Future<void> createEvent(Map<String, dynamic> data) async {
     await eventsRef.add(data);
+  }
+
+  Future<void> createWeeklyRecurringEvent({
+    required Map<String, dynamic> eventData,
+    required DateTime startAt,
+  }) async {
+    await eventsRef.add({
+      ...eventData,
+      'timing': _formatEventDateTime(startAt),
+      'startAt': Timestamp.fromDate(startAt),
+      'expiryAt': Timestamp.fromDate(_endOfDay(startAt)),
+      'isRecurring': true,
+      'recurrenceFrequency': 'weekly',
+      'recurrenceIntervalWeeks': 1,
+      'recurrenceTimeZone': 'Asia/Kolkata',
+      'recurrenceOriginalStartAt': Timestamp.fromDate(startAt),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> updateEvent(String id, Map<String, dynamic> data) async {
@@ -581,4 +601,12 @@ SettableMetadata _metadataFor(String fileName) {
   }
   if (lower.endsWith('.gif')) return SettableMetadata(contentType: 'image/gif');
   return SettableMetadata(contentType: 'image/jpeg');
+}
+
+DateTime _endOfDay(DateTime value) {
+  return DateTime(value.year, value.month, value.day, 23, 59, 59, 999);
+}
+
+String _formatEventDateTime(DateTime value) {
+  return DateFormat('d MMM yyyy, h:mm a').format(value);
 }

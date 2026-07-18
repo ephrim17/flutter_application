@@ -30,6 +30,7 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
   final FeedRepository _repository;
   final String? churchId;
   final bool isGlobal;
+  bool _isLoadingSearchCoverage = false;
 
   FeedPaginationController({
     required FeedRepository repository,
@@ -90,6 +91,22 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
         isLoadingMore: false,
         errorMessage: e.toString(),
       );
+    }
+  }
+
+  Future<void> loadSearchCoverage({int maxPages = 6}) async {
+    if (_isLoadingSearchCoverage) return;
+
+    _isLoadingSearchCoverage = true;
+    try {
+      var loadedPages = 0;
+      while (
+          state.hasMore && !state.isInitialLoading && loadedPages < maxPages) {
+        await loadMore();
+        loadedPages += 1;
+      }
+    } finally {
+      _isLoadingSearchCoverage = false;
     }
   }
 }

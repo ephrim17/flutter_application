@@ -258,13 +258,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   ? 'Search global posts or #tags'
                   : 'Search church posts or #tags',
               onChanged: (value) {
-                setState(() {
-                  if (isGlobal) {
-                    _globalSearchQuery = value;
-                  } else {
-                    _churchSearchQuery = value;
-                  }
-                });
+                _onSearchChanged(
+                  value,
+                  churchId: churchId,
+                  isGlobal: isGlobal,
+                );
               },
               onClear: () {
                 setState(() {
@@ -344,6 +342,33 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       ].join(' ').toLowerCase();
       return haystack.contains(normalized);
     }).toList(growable: false);
+  }
+
+  void _onSearchChanged(
+    String value, {
+    required String churchId,
+    required bool isGlobal,
+  }) {
+    setState(() {
+      if (isGlobal) {
+        _globalSearchQuery = value;
+      } else {
+        _churchSearchQuery = value;
+      }
+    });
+
+    if (value.trim().isEmpty) return;
+
+    if (isGlobal) {
+      ref
+          .read(globalFeedPaginationControllerProvider.notifier)
+          .loadSearchCoverage();
+      return;
+    }
+
+    ref
+        .read(feedPaginationControllerProvider(churchId).notifier)
+        .loadSearchCoverage();
   }
 
   void _openHashtagFeed(
