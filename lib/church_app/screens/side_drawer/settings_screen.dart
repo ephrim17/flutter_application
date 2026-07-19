@@ -1,12 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -21,6 +24,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
@@ -933,27 +937,43 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       final churchId = await ref.read(currentChurchIdProvider.future);
       final user = ref.read(appUserProvider).asData?.value;
+      final selectedChurch = ref.read(selectedChurchProvider);
+      final notificationSettings =
+          await FirebaseMessaging.instance.getNotificationSettings();
       final feedback = {
         'message': message,
-        'userId': firebaseUser?.uid,
-        'userName': user?.name,
-        'userEmail': firebaseUser?.email ?? user?.email,
-        'churchId': churchId,
         'status': 'new',
         'source': 'settings',
+        'churchId': churchId,
+        'churchName': selectedChurch?.name,
+        'userId': firebaseUser?.uid ?? user?.uid,
+        'userName': user?.name,
+        'userEmail': firebaseUser?.email ?? user?.email,
+        'userPhone': user?.phone,
+        'userRole': user?.role,
+        'userApproved': user?.approved,
+        'submittedBy': _feedbackSubmittedBy(
+          firebaseUser: firebaseUser,
+          user: user,
+        ),
+        'userSnapshot': _feedbackUserSnapshot(user),
+        'firebaseAuthSnapshot': _feedbackAuthSnapshot(firebaseUser),
+        'churchSnapshot': _feedbackChurchSnapshot(selectedChurch),
+        'appSnapshot': {
+          'platform': defaultTargetPlatform.name,
+          'projectId': Firebase.app().options.projectId,
+          'notificationAuthorizationStatus':
+              notificationSettings.authorizationStatus.name,
+          'notificationAlert': notificationSettings.alert.name,
+          'notificationBadge': notificationSettings.badge.name,
+          'notificationSound': notificationSettings.sound.name,
+        },
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       };
 
       final firestore = ref.read(firestoreProvider);
-      if (churchId == null || churchId.trim().isEmpty) {
-        await firestore.collection('feedback').add(feedback);
-      } else {
-        await firestore
-            .collection('churches')
-            .doc(churchId)
-            .collection('feedback')
-            .add(feedback);
-      }
+      await FirestorePaths.globalFeedbackCollection(firestore).add(feedback);
 
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -1103,6 +1123,96 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       ),
     );
   }
+}
+
+Map<String, dynamic> _feedbackSubmittedBy({
+  required User? firebaseUser,
+  required AppUser? user,
+}) {
+  return {
+    'uid': firebaseUser?.uid ?? user?.uid,
+    'name': user?.name,
+    'email': firebaseUser?.email ?? user?.email,
+    'phone': user?.phone,
+    'role': user?.role,
+    'approved': user?.approved,
+  };
+}
+
+Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
+  if (user == null) return null;
+
+  return {
+    'uid': user.uid,
+    'name': user.name,
+    'email': user.email,
+    'phone': user.phone,
+    'contact': user.contact,
+    'location': user.location,
+    'address': user.address,
+    'gender': user.gender,
+    'category': user.category,
+    'familyId': user.familyId,
+    'maritalStatus': user.maritalStatus,
+    'weddingDay': _feedbackTimestamp(user.weddingDay),
+    'financialStabilityRating': user.financialStabilityRating,
+    'financialSupportRequired': user.financialSupportRequired,
+    'educationalQualification': user.educationalQualification,
+    'talentsAndGifts': user.talentsAndGifts,
+    'churchGroupIds': user.churchGroupIds,
+    'role': user.role,
+    'dob': _feedbackTimestamp(user.dob),
+    'createdAt': _feedbackTimestamp(user.createdAt),
+    'dayStreak': user.dayStreak,
+    'lastStreakRecordedAt': _feedbackTimestamp(user.lastStreakRecordedAt),
+    'approved': user.approved,
+    'solemnizedBaptism': user.solemnizedBaptism,
+    'baptismDate': _feedbackTimestamp(user.baptismDate),
+    'baptismCertificateNumber': user.baptismCertificateNumber,
+    'baptismChurchName': user.baptismChurchName,
+    'baptismPastorName': user.baptismPastorName,
+    'marriageSolemnizationChurchType': user.marriageSolemnizationChurchType,
+    'marriageSolemnizationChurchName': user.marriageSolemnizationChurchName,
+    'membershipCurrentStatus': user.membershipCurrentStatus,
+    'membershipNotes': user.membershipNotes,
+    'additionalNotes': user.additionalNotes,
+  };
+}
+
+Map<String, dynamic>? _feedbackAuthSnapshot(User? user) {
+  if (user == null) return null;
+
+  return {
+    'uid': user.uid,
+    'email': user.email,
+    'displayName': user.displayName,
+    'phoneNumber': user.phoneNumber,
+    'photoURL': user.photoURL,
+    'emailVerified': user.emailVerified,
+    'isAnonymous': user.isAnonymous,
+    'providerIds': user.providerData.map((info) => info.providerId).toList(),
+    'creationTime': _feedbackTimestamp(user.metadata.creationTime),
+    'lastSignInTime': _feedbackTimestamp(user.metadata.lastSignInTime),
+  };
+}
+
+Map<String, dynamic>? _feedbackChurchSnapshot(Church? church) {
+  if (church == null) return null;
+
+  return {
+    'id': church.id,
+    'name': church.name,
+    'address': church.address,
+    'contact': church.contact,
+    'email': church.email,
+    'pastorName': church.pastorName,
+    'enabled': church.enabled,
+    'registrationSource': church.registrationSource,
+  };
+}
+
+Timestamp? _feedbackTimestamp(DateTime? value) {
+  return value == null ? null : Timestamp.fromDate(value);
 }
 
 class _StorageSection extends ConsumerWidget {

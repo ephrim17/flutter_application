@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_application/church_app/providers/preflow_theme_provider.
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
@@ -19,6 +21,7 @@ import 'package:flutter_application/church_app/widgets/linear_screen_background_
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:intl/intl.dart';
 
 const List<_FeatureToggleSpec> _superAdminFeatureSpecs = <_FeatureToggleSpec>[
   _FeatureToggleSpec(
@@ -94,6 +97,16 @@ bool _isFeatureEnabled(AppConfig config, String key) {
   }
 }
 
+final superAdminFeedbackProvider = StreamProvider.autoDispose<
+    List<QueryDocumentSnapshot<Map<String, dynamic>>>>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  return FirestorePaths.globalFeedbackCollection(firestore)
+      .orderBy('createdAt', descending: true)
+      .limit(100)
+      .snapshots()
+      .map((snapshot) => snapshot.docs);
+});
+
 class SuperAdminHomeScreen extends ConsumerStatefulWidget {
   const SuperAdminHomeScreen({super.key});
 
@@ -140,6 +153,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(allChurchesProvider);
+    final feedbackAsync = ref.watch(superAdminFeedbackProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -190,7 +204,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                         .toList(growable: false);
 
                     return DefaultTabController(
-                      length: 2,
+                      length: 3,
                       child: NestedScrollView(
                         headerSliverBuilder: (context, innerBoxIsScrolled) {
                           return [
@@ -340,24 +354,53 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                   child: Container(
                                     decoration: carouselBoxDecoration(context),
                                     padding: const EdgeInsets.all(6),
-                                    child: TabBar(
-                                      dividerColor: Colors.transparent,
-                                      labelStyle: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final theme = Theme.of(context);
+                                        final colorScheme = theme.colorScheme;
+                                        final isDark =
+                                            theme.brightness == Brightness.dark;
+
+                                        return TabBar(
+                                          dividerColor: Colors.transparent,
+                                          labelColor: Colors.white,
+                                          unselectedLabelColor: isDark
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.74)
+                                              : colorScheme.onSurface
+                                                  .withValues(alpha: 0.74),
+                                          indicator: BoxDecoration(
+                                            color: colorScheme.primary,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          indicatorSize:
+                                              TabBarIndicatorSize.tab,
+                                          labelStyle: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                          unselectedLabelStyle: theme
+                                              .textTheme.titleSmall
+                                              ?.copyWith(
                                             fontWeight: FontWeight.w700,
                                           ),
-                                      tabs: [
-                                        Tab(
-                                          text:
-                                              'Not Approved (${pendingChurches.length})',
-                                        ),
-                                        Tab(
-                                          text:
-                                              'Approved (${approvedChurches.length})',
-                                        ),
-                                      ],
+                                          tabs: [
+                                            Tab(
+                                              text:
+                                                  'Not Approved (${pendingChurches.length})',
+                                            ),
+                                            Tab(
+                                              text:
+                                                  'Approved (${approvedChurches.length})',
+                                            ),
+                                            Tab(
+                                              text:
+                                                  'Feedback (${feedbackAsync.maybeWhen(data: (items) => items.length, orElse: () => 0)})',
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -383,6 +426,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                     'No approved churches match your search yet.',
                               ),
                             ),
+                            _FeedbackListTab(feedbackAsync: feedbackAsync),
                           ],
                         ),
                       ),
@@ -562,6 +606,312 @@ class _ChurchListTab extends StatelessWidget {
           child: _SuperAdminChurchTile(church: church),
         );
       },
+    );
+  }
+}
+
+class _FeedbackListTab extends ConsumerWidget {
+  const _FeedbackListTab({required this.feedbackAsync});
+
+  final AsyncValue<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      feedbackAsync;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return feedbackAsync.when(
+      loading: () => const Center(child: AppLoadingIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+        ),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              Container(
+                decoration: carouselBoxDecoration(context),
+                padding: const EdgeInsets.all(18),
+                child: const Text('No feedback has been submitted yet.'),
+              ),
+            ],
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final doc = items[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Dismissible(
+                key: ValueKey('feedback-${doc.id}'),
+                direction: DismissDirection.endToStart,
+                background: const _FeedbackDeleteBackground(),
+                confirmDismiss: (_) => _confirmDeleteFeedback(context, doc),
+                onDismissed: (_) async {
+                  await doc.reference.delete();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Feedback deleted')),
+                  );
+                },
+                child: _FeedbackTile(doc: doc),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _FeedbackTile extends ConsumerWidget {
+  const _FeedbackTile({required this.doc});
+
+  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = doc.data();
+    final theme = Theme.of(context);
+    final status = (data['status'] ?? 'new').toString();
+    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+    final message = (data['message'] ?? '').toString().trim();
+    final userName = (data['userName'] ?? '').toString().trim();
+    final userEmail = (data['userEmail'] ?? '').toString().trim();
+    final userPhone = (data['userPhone'] ?? '').toString().trim();
+    final userRole = (data['userRole'] ?? '').toString().trim();
+    final churchName = (data['churchName'] ?? '').toString().trim();
+    final churchId = (data['churchId'] ?? '').toString().trim();
+
+    return Container(
+      decoration: carouselBoxDecoration(context),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.redAccent.withValues(alpha: 0.14),
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName.isEmpty ? 'Anonymous user' : userName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (userEmail.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(userEmail, style: theme.textTheme.bodySmall),
+                    ],
+                    if (userPhone.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(userPhone, style: theme.textTheme.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+              _FeedbackStatusChip(status: status),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message.isEmpty ? '-' : message,
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.35),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (churchName.isNotEmpty || churchId.isNotEmpty)
+                _FeedbackMetaChip(
+                  icon: Icons.account_balance_outlined,
+                  label: churchName.isNotEmpty ? churchName : churchId,
+                ),
+              if (createdAt != null)
+                _FeedbackMetaChip(
+                  icon: Icons.schedule_outlined,
+                  label: DateFormat('d MMM yyyy, h:mm a').format(createdAt),
+                ),
+              if (userRole.isNotEmpty)
+                _FeedbackMetaChip(
+                  icon: Icons.verified_user_outlined,
+                  label: userRole,
+                ),
+            ],
+          ),
+          if (status != 'reviewed') ...[
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await doc.reference.set(
+                    {
+                      'status': 'reviewed',
+                      'reviewedAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    },
+                    SetOptions(merge: true),
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Feedback marked reviewed')),
+                  );
+                },
+                icon: const Icon(Icons.done_rounded),
+                label: const Text('Mark reviewed'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedbackDeleteBackground extends StatelessWidget {
+  const _FeedbackDeleteBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.redAccent,
+        borderRadius: BorderRadius.circular(cornerRadius),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: Alignment.centerRight,
+      child: const Icon(
+        Icons.delete_outline_rounded,
+        color: Colors.white,
+        size: 28,
+      ),
+    );
+  }
+}
+
+Future<bool?> _confirmDeleteFeedback(
+  BuildContext context,
+  QueryDocumentSnapshot<Map<String, dynamic>> doc,
+) {
+  final data = doc.data();
+  final userName = (data['userName'] ?? '').toString().trim();
+  final message = (data['message'] ?? '').toString().trim();
+
+  return showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Delete feedback?'),
+        content: Text(
+          [
+            if (userName.isNotEmpty) 'From: $userName',
+            if (message.isNotEmpty) message,
+            'This cannot be undone.',
+          ].join('\n\n'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _FeedbackStatusChip extends StatelessWidget {
+  const _FeedbackStatusChip({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final reviewed = status == 'reviewed';
+    final color = reviewed ? Colors.green : Colors.orange;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        reviewed ? 'Reviewed' : 'New',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
+      ),
+    );
+  }
+}
+
+class _FeedbackMetaChip extends StatelessWidget {
+  const _FeedbackMetaChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
