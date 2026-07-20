@@ -6,6 +6,7 @@ import 'package:flutter_application/church_app/models/side_drawer_models/prayer_
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/dashboard/dashboard_providers.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,18 +21,23 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
   @override
   Future<DashboardViewState> build() async {
     final previous = state.value;
-    const title = 'Church';
+    var title = ref.watch(selectedChurchProvider)?.name.trim() ?? '';
     final isAdmin = ref.watch(isAdminProvider);
 
     if (!isAdmin) {
       return DashboardViewState.accessDenied(
-        churchTitle: title,
+        churchTitle: title.isEmpty ? 'Church' : title,
         selectedChartMode:
             previous?.selectedChartMode ?? DashboardMemberChartMode.gender,
       );
     }
 
     final churchId = await ref.watch(currentChurchIdProvider.future);
+    if (title.isEmpty && churchId != null && churchId.trim().isNotEmpty) {
+      title =
+          (await ref.watch(churchByIdProvider(churchId).future))?.name.trim() ??
+              '';
+    }
     await _logDashboardOpen(churchId);
 
     final results = await Future.wait<Object>([
@@ -44,7 +50,7 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
 
     final nextState = DashboardViewState(
       isAdmin: true,
-      churchTitle: title,
+      churchTitle: title.isEmpty ? 'Church' : title,
       churchId: churchId,
       memberMetrics: results[0] as DashboardMemberMetrics,
       prayers: results[1] as List<PrayerRequest>,

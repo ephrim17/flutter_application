@@ -258,8 +258,10 @@ ThemeData _buildTheme({
       usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
   final errorColor =
       usesDarkSurface ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A);
-  final poppinsTextTheme =
-      GoogleFonts.poppinsTextTheme(ThemeData(brightness: brightness).textTheme);
+  final poppinsTextTheme = _reduceTextThemeFontSizes(
+    GoogleFonts.poppinsTextTheme(ThemeData(brightness: brightness).textTheme),
+    3,
+  );
 
   return ThemeData(
     brightness: brightness,
@@ -286,7 +288,7 @@ ThemeData _buildTheme({
       foregroundColor: textColor,
       titleTextStyle: GoogleFonts.poppins(
         color: textColor,
-        fontSize: 22,
+        fontSize: 19,
         fontWeight: FontWeight.w700,
       ),
     ),
@@ -346,12 +348,12 @@ ThemeData _buildTheme({
       ),
       titleTextStyle: GoogleFonts.poppins(
         color: textColor,
-        fontSize: 22,
+        fontSize: 19,
         fontWeight: FontWeight.w700,
       ),
       contentTextStyle: GoogleFonts.poppins(
         color: textColor,
-        fontSize: 16,
+        fontSize: 13,
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
@@ -433,7 +435,7 @@ ThemeData _buildTheme({
     ),
     textTheme: poppinsTextTheme.copyWith(
       titleLarge: poppinsTextTheme.titleLarge?.copyWith(
-        fontSize: 30,
+        fontSize: 27,
         fontWeight: FontWeight.w600,
         color: textColor,
       ),
@@ -471,5 +473,33 @@ ThemeData _buildTheme({
         color: mutedTextColor,
       ),
     ),
+  );
+}
+
+TextTheme _reduceTextThemeFontSizes(TextTheme theme, double amount) {
+  return theme.copyWith(
+    displayLarge: _reduceTextStyleFontSize(theme.displayLarge, amount),
+    displayMedium: _reduceTextStyleFontSize(theme.displayMedium, amount),
+    displaySmall: _reduceTextStyleFontSize(theme.displaySmall, amount),
+    headlineLarge: _reduceTextStyleFontSize(theme.headlineLarge, amount),
+    headlineMedium: _reduceTextStyleFontSize(theme.headlineMedium, amount),
+    headlineSmall: _reduceTextStyleFontSize(theme.headlineSmall, amount),
+    titleLarge: _reduceTextStyleFontSize(theme.titleLarge, amount),
+    titleMedium: _reduceTextStyleFontSize(theme.titleMedium, amount),
+    titleSmall: _reduceTextStyleFontSize(theme.titleSmall, amount),
+    bodyLarge: _reduceTextStyleFontSize(theme.bodyLarge, amount),
+    bodyMedium: _reduceTextStyleFontSize(theme.bodyMedium, amount),
+    bodySmall: _reduceTextStyleFontSize(theme.bodySmall, amount),
+    labelLarge: _reduceTextStyleFontSize(theme.labelLarge, amount),
+    labelMedium: _reduceTextStyleFontSize(theme.labelMedium, amount),
+    labelSmall: _reduceTextStyleFontSize(theme.labelSmall, amount),
+  );
+}
+
+TextStyle? _reduceTextStyleFontSize(TextStyle? style, double amount) {
+  final fontSize = style?.fontSize;
+  if (style == null || fontSize == null) return style;
+  return style.copyWith(
+    fontSize: (fontSize - amount).clamp(1.0, double.infinity).toDouble(),
   );
 }

@@ -329,16 +329,6 @@ class _WelcomeCard extends StatelessWidget {
                           height: 1.05,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Here is a quick look at what is happening in your church today.',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: onPrimary.withValues(alpha: 0.88),
-                          height: 1.35,
-                        ),
-                      ),
                       if (dayStreak > 0) ...[
                         const SizedBox(height: 14),
                         Container(
@@ -363,7 +353,7 @@ class _WelcomeCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '$dayStreak day streak',
+                                'Your current streak $dayStreak days',
                                 style: theme.textTheme.labelLarge?.copyWith(
                                   color: onPrimary,
                                   fontWeight: FontWeight.w800,

@@ -15,7 +15,7 @@ class AppBarTitle extends StatelessWidget {
       text,
       style: theme.appBarTheme.titleTextStyle ??
           theme.textTheme.titleSmall?.copyWith(
-            fontSize: 22,
+            fontSize: 19,
             fontWeight: FontWeight.w500,
           ),
     );

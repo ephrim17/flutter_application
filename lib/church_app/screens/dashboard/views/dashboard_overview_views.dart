@@ -78,7 +78,7 @@ class _DashboardHeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            churchTitle.trim().isEmpty ? 'Church' : 'Church $churchTitle',
+            churchTitle.trim().isEmpty ? 'Church' : churchTitle,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: onPrimary,
               fontWeight: FontWeight.w900,
