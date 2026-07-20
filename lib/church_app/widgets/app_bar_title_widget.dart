@@ -10,11 +10,14 @@ class AppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Text(
       text,
-      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-        fontSize: 22
-      ),
+      style: theme.appBarTheme.titleTextStyle ??
+          theme.textTheme.titleSmall?.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+          ),
     );
   }
 }

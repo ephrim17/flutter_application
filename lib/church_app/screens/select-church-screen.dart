@@ -594,22 +594,17 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Colors.transparent,
       heightFactor: 0.65,
       builder: (context) {
         final theme = Theme.of(context);
         return Material(
-          color: theme.cardColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28),
-          ),
-          clipBehavior: Clip.antiAlias,
+          color: Colors.transparent,
           child: SafeArea(
             top: false,
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 20,
-                24,
+                8,
                 20,
                 20 + MediaQuery.of(context).viewInsets.bottom,
               ),
@@ -637,7 +632,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 6)
+                            const SizedBox(height: 6),
                           ],
                         ),
                       ),
@@ -859,12 +854,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
         centerTitle: true,
         scrolledUnderElevation: 0,
         elevation: 0,
-        title: Text(
-          widget.title,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        title: AppBarTitle(text: widget.title),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(86),
           child: Container(

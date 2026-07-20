@@ -48,7 +48,9 @@ Future<T?> showAppModalBottomSheet<T>({
           theme.colorScheme.surface;
       final child = _unwrapExistingFractionalSheet(builder(context));
       final shouldShowGrabHandle = showDragHandle ?? true;
-      final handleLaneHeight = shouldShowGrabHandle ? 36.0 : 0.0;
+      final usesCustomSheetSurface = effectiveSheetColor == Colors.transparent;
+      final handleLaneHeight =
+          shouldShowGrabHandle && !usesCustomSheetSurface ? 36.0 : 0.0;
       return BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: SafeArea(
@@ -61,18 +63,25 @@ Future<T?> showAppModalBottomSheet<T>({
               borderRadius: BorderRadius.circular(34),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: effectiveSheetColor.withValues(alpha: 0.94),
+                  color: usesCustomSheetSurface
+                      ? Colors.transparent
+                      : effectiveSheetColor.withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(34),
-                  border: Border.all(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 38,
-                      offset: const Offset(0, 18),
-                    ),
-                  ],
+                  border: usesCustomSheetSurface
+                      ? null
+                      : Border.all(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.08),
+                        ),
+                  boxShadow: usesCustomSheetSurface
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.20),
+                            blurRadius: 38,
+                            offset: const Offset(0, 18),
+                          ),
+                        ],
                 ),
                 child: Stack(
                   children: [

@@ -504,6 +504,10 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.by_unknown': 'By: Unknown',
   'prayer.expires_prefix': 'Expires',
   'prayer.modal_title': 'Prayer Request',
+  'prayer.healing_verse_title': 'A healing promise',
+  'prayer.healing_verse':
+      '"Heal me, Lord, and I will be healed; save me and I will be saved, for you are the one I praise."',
+  'prayer.healing_verse_reference': 'Jeremiah 17:14',
   'prayer.title_label': 'Title',
   'prayer.title_required': 'Title required',
   'prayer.description_label': 'Description',

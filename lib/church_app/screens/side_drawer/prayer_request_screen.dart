@@ -318,6 +318,8 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -333,7 +335,79 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
           children: [
             Text(
               context.t('prayer.modal_title', fallback: 'Prayer Request'),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: primaryColor.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.t(
+                            'prayer.healing_verse_title',
+                            fallback: 'A healing promise',
+                          ),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          context.t(
+                            'prayer.healing_verse',
+                            fallback:
+                                '"Heal me, Lord, and I will be healed; save me and I will be saved, for you are the one I praise."',
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          context.t(
+                            'prayer.healing_verse_reference',
+                            fallback: 'Jeremiah 17:14',
+                          ),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             AppTextField(

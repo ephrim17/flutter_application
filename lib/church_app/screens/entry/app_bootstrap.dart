@@ -284,6 +284,11 @@ ThemeData _buildTheme({
       backgroundColor: bgColor,
       elevation: 0,
       foregroundColor: textColor,
+      titleTextStyle: GoogleFonts.poppins(
+        color: textColor,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+      ),
     ),
     cardTheme: CardThemeData().copyWith(
       color: cardColor,

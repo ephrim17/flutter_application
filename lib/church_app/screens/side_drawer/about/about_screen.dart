@@ -96,12 +96,6 @@ class AboutScreen extends ConsumerWidget {
                 const SizedBox(height: 14),
                 const PastorWidget(),
                 const SizedBox(height: 28),
-                _AboutSectionHeading(
-                  eyebrow: 'Stay Connected',
-                  title:
-                      'Reach out, follow along, and stay part of the community.',
-                ),
-                const SizedBox(height: 14),
                 const _AboutFooterSection(),
               ],
             ),
