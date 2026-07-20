@@ -24,6 +24,10 @@ String mapFirebaseAuthError(Object e) {
         return 'This email is already registered.';
       case 'weak-password':
         return 'Password should be at least 6 characters.';
+      case 'expired-action-code':
+        return 'This reset link has expired. Please request a new one.';
+      case 'invalid-action-code':
+        return 'This reset link is invalid or already used.';
       case 'network-request-failed':
         return 'Network error. Please check your internet connection.';
       case 'too-many-requests':

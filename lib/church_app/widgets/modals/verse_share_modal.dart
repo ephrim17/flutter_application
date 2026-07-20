@@ -71,7 +71,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
   double fontSize = 20;
   VerseFontStyleOption fontStyleOption = VerseFontStyleOption.bold;
   double blurIntensity = 10;
-  int selectedFontStyleIndex = 0;
   double _editorPanelFraction = 0.52;
   bool _editorPanelVisible = true;
   bool _isDownloading = false;
@@ -115,34 +114,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
     Colors.blue,
     Colors.green,
     Colors.orange,
-  ];
-
-  final List<_FontStyleOption> fontStyleOptions = const [
-    _FontStyleOption(
-      labelKey: 'verse_share.default_font',
-      fallback: 'Default',
-      fontFamily: null,
-    ),
-    _FontStyleOption(
-      labelKey: 'verse_share.serif_font',
-      fallback: 'Serif',
-      fontFamily: 'serif',
-    ),
-    _FontStyleOption(
-      labelKey: 'verse_share.sans_font',
-      fallback: 'Sans',
-      fontFamily: 'sans-serif',
-    ),
-    _FontStyleOption(
-      labelKey: 'verse_share.mono_font',
-      fallback: 'Mono',
-      fontFamily: 'monospace',
-    ),
-    _FontStyleOption(
-      labelKey: 'verse_share.rounded_font',
-      fallback: 'Rounded',
-      fontFamily: 'Roboto',
-    ),
   ];
 
   @override
@@ -680,24 +651,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppDropdownField<int>(
-                  initialValue: selectedFontStyleIndex,
-                  labelText: 'Font',
-                  items: List.generate(fontStyleOptions.length, (index) {
-                    final option = fontStyleOptions[index];
-                    return DropdownMenuItem(
-                      value: index,
-                      child: Text(
-                        context.t(option.labelKey, fallback: option.fallback),
-                      ),
-                    );
-                  }),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => selectedFontStyleIndex = value);
-                  },
-                ),
-                const SizedBox(height: 12),
                 ToggleButtons(
                   borderRadius: BorderRadius.circular(cornerRadius),
                   isSelected: [
@@ -886,12 +839,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
   }
 
   TextStyle _textStyle(double size) {
-    final selectedFont = fontStyleOptions[selectedFontStyleIndex];
     return TextStyle(
       fontSize: size,
       fontWeight: _resolvedFontWeight(),
       color: fontColor,
-      fontFamily: selectedFont.fontFamily,
       fontStyle: _resolvedFontStyle(),
       height: 1.28,
     );
@@ -930,12 +881,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
   }
 
   TextStyle _referenceTextStyle(double size) {
-    final selectedFont = fontStyleOptions[selectedFontStyleIndex];
     return TextStyle(
       fontSize: size * 0.72,
       fontWeight: FontWeight.w700,
       color: fontColor,
-      fontFamily: selectedFont.fontFamily,
       fontStyle: _resolvedFontStyle(),
       height: 1.2,
     );
@@ -945,12 +894,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
     required _HighlightRule rule,
     required double size,
   }) {
-    final selectedFont = fontStyleOptions[rule.fontStyleIndex];
     final hasFill = rule.fillColor != Colors.transparent;
     return TextStyle(
       fontSize: size * rule.sizeScale,
       color: rule.textColor,
-      fontFamily: selectedFont.fontFamily,
       fontStyle: rule.fontStyleOption == VerseFontStyleOption.italic
           ? FontStyle.italic
           : FontStyle.normal,
@@ -1372,29 +1319,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
             ],
           ),
           const SizedBox(height: 12),
-          AppDropdownField<int>(
-            initialValue: rule.fontStyleIndex,
-            labelText: context.t(
-              'verse_share.highlight_font',
-              fallback: 'Highlight Font',
-            ),
-            items: List.generate(fontStyleOptions.length, (index) {
-              final option = fontStyleOptions[index];
-              return DropdownMenuItem(
-                value: index,
-                child:
-                    Text(context.t(option.labelKey, fallback: option.fallback)),
-              );
-            }),
-            onChanged: (value) {
-              if (value == null) return;
-              _updateHighlightRule(
-                rule,
-                (current) => current.copyWith(fontStyleIndex: value),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
           Text(
             context.t('verse_share.highlight_weight', fallback: 'Font Style'),
             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -1559,7 +1483,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
         textColor: color,
         fillColor: Colors.transparent,
         borderColor: color.withValues(alpha: 0.55),
-        fontStyleIndex: selectedFontStyleIndex,
         sizeScale: 1.0,
       );
       _highlightRules.add(rule);
@@ -1715,18 +1638,6 @@ class _BrandText extends StatelessWidget {
   }
 }
 
-class _FontStyleOption {
-  const _FontStyleOption({
-    required this.labelKey,
-    required this.fallback,
-    required this.fontFamily,
-  });
-
-  final String labelKey;
-  final String fallback;
-  final String? fontFamily;
-}
-
 class _HighlightRule {
   const _HighlightRule({
     required this.id,
@@ -1737,7 +1648,6 @@ class _HighlightRule {
     required this.textColor,
     required this.fillColor,
     required this.borderColor,
-    required this.fontStyleIndex,
     required this.sizeScale,
   });
 
@@ -1749,7 +1659,6 @@ class _HighlightRule {
   final Color textColor;
   final Color fillColor;
   final Color borderColor;
-  final int fontStyleIndex;
   final double sizeScale;
 
   _HighlightRule copyWith({
@@ -1760,7 +1669,6 @@ class _HighlightRule {
     Color? textColor,
     Color? fillColor,
     Color? borderColor,
-    int? fontStyleIndex,
     double? sizeScale,
   }) {
     return _HighlightRule(
@@ -1772,7 +1680,6 @@ class _HighlightRule {
       textColor: textColor ?? this.textColor,
       fillColor: fillColor ?? this.fillColor,
       borderColor: borderColor ?? this.borderColor,
-      fontStyleIndex: fontStyleIndex ?? this.fontStyleIndex,
       sizeScale: sizeScale ?? this.sizeScale,
     );
   }

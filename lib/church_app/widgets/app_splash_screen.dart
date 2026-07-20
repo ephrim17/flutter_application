@@ -1,69 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_application/church_app/helpers/app_assets.dart';
 
-class AppSplashScreen extends StatefulWidget {
+class AppSplashScreen extends StatelessWidget {
   const AppSplashScreen({super.key, this.size = 240});
 
   final double size;
 
-  static const assetPath = 'assets/lottie/splashScreen.json';
-
-  @override
-  State<AppSplashScreen> createState() => _AppSplashScreenState();
-}
-
-class _AppSplashScreenState extends State<AppSplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _titleEntrance;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-    _titleEntrance = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0, 0.42, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  static const assetPath = AppAssets.churchTreeSplash;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Church Tree splash animation',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: Lottie.asset(
-              AppSplashScreen.assetPath,
-              repeat: true,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('Lottie splash load failed: $error');
-                return Center(
-                  child: SizedBox.square(
-                    dimension: widget.size * 0.28,
-                    child: const CircularProgressIndicator(),
-                  ),
-                );
-              },
+      label: 'Church Tree splash screen',
+      image: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width;
+          final height = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : MediaQuery.sizeOf(context).height;
+
+          return SizedBox(
+            width: width,
+            height: height,
+            child: Image.asset(
+              assetPath,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
             ),
-          ),
-          const SizedBox(height: 14),
-          AppLogoText(controller: _controller, titleEntrance: _titleEntrance),
-        ],
+          );
+        },
       ),
     );
   }
@@ -145,7 +113,7 @@ class _AppLogoTextState extends State<AppLogoText>
       builder: (context, child) {
         final entrance = _titleEntrance.value;
         final pulse = 1 + (_controller.value * 0.025);
-    
+
         return Opacity(
           opacity: entrance,
           child: Transform.translate(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lottie/lottie.dart';
 
 class AppLoadingIndicator extends StatelessWidget {
@@ -26,21 +27,16 @@ class AppLoadingIndicator extends StatelessWidget {
         children: [
           SizedBox.square(
             dimension: size,
-            child: Lottie.asset(
-              assetPath,
-              repeat: true,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: SizedBox.square(
-                    dimension: size * 0.32,
-                    child: CircularProgressIndicator(
-                      strokeWidth: size < 80 ? 2 : 3,
-                    ),
+            child: kIsWeb
+                ? _FallbackLoader(size: size)
+                : Lottie.asset(
+                    assetPath,
+                    repeat: true,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _FallbackLoader(size: size);
+                    },
                   ),
-                );
-              },
-            ),
           ),
           if (labelText != null && labelText.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -54,6 +50,24 @@ class AppLoadingIndicator extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _FallbackLoader extends StatelessWidget {
+  const _FallbackLoader({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox.square(
+        dimension: size * 0.32,
+        child: CircularProgressIndicator(
+          strokeWidth: size < 80 ? 2 : 3,
+        ),
       ),
     );
   }

@@ -28,6 +28,8 @@ const smtpSecure = defineString("SMTP_SECURE");
 const emailFrom = defineString("EMAIL_FROM");
 const smtpUser = defineSecret("SMTP_USER");
 const smtpPass = defineSecret("SMTP_PASS");
+const passwordResetAppUrl =
+  "https://flutterlearning-c9f6c.web.app/reset-password";
 
 type MailJobData = {
   kind?: string;
@@ -199,6 +201,11 @@ export const sendPasswordResetSmtpEmail = onRequest(
 
     try {
       const resetLink = await admin.auth().generatePasswordResetLink(email);
+      const appResetLink = buildAppPasswordResetLink({
+        firebaseResetLink: resetLink,
+        email,
+        churchName,
+      });
       const subject = mode == "setup" ?
         `Set up your ${churchName} password` :
         `Reset your ${churchName} password`;
@@ -208,7 +215,7 @@ export const sendPasswordResetSmtpEmail = onRequest(
           "",
           `Your account for ${churchName} is ready.`,
           "Use the link below to set your password and complete setup:",
-          resetLink,
+          appResetLink,
           "",
           "If you were not expecting this email, you can ignore it.",
         ].join("\n") :
@@ -217,7 +224,7 @@ export const sendPasswordResetSmtpEmail = onRequest(
           "",
           `We received a request to reset your password for ${churchName}.`,
           "Use the link below to choose a new password:",
-          resetLink,
+          appResetLink,
           "",
           "If you did not request this, you can safely ignore this email.",
         ].join("\n");
@@ -694,6 +701,31 @@ function createTransporter() {
       pass: smtpPass.value(),
     },
   });
+}
+
+function buildAppPasswordResetLink({
+  firebaseResetLink,
+  email,
+  churchName,
+}: {
+  firebaseResetLink: string;
+  email: string;
+  churchName: string;
+}): string {
+  const firebaseUrl = new URL(firebaseResetLink);
+  const oobCode = firebaseUrl.searchParams.get("oobCode");
+  if (oobCode === null || oobCode.trim().length === 0) {
+    return firebaseResetLink;
+  }
+
+  const appUrl = new URL(passwordResetAppUrl);
+  appUrl.searchParams.set("mode", "resetPassword");
+  appUrl.searchParams.set("oobCode", oobCode);
+  appUrl.searchParams.set("email", email);
+  if (churchName.trim().length > 0) {
+    appUrl.searchParams.set("churchName", churchName.trim());
+  }
+  return appUrl.toString();
 }
 
 function readUnknownString(value: unknown): string {

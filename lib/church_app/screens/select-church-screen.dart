@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -303,7 +304,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                             child: ClipOval(
                               child: SizedBox.expand(
                                 child: Image.asset(
-                                  'assets/images/churchTreeLogo.png',
+                                  AppAssets.churchTreeAppIcon,
                                   fit: BoxFit.cover,
                                 ),
                               ),

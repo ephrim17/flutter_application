@@ -9,6 +9,7 @@ import 'package:flutter_application/church_app/providers/app_config_provider.dar
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/app_routes.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
@@ -109,6 +110,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     if (!_minimumSplashElapsed) {
       return MaterialApp(
         navigatorObservers: [analyticsObserver],
+        onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
         theme: _buildTheme(
           context: context,
@@ -135,6 +137,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     return configAsync.when(
       loading: () => MaterialApp(
         navigatorObservers: [analyticsObserver],
+        onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
         theme: _buildTheme(
           context: context,
@@ -158,6 +161,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       ),
       error: (_, __) => MaterialApp(
         navigatorObservers: [analyticsObserver],
+        onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
         theme: _buildTheme(
           context: context,
@@ -209,6 +213,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
 
         return MaterialApp(
           navigatorObservers: [analyticsObserver],
+          onGenerateRoute: generateChurchAppRoute,
           themeMode: themeMode,
           theme: _buildTheme(
             context: context,
@@ -253,6 +258,8 @@ ThemeData _buildTheme({
       usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
   final errorColor =
       usesDarkSurface ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A);
+  final poppinsTextTheme =
+      GoogleFonts.poppinsTextTheme(ThemeData(brightness: brightness).textTheme);
 
   return ThemeData(
     brightness: brightness,
@@ -332,12 +339,12 @@ ThemeData _buildTheme({
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
-      titleTextStyle: GoogleFonts.anekTamil(
+      titleTextStyle: GoogleFonts.poppins(
         color: textColor,
         fontSize: 22,
         fontWeight: FontWeight.w700,
       ),
-      contentTextStyle: GoogleFonts.anekTamil(
+      contentTextStyle: GoogleFonts.poppins(
         color: textColor,
         fontSize: 16,
       ),
@@ -419,40 +426,45 @@ ThemeData _buildTheme({
         borderRadius: BorderRadius.circular(24),
       ),
     ),
-    textTheme: ThemeData().textTheme.copyWith(
-          titleLarge: GoogleFonts.anekTamil(
-            fontSize: 30,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-          headlineMedium: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          headlineLarge: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          headlineSmall: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          titleMedium: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          bodyMedium: GoogleFonts.anekTamil(
-            color: textColor,
-            //fontWeight: FontWeight.w600,
-          ),
-          bodyLarge: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          bodySmall: GoogleFonts.anekTamil(
-            color: mutedTextColor,
-          ),
-          labelLarge: GoogleFonts.anekTamil(
-            color: textColor,
-          ),
-          labelMedium: GoogleFonts.anekTamil(
-            color: mutedTextColor,
-          ),
-        ),
+    textTheme: poppinsTextTheme.copyWith(
+      titleLarge: poppinsTextTheme.titleLarge?.copyWith(
+        fontSize: 30,
+        fontWeight: FontWeight.w600,
+        color: textColor,
+      ),
+      headlineMedium: poppinsTextTheme.headlineMedium?.copyWith(
+        color: textColor,
+      ),
+      headlineLarge: poppinsTextTheme.headlineLarge?.copyWith(
+        color: textColor,
+      ),
+      headlineSmall: poppinsTextTheme.headlineSmall?.copyWith(
+        color: textColor,
+      ),
+      titleMedium: poppinsTextTheme.titleMedium?.copyWith(
+        color: textColor,
+      ),
+      titleSmall: poppinsTextTheme.titleSmall?.copyWith(
+        color: textColor,
+      ),
+      bodyMedium: poppinsTextTheme.bodyMedium?.copyWith(
+        color: textColor,
+      ),
+      bodyLarge: poppinsTextTheme.bodyLarge?.copyWith(
+        color: textColor,
+      ),
+      bodySmall: poppinsTextTheme.bodySmall?.copyWith(
+        color: mutedTextColor,
+      ),
+      labelLarge: poppinsTextTheme.labelLarge?.copyWith(
+        color: textColor,
+      ),
+      labelMedium: poppinsTextTheme.labelMedium?.copyWith(
+        color: mutedTextColor,
+      ),
+      labelSmall: poppinsTextTheme.labelSmall?.copyWith(
+        color: mutedTextColor,
+      ),
+    ),
   );
 }

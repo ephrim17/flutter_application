@@ -50,6 +50,13 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.email_invalid': 'Please enter a valid email.',
   'auth.send_reset_email': 'Send Reset Email',
   'auth.reset_email_sent': 'Password reset email sent. Check your inbox.',
+  'auth.reset_password_title': 'Reset Password',
+  'auth.password_reset_success': 'Password updated. You can sign in now.',
+  'auth.reset_link_invalid_title': 'Reset link expired',
+  'auth.reset_link_invalid_message':
+      'Please request a new password reset link and try again.',
+  'auth.choose_new_password': 'Choose a new password',
+  'auth.update_password': 'Update Password',
   'auth.login_validation': 'Please fill all fields (password min 6 chars)',
   'auth.name_label': 'Your Name',
   'auth.name_helper': 'Name should have only characters, not numbers',

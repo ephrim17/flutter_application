@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_assets.dart';
 
 class ChurchLogoAvatar extends StatelessWidget {
   const ChurchLogoAvatar({
@@ -73,10 +74,18 @@ class ChurchLogoAvatar extends StatelessWidget {
   Widget _fallback(BuildContext context) {
     return _logoShell(
       context,
-      child: Icon(
-        Icons.church_outlined,
-        size: size * 0.45,
-        color: Theme.of(context).colorScheme.primary,
+      child: ClipOval(
+        child: Image.asset(
+          AppAssets.churchTreeAppIcon,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Icon(
+            Icons.church_outlined,
+            size: size * 0.45,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
       ),
     );
   }

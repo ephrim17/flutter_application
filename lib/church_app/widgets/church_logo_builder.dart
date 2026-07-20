@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
@@ -7,7 +8,7 @@ class ChurchLogoBuilder extends ConsumerWidget {
   const ChurchLogoBuilder({
     super.key,
     this.size = 38,
-    this.fallbackAsset = 'assets/images/church_logo.png',
+    this.fallbackAsset = AppAssets.churchTreeAppIcon,
     this.fit = BoxFit.cover,
   });
 
