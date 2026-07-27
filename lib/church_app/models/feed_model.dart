@@ -20,6 +20,7 @@ class FeedPost {
   final bool isPinned;
   final DateTime? pinnedAt;
   final String? imageUrl;
+  final List<String> imageUrls;
   final DateTime createdAt;
   final int likeCount;
   final int commentCount;
@@ -44,6 +45,7 @@ class FeedPost {
     this.isPinned = false,
     this.pinnedAt,
     this.imageUrl,
+    this.imageUrls = const [],
     required this.createdAt,
     required this.likeCount,
     required this.commentCount,
@@ -70,6 +72,7 @@ class FeedPost {
       isPinned: json['isPinned'] ?? false,
       pinnedAt: _parseDate(json['pinnedAt']),
       imageUrl: json['imageUrl'],
+      imageUrls: _parseImageUrls(json),
       createdAt: (json['createdAt'] as Timestamp).toDate(),
       likeCount: json['likeCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,
@@ -88,5 +91,16 @@ class FeedPost {
         .map((item) => item.toString().trim().toLowerCase())
         .where((item) => item.isNotEmpty)
         .toList(growable: false);
+  }
+
+  static List<String> _parseImageUrls(Map<String, dynamic> json) {
+    final urls = (json['imageUrls'] as Iterable?)
+            ?.map((item) => item.toString().trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: false) ??
+        const <String>[];
+    if (urls.isNotEmpty) return urls;
+    final legacyUrl = (json['imageUrl'] ?? '').toString().trim();
+    return legacyUrl.isEmpty ? const [] : [legacyUrl];
   }
 }

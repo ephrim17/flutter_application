@@ -59,3 +59,22 @@ final allPrayerRequestsProvider =
     error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
+
+final globalPrayerRequestsProvider =
+    StreamProvider.autoDispose<List<PrayerRequest>>((ref) {
+  final churchIdAsync = ref.watch(currentChurchIdProvider);
+
+  return churchIdAsync.when(
+    data: (churchId) {
+      if (churchId == null || churchId.trim().isEmpty) {
+        return Stream.value(const <PrayerRequest>[]);
+      }
+
+      return ref
+          .watch(prayerRepositoryForChurchProvider(churchId))
+          .watchGlobalPrayers();
+    },
+    loading: () => const Stream.empty(),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
+  );
+});

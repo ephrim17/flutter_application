@@ -54,7 +54,7 @@ class FeedCard extends ConsumerWidget {
     final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
     final canPin = canDelete;
     final theme = Theme.of(context);
-    final hasImage = (post.imageUrl ?? '').trim().isNotEmpty;
+    final hasImage = post.imageUrls.isNotEmpty;
     final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
       '${post.title}\n${post.description}',
     );
@@ -181,31 +181,7 @@ class FeedCard extends ConsumerWidget {
               ],
             ),
           ),
-          if (hasImage)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                color: Colors.black.withValues(alpha: 0.04),
-              ),
-              child: Stack(
-                children: [
-                  InkWell(
-                    onTap: () => _openImagePreview(context, post.imageUrl!),
-                    child: Hero(
-                      tag: post.imageUrl!,
-                      child: ShimmerImage(
-                        imageUrl: post.imageUrl!,
-                        fit: BoxFit.cover,
-                        aspectRatio: 1,
-                        borderRadius: 22,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (hasImage) _FeedImageGallery(imageUrls: post.imageUrls),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(
@@ -347,6 +323,7 @@ class FeedCard extends ConsumerWidget {
       churchId: post.churchId ?? churchId,
       postId: post.id,
       imageUrl: post.imageUrl,
+      imageUrls: post.imageUrls,
       isGlobal: isGlobal,
     );
     await logChurchAnalyticsEvent(
@@ -540,21 +517,95 @@ class FeedCard extends ConsumerWidget {
     if (!doc.exists) return null;
     return AppUser.fromJson(doc.data() as Map<String, dynamic>);
   }
+}
 
-  void _openImagePreview(BuildContext context, String imageUrl) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => _FeedImagePreviewScreen(imageUrl: imageUrl),
-        fullscreenDialog: true,
+class _FeedImageGallery extends StatefulWidget {
+  const _FeedImageGallery({required this.imageUrls});
+
+  final List<String> imageUrls;
+
+  @override
+  State<_FeedImageGallery> createState() => _FeedImageGalleryState();
+}
+
+class _FeedImageGalleryState extends State<_FeedImageGallery> {
+  int _page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.black.withValues(alpha: 0.04),
+      ),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Stack(
+          children: [
+            PageView.builder(
+              itemCount: widget.imageUrls.length,
+              onPageChanged: (value) => setState(() => _page = value),
+              itemBuilder: (context, index) {
+                final imageUrl = widget.imageUrls[index];
+                return InkWell(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _FeedImagePreviewScreen(
+                        imageUrls: widget.imageUrls,
+                        initialIndex: index,
+                      ),
+                      fullscreenDialog: true,
+                    ),
+                  ),
+                  child: Hero(
+                    tag: 'feed-gallery-$imageUrl',
+                    child: ShimmerImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      aspectRatio: 1,
+                      borderRadius: 0,
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (widget.imageUrls.length > 1)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.68),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '${_page + 1}/${widget.imageUrls.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _FeedImagePreviewScreen extends StatefulWidget {
-  final String imageUrl;
+  final List<String> imageUrls;
+  final int initialIndex;
 
-  const _FeedImagePreviewScreen({required this.imageUrl});
+  const _FeedImagePreviewScreen({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
 
   @override
   State<_FeedImagePreviewScreen> createState() =>
@@ -564,13 +615,9 @@ class _FeedImagePreviewScreen extends StatefulWidget {
 class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
   static const double _minScale = 1.0;
   static const double _maxScale = 5.0;
-  final TransformationController _controller = TransformationController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  late final PageController _pageController =
+      PageController(initialPage: widget.initialIndex);
+  late int _page = widget.initialIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -580,49 +627,55 @@ class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(''),
+        title: Text(
+          widget.imageUrls.length > 1
+              ? '${_page + 1} of ${widget.imageUrls.length}'
+              : '',
+          style: const TextStyle(color: Colors.white),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Stack(
-        children: [
-          Center(
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.imageUrls.length,
+        onPageChanged: (value) => setState(() => _page = value),
+        itemBuilder: (context, index) {
+          final imageUrl = widget.imageUrls[index];
+          return Center(
             child: Hero(
-              tag: widget.imageUrl,
+              tag: 'feed-gallery-$imageUrl',
               child: InteractiveViewer(
-                transformationController: _controller,
                 minScale: _minScale,
                 maxScale: _maxScale,
                 panEnabled: true,
-                boundaryMargin: const EdgeInsets.all(100),
-                constrained: false,
                 child: Image.network(
-                  widget.imageUrl,
+                  imageUrl,
                   fit: BoxFit.contain,
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      color: Colors.white70,
-                      size: 48,
-                    ),
+                  width: MediaQuery.sizeOf(context).width,
+                  loadingBuilder: (context, child, progress) => progress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator()),
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white70,
+                    size: 48,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }
 

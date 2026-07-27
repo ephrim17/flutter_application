@@ -6,7 +6,6 @@ import 'package:flutter_application/church_app/services/analytics/firebase_analy
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class CreatePostModal extends ConsumerStatefulWidget {
@@ -39,11 +38,14 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _sharePersonalDetails = false;
+  final List<PickedImageData> _selectedImages = [];
 
   @override
   void initState() {
     super.initState();
-    selectedImage = widget.initialImage;
+    if (widget.initialImage != null) {
+      _selectedImages.add(widget.initialImage!);
+    }
 
     if (widget.post != null) {
       _titleController.text = widget.post!.title;
@@ -59,23 +61,23 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    selectedImage = null;
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
-    if (image != null) {
+  Future<void> _pickImages() async {
+    final images = await picker.pickMultiImage(imageQuality: 80);
+    if (images.isEmpty) return;
+    final pickedImages = <PickedImageData>[];
+    for (final image in images.take(10)) {
       final picked = await PickedImageData.fromXFile(image);
-      if (picked == null) return;
-      setState(() {
-        selectedImage = picked;
-      });
+      if (picked != null) pickedImages.add(picked);
     }
+    if (!mounted) return;
+    setState(() {
+      _selectedImages
+        ..clear()
+        ..addAll(pickedImages);
+    });
   }
 
   @override
@@ -204,17 +206,17 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 alignment: Alignment.centerLeft,
                 child: isCreateMode && widget.allowImagePicking
                     ? TextButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.image),
+                        onPressed: _pickImages,
+                        icon: const Icon(Icons.photo_library_outlined),
                         label: Text(
                           widget.requireImage
                               ? ref.t(
                                   'feed.change_image',
-                                  fallback: 'Change Image',
+                                  fallback: 'Change Images',
                                 )
                               : ref.t(
                                   'feed.add_image_optional',
-                                  fallback: 'Add Image (Optional)',
+                                  fallback: 'Add Images (Optional)',
                                 ),
                         ),
                       )
@@ -223,16 +225,41 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
               const SizedBox(
                 height: 10,
               ),
-              if (selectedImage != null && isCreateMode)
+              if (_selectedImages.isNotEmpty && isCreateMode)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(
-                      selectedImage!.bytes,
-                      //height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                  child: SizedBox(
+                    height: 112,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _selectedImages.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.memory(
+                                _selectedImages[index].bytes,
+                                width: 112,
+                                height: 112,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: IconButton.filled(
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => setState(
+                                  () => _selectedImages.removeAt(index),
+                                ),
+                                icon: const Icon(Icons.close_rounded, size: 16),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -264,7 +291,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             return;
                           }
 
-                          if (widget.requireImage && selectedImage == null) {
+                          if (widget.requireImage && _selectedImages.isEmpty) {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -289,7 +316,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                   .createPost(
                                     title: title,
                                     description: description,
-                                    imageFile: selectedImage,
+                                    imageFiles: _selectedImages,
                                     sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
                                   );
@@ -310,7 +337,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                     postId: widget.post!.id,
                                     title: title,
                                     description: description,
-                                    imageFile: selectedImage,
+                                    imageFile: null,
                                     existingImageUrl: widget.post!.imageUrl,
                                     sharePersonalDetails: _sharePersonalDetails,
                                     isGlobal: widget.isGlobal,
@@ -408,6 +435,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                   .deletePost(
                                     postId: widget.post!.id,
                                     imageUrl: widget.post!.imageUrl,
+                                    imageUrls: widget.post!.imageUrls,
                                     isGlobal: widget.isGlobal,
                                   );
                               navigator.pop();

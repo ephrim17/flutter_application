@@ -317,10 +317,10 @@ class _BirthdayPostComposerModalState
 
     try {
       await ref.read(feedPostModalControllerProvider.notifier).createPost(
-            title: title,
-            description: description,
-            imageFile: _generatedImage,
-          );
+        title: title,
+        description: description,
+        imageFiles: [_generatedImage!],
+      );
 
       if (!mounted) return;
       navigator.pop();

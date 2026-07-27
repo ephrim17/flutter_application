@@ -27,7 +27,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   Future<void> createPost({
     required String title,
     required String description,
-    PickedImageData? imageFile,
+    List<PickedImageData> imageFiles = const [],
     bool sharePersonalDetails = false,
     bool isGlobal = false,
   }) async {
@@ -72,7 +72,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         userDob: user.dob,
         title: title,
         description: description,
-        imageFile: imageFile,
+        imageFiles: imageFiles,
         isGlobal: isGlobal,
       );
     });
@@ -117,6 +117,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   Future<void> deletePost({
     required String postId,
     String? imageUrl,
+    List<String> imageUrls = const [],
     bool isGlobal = false,
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
@@ -131,6 +132,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         churchId: churchId,
         postId: postId,
         imageUrl: imageUrl,
+        imageUrls: imageUrls,
         isGlobal: isGlobal,
       );
     });
@@ -159,5 +161,4 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-PickedImageData? selectedImage;
 final picker = ImagePicker();

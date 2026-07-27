@@ -184,6 +184,20 @@ class FeedRepository {
     return _storage.ref().child('churches/$churchId/feed/$postId.jpg');
   }
 
+  Reference _feedGalleryImageRef({
+    String? churchId,
+    required String postId,
+    required int index,
+    required String fileName,
+    bool isGlobal = false,
+  }) {
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final scope = isGlobal ? 'global' : churchId;
+    return _storage
+        .ref()
+        .child('churches/$scope/feeds/$postId/images/$index-$safeName');
+  }
+
   Future<void> createPost({
     String? churchId,
     required String userId,
@@ -199,7 +213,7 @@ class FeedRepository {
     DateTime? userDob,
     required String title,
     required String description,
-    PickedImageData? imageFile,
+    List<PickedImageData> imageFiles = const [],
     bool isGlobal = false,
   }) async {
     final postsRef = isGlobal
@@ -230,27 +244,31 @@ class FeedRepository {
       'isPinned': false,
       'pinnedAt': null,
       'imageUrl': null,
+      'imageUrls': const <String>[],
       'createdAt': FieldValue.serverTimestamp(),
     });
 
     // 2️⃣ Upload image if exists
-    if (imageFile != null) {
-      final storageRef = _feedImageRef(
-        churchId: churchId,
-        postId: docRef.id,
-        isGlobal: isGlobal,
-      );
-
-      await storageRef.putData(
-        imageFile.bytes,
-        _metadataFor(imageFile.name),
-      );
-
-      final downloadUrl = await storageRef.getDownloadURL();
-
-      // 3️⃣ Update document with image URL
+    if (imageFiles.isNotEmpty) {
+      final downloadUrls = <String>[];
+      for (var index = 0; index < imageFiles.length; index++) {
+        final imageFile = imageFiles[index];
+        final storageRef = _feedGalleryImageRef(
+          churchId: churchId,
+          postId: docRef.id,
+          index: index,
+          fileName: imageFile.name,
+          isGlobal: isGlobal,
+        );
+        await storageRef.putData(
+          imageFile.bytes,
+          _metadataFor(imageFile.name),
+        );
+        downloadUrls.add(await storageRef.getDownloadURL());
+      }
       await docRef.update({
-        'imageUrl': downloadUrl,
+        'imageUrl': downloadUrls.first,
+        'imageUrls': downloadUrls,
       });
     }
 
@@ -331,8 +349,21 @@ class FeedRepository {
     String? churchId,
     required String postId,
     String? imageUrl,
+    List<String> imageUrls = const [],
     bool isGlobal = false,
   }) async {
+    final urlsToDelete = {
+      ...imageUrls.where((url) => url.trim().isNotEmpty),
+      if (imageUrl != null && imageUrl.trim().isNotEmpty) imageUrl,
+    };
+    for (final url in urlsToDelete) {
+      try {
+        await _storage.refFromURL(url).delete();
+      } on FirebaseException catch (error) {
+        if (error.code != 'object-not-found') rethrow;
+      }
+    }
+
     try {
       await _feedImageRef(
         churchId: churchId,
@@ -345,7 +376,7 @@ class FeedRepository {
         rethrow;
       }
 
-      if (imageUrl != null && imageUrl.isNotEmpty) {
+      if (urlsToDelete.isEmpty && imageUrl != null && imageUrl.isNotEmpty) {
         try {
           await _storage.refFromURL(imageUrl).delete();
         } on FirebaseException catch (fallbackError) {

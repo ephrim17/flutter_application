@@ -7,6 +7,7 @@ class FirestorePaths {
   static const churches = 'churches';
   static const users = 'users';
   static const globalFeeds = 'globalFeeds';
+  static const globalPrayerRequests = 'globalPrayerRequests';
   static const globalFeedback = 'globalFeedback';
   static const mail = 'mail';
   static const bibleVersions = 'bible_versions';
@@ -301,6 +302,12 @@ class FirestorePaths {
     FirebaseFirestore firestore,
   ) {
     return firestore.collection(globalFeeds);
+  }
+
+  static CollectionReference<Map<String, dynamic>> globalPrayerCollection(
+    FirebaseFirestore firestore,
+  ) {
+    return firestore.collection(globalPrayerRequests);
   }
 
   static CollectionReference<Map<String, dynamic>> globalFeedbackCollection(

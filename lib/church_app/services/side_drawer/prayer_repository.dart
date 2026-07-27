@@ -20,6 +20,27 @@ class PrayerRepository {
     return FirestorePaths.churchPrayerRequests(firestore, churchId);
   }
 
+  CollectionReference<Map<String, dynamic>> globalCollectionRef() {
+    return FirestorePaths.globalPrayerCollection(firestore);
+  }
+
+  String _globalPrayerId(String prayerId) => '${churchId}_$prayerId';
+
+  Future<void> _ensureCurrentUserIsAdmin() async {
+    final email = auth.currentUser?.email?.trim().toLowerCase();
+    if (email == null || email.isEmpty) {
+      throw Exception('Only church admins can manage global prayer requests');
+    }
+
+    final configSnapshot =
+        await FirestorePaths.churchAppConfig(firestore, churchId).get();
+    final admins = (configSnapshot.data()?['admins'] as Iterable? ?? const [])
+        .map((value) => value.toString().trim().toLowerCase());
+    if (!admins.contains(email)) {
+      throw Exception('Only church admins can manage global prayer requests');
+    }
+  }
+
   Future<DocumentReference<Map<String, dynamic>>> _validatedPrayerDoc(
     String prayerId,
   ) async {
@@ -62,6 +83,7 @@ class PrayerRepository {
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
+      'isGlobal': false,
       'createdAt': Timestamp.fromDate(now),
       'updatedAt': Timestamp.fromDate(now),
       'expiryDate': Timestamp.fromDate(selectedDate),
@@ -88,13 +110,28 @@ class PrayerRepository {
 
     final prayerDoc = await _validatedPrayerDoc(prayerId);
 
-    await prayerDoc.update({
+    final existingSnapshot = await prayerDoc.get();
+    final existing = existingSnapshot.data() ?? const <String, dynamic>{};
+    final updates = <String, dynamic>{
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
       'expiryDate': Timestamp.fromDate(selectedDate),
       'updatedAt': Timestamp.fromDate(now),
-    });
+    };
+
+    final batch = firestore.batch()..update(prayerDoc, updates);
+    if (existing['isGlobal'] == true) {
+      batch.set(
+        globalCollectionRef().doc(_globalPrayerId(prayerId)),
+        {
+          ...updates,
+          'userId': isAnonymous ? '' : existing['userId'] ?? '',
+        },
+        SetOptions(merge: true),
+      );
+    }
+    await batch.commit();
   }
 
   /// WATCH MY PRAYERS
@@ -115,8 +152,7 @@ class PrayerRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
+          (snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList(),
         );
   }
 
@@ -134,9 +170,78 @@ class PrayerRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(PrayerRequest.fromDoc).toList(),
+          (snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList(),
         );
+  }
+
+  Stream<List<PrayerRequest>> watchGlobalPrayers() {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
+    return globalCollectionRef()
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(PrayerRequest.fromDoc).toList(growable: false),
+        );
+  }
+
+  Future<void> setPrayerGlobal({
+    required String prayerId,
+    required bool isGlobal,
+  }) async {
+    await _ensureCurrentUserIsAdmin();
+    final prayerDoc = await _validatedPrayerDoc(prayerId);
+    final globalDoc = globalCollectionRef().doc(_globalPrayerId(prayerId));
+
+    if (!isGlobal) {
+      final batch = firestore.batch()
+        ..update(prayerDoc, {
+          'isGlobal': false,
+          'updatedAt': FieldValue.serverTimestamp(),
+        })
+        ..delete(globalDoc);
+      await batch.commit();
+      return;
+    }
+
+    final prayerSnapshot = await prayerDoc.get();
+    final prayer = prayerSnapshot.data();
+    if (prayer == null) {
+      throw Exception('Prayer request not found');
+    }
+
+    final churchSnapshot =
+        await FirestorePaths.churchDoc(firestore, churchId).get();
+    final churchData = churchSnapshot.data() as Map<String, dynamic>?;
+    final churchName = (churchData?['name'] as String? ?? '').trim();
+    final now = FieldValue.serverTimestamp();
+
+    final batch = firestore.batch()
+      ..update(prayerDoc, {
+        'isGlobal': true,
+        'updatedAt': now,
+      })
+      ..set(globalDoc, {
+        'title': prayer['title'] ?? '',
+        'description': prayer['description'] ?? '',
+        'userId': prayer['isAnonymous'] == true ? '' : prayer['userId'] ?? '',
+        'isAnonymous': prayer['isAnonymous'] == true,
+        'expiryDate': prayer['expiryDate'],
+        'createdAt': prayer['createdAt'] ?? now,
+        'updatedAt': now,
+        'isGlobal': true,
+        'sourceChurchId': churchId,
+        'sourcePrayerId': prayerId,
+        'sourceChurchName': churchName,
+      });
+    await batch.commit();
   }
 
   Future<List<PrayerRequest>> getAllPrayersOnce() async {
@@ -155,7 +260,11 @@ class PrayerRepository {
     return snapshot.docs.map(PrayerRequest.fromDoc).toList(growable: false);
   }
 
-  Future<void> deletePrayer(String prayerId) {
-    return _validatedPrayerDoc(prayerId).then((prayerDoc) => prayerDoc.delete());
+  Future<void> deletePrayer(String prayerId) async {
+    final prayerDoc = await _validatedPrayerDoc(prayerId);
+    final batch = firestore.batch()
+      ..delete(prayerDoc)
+      ..delete(globalCollectionRef().doc(_globalPrayerId(prayerId)));
+    await batch.commit();
   }
 }
