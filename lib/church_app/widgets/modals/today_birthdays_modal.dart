@@ -512,6 +512,12 @@ bool isBirthdayToday(DateTime? dob) {
   return dob.month == now.month && dob.day == now.day;
 }
 
+bool isAnniversaryToday(DateTime? weddingDay) {
+  if (weddingDay == null) return false;
+  final now = DateTime.now();
+  return weddingDay.day == now.day && weddingDay.month == now.month;
+}
+
 String _formatDob(BuildContext context, DateTime? dob) {
   if (dob == null) {
     return context.t(

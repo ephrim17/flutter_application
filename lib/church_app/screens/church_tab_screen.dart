@@ -44,9 +44,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     }
   }
 
+  void _handleNotificationTabRequest() {
+    final requestedIndex = notificationTabRequest.value;
+    if (requestedIndex == null || !mounted) return;
+    notificationTabRequest.value = null;
+    setActiveScreen(requestedIndex);
+  }
+
   @override
   void initState() {
     super.initState();
+    notificationTabRequest.addListener(_handleNotificationTabRequest);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await handleNotificationSetup(
@@ -56,6 +64,12 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       );
       await _logTabOpen(selectedIndex);
     });
+  }
+
+  @override
+  void dispose() {
+    notificationTabRequest.removeListener(_handleNotificationTabRequest);
+    super.dispose();
   }
 
   Future<void> _logTabOpen(int index) async {

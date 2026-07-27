@@ -7,11 +7,14 @@ import 'package:flutter_application/church_app/models/home_section_models/announ
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/dashboard/dashboard_providers.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
+import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_model.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_state.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/widgets/disabled_feature_tips.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +29,14 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardStateAsync = ref.watch(dashboardViewModelProvider);
     final dashboardMembersAsync = ref.watch(dashboardMembersProvider);
+    final homeSectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
+    final forYouSectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
+    final homeSectionConfigs =
+        homeSectionConfigsAsync.asData?.value ?? const [];
+    final forYouSectionConfigs =
+        forYouSectionConfigsAsync.asData?.value ?? const [];
+    final sectionConfigsLoaded =
+        homeSectionConfigsAsync.hasValue && forYouSectionConfigsAsync.hasValue;
     final dashboardState = dashboardStateAsync.value ??
         DashboardViewState.accessDenied(
           churchTitle: 'Church',
@@ -53,6 +64,60 @@ class DashboardScreen extends ConsumerWidget {
           ..sort(
             (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
           );
+    final anniversaryMembers = dashboardMembers
+        .where((member) => isAnniversaryToday(member.weddingDay))
+        .toList()
+      ..sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    bool homeSectionDisabled(String id) => !(homeSectionConfigs
+            .where((config) => config.id == id)
+            .firstOrNull
+            ?.enabled ??
+        false);
+    bool forYouSectionDisabled(String id) => !(forYouSectionConfigs
+            .where((config) => config.id == id)
+            .firstOrNull
+            ?.enabled ??
+        false);
+    final disabledFeatureTips = <DisabledFeatureTip>[
+      if (homeSectionDisabled('announcements'))
+        const DisabledFeatureTip(
+          title: 'Announcements',
+          icon: Icons.campaign_outlined,
+        ),
+      if (homeSectionDisabled('events'))
+        const DisabledFeatureTip(
+          title: 'Events',
+          icon: Icons.event_outlined,
+        ),
+      if (homeSectionDisabled('promise'))
+        const DisabledFeatureTip(
+          title: 'Promise',
+          icon: Icons.wb_sunny_outlined,
+        ),
+      if (forYouSectionDisabled('liveChurch'))
+        const DisabledFeatureTip(
+          title: 'Live Church',
+          icon: Icons.live_tv_outlined,
+        ),
+      if (forYouSectionDisabled('dailyVerse'))
+        const DisabledFeatureTip(
+          title: 'Daily Verse',
+          icon: Icons.menu_book_outlined,
+        ),
+      if (forYouSectionDisabled('featured'))
+        const DisabledFeatureTip(
+          title: 'Featured',
+          icon: Icons.star_outline_rounded,
+        ),
+      if (forYouSectionDisabled('article'))
+        const DisabledFeatureTip(
+          title: 'Articles',
+          icon: Icons.article_outlined,
+        ),
+    ];
+    if (!sectionConfigsLoaded) disabledFeatureTips.clear();
     return RefreshIndicator(
       onRefresh: () => ref.read(dashboardViewModelProvider.notifier).refresh(),
       child: ListView(
@@ -63,13 +128,23 @@ class DashboardScreen extends ConsumerWidget {
             metrics: dashboardState.metrics,
             isLoading: dashboardStateAsync.isLoading,
           ),
+          if (disabledFeatureTips.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            _DashboardSectionCard(
+              title: 'Features not enabled',
+              subtitle:
+                  'Swipe through sections that are currently hidden from members.',
+              child: DisabledFeatureTips(tips: disabledFeatureTips),
+            ),
+          ],
           const SizedBox(height: 18),
           _DashboardSectionCard(
-            title: "Today's Birthdays",
+            title: "Today's Special Days",
             subtitle:
-                'Celebrate members today and jump straight into a birthday post.',
-            child: _DashboardBirthdaySection(
-              members: birthdayMembers,
+                'Celebrate birthdays and wedding anniversaries with members.',
+            child: _DashboardSpecialDaysSection(
+              birthdays: birthdayMembers,
+              anniversaries: anniversaryMembers,
             ),
           ),
           const SizedBox(height: 18),

@@ -27,6 +27,7 @@ bool _notificationPresentationInitialized = false;
 bool _notificationListenersAttached = false;
 bool _notificationInitialMessageHandled = false;
 Future<void>? _activeNotificationSetup;
+final ValueNotifier<int?> notificationTabRequest = ValueNotifier<int?>(null);
 
 Future<void> initializeNotificationPresentation() async {
   if (_notificationPresentationInitialized || kIsWeb) {
@@ -38,7 +39,14 @@ Future<void> initializeNotificationPresentation() async {
     iOS: DarwinInitializationSettings(),
   );
 
-  await _localNotifications.initialize(settings);
+  await _localNotifications.initialize(
+    settings,
+    onDidReceiveNotificationResponse: (response) {
+      if (response.payload == 'live_church') {
+        notificationTabRequest.value = 1;
+      }
+    },
+  );
 
   await _localNotifications
       .resolvePlatformSpecificImplementation<
@@ -83,6 +91,7 @@ Future<void> showRemoteMessageNotification(RemoteMessage message) async {
       ),
       iOS: DarwinNotificationDetails(),
     ),
+    payload: message.data['kind']?.toString(),
   );
 }
 
@@ -247,6 +256,7 @@ Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
 
   FirebaseMessaging.onMessage.listen(showRemoteMessageNotification);
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    _handleNotificationNavigation(message);
     debugPrint(
       'Notification opened: ${message.messageId ?? 'unknown-message'}',
     );
@@ -255,6 +265,7 @@ Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
   if (!_notificationInitialMessageHandled) {
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
+      _handleNotificationNavigation(initialMessage);
       debugPrint(
         'Notification opened from terminated state: '
         '${initialMessage.messageId ?? 'unknown-message'}',
@@ -264,4 +275,10 @@ Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
   }
 
   _notificationListenersAttached = true;
+}
+
+void _handleNotificationNavigation(RemoteMessage message) {
+  if (message.data['kind'] == 'live_church') {
+    notificationTabRequest.value = 1;
+  }
 }

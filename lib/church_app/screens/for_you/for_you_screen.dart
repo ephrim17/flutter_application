@@ -3,10 +3,12 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/live_church_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +18,7 @@ class ForYouScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
+    final liveChurchStatus = ref.watch(liveChurchStatusProvider).asData?.value;
 
     return sectionConfigsAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
@@ -29,6 +32,10 @@ class ForYouScreen extends ConsumerWidget {
         // 🔹 Enable / disable + order
         final activeSections = registry.where((section) {
           final config = configs.where((c) => c.id == section.id).firstOrNull;
+          if (section.id == 'liveChurch' &&
+              !(liveChurchStatus?.canPlay ?? false)) {
+            return false;
+          }
           return config?.enabled ?? false;
         }).map((section) {
           final config = configs.firstWhere((c) => c.id == section.id);
@@ -63,6 +70,7 @@ class ForYouScreen extends ConsumerWidget {
 
 class ForYouSectionRegistry {
   static List<MasterSection> all() => [
+        const LiveChurchSection(),
         DailyVerseSection(),
         FeaturedSection(),
         FooterSection(),

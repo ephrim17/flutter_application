@@ -19,6 +19,13 @@ export {
   upsertFinancialLedger,
   upsertFinancialTransaction,
 } from "./financial";
+export {
+  notifyChurchWhenYouTubeLive,
+  refreshKnownYouTubeBroadcasts,
+  renewYouTubeChannelSubscriptions,
+  syncYouTubeChannelSubscription,
+  youtubeLiveWebhook,
+} from "./youtube_live";
 
 admin.initializeApp();
 

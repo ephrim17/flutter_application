@@ -342,6 +342,19 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             subtitle: 'Control prompts, notifications, and live sections.',
             items: [
               _StudioToolItem(
+                title: ref.t(
+                  'studio.tab_live_church',
+                  fallback: 'Live Church',
+                ),
+                subtitle:
+                    'Connect a YouTube channel for automatic live services.',
+                icon: Icons.live_tv_outlined,
+                countStream: repository.watchLiveChurchConfig().map(
+                      (data) => data?['enabled'] == true ? 1 : 0,
+                    ),
+                builder: (_) => _LiveChurchEditor(repository: repository),
+              ),
+              _StudioToolItem(
                 title: ref.t('studio.tab_sections', fallback: 'Sections'),
                 subtitle: 'Enable, disable, and reorder major app sections.',
                 icon: Icons.dashboard_customize_outlined,
@@ -2521,6 +2534,12 @@ const List<_StudioSectionDefinition> _homeSectionDefinitions = [
 
 const List<_StudioSectionDefinition> _forYouSectionDefinitions = [
   _StudioSectionDefinition(
+    id: 'liveChurch',
+    titleKey: 'studio.section_live_church',
+    fallbackTitle: 'Live Church',
+    defaultOrder: 5,
+  ),
+  _StudioSectionDefinition(
     id: 'dailyVerse',
     titleKey: 'studio.section_daily_verse',
     fallbackTitle: 'Daily Verse',
@@ -2545,6 +2564,136 @@ const List<_StudioSectionDefinition> _forYouSectionDefinitions = [
     defaultOrder: 100,
   ),
 ];
+
+class _LiveChurchEditor extends StatefulWidget {
+  const _LiveChurchEditor({required this.repository});
+
+  final StudioRepository repository;
+
+  @override
+  State<_LiveChurchEditor> createState() => _LiveChurchEditorState();
+}
+
+class _LiveChurchEditorState extends State<_LiveChurchEditor> {
+  final _formKey = GlobalKey<FormState>();
+  final _channelController = TextEditingController();
+  bool _enabled = true;
+  bool _notifyWhenLive = false;
+  bool _initialized = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _channelController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: widget.repository.watchLiveChurchConfig(),
+      builder: (context, snapshot) {
+        if (!_initialized &&
+            snapshot.connectionState != ConnectionState.waiting) {
+          final data = snapshot.data;
+          _channelController.text =
+              (data?['youtubeChannelId'] ?? '').toString();
+          _enabled = data?['enabled'] != false;
+          _notifyWhenLive = data?['notifyWhenLive'] == true;
+          _initialized = true;
+        }
+
+        return Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Automatic YouTube live detection',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enter the permanent channel ID that starts with UC. '
+                'The backend will publish a player only while that channel is live.',
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _channelController,
+                decoration: const InputDecoration(
+                  labelText: 'YouTube channel ID',
+                  hintText: 'UCxxxxxxxxxxxxxxxxxxxxxx',
+                  prefixIcon: Icon(Icons.video_library_outlined),
+                ),
+                textInputAction: TextInputAction.done,
+                validator: (value) {
+                  final channelId = value?.trim() ?? '';
+                  if (channelId.isEmpty) return 'Enter a YouTube channel ID.';
+                  if (!RegExp(r'^UC[A-Za-z0-9_-]{20,}$').hasMatch(channelId)) {
+                    return 'Use the channel ID, not the channel URL or @handle.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Automatic detection'),
+                subtitle: const Text(
+                  'Allow the backend to show live services for this church.',
+                ),
+                value: _enabled,
+                onChanged: (value) => setState(() => _enabled = value),
+              ),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Notify members when live'),
+                subtitle: const Text(
+                  'Send one push notification when a new service goes live.',
+                ),
+                value: _notifyWhenLive,
+                onChanged: _enabled
+                    ? (value) => setState(() => _notifyWhenLive = value)
+                    : null,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: const Text('Save Live Church settings'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _saving = true);
+    try {
+      await widget.repository.updateLiveChurchConfig(
+        youtubeChannelId: _channelController.text,
+        enabled: _enabled,
+        notifyWhenLive: _notifyWhenLive,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Live Church settings saved')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
 
 class _AdminsEditor extends ConsumerWidget {
   const _AdminsEditor({

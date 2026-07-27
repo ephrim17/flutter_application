@@ -206,49 +206,130 @@ class _DashboardSectionCard extends StatelessWidget {
   }
 }
 
-class _DashboardBirthdaySection extends StatelessWidget {
-  const _DashboardBirthdaySection({
-    required this.members,
+class _DashboardSpecialDaysSection extends StatelessWidget {
+  const _DashboardSpecialDaysSection({
+    required this.birthdays,
+    required this.anniversaries,
   });
 
-  final List<AppUser> members;
+  final List<AppUser> birthdays;
+  final List<AppUser> anniversaries;
 
   @override
   Widget build(BuildContext context) {
-    if (members.isEmpty) {
+    if (birthdays.isEmpty && anniversaries.isEmpty) {
       return const _DashboardEmptyState(
-        title: 'No birthdays today',
-        subtitle: 'When a member has a birthday today, it will show up here.',
+        title: 'No special days today',
+        subtitle:
+            'Today’s member birthdays and wedding anniversaries will appear here.',
       );
     }
 
     return Column(
-      children: members.map((member) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: carouselBoxDecoration(context),
-          child: ListTile(
-            onTap: () {
-              showAppModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder: (_) => FractionallySizedBox(
-                  heightFactor: 0.95,
-                  child: BirthdayPostComposerModal(member: member),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (birthdays.isNotEmpty) ...[
+          _DashboardSpecialDayHeading(
+            title: 'Birthdays',
+            count: birthdays.length,
+          ),
+          for (final member in birthdays)
+            _DashboardSpecialDayTile(
+              member: member,
+              type: SpecialPostType.birthday,
+              subtitle: _birthdayDashboardLabel(member.dob),
+            ),
+        ],
+        if (anniversaries.isNotEmpty) ...[
+          if (birthdays.isNotEmpty) const SizedBox(height: 8),
+          _DashboardSpecialDayHeading(
+            title: 'Wedding Anniversaries',
+            count: anniversaries.length,
+          ),
+          for (final member in anniversaries)
+            _DashboardSpecialDayTile(
+              member: member,
+              type: SpecialPostType.anniversary,
+              subtitle: _anniversaryDashboardLabel(member.weddingDay),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DashboardSpecialDayHeading extends StatelessWidget {
+  const _DashboardSpecialDayHeading({
+    required this.title,
+    required this.count,
+  });
+
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
-              );
-            },
-            leading: CircleAvatar(
-              child: Text(
-                member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
+          ),
+          const SizedBox(width: 8),
+          Badge(label: Text('$count')),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardSpecialDayTile extends StatelessWidget {
+  const _DashboardSpecialDayTile({
+    required this.member,
+    required this.type,
+    required this.subtitle,
+  });
+
+  final AppUser member;
+  final SpecialPostType type;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: carouselBoxDecoration(context),
+      child: ListTile(
+        onTap: () {
+          showAppModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => FractionallySizedBox(
+              heightFactor: 0.95,
+              child: BirthdayPostComposerModal(
+                member: member,
+                type: type,
               ),
             ),
-            title: Text(member.name),
-            subtitle: Text(_birthdayDashboardLabel(member.dob)),
-            trailing: const Icon(Icons.celebration_outlined),
+          );
+        },
+        leading: CircleAvatar(
+          child: Text(
+            member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
           ),
-        );
-      }).toList(growable: false),
+        ),
+        title: Text(member.name),
+        subtitle: Text(subtitle),
+        trailing: Icon(
+          type == SpecialPostType.birthday
+              ? Icons.cake_outlined
+              : Icons.favorite_outline_rounded,
+        ),
+      ),
     );
   }
 }
@@ -265,6 +346,12 @@ int? _dashboardBirthdayAge(DateTime? dob) {
   if (dob == null) return null;
   final now = DateTime.now();
   return now.year - dob.year;
+}
+
+String _anniversaryDashboardLabel(DateTime? weddingDay) {
+  final years = _dashboardBirthdayAge(weddingDay);
+  if (years == null) return 'Wedding anniversary today';
+  return 'Celebrating $years ${years == 1 ? 'year' : 'years'} today';
 }
 
 class _DashboardMemberJoinHistory extends StatelessWidget {

@@ -41,6 +41,8 @@ class StudioRepository {
       FirestorePaths.churchAppConfig(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get churchRef =>
       firestore.collection('churches').doc(churchId);
+  DocumentReference<Map<String, dynamic>> get liveChurchConfigRef =>
+      FirestorePaths.churchLiveChurchConfig(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get aboutRef =>
       FirestorePaths.churchAboutDoc(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get bibleSwipeRef =>
@@ -98,6 +100,23 @@ class StudioRepository {
 
   Stream<Map<String, dynamic>?> watchAbout() {
     return aboutRef.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  Stream<Map<String, dynamic>?> watchLiveChurchConfig() {
+    return liveChurchConfigRef.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  Future<void> updateLiveChurchConfig({
+    required String youtubeChannelId,
+    required bool enabled,
+    required bool notifyWhenLive,
+  }) async {
+    await liveChurchConfigRef.set({
+      'youtubeChannelId': youtubeChannelId.trim(),
+      'enabled': enabled,
+      'notifyWhenLive': notifyWhenLive,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<Map<String, dynamic>> fetchAboutData() async {

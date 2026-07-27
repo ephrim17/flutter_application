@@ -34,6 +34,28 @@ class FirestorePaths {
         .collection(forYouSection);
   }
 
+  static DocumentReference<Map<String, dynamic>> churchLiveChurchConfig(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection(churches)
+        .doc(churchId)
+        .collection('live_church')
+        .doc('config');
+  }
+
+  static DocumentReference<Map<String, dynamic>> churchLiveChurchStatus(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore
+        .collection(churches)
+        .doc(churchId)
+        .collection('live_church')
+        .doc('status');
+  }
+
   // Footer support paths
   static const footerSupport = 'footerSupport';
   static const contactsDoc = 'contacts';

@@ -663,6 +663,13 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.footer_url_label': 'URL',
   'studio.section_home': 'Home Sections',
   'studio.section_for_you': 'For You Sections',
+  'studio.section_live_church': 'Live Church',
+  'studio.tab_live_church': 'Live Church',
+  'for_you.live_church.title': 'Live Church',
+  'for_you.live_church.live': 'LIVE',
+  'for_you.live_church.youtube_only':
+      'This service is available live on YouTube.',
+  'for_you.live_church.watch_youtube': 'Watch live on YouTube',
   'studio.section_enabled': 'Enabled',
   'studio.section_disabled': 'Disabled',
   'studio.section_order': 'Order',
