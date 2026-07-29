@@ -2,6 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -329,53 +330,42 @@ class _PrayerActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actions = <PopupMenuEntry<_PrayerAction>>[
+    final actions = <AppPopupMenuAction<_PrayerAction>>[
       if (segment == PrayerSegment.my)
-        PopupMenuItem(
+        AppPopupMenuAction(
           value: _PrayerAction.edit,
-          child: _ActionMenuRow(
-            icon: Icons.edit_outlined,
-            label: context.t('prayer.edit_action', fallback: 'Edit'),
-          ),
+          icon: Icons.edit_outlined,
+          label: context.t('prayer.edit_action', fallback: 'Edit'),
         ),
       if (canManageGlobal && !prayer.isGlobal)
-        PopupMenuItem(
+        AppPopupMenuAction(
           value: _PrayerAction.makeGlobal,
-          child: _ActionMenuRow(
-            icon: Icons.public_rounded,
-            label: context.t(
-              'prayer.make_global_action',
-              fallback: 'Make global',
-            ),
+          icon: Icons.public_rounded,
+          label: context.t(
+            'prayer.make_global_action',
+            fallback: 'Make global',
           ),
         ),
       if (canManageGlobal && prayer.isGlobal)
-        PopupMenuItem(
+        AppPopupMenuAction(
           value: _PrayerAction.removeGlobal,
-          child: _ActionMenuRow(
-            icon: Icons.public_off_outlined,
-            label: context.t(
-              'prayer.remove_global_action',
-              fallback: 'Remove from global',
-            ),
+          icon: Icons.public_off_outlined,
+          label: context.t(
+            'prayer.remove_global_action',
+            fallback: 'Remove from global',
           ),
         ),
       if (segment != PrayerSegment.global)
-        PopupMenuItem(
+        AppPopupMenuAction(
           value: _PrayerAction.delete,
-          child: _ActionMenuRow(
-            icon: Icons.delete_outline_rounded,
-            label: context.t('common.delete', fallback: 'Delete'),
-            color: Theme.of(context).colorScheme.error,
-          ),
+          icon: Icons.delete_outline_rounded,
+          label: context.t('common.delete', fallback: 'Delete'),
+          color: Theme.of(context).colorScheme.error,
         ),
     ];
 
-    if (actions.isEmpty) return const SizedBox.shrink();
-    return PopupMenuButton<_PrayerAction>(
-      tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-      icon: const Icon(Icons.more_horiz_rounded),
-      itemBuilder: (_) => actions,
+    return AppPopupMenu<_PrayerAction>(
+      actions: actions,
       onSelected: (action) {
         switch (action) {
           case _PrayerAction.edit:
@@ -388,29 +378,6 @@ class _PrayerActions extends StatelessWidget {
             onDelete();
         }
       },
-    );
-  }
-}
-
-class _ActionMenuRow extends StatelessWidget {
-  const _ActionMenuRow({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: color)),
-      ],
     );
   }
 }

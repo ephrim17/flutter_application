@@ -26,6 +26,7 @@ export {
   syncYouTubeChannelSubscription,
   youtubeLiveWebhook,
 } from "./youtube_live";
+export {setFeedPostGlobal} from "./feed_global";
 
 admin.initializeApp();
 
@@ -182,6 +183,116 @@ export const sendQueuedSuperAdminMail = onDocumentCreated(
         processedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
+  },
+);
+
+export const queuePublicChurchRegistrationWelcome = onDocumentCreated(
+  {
+    document: "churches/{churchId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const churchSnapshot = event.data;
+    if (!churchSnapshot) {
+      logger.warn("Church registration trigger fired without snapshot data.");
+      return;
+    }
+
+    const church = churchSnapshot.data();
+    if (readUnknownString(church.registrationSource) !== "public") {
+      return;
+    }
+
+    const churchId = event.params.churchId;
+    const churchName =
+      readUnknownString(church.name) || "Your church";
+    const churchEmail = normalizeEmail(
+      readUnknownString(church.email),
+    );
+    const configSnapshot = await churchSnapshot.ref
+      .collection("config")
+      .doc("app")
+      .get();
+    const adminEmails = normalizeRecipients(
+      configSnapshot.data()?.admins as string[] | string | undefined,
+    );
+    const recipients = normalizeRecipients([
+      churchEmail,
+      ...adminEmails,
+    ]);
+
+    if (recipients.length === 0) {
+      logger.warn("Public church registration has no welcome recipients.", {
+        churchId,
+      });
+      return;
+    }
+
+    const superAdminsSnapshot = await admin.firestore()
+      .collection("superAdmins")
+      .where("enabled", "==", true)
+      .limit(10)
+      .get();
+    const supportContacts = [
+      ...new Set(
+        superAdminsSnapshot.docs.flatMap((doc) => {
+          const data = doc.data();
+          const supportEmail = normalizeEmail(
+            readUnknownString(data.supportEmail) ||
+              readUnknownString(data.email),
+          );
+          const supportPhone =
+            readUnknownString(data.supportPhone) ||
+            readUnknownString(data.phone) ||
+            readUnknownString(data.contact);
+          return [supportEmail, supportPhone].filter(
+            (value) => value.length > 0,
+          );
+        }),
+      ),
+    ];
+    const supportLines = supportContacts.length > 0 ?
+      [
+        "Super admin support:",
+        ...supportContacts.map((contact) => `• ${contact}`),
+      ] :
+      [
+        "For support, contact the super admin team through the app.",
+      ];
+    const text = [
+      "Welcome!",
+      "",
+      `We received the registration for "${churchName}".`,
+      `Church ID: ${churchId}`,
+      "",
+      "Your registration is pending super admin approval.",
+      "The church will remain hidden until the review is complete. " +
+        "We will notify you when it is approved.",
+      "",
+      ...supportLines,
+      "",
+      "Thank you for joining our church community.",
+    ].join("\n");
+
+    await admin.firestore()
+      .collection("mail")
+      .doc(`public-registration-${churchId}`)
+      .set({
+        kind: "super_admin_notification",
+        template: "church_registration_pending",
+        to: recipients,
+        subject: `Welcome - ${churchName} registration received`,
+        text,
+        html: textToHtml(text),
+        data: {
+          churchId,
+          churchName,
+          approvalStatus: "pending",
+          supportContacts,
+        },
+        status: "queued",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
   },
 );
 
@@ -647,7 +758,8 @@ function resolveText(job: MailJobData): string {
         "Hello Admin,",
         "",
         `Your church "${churchName}" has been created ` +
-            "from the super admin dashboard.",
+            "from the super admin dashboard. Now can you see your church " +
+            "listed in our app",
         `Church ID: ${churchId}`,
       ].join("\n");
     case "church_enabled":

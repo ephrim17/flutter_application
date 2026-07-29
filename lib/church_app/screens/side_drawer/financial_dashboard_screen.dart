@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/financial_das
 import 'package:flutter_application/church_app/screens/side_drawer/financial_dashboard_viewmodel.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -2832,13 +2833,9 @@ class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
                         }
                         final member = _members[index];
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary
-                                .withValues(alpha: 0.12),
-                            child: Icon(
-                              Icons.person_outline_rounded,
-                              color: theme.colorScheme.primary,
-                            ),
+                          leading: AppProfileAvatar(
+                            name: member.name,
+                            imageUrl: member.profilePhotoUrl,
                           ),
                           title: Text(member.name),
                           subtitle: Text(member.email),

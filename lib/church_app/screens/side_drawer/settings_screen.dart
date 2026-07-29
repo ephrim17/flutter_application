@@ -10,6 +10,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
+import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -27,6 +28,7 @@ import 'package:flutter_application/church_app/services/church_user_repository.d
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -34,6 +36,7 @@ import 'package:hooks_riverpod/legacy.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -175,12 +178,6 @@ class _SettingsHeroCard extends StatelessWidget {
               ? user!.name.trim()
               : 'Church Tree';
           final email = user?.email.trim() ?? '';
-          final initials = userName
-              .split(RegExp(r'\s+'))
-              .where((part) => part.isNotEmpty)
-              .take(2)
-              .map((part) => part.characters.first.toUpperCase())
-              .join();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,24 +185,13 @@ class _SettingsHeroCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    height: 64,
-                    width: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.14),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initials.isEmpty ? 'CT' : initials,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: onPrimary,
-                      ),
-                    ),
+                  AppProfileAvatar(
+                    name: userName,
+                    imageUrl: user?.profilePhotoUrl,
+                    radius: 32,
+                    backgroundColor: Colors.white.withValues(alpha: 0.14),
+                    foregroundColor: onPrimary,
+                    borderColor: Colors.white.withValues(alpha: 0.18),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -480,7 +466,8 @@ class _EditProfileSection extends ConsumerWidget {
           title: ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
           subtitle: ref.t(
             'settings.edit_profile_subtitle',
-            fallback: 'Update phone number, birthday, address, and location.',
+            fallback:
+                'Update your profile photo, phone, birthday, and location.',
           ),
           onTap: () => showAppModalBottomSheet<void>(
             context: context,
@@ -1145,6 +1132,7 @@ Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
   return {
     'uid': user.uid,
     'name': user.name,
+    'profilePhotoUrl': user.profilePhotoUrl,
     'email': user.email,
     'phone': user.phone,
     'contact': user.contact,
@@ -1309,6 +1297,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   bool _isSaving = false;
   bool _isFetchingLocation = false;
   DateTime? _dob;
+  PickedImageData? _profilePhoto;
+  bool _removeProfilePhoto = false;
 
   @override
   void initState() {
@@ -1332,6 +1322,42 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    final image = await PickedImageData.fromXFile(file);
+    if (image == null || !mounted) return;
+    if (image.bytes.lengthInBytes > 5 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t(
+              'settings.profile_photo_too_large',
+              fallback: 'Choose an image smaller than 5 MB.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _profilePhoto = image;
+      _removeProfilePhoto = false;
+    });
+  }
+
+  void _removeSelectedProfilePhoto() {
+    setState(() {
+      _profilePhoto = null;
+      _removeProfilePhoto = true;
+    });
   }
 
   Future<void> _fillCurrentLocation() async {
@@ -1456,14 +1482,21 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         churchId: churchId,
       );
 
-      await repo.updateProfile(
+      final profilePhotoUrl = await repo.updateProfile(
         uid: firebaseUser.uid,
         phone: phone,
         location: _locationController.text,
         address: _addressController.text,
         category: widget.user.category,
         familyId: widget.user.familyId,
+        churchGroupIds: widget.user.churchGroupIds,
         dob: _dob,
+        existingProfilePhotoUrl: widget.user.profilePhotoUrl,
+        profilePhoto: _profilePhoto,
+        removeProfilePhoto: _removeProfilePhoto,
+      );
+      await firebaseUser.updatePhotoURL(
+        profilePhotoUrl.isEmpty ? null : profilePhotoUrl,
       );
 
       if (!mounted) return;
@@ -1518,7 +1551,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                     ref.t(
                       'settings.edit_profile_sheet_subtitle',
                       fallback:
-                          'Keep your contact information and location up to date.',
+                          'Keep your photo and personal information up to date.',
                     ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context)
@@ -1526,6 +1559,77 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                               .onPrimary
                               .withValues(alpha: 0.88),
                         ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Column(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AppProfileAvatar(
+                        name: widget.user.name,
+                        imageUrl: _removeProfilePhoto
+                            ? null
+                            : widget.user.profilePhotoUrl,
+                        imageBytes: _profilePhoto?.bytes,
+                        radius: 52,
+                        borderColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.24),
+                      ),
+                      Positioned(
+                        right: -4,
+                        bottom: -4,
+                        child: IconButton.filled(
+                          tooltip: ref.t(
+                            'settings.profile_photo_change',
+                            fallback: 'Change profile photo',
+                          ),
+                          onPressed: _isSaving ? null : _pickProfilePhoto,
+                          icon: const Icon(Icons.camera_alt_outlined),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _isSaving ? null : _pickProfilePhoto,
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: Text(
+                          ref.t(
+                            'settings.profile_photo_choose',
+                            fallback: 'Choose photo',
+                          ),
+                        ),
+                      ),
+                      if (_profilePhoto != null ||
+                          (!_removeProfilePhoto &&
+                              widget.user.profilePhotoUrl.isNotEmpty))
+                        TextButton.icon(
+                          onPressed:
+                              _isSaving ? null : _removeSelectedProfilePhoto,
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: Text(
+                            ref.t(
+                              'settings.profile_photo_remove',
+                              fallback: 'Remove',
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),

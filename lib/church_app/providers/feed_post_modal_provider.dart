@@ -1,5 +1,6 @@
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
+import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
@@ -61,7 +62,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         churchId: churchId,
         userId: currentUid,
         userName: user.name,
-        userPhoto: null,
+        userPhoto: user.profilePhotoUrl,
         churchName: church?.name,
         churchPastorName: church?.pastorName,
         sharePersonalDetails: isGlobal && sharePersonalDetails,
@@ -80,6 +81,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
 
   Future<void> updatePost({
     required String postId,
+    required DateTime createdAt,
     required String title,
     required String description,
     PickedImageData? imageFile,
@@ -87,6 +89,10 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     bool? sharePersonalDetails,
     bool isGlobal = false,
   }) async {
+    if (DateTime.now().isAfter(createdAt.add(FeedPost.editWindow))) {
+      throw const FeedEditWindowExpiredException();
+    }
+
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
 
@@ -159,6 +165,10 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
       );
     });
   }
+}
+
+class FeedEditWindowExpiredException implements Exception {
+  const FeedEditWindowExpiredException();
 }
 
 final picker = ImagePicker();

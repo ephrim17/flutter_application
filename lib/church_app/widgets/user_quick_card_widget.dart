@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:intl/intl.dart';
@@ -41,11 +42,10 @@ Future<void> showUserQuickCardWithChurch(
             children: [
               Row(
                 children: [
-                  CircleAvatar(
+                  AppProfileAvatar(
+                    name: user.name,
+                    imageUrl: user.profilePhotoUrl,
                     radius: 24,
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

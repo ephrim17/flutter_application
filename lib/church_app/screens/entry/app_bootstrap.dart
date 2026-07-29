@@ -258,8 +258,8 @@ ThemeData _buildTheme({
       usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
   final errorColor =
       usesDarkSurface ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A);
-  final poppinsTextTheme = _reduceTextThemeFontSizes(
-    GoogleFonts.poppinsTextTheme(ThemeData(brightness: brightness).textTheme),
+  final interTextTheme = _reduceTextThemeFontSizes(
+    GoogleFonts.interTextTheme(ThemeData(brightness: brightness).textTheme),
     3,
   );
 
@@ -286,10 +286,11 @@ ThemeData _buildTheme({
       backgroundColor: bgColor,
       elevation: 0,
       foregroundColor: textColor,
-      titleTextStyle: GoogleFonts.poppins(
+      titleTextStyle: GoogleFonts.inter(
         color: textColor,
         fontSize: 19,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.35,
       ),
     ),
     cardTheme: CardThemeData().copyWith(
@@ -346,14 +347,17 @@ ThemeData _buildTheme({
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
-      titleTextStyle: GoogleFonts.poppins(
+      titleTextStyle: GoogleFonts.inter(
         color: textColor,
-        fontSize: 19,
-        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.35,
       ),
-      contentTextStyle: GoogleFonts.poppins(
+      contentTextStyle: GoogleFonts.inter(
         color: textColor,
-        fontSize: 13,
+        fontSize: 11,
+        height: 1.5,
+        letterSpacing: -0.08,
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
@@ -433,44 +437,91 @@ ThemeData _buildTheme({
         borderRadius: BorderRadius.circular(24),
       ),
     ),
-    textTheme: poppinsTextTheme.copyWith(
-      titleLarge: poppinsTextTheme.titleLarge?.copyWith(
+    textTheme: interTextTheme.copyWith(
+      displayLarge: interTextTheme.displayLarge?.copyWith(
+        color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.08,
+        letterSpacing: -1.2,
+      ),
+      displayMedium: interTextTheme.displayMedium?.copyWith(
+        color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.1,
+        letterSpacing: -0.9,
+      ),
+      displaySmall: interTextTheme.displaySmall?.copyWith(
+        color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.12,
+        letterSpacing: -0.65,
+      ),
+      titleLarge: interTextTheme.titleLarge?.copyWith(
         fontSize: 27,
         fontWeight: FontWeight.w600,
         color: textColor,
+        height: 1.2,
+        letterSpacing: -0.55,
       ),
-      headlineMedium: poppinsTextTheme.headlineMedium?.copyWith(
+      headlineMedium: interTextTheme.headlineMedium?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.18,
+        letterSpacing: -0.5,
       ),
-      headlineLarge: poppinsTextTheme.headlineLarge?.copyWith(
+      headlineLarge: interTextTheme.headlineLarge?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.16,
+        letterSpacing: -0.6,
       ),
-      headlineSmall: poppinsTextTheme.headlineSmall?.copyWith(
+      headlineSmall: interTextTheme.headlineSmall?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+        letterSpacing: -0.4,
       ),
-      titleMedium: poppinsTextTheme.titleMedium?.copyWith(
+      titleMedium: interTextTheme.titleMedium?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+        letterSpacing: -0.25,
       ),
-      titleSmall: poppinsTextTheme.titleSmall?.copyWith(
+      titleSmall: interTextTheme.titleSmall?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+        letterSpacing: -0.15,
       ),
-      bodyMedium: poppinsTextTheme.bodyMedium?.copyWith(
+      bodyMedium: interTextTheme.bodyMedium?.copyWith(
         color: textColor,
+        height: 1.5,
+        letterSpacing: -0.08,
       ),
-      bodyLarge: poppinsTextTheme.bodyLarge?.copyWith(
+      bodyLarge: interTextTheme.bodyLarge?.copyWith(
         color: textColor,
+        height: 1.5,
+        letterSpacing: -0.12,
       ),
-      bodySmall: poppinsTextTheme.bodySmall?.copyWith(
+      bodySmall: interTextTheme.bodySmall?.copyWith(
         color: mutedTextColor,
+        height: 1.45,
+        letterSpacing: 0,
       ),
-      labelLarge: poppinsTextTheme.labelLarge?.copyWith(
+      labelLarge: interTextTheme.labelLarge?.copyWith(
         color: textColor,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.05,
       ),
-      labelMedium: poppinsTextTheme.labelMedium?.copyWith(
+      labelMedium: interTextTheme.labelMedium?.copyWith(
         color: mutedTextColor,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
       ),
-      labelSmall: poppinsTextTheme.labelSmall?.copyWith(
+      labelSmall: interTextTheme.labelSmall?.copyWith(
         color: mutedTextColor,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.05,
       ),
     ),
   );

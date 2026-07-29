@@ -381,15 +381,37 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                                 );
                                 if (!context.mounted || result == null) return;
                                 if (result == 'registered_pending_approval') {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
+                                  await showDialog<void>(
+                                    context: context,
+                                    builder: (dialogContext) => AlertDialog(
+                                      icon: const Icon(
+                                        Icons.mark_email_read_outlined,
+                                      ),
+                                      title: Text(
+                                        context.t(
+                                          'church.register_received_title',
+                                          fallback: 'Registration received',
+                                        ),
+                                      ),
                                       content: Text(
                                         context.t(
                                           'church.register_success_pending',
                                           fallback:
-                                              'Church registered successfully. It will appear after super admin approval.',
+                                              'Welcome emails were sent to the church and admin addresses. Please wait for super admin approval. The welcome email includes the super admin support contact if you need help.',
                                         ),
                                       ),
+                                      actions: [
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext).pop(),
+                                          child: Text(
+                                            context.t(
+                                              'common.ok',
+                                              fallback: 'Okay',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 }

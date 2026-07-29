@@ -164,6 +164,7 @@ class MembersRepository extends ChurchScopedRepository {
       phone: member.phone.trim(),
       category: member.category.trim(),
       churchGroupIds: normalizedGroupIds,
+      profilePhotoUrl: member.profilePhotoUrl,
     );
   }
 
@@ -242,13 +243,15 @@ class MembersRepository extends ChurchScopedRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
+    final updatedMember = (await collectionRef().doc(userId).get()).data();
     await _syncChurchGroupMemberships(
       userId: userId,
       name: name.trim(),
-      email: (await collectionRef().doc(userId).get()).data()?.email ?? '',
+      email: updatedMember?.email ?? '',
       phone: phone.trim(),
       category: category.trim(),
       churchGroupIds: churchGroupIds,
+      profilePhotoUrl: updatedMember?.profilePhotoUrl ?? '',
     );
 
     if (category.trim() == 'family') {
@@ -344,6 +347,8 @@ class MembersRepository extends ChurchScopedRepository {
               'category': category,
               'groupId': group.id,
               'groupLabel': group.label,
+              'profilePhotoUrl':
+                  (existingData['profilePhotoUrl'] ?? '').toString(),
               'updatedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));
@@ -422,6 +427,7 @@ class MembersRepository extends ChurchScopedRepository {
     required String phone,
     required String category,
     required List<String> churchGroupIds,
+    required String profilePhotoUrl,
   }) async {
     final batch = firestore.batch();
 
@@ -452,6 +458,7 @@ class MembersRepository extends ChurchScopedRepository {
               'category': category,
               'groupId': group.id,
               'groupLabel': group.label,
+              'profilePhotoUrl': profilePhotoUrl,
               'updatedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));

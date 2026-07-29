@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FeedPost {
+  static const Duration editWindow = Duration(minutes: 30);
+
   final String id;
   final String userId;
   final String userName;
@@ -17,6 +19,9 @@ class FeedPost {
   final String title;
   final String description;
   final List<String> hashtags;
+  final bool isGlobal;
+  final String sourceChurchId;
+  final String sourcePostId;
   final bool isPinned;
   final DateTime? pinnedAt;
   final String? imageUrl;
@@ -42,6 +47,9 @@ class FeedPost {
     required this.title,
     required this.description,
     this.hashtags = const [],
+    this.isGlobal = false,
+    this.sourceChurchId = '',
+    this.sourcePostId = '',
     this.isPinned = false,
     this.pinnedAt,
     this.imageUrl,
@@ -69,6 +77,9 @@ class FeedPost {
       title: json['title'],
       description: json['description'],
       hashtags: _parseStringList(json['hashtags']),
+      isGlobal: json['isGlobal'] == true,
+      sourceChurchId: (json['sourceChurchId'] ?? '').toString().trim(),
+      sourcePostId: (json['sourcePostId'] ?? '').toString().trim(),
       isPinned: json['isPinned'] ?? false,
       pinnedAt: _parseDate(json['pinnedAt']),
       imageUrl: json['imageUrl'],
@@ -102,5 +113,48 @@ class FeedPost {
     if (urls.isNotEmpty) return urls;
     final legacyUrl = (json['imageUrl'] ?? '').toString().trim();
     return legacyUrl.isEmpty ? const [] : [legacyUrl];
+  }
+
+  bool canEditAt(DateTime now) {
+    return !now.isAfter(createdAt.add(editWindow));
+  }
+
+  FeedPost copyWith({
+    String? id,
+    bool? isGlobal,
+    String? sourceChurchId,
+    String? sourcePostId,
+    bool? isPinned,
+    DateTime? pinnedAt,
+    bool clearPinnedAt = false,
+  }) {
+    return FeedPost(
+      id: id ?? this.id,
+      userId: userId,
+      userName: userName,
+      userPhoto: userPhoto,
+      churchId: churchId,
+      churchName: churchName,
+      churchPastorName: churchPastorName,
+      sharePersonalDetails: sharePersonalDetails,
+      userCategory: userCategory,
+      userAddress: userAddress,
+      userEmail: userEmail,
+      userPhone: userPhone,
+      userDob: userDob,
+      title: title,
+      description: description,
+      hashtags: hashtags,
+      isGlobal: isGlobal ?? this.isGlobal,
+      sourceChurchId: sourceChurchId ?? this.sourceChurchId,
+      sourcePostId: sourcePostId ?? this.sourcePostId,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: clearPinnedAt ? null : (pinnedAt ?? this.pinnedAt),
+      imageUrl: imageUrl,
+      imageUrls: imageUrls,
+      createdAt: createdAt,
+      likeCount: likeCount,
+      commentCount: commentCount,
+    );
   }
 }

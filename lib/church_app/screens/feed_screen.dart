@@ -12,6 +12,7 @@ import 'package:flutter_application/church_app/services/analytics/firebase_analy
 import 'package:flutter_application/church_app/services/feed_repository.dart';
 import 'package:flutter_application/church_app/widgets/feed_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
+import 'package:flutter_application/church_app/widgets/feed_scroll_navigation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
@@ -243,77 +244,92 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         (feedState.hasMore && searchQuery.trim().isEmpty ? 1 : 0) +
         1;
 
-    return RefreshIndicator(
-      onRefresh: () => _refreshFeed(churchId, isGlobal: isGlobal),
-      child: ListView.builder(
-        controller:
-            isGlobal ? _globalScrollController : _churchScrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: itemCount,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return _FeedSearchField(
-              controller: searchController,
-              hintText: isGlobal
-                  ? 'Search global posts or #tags'
-                  : 'Search church posts or #tags',
-              onChanged: (value) {
-                _onSearchChanged(
-                  value,
-                  churchId: churchId,
-                  isGlobal: isGlobal,
+    final scrollController =
+        isGlobal ? _globalScrollController : _churchScrollController;
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: () => _refreshFeed(churchId, isGlobal: isGlobal),
+          child: ListView.builder(
+            controller: scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _FeedSearchField(
+                  controller: searchController,
+                  hintText: isGlobal
+                      ? 'Search global posts or #tags'
+                      : 'Search church posts or #tags',
+                  onChanged: (value) {
+                    _onSearchChanged(
+                      value,
+                      churchId: churchId,
+                      isGlobal: isGlobal,
+                    );
+                  },
+                  onClear: () {
+                    setState(() {
+                      searchController.clear();
+                      if (isGlobal) {
+                        _globalSearchQuery = '';
+                      } else {
+                        _churchSearchQuery = '';
+                      }
+                    });
+                  },
                 );
-              },
-              onClear: () {
-                setState(() {
-                  searchController.clear();
-                  if (isGlobal) {
-                    _globalSearchQuery = '';
-                  } else {
-                    _churchSearchQuery = '';
-                  }
-                });
-              },
-            );
-          }
+              }
 
-          final postIndex = index - 1;
-          if (visiblePosts.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 96),
-              child: Center(
-                child: Text(
-                  'No posts found',
-                  style: Theme.of(context).textTheme.bodyMedium,
+              final postIndex = index - 1;
+              if (visiblePosts.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 96),
+                  child: Center(
+                    child: Text(
+                      'No posts found',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                );
+              }
+
+              if (postIndex >= visiblePosts.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: AppLoadingIndicator()),
+                );
+              }
+
+              final post = visiblePosts[postIndex];
+              return FeedCard(
+                post: post,
+                currentUid: currentUid,
+                isAdmin: isAdmin,
+                isGlobal: isGlobal,
+                onHashtagTap: (tag) => _openHashtagFeed(
+                  context,
+                  tag,
+                  churchId: churchId,
+                  currentUid: currentUid,
+                  isAdmin: isAdmin,
+                  isGlobal: isGlobal,
                 ),
-              ),
-            );
-          }
-
-          if (postIndex >= visiblePosts.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: AppLoadingIndicator()),
-            );
-          }
-
-          final post = visiblePosts[postIndex];
-          return FeedCard(
-            post: post,
-            currentUid: currentUid,
-            isAdmin: isAdmin,
-            isGlobal: isGlobal,
-            onHashtagTap: (tag) => _openHashtagFeed(
-              context,
-              tag,
-              churchId: churchId,
-              currentUid: currentUid,
-              isAdmin: isAdmin,
-              isGlobal: isGlobal,
+              );
+            },
+          ),
+        ),
+        if (visiblePosts.length > 1)
+          Positioned(
+            right: 12,
+            bottom: 84,
+            child: FeedScrollNavigation(
+              controller: scrollController,
+              latestLabel: ref.t('feed.jump_latest', fallback: 'Latest'),
+              olderLabel: ref.t('feed.jump_older', fallback: 'Older posts'),
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 
@@ -542,6 +558,7 @@ class FeedHashtagScreen extends ConsumerStatefulWidget {
 
 class _FeedHashtagScreenState extends ConsumerState<FeedHashtagScreen> {
   late Future<List<FeedPost>> _postsFuture;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -561,6 +578,12 @@ class _FeedHashtagScreenState extends ConsumerState<FeedHashtagScreen> {
     setState(() {
       _postsFuture = _loadPosts();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -591,35 +614,51 @@ class _FeedHashtagScreenState extends ConsumerState<FeedHashtagScreen> {
             );
           }
 
-          return RefreshIndicator(
-            onRefresh: () async => _refresh(),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return FeedCard(
-                  post: post,
-                  currentUid: widget.currentUid,
-                  isAdmin: widget.isAdmin,
-                  isGlobal: widget.isGlobal,
-                  onPostChanged: _refresh,
-                  onHashtagTap: (tag) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => FeedHashtagScreen(
-                          hashtag: tag,
-                          churchId: widget.churchId,
-                          currentUid: widget.currentUid,
-                          isAdmin: widget.isAdmin,
-                          isGlobal: widget.isGlobal,
-                        ),
-                      ),
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return FeedCard(
+                      post: post,
+                      currentUid: widget.currentUid,
+                      isAdmin: widget.isAdmin,
+                      isGlobal: widget.isGlobal,
+                      onPostChanged: _refresh,
+                      onHashtagTap: (tag) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (_) => FeedHashtagScreen(
+                              hashtag: tag,
+                              churchId: widget.churchId,
+                              currentUid: widget.currentUid,
+                              isAdmin: widget.isAdmin,
+                              isGlobal: widget.isGlobal,
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+              if (posts.length > 1)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: FeedScrollNavigation(
+                    controller: _scrollController,
+                    latestLabel: ref.t('feed.jump_latest', fallback: 'Latest'),
+                    olderLabel:
+                        ref.t('feed.jump_older', fallback: 'Older posts'),
+                  ),
+                ),
+            ],
           );
         },
       ),

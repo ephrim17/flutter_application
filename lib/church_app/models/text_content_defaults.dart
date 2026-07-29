@@ -149,8 +149,15 @@ const Map<String, String> preAuthDefaultTextContents = {
       'Share your church details. It will stay hidden until a super admin approves it.',
   'church.register_loading': 'Registering church...',
   'church.register_duplicate_email': 'A church with this email already exists.',
+  'church.register_admin_email_locked':
+      'This is the email of your currently signed-in account.',
+  'church.register_admin_email_mismatch':
+      'Admin email must match the account currently signed in.',
+  'church.register_missing_auth_email':
+      'Your signed-in account does not have an email address. Please sign in again.',
   'church.register_success_pending':
-      'Church registered successfully. It will appear after super admin approval.',
+      'Welcome emails were sent to the church and admin addresses. Please wait for super admin approval. The welcome email includes the super admin support contact if you need help.',
+  'church.register_received_title': 'Registration received',
   'church.directory_title': 'Churches',
   'church.directory_load_error': 'We could not load the church list right now.',
   'church.your_churches_title': 'Your Churches',
@@ -271,6 +278,15 @@ const Map<String, String> defaultChurchTextContents = {
   'feed.update_action': 'Update',
   'feed.delete_action': 'Delete Post',
   'feed.edit_post': 'Edit post',
+  'feed.edit_window_expired':
+      'Posts can only be edited within 30 minutes of publishing.',
+  'feed.global_badge': 'Global post',
+  'feed.make_global_action': 'Make global',
+  'feed.remove_global_action': 'Remove from global',
+  'feed.global_success': 'Feed post is now global',
+  'feed.global_removed': 'Feed post removed from the global feed',
+  'feed.jump_latest': 'Latest',
+  'feed.jump_older': 'Older posts',
   'feed.delete_post': 'Delete post',
   'feed.delete_confirm_title': 'Delete post?',
   'feed.delete_confirm_message':
@@ -293,6 +309,14 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.prayer_schedule_failed': 'Failed to schedule reminder',
   'settings.edit_profile': 'Review Profile',
   'settings.profile_updated': 'Profile updated',
+  'settings.edit_profile_subtitle':
+      'Update your profile photo, phone, birthday, and location.',
+  'settings.edit_profile_sheet_subtitle':
+      'Keep your photo and personal information up to date.',
+  'settings.profile_photo_change': 'Change profile photo',
+  'settings.profile_photo_choose': 'Choose photo',
+  'settings.profile_photo_remove': 'Remove',
+  'settings.profile_photo_too_large': 'Choose an image smaller than 5 MB.',
   'settings.delete_account': 'Delete Account',
   'settings.delete_account_subtitle':
       'Remove your profile from the selected church',

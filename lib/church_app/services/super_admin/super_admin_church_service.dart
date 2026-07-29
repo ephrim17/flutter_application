@@ -22,6 +22,8 @@ class CreateChurchInput {
     this.adminName,
     this.adminEmail,
     this.adminPhone,
+    this.registeredByUid,
+    this.registeredByEmail,
     this.features = const <String, bool>{},
   });
 
@@ -40,6 +42,8 @@ class CreateChurchInput {
   final String? adminName;
   final String? adminEmail;
   final String? adminPhone;
+  final String? registeredByUid;
+  final String? registeredByEmail;
   final Map<String, bool> features;
 }
 
@@ -151,6 +155,18 @@ class SuperAdminChurchService {
   Future<void> createChurch(CreateChurchInput input) async {
     final churchId = input.churchId.trim();
     final churchDoc = FirestorePaths.churchDoc(_firestore, churchId);
+    final registrationSource = input.registrationSource.trim().isEmpty
+        ? 'super_admin'
+        : input.registrationSource.trim();
+    final normalizedAdminEmail = input.adminEmail?.trim().toLowerCase() ?? '';
+    final normalizedRegistrantEmail =
+        input.registeredByEmail?.trim().toLowerCase() ?? '';
+    if (registrationSource == 'public' &&
+        (normalizedRegistrantEmail.isEmpty ||
+            normalizedAdminEmail != normalizedRegistrantEmail)) {
+      throw const CreateChurchException('invalid-public-admin-email');
+    }
+
     if (await churchExists(churchId)) {
       throw const CreateChurchException('duplicate-id');
     }
@@ -170,7 +186,6 @@ class SuperAdminChurchService {
     final batch = _firestore.batch();
     final now = FieldValue.serverTimestamp();
     final normalizedChurchEmail = input.email.trim().toLowerCase();
-    final normalizedAdminEmail = input.adminEmail?.trim().toLowerCase() ?? '';
     final adminGroupIds = <String>['administration'];
     final pastorDocRef =
         FirestorePaths.churchPastors(_firestore, churchId).doc();
@@ -184,9 +199,12 @@ class SuperAdminChurchService {
       'email': normalizedChurchEmail,
       'logo': logoUrl,
       'enabled': input.enabled,
-      'registrationSource': input.registrationSource.trim().isEmpty
-          ? 'super_admin'
-          : input.registrationSource.trim(),
+      'registrationSource': registrationSource,
+      if (input.registeredByUid?.trim().isNotEmpty == true)
+        'registeredByUid': input.registeredByUid!.trim(),
+      if (input.registeredByEmail?.trim().isNotEmpty == true)
+        'registeredByEmail': input.registeredByEmail!.trim().toLowerCase(),
+      if (registrationSource == 'public') 'approvalStatus': 'pending',
       'createdAt': now,
       'updatedAt': now,
     });
@@ -432,6 +450,9 @@ class SuperAdminChurchService {
     final existingChurchSnapshot = await churchDoc.get();
     final existingChurchData =
         (existingChurchSnapshot.data() as Map<String, dynamic>?) ?? const {};
+    final isPendingPublicRegistration =
+        existingChurchData['registrationSource'] == 'public' &&
+            existingChurchData['approvalStatus'] == 'pending';
     final now = FieldValue.serverTimestamp();
     final normalizedChurchEmail = input.email.trim().toLowerCase();
     final pastorDocRef = await _resolvePastorDocRef(churchId);
@@ -463,6 +484,9 @@ class SuperAdminChurchService {
         'email': normalizedChurchEmail,
         'logo': logoUrl,
         'enabled': input.enabled,
+        if (input.enabled && isPendingPublicRegistration)
+          'approvalStatus': 'approved',
+        if (input.enabled && isPendingPublicRegistration) 'approvedAt': now,
         'updatedAt': now,
       },
       SetOptions(merge: true),
@@ -527,6 +551,9 @@ class SuperAdminChurchService {
     }
 
     final previousEnabled = churchData['enabled'] as bool? ?? false;
+    final isPendingPublicRegistration =
+        churchData['registrationSource'] == 'public' &&
+            churchData['approvalStatus'] == 'pending';
     final churchName = (churchData['name'] as String? ?? '').trim();
     final fallbackEmail =
         (churchData['email'] as String? ?? '').trim().toLowerCase();
@@ -536,6 +563,10 @@ class SuperAdminChurchService {
       churchRef,
       {
         'enabled': enabled,
+        if (enabled && isPendingPublicRegistration)
+          'approvalStatus': 'approved',
+        if (enabled && isPendingPublicRegistration)
+          'approvedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
@@ -791,6 +822,11 @@ class SuperAdminChurchService {
       'Current status: ${enabled ? 'enabled' : 'disabled'}',
       '',
       'You can now continue setting up the church in the app.',
+      '',
+      'Welcome, "$churchName"! We are glad to have your church with us and look forward to supporting your community.',
+      '',
+      'Warm regards,',
+      'The Church App Team',
     ].join('\n');
   }
 
@@ -803,11 +839,17 @@ class SuperAdminChurchService {
       'Hello Admin,',
       '',
       'Your church "$churchName" has been ${enabled ? 'enabled' : 'disabled'} from the super admin dashboard.',
-      'Church ID: $churchId',
       '',
       enabled
-          ? 'Access to the church is active again.'
+          ? 'Access to the church is active now.'
           : 'Access to the church is currently turned off.',
+      '',
+      enabled
+          ? 'We are delighted to see your church active and look forward to seeing your community grow.'
+          : 'We are here to support you and hope to welcome your church back when the time is right.',
+      '',
+      'Warm regards,',
+      'The Church App Team',
     ].join('\n');
   }
 

@@ -9,6 +9,7 @@ import 'package:flutter_application/church_app/providers/feed_post_modal_provide
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/prompts/birthday_card_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
@@ -87,12 +88,9 @@ class _TodayBirthdaysModal extends StatelessWidget {
                       final member = members[index];
                       return Card(
                         child: ListTile(
-                          leading: CircleAvatar(
-                            child: Text(
-                              member.name.isNotEmpty
-                                  ? member.name[0].toUpperCase()
-                                  : '?',
-                            ),
+                          leading: AppProfileAvatar(
+                            name: member.name,
+                            imageUrl: member.profilePhotoUrl,
                           ),
                           title: Text(member.name),
                           subtitle:

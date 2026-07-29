@@ -20,6 +20,7 @@ import 'package:flutter_application/church_app/screens/entry/login_request_scree
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -781,12 +782,9 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
         isAdmin: widget.isAdmin,
         currentUid: widget.currentUid,
       ),
-      leading: CircleAvatar(
-        child: Text(
-          widget.member.name.isNotEmpty
-              ? widget.member.name[0].toUpperCase()
-              : '?',
-        ),
+      leading: AppProfileAvatar(
+        name: widget.member.name,
+        imageUrl: widget.member.profilePhotoUrl,
       ),
       title: Text(widget.member.name),
       trailing: trailing,
@@ -861,13 +859,10 @@ Future<void> _showMemberDetailsSheet(
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
+                              AppProfileAvatar(
+                                name: currentMember.name,
+                                imageUrl: currentMember.profilePhotoUrl,
                                 radius: 24,
-                                child: Text(
-                                  currentMember.name.isNotEmpty
-                                      ? currentMember.name[0].toUpperCase()
-                                      : '?',
-                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

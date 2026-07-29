@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -51,8 +55,18 @@ class FeedCard extends ConsumerWidget {
         : false;
 
     final isOwner = currentUid != null && currentUid == post.userId;
-    final canDelete = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
+    final isPromotedGlobal = isGlobal &&
+        post.sourceChurchId.isNotEmpty &&
+        post.sourcePostId.isNotEmpty;
+    final globalFeedEnabled =
+        ref.watch(appConfigProvider).value?.globalFeedEnabled ?? false;
+    final canManageGlobal = (globalFeedEnabled || post.isGlobal) &&
+        (isGlobal ? isPostChurchAdmin && isPromotedGlobal : isAdmin);
+    final canDelete = !isPromotedGlobal &&
+        (isOwner || (isGlobal ? isPostChurchAdmin : isAdmin));
     final canPin = canDelete;
+    final canEdit =
+        isOwner && !isPromotedGlobal && post.canEditAt(DateTime.now());
     final theme = Theme.of(context);
     final hasImage = post.imageUrls.isNotEmpty;
     final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
@@ -72,22 +86,12 @@ class FeedCard extends ConsumerWidget {
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () => _showPostAuthorDetails(context, ref),
-                  child: CircleAvatar(
+                  child: AppProfileAvatar(
+                    name: post.userName,
+                    imageUrl: post.userPhoto,
                     radius: 21,
                     backgroundColor:
                         theme.colorScheme.primary.withValues(alpha: 0.10),
-                    backgroundImage: post.userPhoto != null
-                        ? NetworkImage(post.userPhoto!)
-                        : null,
-                    child: post.userPhoto == null
-                        ? Text(
-                            post.userName[0].toUpperCase(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.primary,
-                            ),
-                          )
-                        : null,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -120,14 +124,20 @@ class FeedCard extends ConsumerWidget {
                                 fallback: 'Pinned',
                               ),
                             ),
+                          if (!isGlobal && post.isGlobal)
+                            _GlobalFeedBadge(
+                              label: ref.t(
+                                'feed.global_badge',
+                                fallback: 'Global post',
+                              ),
+                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                if (isOwner || canDelete || canPin)
-                  PopupMenuButton<_FeedPostAction>(
-                    icon: const Icon(Icons.more_horiz_rounded),
+                if (canEdit || canDelete || canPin || canManageGlobal)
+                  AppPopupMenu<_FeedPostAction>(
                     onSelected: (action) async {
                       switch (action) {
                         case _FeedPostAction.edit:
@@ -139,42 +149,72 @@ class FeedCard extends ConsumerWidget {
                         case _FeedPostAction.unpin:
                           await _setPinnedPost(context, ref, pinned: false);
                           break;
+                        case _FeedPostAction.makeGlobal:
+                          await _setPostGlobal(context, ref, makeGlobal: true);
+                          break;
+                        case _FeedPostAction.removeGlobal:
+                          await _setPostGlobal(context, ref, makeGlobal: false);
+                          break;
                         case _FeedPostAction.delete:
                           await _confirmAndDeletePost(context, ref);
                           break;
                       }
                     },
-                    itemBuilder: (context) => [
-                      if (isOwner)
-                        PopupMenuItem(
+                    actions: [
+                      if (canEdit)
+                        AppPopupMenuAction(
                           value: _FeedPostAction.edit,
-                          child: Text(
-                            ref.t('feed.edit_post', fallback: 'Edit post'),
+                          icon: Icons.edit_outlined,
+                          label: ref.t(
+                            'feed.edit_post',
+                            fallback: 'Edit post',
                           ),
                         ),
                       if (canPin)
-                        PopupMenuItem(
+                        AppPopupMenuAction(
                           value: post.isPinned
                               ? _FeedPostAction.unpin
                               : _FeedPostAction.pin,
-                          child: Text(
-                            post.isPinned
-                                ? ref.t(
-                                    'feed.unpin_post',
-                                    fallback: 'Unpin post',
-                                  )
-                                : ref.t(
-                                    'feed.pin_post',
-                                    fallback: 'Pin post',
-                                  ),
+                          icon: post.isPinned
+                              ? Icons.push_pin_rounded
+                              : Icons.push_pin_outlined,
+                          label: post.isPinned
+                              ? ref.t(
+                                  'feed.unpin_post',
+                                  fallback: 'Unpin post',
+                                )
+                              : ref.t(
+                                  'feed.pin_post',
+                                  fallback: 'Pin post',
+                                ),
+                        ),
+                      if (canManageGlobal && !post.isGlobal)
+                        AppPopupMenuAction(
+                          value: _FeedPostAction.makeGlobal,
+                          icon: Icons.public_rounded,
+                          label: ref.t(
+                            'feed.make_global_action',
+                            fallback: 'Make global',
+                          ),
+                        ),
+                      if (canManageGlobal && post.isGlobal)
+                        AppPopupMenuAction(
+                          value: _FeedPostAction.removeGlobal,
+                          icon: Icons.public_off_outlined,
+                          label: ref.t(
+                            'feed.remove_global_action',
+                            fallback: 'Remove from global',
                           ),
                         ),
                       if (canDelete)
-                        PopupMenuItem(
+                        AppPopupMenuAction(
                           value: _FeedPostAction.delete,
-                          child: Text(
-                            ref.t('feed.delete_post', fallback: 'Delete post'),
+                          icon: Icons.delete_outline_rounded,
+                          label: ref.t(
+                            'feed.delete_post',
+                            fallback: 'Delete post',
                           ),
+                          color: theme.colorScheme.error,
                         ),
                     ],
                   ),
@@ -223,6 +263,21 @@ class FeedCard extends ConsumerWidget {
   }
 
   Future<void> _editPost(BuildContext context, WidgetRef ref) async {
+    if (!post.canEditAt(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t(
+              'feed.edit_window_expired',
+              fallback:
+                  'Posts can only be edited within 30 minutes of publishing.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
     await logChurchAnalyticsEvent(
       ref,
       name: 'feed_post_edit_started',
@@ -279,6 +334,96 @@ class FeedCard extends ConsumerWidget {
 
     await _refreshFeed(ref);
     onPostChanged?.call();
+  }
+
+  Future<void> _setPostGlobal(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool makeGlobal,
+  }) async {
+    final currentChurchId = ref.read(currentChurchIdProvider).value;
+    final sourceChurchId = isGlobal
+        ? post.sourceChurchId
+        : (post.churchId?.trim().isNotEmpty ?? false)
+            ? post.churchId!.trim()
+            : currentChurchId?.trim() ?? '';
+    final sourcePostId = isGlobal ? post.sourcePostId : post.id;
+    if (sourceChurchId.isEmpty || sourcePostId.isEmpty) return;
+
+    final churchFeedController =
+        ref.read(feedPaginationControllerProvider(sourceChurchId).notifier);
+    final globalFeedController =
+        ref.read(globalFeedPaginationControllerProvider.notifier);
+    final repository = ref.read(feedRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+
+    churchFeedController.setChurchPostGlobal(
+      postId: sourcePostId,
+      isGlobal: makeGlobal,
+    );
+    if (makeGlobal) {
+      globalFeedController.upsertPromotedPost(
+        source: post,
+        sourceChurchId: sourceChurchId,
+      );
+    } else {
+      globalFeedController.removePromotedPost(
+        sourceChurchId: sourceChurchId,
+        sourcePostId: sourcePostId,
+      );
+    }
+
+    try {
+      await repository.setPostGlobal(
+        churchId: sourceChurchId,
+        postId: sourcePostId,
+        isGlobal: makeGlobal,
+      );
+      unawaited(
+        logAnalyticsEvent(
+          name: makeGlobal
+              ? 'feed_post_made_global'
+              : 'feed_post_removed_from_global',
+          parameters: {
+            'post_id': sourcePostId,
+            'church_id': sourceChurchId,
+          },
+        ),
+      );
+      unawaited(
+        Future.wait([
+          churchFeedController.refreshSilently(),
+          globalFeedController.refreshSilently(),
+        ]),
+      );
+      onPostChanged?.call();
+
+      if (!messenger.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            makeGlobal
+                ? ref.t(
+                    'feed.global_success',
+                    fallback: 'Feed post is now global',
+                  )
+                : ref.t(
+                    'feed.global_removed',
+                    fallback: 'Feed post removed from the global feed',
+                  ),
+          ),
+        ),
+      );
+    } catch (error) {
+      await Future.wait([
+        churchFeedController.refreshSilently(),
+        globalFeedController.refreshSilently(),
+      ]);
+      if (!messenger.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
   }
 
   Future<void> _confirmAndDeletePost(
@@ -396,6 +541,7 @@ class FeedCard extends ConsumerWidget {
           AppUser(
             uid: post.userId,
             name: post.userName,
+            profilePhotoUrl: post.userPhoto ?? '',
             email: '',
             role: 'user',
             approved: true,
@@ -434,6 +580,7 @@ class FeedCard extends ConsumerWidget {
         AppUser(
           uid: post.userId,
           name: post.userName,
+          profilePhotoUrl: post.userPhoto ?? '',
           email: '',
           role: 'user',
           approved: true,
@@ -476,6 +623,7 @@ class FeedCard extends ConsumerWidget {
         ? AppUser(
             uid: post.userId,
             name: post.userName,
+            profilePhotoUrl: post.userPhoto ?? '',
             email: post.userEmail ?? '',
             role: 'user',
             approved: true,
@@ -814,9 +962,44 @@ class _PinnedBadge extends StatelessWidget {
   }
 }
 
+class _GlobalFeedBadge extends StatelessWidget {
+  const _GlobalFeedBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.tertiary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.public_rounded, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 enum _FeedPostAction {
   edit,
   pin,
   unpin,
+  makeGlobal,
+  removeGlobal,
   delete,
 }

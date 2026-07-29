@@ -1,17 +1,23 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class FeedRepository {
   final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions;
   static const int recentFeedWindowDays = 90;
 
-  FeedRepository(this._firestore);
+  FeedRepository(this._firestore, [FirebaseFunctions? functions])
+      : _functions =
+            functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   static const int defaultFeedPageSize = 20;
+
+  String _globalPostId(String churchId, String postId) => '${churchId}_$postId';
 
   Query<Map<String, dynamic>> _feedQuery({
     String? churchId,
@@ -241,6 +247,9 @@ class FeedRepository {
       'title': title,
       'description': description,
       'hashtags': extractHashtags('$title\n$description'),
+      'isGlobal': isGlobal,
+      'sourceChurchId': '',
+      'sourcePostId': '',
       'isPinned': false,
       'pinnedAt': null,
       'imageUrl': null,
@@ -322,7 +331,7 @@ class FeedRepository {
         ? FirestorePaths.globalFeedCollection(_firestore).doc(postId)
         : FirestorePaths.feedCollection(_firestore, churchId!).doc(postId);
 
-    await docRef.update({
+    final updates = <String, dynamic>{
       'title': title,
       'description': description,
       'hashtags': extractHashtags('$title\n$description'),
@@ -342,7 +351,20 @@ class FeedRepository {
             ? Timestamp.fromDate(userDob)
             : null,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+
+    final existingSnapshot = !isGlobal ? await docRef.get() : null;
+    final existingData = existingSnapshot?.data() as Map<String, dynamic>?;
+    final batch = _firestore.batch()..update(docRef, updates);
+    if (existingData?['isGlobal'] == true) {
+      batch.set(
+        FirestorePaths.globalFeedCollection(_firestore)
+            .doc(_globalPostId(churchId!, postId)),
+        updates,
+        SetOptions(merge: true),
+      );
+    }
+    await batch.commit();
   }
 
   Future<void> deletePost({
@@ -352,6 +374,33 @@ class FeedRepository {
     List<String> imageUrls = const [],
     bool isGlobal = false,
   }) async {
+    final docRef = isGlobal
+        ? FirestorePaths.globalFeedCollection(_firestore).doc(postId)
+        : FirestorePaths.feedCollection(_firestore, churchId!).doc(postId);
+
+    if (isGlobal) {
+      final snapshot = await docRef.get();
+      final data = snapshot.data() as Map<String, dynamic>?;
+      final sourceChurchId = (data?['sourceChurchId'] ?? '').toString().trim();
+      final sourcePostId = (data?['sourcePostId'] ?? '').toString().trim();
+      if (sourceChurchId.isNotEmpty && sourcePostId.isNotEmpty) {
+        final sourceRef = FirestorePaths.feedCollection(
+          _firestore,
+          sourceChurchId,
+        ).doc(sourcePostId);
+        final batch = _firestore.batch()..delete(docRef);
+        final sourceSnapshot = await sourceRef.get();
+        if (sourceSnapshot.exists) {
+          batch.update(sourceRef, {
+            'isGlobal': false,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
+        return;
+      }
+    }
+
     final urlsToDelete = {
       ...imageUrls.where((url) => url.trim().isNotEmpty),
       if (imageUrl != null && imageUrl.trim().isNotEmpty) imageUrl,
@@ -388,11 +437,27 @@ class FeedRepository {
     }
 
     // Always delete the feed document (text/title/description).
-    final docRef = isGlobal
-        ? FirestorePaths.globalFeedCollection(_firestore).doc(postId)
-        : FirestorePaths.feedCollection(_firestore, churchId!).doc(postId);
+    final batch = _firestore.batch()..delete(docRef);
+    if (!isGlobal) {
+      batch.delete(
+        FirestorePaths.globalFeedCollection(_firestore)
+            .doc(_globalPostId(churchId!, postId)),
+      );
+    }
+    await batch.commit();
+  }
 
-    await docRef.delete();
+  Future<void> setPostGlobal({
+    required String churchId,
+    required String postId,
+    required bool isGlobal,
+  }) async {
+    final callable = _functions.httpsCallable('setFeedPostGlobal');
+    await callable.call<void>({
+      'churchId': churchId,
+      'postId': postId,
+      'isGlobal': isGlobal,
+    });
   }
 
   Future<void> setPinnedPost({

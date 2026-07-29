@@ -13,6 +13,7 @@ import 'package:flutter_application/church_app/screens/dashboard/view_models/das
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_state.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/disabled_feature_tips.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';

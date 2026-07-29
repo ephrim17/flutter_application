@@ -7,6 +7,7 @@ class ChurchGroupMember {
     required this.category,
     required this.groupId,
     required this.groupLabel,
+    this.profilePhotoUrl = '',
   });
 
   final String uid;
@@ -16,6 +17,7 @@ class ChurchGroupMember {
   final String category;
   final String groupId;
   final String groupLabel;
+  final String profilePhotoUrl;
 
   factory ChurchGroupMember.fromMap(Map<String, dynamic> data) {
     return ChurchGroupMember(
@@ -26,6 +28,7 @@ class ChurchGroupMember {
       category: (data['category'] ?? '').toString(),
       groupId: (data['groupId'] ?? '').toString(),
       groupLabel: (data['groupLabel'] ?? '').toString(),
+      profilePhotoUrl: (data['profilePhotoUrl'] ?? '').toString(),
     );
   }
 }

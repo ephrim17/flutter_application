@@ -148,6 +148,7 @@ class AppTextField extends StatelessWidget {
       prefixIconConstraints: decoration?.prefixIconConstraints,
       helperText: decoration?.helperText,
       helperStyle: decoration?.helperStyle,
+      helperMaxLines: decoration?.helperMaxLines,
       errorText: decoration?.errorText,
       errorStyle: decoration?.errorStyle,
       counterText: decoration?.counterText,

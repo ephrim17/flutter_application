@@ -16,6 +16,7 @@ import 'package:flutter_application/church_app/providers/side_drawer/church_grou
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChurchGroupsScreen extends ConsumerStatefulWidget {
@@ -596,12 +597,9 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
                           return Container(
                             decoration: carouselBoxDecoration(context),
                             child: ListTile(
-                              leading: CircleAvatar(
-                                child: Text(
-                                  member.name.isNotEmpty
-                                      ? member.name[0].toUpperCase()
-                                      : '?',
-                                ),
+                              leading: AppProfileAvatar(
+                                name: member.name,
+                                imageUrl: member.profilePhotoUrl,
                               ),
                               title: Text(
                                 member.name.trim().isEmpty
@@ -948,10 +946,9 @@ class _GroupMembersTab extends ConsumerWidget {
                   horizontal: 14,
                   vertical: 6,
                 ),
-                leading: CircleAvatar(
-                  child: Text(
-                    member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-                  ),
+                leading: AppProfileAvatar(
+                  name: member.name,
+                  imageUrl: member.profilePhotoUrl,
                 ),
                 title: Text(member.name),
                 subtitle: Text(

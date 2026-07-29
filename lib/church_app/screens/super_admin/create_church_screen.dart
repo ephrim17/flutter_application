@@ -75,7 +75,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
       _emailController.text = church.email;
       _enabled = church.enabled;
     }
+
+    if (_isPublicRegistrationMode) {
+      _adminEmailController.text = _authenticatedUserEmail;
+    }
   }
+
+  String get _authenticatedUserEmail =>
+      ref.read(firebaseAuthProvider).currentUser?.email?.trim().toLowerCase() ??
+      '';
 
   @override
   void dispose() {
@@ -222,6 +230,13 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             fallback: 'Please enter a valid email address',
           );
         }
+        if (_isPublicRegistrationMode &&
+            adminEmail.toLowerCase() != _authenticatedUserEmail) {
+          return context.t(
+            'church.register_admin_email_mismatch',
+            fallback: 'Admin email must match the account currently signed in.',
+          );
+        }
         if (adminPhone.isEmpty) {
           return context.t(
             'super_admin.admin_phone_required',
@@ -320,6 +335,13 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         fallback: 'Please enter a valid email address',
       );
     }
+    if (_isPublicRegistrationMode &&
+        adminEmail.toLowerCase() != _authenticatedUserEmail) {
+      return context.t(
+        'church.register_admin_email_mismatch',
+        fallback: 'Admin email must match the account currently signed in.',
+      );
+    }
     if (adminPhone.isEmpty) {
       return context.t(
         'super_admin.admin_phone_required',
@@ -408,7 +430,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
       String? createdAdminEmail;
       var createResult = 'created_without_account';
       final enteredAdminName = _adminNameController.text.trim();
-      final enteredAdminEmail = _adminEmailController.text.trim().toLowerCase();
+      final authenticatedUser = ref.read(firebaseAuthProvider).currentUser;
+      final authenticatedEmail =
+          authenticatedUser?.email?.trim().toLowerCase() ?? '';
+      if (_isPublicRegistrationMode && authenticatedEmail.isEmpty) {
+        throw const CreateChurchException('missing-auth-email');
+      }
+      final enteredAdminEmail = _isPublicRegistrationMode
+          ? authenticatedEmail
+          : _adminEmailController.text.trim().toLowerCase();
       final enteredAdminPhone = _adminPhoneController.text.trim();
 
       if (_setupChurchAccount && !_isPublicRegistrationMode) {
@@ -441,6 +471,10 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           adminName: enteredAdminName,
           adminEmail: createdAdminEmail ?? enteredAdminEmail,
           adminPhone: enteredAdminPhone,
+          registeredByUid:
+              _isPublicRegistrationMode ? authenticatedUser?.uid : null,
+          registeredByEmail:
+              _isPublicRegistrationMode ? authenticatedEmail : null,
           features: _featureFlags,
         ),
       );
@@ -475,6 +509,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         'duplicate-id' => context.t(
             'super_admin.duplicate_id',
             fallback: 'A church with this ID already exists',
+          ),
+        'missing-auth-email' => context.t(
+            'church.register_missing_auth_email',
+            fallback:
+                'Your signed-in account does not have an email address. Please sign in again.',
+          ),
+        'invalid-public-admin-email' => context.t(
+            'church.register_admin_email_mismatch',
+            fallback: 'Admin email must match the account currently signed in.',
           ),
         _ => error.code,
       };
@@ -723,13 +766,26 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           const SizedBox(height: 14),
           AppTextField(
             controller: _adminEmailController,
-            onChanged: (_) => setState(() {}),
+            readOnly: _isPublicRegistrationMode,
+            onChanged:
+                _isPublicRegistrationMode ? null : (_) => setState(() {}),
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               labelText: context.t(
                 'super_admin.admin_email_label',
                 fallback: 'Admin Email',
               ),
+              helperText: _isPublicRegistrationMode
+                  ? context.t(
+                      'church.register_admin_email_locked',
+                      fallback:
+                          'This is the email of your currently signed-in account.',
+                    )
+                  : null,
+              helperMaxLines: 3,
+              suffixIcon: _isPublicRegistrationMode
+                  ? const Icon(Icons.verified_user_outlined)
+                  : null,
             ),
           ),
           const SizedBox(height: 14),

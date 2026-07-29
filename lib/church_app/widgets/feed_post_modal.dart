@@ -330,11 +330,26 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                               );
                             } else {
                               /// UPDATE
+                              if (!widget.post!.canEditAt(DateTime.now())) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      ref.t(
+                                        'feed.edit_window_expired',
+                                        fallback:
+                                            'Posts can only be edited within 30 minutes of publishing.',
+                                      ),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
                               await ref
                                   .read(
                                       feedPostModalControllerProvider.notifier)
                                   .updatePost(
                                     postId: widget.post!.id,
+                                    createdAt: widget.post!.createdAt,
                                     title: title,
                                     description: description,
                                     imageFile: null,
@@ -354,6 +369,18 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             }
 
                             navigator.pop();
+                          } on FeedEditWindowExpiredException {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ref.t(
+                                    'feed.edit_window_expired',
+                                    fallback:
+                                        'Posts can only be edited within 30 minutes of publishing.',
+                                  ),
+                                ),
+                              ),
+                            );
                           } catch (e) {
                             messenger.showSnackBar(
                               SnackBar(content: Text(e.toString())),

@@ -41,8 +41,10 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
     _loadInitial();
   }
 
-  Future<void> _loadInitial() async {
-    state = state.copyWith(isInitialLoading: true, errorMessage: null);
+  Future<void> _loadInitial({bool showLoading = true}) async {
+    if (showLoading) {
+      state = state.copyWith(isInitialLoading: true, clearError: true);
+    }
 
     try {
       final page = await _repository.fetchFeedPage(
@@ -56,16 +58,70 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
         isInitialLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isInitialLoading: false,
-        errorMessage: e.toString(),
-      );
+      if (showLoading) {
+        state = state.copyWith(
+          isInitialLoading: false,
+          errorMessage: e.toString(),
+        );
+      }
     }
   }
 
   Future<void> refresh() async {
     state = const FeedPaginationState(isInitialLoading: true);
     await _loadInitial();
+  }
+
+  Future<void> refreshSilently() => _loadInitial(showLoading: false);
+
+  void setChurchPostGlobal({
+    required String postId,
+    required bool isGlobal,
+  }) {
+    state = state.copyWith(
+      posts: state.posts
+          .map(
+            (post) =>
+                post.id == postId ? post.copyWith(isGlobal: isGlobal) : post,
+          )
+          .toList(growable: false),
+    );
+  }
+
+  void upsertPromotedPost({
+    required FeedPost source,
+    required String sourceChurchId,
+  }) {
+    final promotedId = '${sourceChurchId}_${source.id}';
+    final promoted = source.copyWith(
+      id: promotedId,
+      isGlobal: true,
+      sourceChurchId: sourceChurchId,
+      sourcePostId: source.id,
+      isPinned: false,
+      clearPinnedAt: true,
+    );
+    state = state.copyWith(
+      posts: sortFeedPosts([
+        promoted,
+        ...state.posts.where((post) => post.id != promotedId),
+      ]),
+    );
+  }
+
+  void removePromotedPost({
+    required String sourceChurchId,
+    required String sourcePostId,
+  }) {
+    state = state.copyWith(
+      posts: state.posts
+          .where(
+            (post) =>
+                post.sourceChurchId != sourceChurchId ||
+                post.sourcePostId != sourcePostId,
+          )
+          .toList(growable: false),
+    );
   }
 
   Future<void> loadMore() async {

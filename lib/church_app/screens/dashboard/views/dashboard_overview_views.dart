@@ -317,10 +317,9 @@ class _DashboardSpecialDayTile extends StatelessWidget {
             ),
           );
         },
-        leading: CircleAvatar(
-          child: Text(
-            member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-          ),
+        leading: AppProfileAvatar(
+          name: member.name,
+          imageUrl: member.profilePhotoUrl,
         ),
         title: Text(member.name),
         subtitle: Text(subtitle),
@@ -467,13 +466,6 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final approvalRate = state.metrics.memberCount == 0
-        ? 100
-        : ((state.metrics.approvedMembers / state.metrics.memberCount) * 100)
-            .round();
-    final contentGapCount =
-        (state.announcements.isEmpty ? 1 : 0) + (state.events.isEmpty ? 1 : 0);
-
     return Column(
       children: [
         _DashboardSignalTile(
@@ -496,40 +488,6 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
           caption: state.expiringPrayers.isEmpty
               ? 'Nothing urgent is about to expire.'
               : 'Prayer follow-up may be needed soon.',
-        ),
-        const SizedBox(height: 12),
-        _DashboardSignalTile(
-          title: 'Content gaps',
-          value: contentGapCount.toString(),
-          tone:
-              contentGapCount == 0 ? _SignalTone.healthy : _SignalTone.warning,
-          caption: contentGapCount == 0
-              ? 'Announcements and events are both live.'
-              : 'One or more public-facing sections feel empty.',
-        ),
-        const SizedBox(height: 14),
-        _DashboardHealthRow(
-          label: 'Approval health',
-          value: '$approvalRate%',
-          healthy: state.metrics.pendingApprovals <= 2,
-        ),
-        const SizedBox(height: 10),
-        _DashboardHealthRow(
-          label: 'Group participation',
-          value: '${state.metrics.groupParticipationRate}%',
-          healthy: state.metrics.groupParticipationRate >= 50,
-        ),
-        const SizedBox(height: 10),
-        _DashboardHealthRow(
-          label: 'Content readiness',
-          value: '${state.announcements.length + state.events.length} live',
-          healthy: state.announcements.isNotEmpty && state.events.isNotEmpty,
-        ),
-        const SizedBox(height: 10),
-        _DashboardHealthRow(
-          label: 'Prayer urgency',
-          value: '${state.expiringPrayers.length} urgent',
-          healthy: state.expiringPrayers.length <= 2,
         ),
         const SizedBox(height: 18),
         Align(
@@ -673,62 +631,6 @@ class _DashboardSignalTile extends StatelessWidget {
               color: onSurface.withValues(alpha: 0.76),
               height: 1.35,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashboardHealthRow extends StatelessWidget {
-  const _DashboardHealthRow({
-    required this.label,
-    required this.value,
-    required this.healthy,
-  });
-
-  final String label;
-  final String value;
-  final bool healthy;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = healthy ? Colors.green : Colors.orange;
-    final status = healthy ? 'Healthy' : 'Needs attention';
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  status,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: color.shade700,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
           ),
         ],
       ),
