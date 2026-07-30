@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_count_badge.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
+import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
+import 'package:flutter_application/church_app/providers/members_provider.dart';
+import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/equipment_viewmodel.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -82,6 +89,32 @@ class AppDrawer extends ConsumerWidget {
       }
       return isAdmin || !item.adminOnly;
     }).toList();
+    final churchId =
+        ref.watch(currentChurchIdProvider).asData?.value?.trim() ?? '';
+    final favoritesCount = ref.watch(favoritesProvider).asData?.value.length;
+    final myPrayersAsync = ref.watch(myPrayerRequestsProvider);
+    final globalPrayersAsync = ref.watch(globalPrayerRequestsProvider);
+    final allPrayersAsync =
+        isAdmin ? ref.watch(allPrayerRequestsProvider) : null;
+    final prayerCount = _overallPrayerCount(
+      churchId: churchId,
+      localPrayers: isAdmin
+          ? allPrayersAsync?.asData?.value
+          : myPrayersAsync.asData?.value,
+      globalPrayers: globalPrayersAsync.asData?.value,
+    );
+    final membersCount = items.contains(DrawerMenuItem.members)
+        ? ref.watch(membersProvider).asData?.value.length
+        : null;
+    final equipmentCount = items.contains(DrawerMenuItem.equipment)
+        ? ref.watch(equipmentItemsProvider).asData?.value.length
+        : null;
+    final badgeCounts = <DrawerMenuItem, int?>{
+      DrawerMenuItem.favorites: favoritesCount,
+      DrawerMenuItem.prayerRequest: prayerCount,
+      DrawerMenuItem.members: membersCount,
+      DrawerMenuItem.equipment: equipmentCount,
+    };
 
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -131,6 +164,7 @@ class AppDrawer extends ConsumerWidget {
               );
             },
           ),
+
           /// 🧭 Menu items
           ...items.map(
             (item) => ListTile(
@@ -138,6 +172,12 @@ class AppDrawer extends ConsumerWidget {
                 item.icon,
               ),
               title: Text(item.label),
+              trailing: badgeCounts[item] == null
+                  ? null
+                  : AppCountBadge(
+                      count: badgeCounts[item]!,
+                      semanticLabel: item.label,
+                    ),
               onTap: () => _handleTap(context, item),
             ),
           ),
@@ -155,4 +195,27 @@ class AppDrawer extends ConsumerWidget {
       ));
     }
   }
+}
+
+int? _overallPrayerCount({
+  required String churchId,
+  required List<PrayerRequest>? localPrayers,
+  required List<PrayerRequest>? globalPrayers,
+}) {
+  if (localPrayers == null || globalPrayers == null) return null;
+
+  final requestKeys = <String>{
+    for (final prayer in localPrayers) 'local:${prayer.id}',
+  };
+  for (final prayer in globalPrayers) {
+    final isLinkedLocalPrayer = churchId.isNotEmpty &&
+        prayer.sourceChurchId == churchId &&
+        prayer.sourcePrayerId.isNotEmpty;
+    requestKeys.add(
+      isLinkedLocalPrayer
+          ? 'local:${prayer.sourcePrayerId}'
+          : 'global:${prayer.id}',
+    );
+  }
+  return requestKeys.length;
 }

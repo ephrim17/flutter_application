@@ -9,6 +9,61 @@ Future<void> launchPhoneCall(
   final normalized = phoneNumber.trim();
   if (normalized.isEmpty) return;
 
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      icon: const Icon(Icons.phone_in_talk_rounded),
+      title: Text(
+        context.t(
+          'common.call_confirmation_title',
+          fallback: 'Call this number?',
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.t(
+              'common.call_confirmation_message',
+              fallback: 'Your phone app will open with this number.',
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          SelectableText(
+            normalized,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(
+            context.t(
+              'common.cancel',
+              fallback: 'Cancel',
+            ),
+          ),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(
+            context.t(
+              'common.call',
+              fallback: 'Call',
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true || !context.mounted) return;
+
   final uri = Uri.parse('tel:$normalized');
   final launched = await launchUrl(
     uri,

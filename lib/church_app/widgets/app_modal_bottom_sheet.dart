@@ -97,6 +97,9 @@ Future<T?> showAppModalBottomSheet<T>({
                         child: IgnorePointer(
                           child: Center(
                             child: Container(
+                              key: const ValueKey<String>(
+                                'app-modal-drag-handle',
+                              ),
                               width: 56,
                               height: 6,
                               decoration: BoxDecoration(

@@ -4,6 +4,11 @@ const Map<String, String> preAuthDefaultTextContents = {
   'common.open_link_failed': 'Unable to open link',
   'common.open_contact_failed': 'Unable to open contact action',
   'common.phone_call_failed': 'Unable to place the call',
+  'common.call_confirmation_title': 'Call this number?',
+  'common.call_confirmation_message':
+      'Your phone app will open with this number.',
+  'common.call': 'Call',
+  'common.cancel': 'Cancel',
   'common.proceed': 'Proceed',
   'common.submit': 'Submit',
   'common.unknown_error': 'An unknown error occurred.',
@@ -526,6 +531,7 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.my_requests_tab': 'My Requests',
   'prayer.all_requests_tab': 'All Requests',
   'prayer.global_requests_tab': 'Global',
+  'prayer.requests_count': '{count} requests',
   'prayer.showing_label': 'Showing',
   'prayer.new_request': 'New request',
   'prayer.community_title': 'Pray together',
@@ -551,6 +557,10 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.edit_title': 'Edit prayer request',
   'prayer.form_hint': 'Your church community is here for you.',
   'prayer.anonymous_hint': 'Your name will not be shown with this request.',
+  'prayer.visible_to_church_title': 'Visible to church members',
+  'prayer.visible_to_church_hint':
+      'Show this request in “Pray for others” on the For You tab.',
+  'prayer.visible_to_church_badge': 'Visible to church',
   'prayer.expiry_date_title': 'Keep request active until',
   'prayer.submit_action': 'Share request',
   'prayer.update_action': 'Save changes',
@@ -578,6 +588,12 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.expiry_prefix': 'Expiry',
   'prayer.select_expiry_required': 'Please select expiry date',
   'prayer.saved_success': 'Prayer request saved successfully',
+  'for_you.pray_for_others.title': 'Pray for others',
+  'for_you.pray_for_others.subtitle':
+      'Stand with someone from your church in prayer.',
+  'for_you.pray_for_others.anonymous': 'Anonymous request',
+  'for_you.pray_for_others.member': 'Church member',
+  'for_you.pray_for_others.ends_today': 'Ends today',
 
   // About
   'about.our_mission': 'Our Mission',

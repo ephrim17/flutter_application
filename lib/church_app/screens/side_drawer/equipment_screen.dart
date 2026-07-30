@@ -1385,17 +1385,6 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 56,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
               Text(
                 existingItem == null ? 'Add Equipment' : 'Edit Equipment',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(

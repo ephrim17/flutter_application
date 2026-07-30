@@ -54,6 +54,7 @@ type TopicNotificationPayload = {
   title: string;
   body: string;
   topic: string;
+  data?: Record<string, string>;
 };
 
 type FeedPostNotificationPayload = {
@@ -385,6 +386,7 @@ async function sendTopicNotification(
       title: payload.title,
       body: payload.body,
     },
+    data: payload.data,
     topic: payload.topic,
   });
 }
@@ -431,6 +433,199 @@ async function sendFeedPostNotification(
 
   return successCount;
 }
+
+async function sendPrayerRequestAdminNotification(
+  churchId: string,
+  prayerId: string,
+): Promise<{successCount: number; failureCount: number}> {
+  const firestore = admin.firestore();
+  const churchRef = firestore.collection("churches").doc(churchId);
+  const [configSnapshot, usersSnapshot] = await Promise.all([
+    churchRef.collection("config").doc("app").get(),
+    churchRef.collection("users").get(),
+  ]);
+
+  const rawAdmins = configSnapshot.data()?.admins;
+  const adminEmails = new Set(
+    (Array.isArray(rawAdmins) ? rawAdmins : [])
+      .map((value) => readUnknownString(value).toLowerCase())
+      .filter((email) => email.length > 0),
+  );
+
+  if (adminEmails.size === 0) {
+    logger.warn("Prayer request notification has no configured admins.", {
+      churchId,
+      prayerId,
+    });
+    return {successCount: 0, failureCount: 0};
+  }
+
+  const messages: admin.messaging.Message[] = [];
+  const seenTokens = new Set<string>();
+
+  usersSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    const email = readUnknownString(data.email).toLowerCase();
+    const token = readUnknownString(data.authToken);
+    if (!adminEmails.has(email) || !token || seenTokens.has(token)) return;
+
+    seenTokens.add(token);
+    messages.push({
+      token,
+      notification: {
+        title: "New prayer request",
+        body: "A new prayer request was added to your church.",
+      },
+      data: {
+        kind: "prayer_request_created",
+        churchId,
+        prayerId,
+      },
+    });
+  });
+
+  let successCount = 0;
+  let failureCount = 0;
+  for (let index = 0; index < messages.length; index += 500) {
+    const response = await admin.messaging().sendEach(
+      messages.slice(index, index + 500),
+    );
+    successCount += response.successCount;
+    failureCount += response.failureCount;
+  }
+
+  return {successCount, failureCount};
+}
+
+export const notifyChurchAdminsOnPrayerCreated = onDocumentCreated(
+  {
+    document: "churches/{churchId}/prayer_requests/{prayerId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      logger.warn("Prayer request trigger fired without snapshot data.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const churchId = readUnknownString(event.params.churchId);
+    const prayerId = readUnknownString(event.params.prayerId);
+    if (!churchId || !prayerId) {
+      logger.warn("Prayer request trigger is missing path parameters.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    if (snapshot.data().visibleToChurchMembers === true) {
+      logger.info(
+        "Skipping separate admin push for a church-visible prayer request.",
+        {churchId, prayerId},
+      );
+      return;
+    }
+
+    const result = await sendPrayerRequestAdminNotification(
+      churchId,
+      prayerId,
+    );
+
+    logger.info("Prayer request admin notifications processed.", {
+      churchId,
+      prayerId,
+      ...result,
+    });
+  },
+);
+
+export const notifyChurchMembersOnArticleCreated = onDocumentCreated(
+  {
+    document: "churches/{churchId}/articles/{articleId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      logger.warn("Article notification trigger has no snapshot data.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const churchId = readUnknownString(event.params.churchId);
+    const articleId = readUnknownString(event.params.articleId);
+    if (!churchId || !articleId) {
+      logger.warn("Article notification trigger is missing path parameters.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const articleTitle = readUnknownString(snapshot.data().title);
+    await sendTopicNotification({
+      title: "New article",
+      body: articleTitle ?
+        `${articleTitle} is ready to read.` :
+        "A new article is ready to read.",
+      topic: `church_${churchId}`,
+      data: {
+        kind: "article_created",
+        churchId,
+        articleId,
+      },
+    });
+
+    logger.info("New article notification sent to church members.", {
+      churchId,
+      articleId,
+    });
+  },
+);
+
+export const notifyChurchMembersWhenPrayerVisible = onDocumentWritten(
+  {
+    document: "churches/{churchId}/prayer_requests/{prayerId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const beforeVisible =
+      event.data?.before.exists &&
+      event.data.before.data()?.visibleToChurchMembers === true;
+    const afterVisible =
+      event.data?.after.exists &&
+      event.data.after.data()?.visibleToChurchMembers === true;
+
+    if (beforeVisible || !afterVisible) return;
+
+    const churchId = readUnknownString(event.params.churchId);
+    const prayerId = readUnknownString(event.params.prayerId);
+    if (!churchId || !prayerId) {
+      logger.warn("Prayer visibility trigger is missing path parameters.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    await sendTopicNotification({
+      title: "Pray for someone in your church",
+      body: "A prayer request was shared. Join your church in prayer.",
+      topic: `church_${churchId}`,
+      data: {
+        kind: "prayer_request_visible",
+        churchId,
+        prayerId,
+      },
+    });
+
+    logger.info("Church-visible prayer notification sent.", {
+      churchId,
+      prayerId,
+    });
+  },
+);
 
 export const processQueuedChurchNotification = onDocumentCreated(
   {

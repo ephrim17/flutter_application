@@ -42,17 +42,6 @@ class _TodayBirthdaysModal extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
           Text(
             context.t('birthday.today_title', fallback: "Today's Birthdays"),
             style: Theme.of(context).textTheme.titleLarge,

@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/helpers/date_formatter.dart';
+import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/article_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/card_Link_button_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
+import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ArticleSection implements MasterSection {
@@ -131,8 +139,10 @@ class ArticleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ColorText(badgeText: article.title),
+            _ArticleAuthorHeader(article: article),
             const Divider(height: 22),
+            ColorText(badgeText: article.title),
+            const SizedBox(height: 10),
             Text(
               article.description,
               maxLines: 2,
@@ -174,6 +184,8 @@ class ArticleDetailPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _ArticleAuthorHeader(article: article),
+              const SizedBox(height: 24),
               Text(
                 article.title,
                 style: const TextStyle(
@@ -195,4 +207,134 @@ class ArticleDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ArticleAuthorHeader extends ConsumerWidget {
+  const _ArticleAuthorHeader({required this.article});
+
+  final Article article;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final authorName = article.createdByName.isNotEmpty
+        ? article.createdByName
+        : 'Church admin';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _showArticleAuthorDetails(context, ref, article),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              AppProfileAvatar(
+                name: authorName,
+                imageUrl: article.createdByProfilePhotoUrl,
+                radius: 21,
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.10),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      authorName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (article.createdAt != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        humanFormatDate(article.createdAt!),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showArticleAuthorDetails(
+  BuildContext context,
+  WidgetRef ref,
+  Article article,
+) async {
+  final churchId = ref.read(currentChurchIdProvider).value?.trim() ?? '';
+  final firestore = ref.read(firestoreProvider);
+  AppUser? author;
+  var churchName = '';
+  var churchPastorName = '';
+
+  if (churchId.isNotEmpty) {
+    final results = await Future.wait([
+      if (article.createdByUid.isNotEmpty)
+        FirestorePaths.churchUserDoc(
+          firestore,
+          churchId,
+          article.createdByUid,
+        ).get(),
+      FirestorePaths.churchDoc(firestore, churchId).get(),
+    ]);
+
+    var resultIndex = 0;
+    if (article.createdByUid.isNotEmpty) {
+      final userSnapshot = results[resultIndex++];
+      if (userSnapshot.exists) {
+        author = AppUser.fromFirestore(
+          userSnapshot.id,
+          userSnapshot.data() as Map<String, dynamic>,
+        );
+      }
+    }
+
+    final churchSnapshot = results[resultIndex];
+    if (churchSnapshot.exists) {
+      final church = Church.fromFirestore(
+        churchSnapshot.id,
+        churchSnapshot.data() as Map<String, dynamic>? ?? const {},
+      );
+      churchName = church.name;
+      churchPastorName = church.pastorName;
+    }
+  }
+
+  author ??= AppUser.fromJson({
+    'uid': article.createdByUid,
+    'name': article.createdByName.isNotEmpty
+        ? article.createdByName
+        : 'Church admin',
+    'email': article.createdByEmail,
+    'profilePhotoUrl': article.createdByProfilePhotoUrl,
+    'role': 'admin',
+    'approved': true,
+  });
+
+  if (!context.mounted) return;
+  await showUserQuickCardWithChurch(
+    context,
+    author,
+    churchName: churchName,
+    churchPastorName: churchPastorName,
+  );
 }

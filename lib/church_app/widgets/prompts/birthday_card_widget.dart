@@ -95,15 +95,6 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 50,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                     const Text(
                       '🎉🎂🎁',
                       style: TextStyle(fontSize: 48),

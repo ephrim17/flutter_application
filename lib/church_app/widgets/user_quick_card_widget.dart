@@ -140,7 +140,33 @@ class _UserDetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          if (onActionTap == null)
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: Icon(
+                icon,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+            )
+          else
+            Tooltip(
+              message: 'Call',
+              child: InkResponse(
+                onTap: onActionTap,
+                radius: 22,
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -160,17 +186,6 @@ class _UserDetailRow extends StatelessWidget {
               ],
             ),
           ),
-          if (onActionTap != null) ...[
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onActionTap,
-              tooltip: 'Call',
-              icon: Icon(
-                Icons.call_outlined,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
         ],
       ),
     );

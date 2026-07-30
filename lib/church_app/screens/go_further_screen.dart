@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
@@ -309,18 +310,6 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
                 Row(
                   children: [
                     ChurchLogoAvatar(logo: church.logo, size: 58),
@@ -350,6 +339,9 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   icon: Icons.phone_outlined,
                   label: 'Contact',
                   value: _valueOrFallback(church.contact),
+                  onActionTap: church.contact.trim().isEmpty
+                      ? null
+                      : () => launchPhoneCall(context, church.contact),
                 ),
                 _GoFurtherDetailRow(
                   icon: Icons.email_outlined,
@@ -733,38 +725,49 @@ class _GoFurtherDetailRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onActionTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: theme.colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(value, style: theme.textTheme.bodyLarge),
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onActionTap,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: Icon(icon, color: theme.colorScheme.primary),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.62),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(value, style: theme.textTheme.bodyLarge),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -955,20 +958,6 @@ class _ChurchDiscoveryEditorSheetState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
             Text(
               'Church Discovery Details',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
@@ -8,10 +7,12 @@ import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/go_further_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -51,10 +52,28 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     setActiveScreen(requestedIndex);
   }
 
+  void _handleNotificationDestinationRequest() {
+    final destination = notificationDestinationRequest.value;
+    if (destination == null || !mounted) return;
+
+    setActiveScreen(1);
+    if (destination != NotificationDestination.articles) return;
+
+    notificationDestinationRequest.value = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const ArticleListScreen()),
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     notificationTabRequest.addListener(_handleNotificationTabRequest);
+    notificationDestinationRequest
+        .addListener(_handleNotificationDestinationRequest);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await handleNotificationSetup(
@@ -69,6 +88,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   @override
   void dispose() {
     notificationTabRequest.removeListener(_handleNotificationTabRequest);
+    notificationDestinationRequest
+        .removeListener(_handleNotificationDestinationRequest);
     super.dispose();
   }
 
@@ -101,26 +122,31 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       const GoFurtherScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
-    final items = <BottomNavigationBarItem>[
-      BottomNavigationBarItem(
-        icon: const Icon(Icons.home_filled),
+    final items = <AppBottomTabItem>[
+      AppBottomTabItem(
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
         label: ref.t('church_tab.home', fallback: 'Home'),
       ),
-      BottomNavigationBarItem(
-        icon: const Icon(Icons.star),
+      AppBottomTabItem(
+        icon: Icons.star_outline_rounded,
+        selectedIcon: Icons.star_rounded,
         label: ref.t('church_tab.for_you', fallback: 'For You'),
       ),
-      BottomNavigationBarItem(
-        icon: const Icon(Icons.newspaper_rounded),
+      AppBottomTabItem(
+        icon: Icons.newspaper_outlined,
+        selectedIcon: Icons.newspaper_rounded,
         label: ref.t('church_tab.feeds', fallback: 'Feeds'),
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.travel_explore_rounded),
+      const AppBottomTabItem(
+        icon: Icons.travel_explore_outlined,
+        selectedIcon: Icons.travel_explore_rounded,
         label: 'Go Further',
       ),
       if (canSeeDashboard)
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard_customize_rounded),
+        const AppBottomTabItem(
+          icon: Icons.dashboard_customize_outlined,
+          selectedIcon: Icons.dashboard_customize_rounded,
           label: 'Dashboard',
         ),
     ];
@@ -141,31 +167,10 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       ),
       body: screens[selectedIndex],
       drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        decoration: carouselBoxDecoration(context),
-        child: SafeArea(
-          top: false,
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            selectedItemColor: Theme.of(context).colorScheme.primary,
-            unselectedItemColor:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
-            selectedLabelStyle:
-                Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-            unselectedLabelStyle:
-                Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-            onTap: (value) => setActiveScreen(value),
-            currentIndex: selectedIndex,
-            items: items,
-          ),
-        ),
+      bottomNavigationBar: AppBottomTabBar(
+        currentIndex: selectedIndex,
+        items: items,
+        onTap: setActiveScreen,
       ),
     );
   }

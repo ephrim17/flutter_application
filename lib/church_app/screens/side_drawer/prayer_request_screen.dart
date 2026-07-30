@@ -46,11 +46,27 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
     final currentChurchId =
         ref.watch(currentChurchIdProvider).asData?.value ?? '';
 
+    final myPrayersAsync = ref.watch(myPrayerRequestsProvider);
+    final allPrayersAsync =
+        isAdmin ? ref.watch(allPrayerRequestsProvider) : null;
+    final globalPrayersAsync = ref.watch(globalPrayerRequestsProvider);
     final prayersAsync = switch (segment) {
-      PrayerSegment.my => ref.watch(myPrayerRequestsProvider),
-      PrayerSegment.all => ref.watch(allPrayerRequestsProvider),
-      PrayerSegment.global => ref.watch(globalPrayerRequestsProvider),
+      PrayerSegment.my => myPrayersAsync,
+      PrayerSegment.all => allPrayersAsync ?? myPrayersAsync,
+      PrayerSegment.global => globalPrayersAsync,
     };
+    final availableSegments = <PrayerSegment>[
+      PrayerSegment.my,
+      if (isAdmin) PrayerSegment.all,
+      PrayerSegment.global,
+    ];
+    final counts = <PrayerSegment, int>{
+      PrayerSegment.my: myPrayersAsync.asData?.value.length ?? 0,
+      if (isAdmin)
+        PrayerSegment.all: allPrayersAsync?.asData?.value.length ?? 0,
+      PrayerSegment.global: globalPrayersAsync.asData?.value.length ?? 0,
+    };
+    final selectedPrayers = prayersAsync.asData?.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -61,48 +77,38 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
           ),
         ),
       ),
-      floatingActionButton: segment == PrayerSegment.global
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _openCreatePrayer(segment),
-              icon: const Icon(Icons.add_rounded),
-              label: Text(
-                context.t('prayer.new_request', fallback: 'New request'),
+      body: Column(
+        children: [
+          _PrayerHeader(
+            segment: segment,
+            availableSegments: availableSegments,
+            counts: counts,
+            onSegmentSelected: (selected) {
+              ref.read(prayerSegmentProvider.notifier).state = selected;
+            },
+            onCreate: selectedPrayers?.isNotEmpty == true &&
+                    segment != PrayerSegment.global
+                ? () => _openCreatePrayer(segment)
+                : null,
+          ),
+          Expanded(
+            child: prayersAsync.when(
+              loading: () => const Center(child: AppLoadingIndicator()),
+              error: (error, _) => _PrayerErrorView(
+                onRetry: () => _retry(segment),
               ),
-            ),
-      body: prayersAsync.when(
-        loading: () => _PrayerLoadingView(
-          segment: segment,
-          onChangeScope: () => _chooseScope(segment, isAdmin),
-        ),
-        error: (error, _) => _PrayerErrorView(
-          segment: segment,
-          onChangeScope: () => _chooseScope(segment, isAdmin),
-          onRetry: () => _retry(segment),
-        ),
-        data: (prayers) => CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: _PrayerHeader(
-                segment: segment,
-                count: prayers.length,
-                onChangeScope: () => _chooseScope(segment, isAdmin),
-              ),
-            ),
-            if (prayers.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _PrayerEmptyState(
-                  segment: segment,
-                  onCreate: segment == PrayerSegment.global
-                      ? null
-                      : () => _openCreatePrayer(segment),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 104),
-                sliver: SliverList.separated(
+              data: (prayers) {
+                if (prayers.isEmpty) {
+                  return _PrayerEmptyState(
+                    segment: segment,
+                    onCreate: segment == PrayerSegment.global
+                        ? null
+                        : () => _openCreatePrayer(segment),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                   itemCount: prayers.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
@@ -124,10 +130,11 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
                       ),
                     );
                   },
-                ),
-              ),
-          ],
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -161,22 +168,6 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
     );
     if (!mounted) return;
     await _showPrayerDetailsSheet(context, prayer);
-  }
-
-  Future<void> _chooseScope(
-    PrayerSegment selected,
-    bool isAdmin,
-  ) async {
-    final result = await showAppModalBottomSheet<PrayerSegment>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => _PrayerScopeSheet(
-        selected: selected,
-        isAdmin: isAdmin,
-      ),
-    );
-    if (result == null || !mounted) return;
-    ref.read(prayerSegmentProvider.notifier).state = result;
   }
 
   void _retry(PrayerSegment segment) {
@@ -392,13 +383,11 @@ Future<void> _showPrayerDetailsSheet(
     context: context,
     showDragHandle: true,
     builder: (_) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
               children: [
                 _PrayerIcon(
                   isGlobal: prayer.isGlobal,
@@ -414,6 +403,8 @@ Future<void> _showPrayerDetailsSheet(
                         prayer.title.trim().isEmpty
                             ? 'Prayer Request'
                             : prayer.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -422,6 +413,8 @@ Future<void> _showPrayerDetailsSheet(
                         const SizedBox(height: 3),
                         Text(
                           sourceName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -432,23 +425,30 @@ Future<void> _showPrayerDetailsSheet(
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                prayer.description.trim().isEmpty
-                    ? 'No description provided.'
-                    : prayer.description,
-                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  prayer.description.trim().isEmpty
+                      ? 'No description provided.'
+                      : prayer.description,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            child: Row(
               children: [
                 Icon(
                   Icons.event_outlined,
@@ -456,16 +456,20 @@ Future<void> _showPrayerDetailsSheet(
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Active until ${DateFormat.yMMMd().format(prayer.expiryDate)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    'Active until ${DateFormat.yMMMd().format(prayer.expiryDate)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -474,13 +478,17 @@ Future<void> _showPrayerDetailsSheet(
 class _PrayerHeader extends StatelessWidget {
   const _PrayerHeader({
     required this.segment,
-    required this.count,
-    required this.onChangeScope,
+    required this.availableSegments,
+    required this.counts,
+    required this.onSegmentSelected,
+    this.onCreate,
   });
 
   final PrayerSegment segment;
-  final int count;
-  final VoidCallback onChangeScope;
+  final List<PrayerSegment> availableSegments;
+  final Map<PrayerSegment, int> counts;
+  final ValueChanged<PrayerSegment> onSegmentSelected;
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -552,59 +560,130 @@ class _PrayerHeader extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (onCreate != null) ...[
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed: onCreate,
+                    tooltip: context.t(
+                      'prayer.new_request',
+                      fallback: 'New request',
+                    ),
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 18),
-            Material(
-              color: colors.surface.withValues(alpha: 0.82),
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                onTap: onChangeScope,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _scopeIcon(segment),
-                        color: colors.primary,
-                        size: 21,
-                      ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var index = 0;
+                      index < availableSegments.length;
+                      index++) ...[
+                    _PrayerScopeChip(
+                      segment: availableSegments[index],
+                      count: counts[availableSegments[index]] ?? 0,
+                      selected: segment == availableSegments[index],
+                      onTap: () => onSegmentSelected(availableSegments[index]),
+                    ),
+                    if (index != availableSegments.length - 1)
                       const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _scopeLabel(context, segment),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.primaryContainer,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: colors.onPrimaryContainer,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.tune_rounded, size: 20),
-                    ],
-                  ),
-                ),
+                  ],
+                ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrayerScopeChip extends StatelessWidget {
+  const _PrayerScopeChip({
+    required this.segment,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final PrayerSegment segment;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final foreground = selected ? colors.onPrimaryContainer : colors.onSurface;
+
+    return Material(
+      color: selected
+          ? colors.primaryContainer
+          : colors.surface.withValues(alpha: 0.82),
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 142,
+          constraints: const BoxConstraints(minHeight: 86),
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? colors.primary.withValues(alpha: 0.52)
+                  : colors.outlineVariant.withValues(alpha: 0.48),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Icon(_scopeIcon(segment), size: 19, color: foreground),
+                  const Spacer(),
+                  if (selected)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _scopeChipLabel(context, segment),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                context
+                    .t(
+                      'prayer.requests_count',
+                      fallback: '{count} requests',
+                    )
+                    .replaceAll('{count}', '$count'),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: selected
+                      ? foreground.withValues(alpha: 0.76)
+                      : colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -690,6 +769,14 @@ class _PrayerRequestCard extends ConsumerWidget {
                                 label: context.t(
                                   'prayer.anonymous_badge',
                                   fallback: 'Anonymous',
+                                ),
+                              ),
+                            if (prayer.visibleToChurchMembers)
+                              _PrayerBadge(
+                                icon: Icons.people_alt_outlined,
+                                label: context.t(
+                                  'prayer.visible_to_church_badge',
+                                  fallback: 'Visible to church',
                                 ),
                               ),
                           ],
@@ -874,133 +961,6 @@ class _PrayerBadge extends StatelessWidget {
   }
 }
 
-class _PrayerScopeSheet extends StatelessWidget {
-  const _PrayerScopeSheet({
-    required this.selected,
-    required this.isAdmin,
-  });
-
-  final PrayerSegment selected;
-  final bool isAdmin;
-
-  @override
-  Widget build(BuildContext context) {
-    final options = [
-      PrayerSegment.my,
-      if (isAdmin) PrayerSegment.all,
-      PrayerSegment.global,
-    ];
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.t('prayer.choose_view', fallback: 'Choose what to view'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              context.t(
-                'prayer.choose_view_hint',
-                fallback: 'Move between your requests and the wider community.',
-              ),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 18),
-            for (final option in options) ...[
-              _PrayerScopeOption(
-                segment: option,
-                selected: option == selected,
-                onTap: () => Navigator.of(context).pop(option),
-              ),
-              if (option != options.last) const SizedBox(height: 10),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PrayerScopeOption extends StatelessWidget {
-  const _PrayerScopeOption({
-    required this.segment,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final PrayerSegment segment;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Material(
-      color: selected ? colors.primaryContainer : colors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? colors.surface.withValues(alpha: 0.7)
-                      : colors.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(_scopeIcon(segment), size: 21),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _scopeLabel(context, segment),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _scopeDescription(context, segment),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (selected)
-                Icon(Icons.check_circle_rounded, color: colors.primary)
-              else
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colors.onSurfaceVariant,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PrayerEmptyState extends StatelessWidget {
   const _PrayerEmptyState({
     required this.segment,
@@ -1076,88 +1036,49 @@ class _PrayerEmptyState extends StatelessWidget {
   }
 }
 
-class _PrayerLoadingView extends StatelessWidget {
-  const _PrayerLoadingView({
-    required this.segment,
-    required this.onChangeScope,
-  });
-
-  final PrayerSegment segment;
-  final VoidCallback onChangeScope;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _PrayerHeader(
-          segment: segment,
-          count: 0,
-          onChangeScope: onChangeScope,
-        ),
-        const Expanded(child: Center(child: AppLoadingIndicator())),
-      ],
-    );
-  }
-}
-
 class _PrayerErrorView extends StatelessWidget {
   const _PrayerErrorView({
-    required this.segment,
-    required this.onChangeScope,
     required this.onRetry,
   });
 
-  final PrayerSegment segment;
-  final VoidCallback onChangeScope;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        _PrayerHeader(
-          segment: segment,
-          count: 0,
-          onChangeScope: onChangeScope,
-        ),
-        Expanded(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.cloud_off_outlined,
-                    size: 42,
-                    color: theme.colorScheme.error,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    context.t(
-                      'prayer.load_error',
-                      fallback: 'Could not load prayer requests',
-                    ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  OutlinedButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(
-                      context.t('feed.retry', fallback: 'Retry'),
-                    ),
-                  ),
-                ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 42,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              context.t(
+                'prayer.load_error',
+                fallback: 'Could not load prayer requests',
+              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
             ),
-          ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(
+                context.t('feed.retry', fallback: 'Retry'),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -1168,35 +1089,19 @@ IconData _scopeIcon(PrayerSegment segment) => switch (segment) {
       PrayerSegment.global => Icons.public_rounded,
     };
 
-String _scopeLabel(BuildContext context, PrayerSegment segment) =>
+String _scopeChipLabel(BuildContext context, PrayerSegment segment) =>
     switch (segment) {
       PrayerSegment.my => context.t(
-          'prayer.my_requests_title',
-          fallback: 'My Prayer Requests',
+          'prayer.my_requests_tab',
+          fallback: 'My Requests',
         ),
       PrayerSegment.all => context.t(
-          'prayer.all_requests_title',
-          fallback: 'Church Prayer Requests',
+          'prayer.all_requests_tab',
+          fallback: 'All Requests',
         ),
       PrayerSegment.global => context.t(
-          'prayer.global_requests_title',
-          fallback: 'Global Prayer Requests',
-        ),
-    };
-
-String _scopeDescription(BuildContext context, PrayerSegment segment) =>
-    switch (segment) {
-      PrayerSegment.my => context.t(
-          'prayer.my_requests_hint',
-          fallback: 'Requests you have shared',
-        ),
-      PrayerSegment.all => context.t(
-          'prayer.church_requests_hint',
-          fallback: 'Active requests from your church',
-        ),
-      PrayerSegment.global => context.t(
-          'prayer.global_requests_hint',
-          fallback: 'Requests shared across churches',
+          'prayer.global_requests_tab',
+          fallback: 'Global',
         ),
     };
 
@@ -1223,6 +1128,8 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
   final _descCtrl = TextEditingController();
 
   bool _isAnonymous = false;
+  bool _visibleToChurchMembers = false;
+  bool _showExpiryError = false;
   DateTime? _expiryDate;
   bool _isLoading = false;
 
@@ -1234,6 +1141,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
       _titleCtrl.text = widget.existing!.title;
       _descCtrl.text = widget.existing!.description;
       _isAnonymous = widget.existing!.isAnonymous;
+      _visibleToChurchMembers = widget.existing!.visibleToChurchMembers;
       _expiryDate = widget.existing!.expiryDate;
     }
   }
@@ -1436,9 +1344,49 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               ),
             ),
             const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: SwitchListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                secondary: const Icon(Icons.people_alt_outlined),
+                title: Text(
+                  context.t(
+                    'prayer.visible_to_church_title',
+                    fallback: 'Visible to church members',
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  context.t(
+                    'prayer.visible_to_church_hint',
+                    fallback:
+                        'Show this request in “Pray for others” on the For You tab.',
+                  ),
+                ),
+                value: _visibleToChurchMembers,
+                onChanged: (value) {
+                  setState(() => _visibleToChurchMembers = value);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
             Material(
               color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: _showExpiryError
+                    ? BorderSide(
+                        color: theme.colorScheme.error,
+                        width: 1.5,
+                      )
+                    : BorderSide.none,
+              ),
+              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1451,13 +1399,31 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                   ),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(
-                  _expiryDate == null
-                      ? context.t(
-                          'prayer.select_expiry_date',
-                          fallback: 'Choose a date within 30 days',
-                        )
-                      : DateFormat.yMMMMd().format(_expiryDate!),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _expiryDate == null
+                          ? context.t(
+                              'prayer.select_expiry_date',
+                              fallback: 'Choose a date within 30 days',
+                            )
+                          : DateFormat.yMMMMd().format(_expiryDate!),
+                    ),
+                    if (_showExpiryError) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        context.t(
+                          'prayer.select_expiry_required',
+                          fallback: 'Please select expiry date',
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () async {
@@ -1469,7 +1435,10 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                   );
 
                   if (picked != null) {
-                    setState(() => _expiryDate = picked);
+                    setState(() {
+                      _expiryDate = picked;
+                      _showExpiryError = false;
+                    });
                   }
                 },
               ),
@@ -1510,15 +1479,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_expiryDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-          context.t(
-            'prayer.select_expiry_required',
-            fallback: 'Please select expiry date',
-          ),
-        )),
-      );
+      setState(() => _showExpiryError = true);
       return;
     }
 
@@ -1531,6 +1492,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               title: _titleCtrl.text.trim(),
               description: _descCtrl.text.trim(),
               isAnonymous: _isAnonymous,
+              visibleToChurchMembers: _visibleToChurchMembers,
               expiryDate: _expiryDate!,
             );
         await FirebaseAnalytics.instance.logEvent(
@@ -1539,6 +1501,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
             if (currentChurchId != null && currentChurchId.trim().isNotEmpty)
               'church_id': currentChurchId,
             'is_anonymous': _isAnonymous.toString(),
+            'visible_to_church_members': _visibleToChurchMembers.toString(),
           },
         );
       } else {
@@ -1547,6 +1510,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               title: _titleCtrl.text.trim(),
               description: _descCtrl.text.trim(),
               isAnonymous: _isAnonymous,
+              visibleToChurchMembers: _visibleToChurchMembers,
               expiryDate: _expiryDate!,
             );
         await FirebaseAnalytics.instance.logEvent(
@@ -1556,6 +1520,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               'church_id': currentChurchId,
             'prayer_id': widget.existing!.id,
             'is_anonymous': _isAnonymous.toString(),
+            'visible_to_church_members': _visibleToChurchMembers.toString(),
           },
         );
       }

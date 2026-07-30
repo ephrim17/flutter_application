@@ -59,6 +59,7 @@ class PrayerRepository {
     required String title,
     required String description,
     required bool isAnonymous,
+    required bool visibleToChurchMembers,
     required DateTime expiryDate,
   }) async {
     final user = auth.currentUser;
@@ -83,6 +84,7 @@ class PrayerRepository {
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
+      'visibleToChurchMembers': visibleToChurchMembers,
       'isGlobal': false,
       'createdAt': Timestamp.fromDate(now),
       'updatedAt': Timestamp.fromDate(now),
@@ -96,6 +98,7 @@ class PrayerRepository {
     required String title,
     required String description,
     required bool isAnonymous,
+    required bool visibleToChurchMembers,
     required DateTime expiryDate,
   }) async {
     final now = DateTime.now();
@@ -116,6 +119,7 @@ class PrayerRepository {
       'title': title.trim(),
       'description': description.trim(),
       'isAnonymous': isAnonymous,
+      'visibleToChurchMembers': visibleToChurchMembers,
       'expiryDate': Timestamp.fromDate(selectedDate),
       'updatedAt': Timestamp.fromDate(now),
     };
@@ -172,6 +176,23 @@ class PrayerRepository {
         .map(
           (snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList(),
         );
+  }
+
+  Stream<List<PrayerRequest>> watchPrayersVisibleToChurchMembers() {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
+    return collectionRef()
+        .where('visibleToChurchMembers', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) {
+      final prayers = snapshot.docs
+          .map(PrayerRequest.fromDoc)
+          .where((prayer) => !prayer.expiryDate.isBefore(startOfToday))
+          .toList(growable: false)
+        ..sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
+      return prayers;
+    });
   }
 
   Stream<List<PrayerRequest>> watchGlobalPrayers() {
@@ -233,6 +254,7 @@ class PrayerRepository {
         'description': prayer['description'] ?? '',
         'userId': prayer['isAnonymous'] == true ? '' : prayer['userId'] ?? '',
         'isAnonymous': prayer['isAnonymous'] == true,
+        'visibleToChurchMembers': prayer['visibleToChurchMembers'] == true,
         'expiryDate': prayer['expiryDate'],
         'createdAt': prayer['createdAt'] ?? now,
         'updatedAt': now,

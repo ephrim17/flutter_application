@@ -28,6 +28,13 @@ bool _notificationListenersAttached = false;
 bool _notificationInitialMessageHandled = false;
 Future<void>? _activeNotificationSetup;
 final ValueNotifier<int?> notificationTabRequest = ValueNotifier<int?>(null);
+final ValueNotifier<NotificationDestination?> notificationDestinationRequest =
+    ValueNotifier<NotificationDestination?>(null);
+
+enum NotificationDestination {
+  articles,
+  prayForOthers,
+}
 
 Future<void> initializeNotificationPresentation() async {
   if (_notificationPresentationInitialized || kIsWeb) {
@@ -42,9 +49,7 @@ Future<void> initializeNotificationPresentation() async {
   await _localNotifications.initialize(
     settings,
     onDidReceiveNotificationResponse: (response) {
-      if (response.payload == 'live_church') {
-        notificationTabRequest.value = 1;
-      }
+      _handleNotificationKind(response.payload);
     },
   );
 
@@ -278,7 +283,18 @@ Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
 }
 
 void _handleNotificationNavigation(RemoteMessage message) {
-  if (message.data['kind'] == 'live_church') {
-    notificationTabRequest.value = 1;
+  _handleNotificationKind(message.data['kind']?.toString());
+}
+
+void _handleNotificationKind(String? kind) {
+  switch (kind) {
+    case 'live_church':
+      notificationTabRequest.value = 1;
+    case 'article_created':
+      notificationDestinationRequest.value = NotificationDestination.articles;
+    case 'prayer_request_created':
+    case 'prayer_request_visible':
+      notificationDestinationRequest.value =
+          NotificationDestination.prayForOthers;
   }
 }

@@ -11,6 +11,8 @@ import 'package:flutter_application/church_app/models/home_section_models/home_s
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
+    show firebaseAuthProvider;
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
@@ -80,6 +82,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
         final repository = StudioRepository(
           firestore: ref.read(firestoreProvider),
+          auth: ref.read(firebaseAuthProvider),
           churchId: churchId,
         );
         final configAsync = ref.watch(appConfigProvider);
@@ -4524,20 +4527,24 @@ Future<void> _showArticleEditor(
                       labelText: context.t('common.title', fallback: 'Title'),
                     ),
                   ),
+                  const SizedBox(height: 18),
                   AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: context.t('common.description',
                           fallback: 'Description'),
                     ),
+                    keyboardType: TextInputType.multiline,
                     maxLines: 3,
                   ),
+                  const SizedBox(height: 18),
                   AppTextField(
                     controller: contentController,
                     decoration: InputDecoration(
                       labelText:
                           context.t('common.content', fallback: 'Content'),
                     ),
+                    keyboardType: TextInputType.multiline,
                     maxLines: 8,
                   ),
                   const SizedBox(height: 16),
@@ -4585,7 +4592,11 @@ Future<void> _showArticleEditor(
         },
       );
     },
-  );
+  ).whenComplete(() {
+    titleController.dispose();
+    descriptionController.dispose();
+    contentController.dispose();
+  });
 }
 
 Future<void> _runWithBlockingLoader(

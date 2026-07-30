@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
@@ -9,10 +10,12 @@ import 'package:intl/intl.dart';
 class StudioRepository {
   StudioRepository({
     required this.firestore,
+    required this.auth,
     required this.churchId,
   });
 
   final FirebaseFirestore firestore;
+  final FirebaseAuth auth;
   final String churchId;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
@@ -285,15 +288,49 @@ class StudioRepository {
   }
 
   Future<void> createArticle(Map<String, dynamic> data) async {
-    await articlesRef.add(data);
+    final footprint = await _currentUserFootprint();
+    await articlesRef.add({
+      ...data,
+      'createdBy': footprint,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> updateArticle(String id, Map<String, dynamic> data) async {
-    await articlesRef.doc(id).set(data, SetOptions(merge: true));
+    final footprint = await _currentUserFootprint();
+    await articlesRef.doc(id).set({
+      ...data,
+      'updatedBy': footprint,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> deleteArticle(String id) async {
     await articlesRef.doc(id).delete();
+  }
+
+  Future<Map<String, String>> _currentUserFootprint() async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('A signed-in admin is required to manage articles.');
+    }
+
+    final userSnapshot =
+        await FirestorePaths.churchUserDoc(firestore, churchId, user.uid).get();
+    final userData = userSnapshot.data() as Map<String, dynamic>?;
+    final name =
+        (userData?['name'] ?? user.displayName ?? '').toString().trim();
+    final email = (userData?['email'] ?? user.email ?? '').toString().trim();
+    final profilePhotoUrl =
+        (userData?['profilePhotoUrl'] ?? user.photoURL ?? '').toString().trim();
+
+    return {
+      'uid': user.uid,
+      'name': name,
+      'email': email,
+      'profilePhotoUrl': profilePhotoUrl,
+    };
   }
 
   Future<void> updateAbout({

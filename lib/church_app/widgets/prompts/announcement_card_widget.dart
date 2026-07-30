@@ -10,12 +10,10 @@ class AnnouncemnetCardWidget extends StatefulWidget {
   final PromptSheetModel promptSheetModel;
 
   @override
-  State<AnnouncemnetCardWidget> createState() =>
-      _AnnouncemnetCardWidgetState();
+  State<AnnouncemnetCardWidget> createState() => _AnnouncemnetCardWidgetState();
 }
 
-class _AnnouncemnetCardWidgetState
-    extends State<AnnouncemnetCardWidget> {
+class _AnnouncemnetCardWidgetState extends State<AnnouncemnetCardWidget> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -48,33 +46,15 @@ class _AnnouncemnetCardWidgetState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        /// Drag handle
-                        Container(
-                          width: 50,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                    
-                        const SizedBox(height: 8),
-                    
                         Text(
                           widget.promptSheetModel.title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineLarge,
+                          style: Theme.of(context).textTheme.headlineLarge,
                           textAlign: TextAlign.center,
                         ),
-                    
                         const SizedBox(height: 16),
-                    
                         Text(
                           widget.promptSheetModel.desc,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall,
+                          style: Theme.of(context).textTheme.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
                       ],

@@ -6,6 +6,7 @@ class PrayerRequest {
   final String description;
   final String userId;
   final bool isAnonymous;
+  final bool visibleToChurchMembers;
   final DateTime expiryDate;
   final bool isGlobal;
   final String sourceChurchId;
@@ -18,6 +19,7 @@ class PrayerRequest {
     required this.description,
     required this.userId,
     required this.isAnonymous,
+    this.visibleToChurchMembers = false,
     required this.expiryDate,
     this.isGlobal = false,
     this.sourceChurchId = '',
@@ -38,6 +40,7 @@ class PrayerRequest {
       description: data['description'] ?? '',
       userId: data['userId'] ?? '',
       isAnonymous: data['isAnonymous'] ?? false,
+      visibleToChurchMembers: data['visibleToChurchMembers'] == true,
       expiryDate: expiryValue is Timestamp
           ? expiryValue.toDate()
           : DateTime.fromMillisecondsSinceEpoch(0),
@@ -55,6 +58,7 @@ class PrayerRequest {
       'description': description,
       'userId': userId,
       'isAnonymous': isAnonymous,
+      'visibleToChurchMembers': visibleToChurchMembers,
       'expiryDate': Timestamp.fromDate(expiryDate),
       'isGlobal': isGlobal,
       if (sourceChurchId.isNotEmpty) 'sourceChurchId': sourceChurchId,
