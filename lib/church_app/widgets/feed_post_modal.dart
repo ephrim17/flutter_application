@@ -124,22 +124,6 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: ref.t('feed.title_label', fallback: 'Title'),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -153,22 +137,6 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   labelText:
                       ref.t('feed.description_label', fallback: 'Description'),
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
                 ),
               ),
               if (widget.isGlobal) ...[

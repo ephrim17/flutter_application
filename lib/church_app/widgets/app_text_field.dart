@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 
 enum AppTextFieldVariant {
   standard,
@@ -132,6 +131,7 @@ class AppTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final allowsCustomSurface = variant == AppTextFieldVariant.search;
     final baseDecoration = appTextFieldDecoration(
       context,
       variant: variant,
@@ -154,16 +154,30 @@ class AppTextField extends StatelessWidget {
       counterText: decoration?.counterText,
       contentPadding:
           decoration?.contentPadding ?? baseDecoration.contentPadding,
-      filled: decoration?.filled ?? baseDecoration.filled,
-      fillColor: decoration?.fillColor ?? baseDecoration.fillColor,
-      border: decoration?.border ?? baseDecoration.border,
-      enabledBorder: decoration?.enabledBorder ?? baseDecoration.enabledBorder,
-      focusedBorder: decoration?.focusedBorder ?? baseDecoration.focusedBorder,
-      errorBorder: decoration?.errorBorder ?? baseDecoration.errorBorder,
-      focusedErrorBorder:
-          decoration?.focusedErrorBorder ?? baseDecoration.focusedErrorBorder,
-      disabledBorder:
-          decoration?.disabledBorder ?? baseDecoration.disabledBorder,
+      filled: allowsCustomSurface
+          ? decoration?.filled ?? baseDecoration.filled
+          : baseDecoration.filled,
+      fillColor: allowsCustomSurface
+          ? decoration?.fillColor ?? baseDecoration.fillColor
+          : baseDecoration.fillColor,
+      border: allowsCustomSurface
+          ? decoration?.border ?? baseDecoration.border
+          : baseDecoration.border,
+      enabledBorder: allowsCustomSurface
+          ? decoration?.enabledBorder ?? baseDecoration.enabledBorder
+          : baseDecoration.enabledBorder,
+      focusedBorder: allowsCustomSurface
+          ? decoration?.focusedBorder ?? baseDecoration.focusedBorder
+          : baseDecoration.focusedBorder,
+      errorBorder: allowsCustomSurface
+          ? decoration?.errorBorder ?? baseDecoration.errorBorder
+          : baseDecoration.errorBorder,
+      focusedErrorBorder: allowsCustomSurface
+          ? decoration?.focusedErrorBorder ?? baseDecoration.focusedErrorBorder
+          : baseDecoration.focusedErrorBorder,
+      disabledBorder: allowsCustomSurface
+          ? decoration?.disabledBorder ?? baseDecoration.disabledBorder
+          : baseDecoration.disabledBorder,
       floatingLabelBehavior: decoration?.floatingLabelBehavior ??
           baseDecoration.floatingLabelBehavior,
       floatingLabelStyle:
@@ -241,32 +255,33 @@ class AppDropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return DecoratedBox(
-      decoration: carouselBoxDecoration(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: DropdownButtonFormField<T>(
-          initialValue: initialValue,
-          isExpanded: isExpanded,
-          decoration: appTextFieldDecoration(
-            context,
-            labelText: labelText,
-            hintText: hintText,
-            helperText: helperText,
-          ).copyWith(
-            filled: false,
-            fillColor: Colors.transparent,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            errorBorder: InputBorder.none,
-            focusedErrorBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withAlpha(10),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          items: items,
-          onChanged: enabled ? onChanged : null,
-          iconEnabledColor: Theme.of(context).colorScheme.onSurface,
+        ],
+      ),
+      child: DropdownButtonFormField<T>(
+        initialValue: initialValue,
+        isExpanded: isExpanded,
+        decoration: appTextFieldDecoration(
+          context,
+          labelText: labelText,
+          hintText: hintText,
+          helperText: helperText,
         ),
+        items: items,
+        onChanged: enabled ? onChanged : null,
+        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+        iconEnabledColor: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(20),
       ),
     );
   }

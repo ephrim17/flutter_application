@@ -19,6 +19,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_prov
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/admin_email_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -2737,96 +2738,11 @@ class _AdminsEditorForm extends StatefulWidget {
 }
 
 class _AdminsEditorFormState extends State<_AdminsEditorForm> {
-  late final TextEditingController _controller;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: widget.initialAdmins.join('\n'),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Container(
-          decoration: carouselBoxDecoration(context),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t('studio.admins_hint',
-                      fallback: 'Enter one admin email per line.'),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _controller,
-                  maxLines: 10,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.admins_label',
-                        fallback: 'Admin emails'),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () async {
-                            setState(() => _isSaving = true);
-                            try {
-                              final admins = _controller.text
-                                  .split('\n')
-                                  .map((value) => value.trim())
-                                  .where((value) => value.isNotEmpty)
-                                  .toList();
-                              await widget.onSave(admins);
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t('studio.admins_updated',
-                                        fallback: 'Admins updated'),
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (mounted) {
-                                setState(() => _isSaving = false);
-                              }
-                            }
-                          },
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            context.t('studio.admins_save',
-                                fallback: 'Save Admins'),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return AdminEmailManager(
+      initialAdmins: widget.initialAdmins,
+      onSave: widget.onSave,
     );
   }
 }

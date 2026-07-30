@@ -140,11 +140,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       }
       _selectedChurchGroupIds = existingMember.churchGroupIds.toSet();
 
-      if (_category == 'family') {
+      if (existingMember.familyId.trim().toLowerCase().startsWith('family_')) {
         _selectedExistingFamilyId = existingMember.familyId.trim().isEmpty
             ? null
             : existingMember.familyId.trim();
         _useExistingFamilyId = _selectedExistingFamilyId != null;
+      }
+      if (_category == 'family') {
         _familyNameController.text =
             _familySeedFromId(existingMember.familyId.trim());
       }
@@ -184,8 +186,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
     }
 
-    if (_category == 'family' &&
-        _useExistingFamilyId &&
+    if (_useExistingFamilyId &&
         _selectedExistingFamilyId != null &&
         _selectedExistingFamilyId!.trim().isNotEmpty) {
       return _selectedExistingFamilyId!.trim();
@@ -248,10 +249,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
   void _syncCategoryWithMaritalStatus() {
     _category = _maritalStatus == 'married' ? 'family' : 'individual';
-    if (_category != 'family') {
-      _useExistingFamilyId = false;
-      _selectedExistingFamilyId = null;
+    if (_category == 'individual') {
       _familyNameController.clear();
+      _useExistingFamilyId = _selectedExistingFamilyId != null;
     }
   }
 
@@ -406,16 +406,15 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
               fallback: 'Please select the member date of birth',
             );
           }
-          if (_category == 'family') {
-            if (_useExistingFamilyId &&
-                (_selectedExistingFamilyId == null ||
-                    _selectedExistingFamilyId!.trim().isEmpty)) {
-              return 'Please select or create a family ID';
-            }
-            if (!_useExistingFamilyId &&
-                _familyNameController.text.trim().isEmpty) {
-              return 'Please enter a family name';
-            }
+          if (_useExistingFamilyId &&
+              (_selectedExistingFamilyId == null ||
+                  _selectedExistingFamilyId!.trim().isEmpty)) {
+            return 'Please select an existing family ID';
+          }
+          if (_category == 'family' &&
+              !_useExistingFamilyId &&
+              _familyNameController.text.trim().isEmpty) {
+            return 'Please enter a family name';
           }
           return null;
         case 2:
@@ -1192,7 +1191,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         ),
                                       ),
                                     ],
-                                    if (_category == 'family') ...[
+                                    if (_maritalStatus.isNotEmpty) ...[
                                       const SizedBox(height: 16),
                                       FutureBuilder<List<String>>(
                                         future: _familyIdsFuture,
@@ -1210,7 +1209,21 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                               if (familyIds.isNotEmpty)
                                                 SwitchListTile(
                                                   contentPadding:
-                                                      EdgeInsets.zero,
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                    horizontal: 8,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      20,
+                                                    ),
+                                                    side: BorderSide(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .outlineVariant,
+                                                    ),
+                                                  ),
                                                   title: Text(
                                                     context.t(
                                                       'auth.family_existing_toggle',
@@ -1230,7 +1243,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                     });
                                                   },
                                                 ),
-                                              const SizedBox(height: 8),
+                                              if (familyIds.isNotEmpty)
+                                                const SizedBox(height: 12),
                                               if (familyIds.isNotEmpty &&
                                                   _useExistingFamilyId)
                                                 AppDropdownField<String>(
@@ -1260,7 +1274,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                     });
                                                   },
                                                 )
-                                              else
+                                              else if (_category == 'family')
                                                 AppTextField(
                                                   controller:
                                                       _familyNameController,
@@ -1273,6 +1287,33 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                       'auth.family_name_helper',
                                                       fallback:
                                                           'Used to generate a family ID',
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (_category == 'individual' &&
+                                                  !_useExistingFamilyId)
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                      left: 8,
+                                                    ),
+                                                    child: Text(
+                                                      familyIds.isEmpty
+                                                          ? 'No existing families are available to join.'
+                                                          : 'You can join an existing family, but new families can only be created for married members.',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color: Theme.of(
+                                                              context,
+                                                            )
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                          ),
                                                     ),
                                                   ),
                                                 ),

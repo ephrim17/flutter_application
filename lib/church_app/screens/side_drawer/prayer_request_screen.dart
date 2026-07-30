@@ -1288,7 +1288,6 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               controller: _titleCtrl,
               decoration: InputDecoration(
                 labelText: context.t('prayer.title_label', fallback: 'Title'),
-                border: OutlineInputBorder(),
               ),
               validator: (value) => value == null || value.trim().isEmpty
                   ? context.t('prayer.title_required',
@@ -1304,7 +1303,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                   'prayer.description_label',
                   fallback: 'Description',
                 ),
-                border: OutlineInputBorder(),
+                alignLabelWithHint: true,
               ),
               validator: (value) => value == null || value.trim().isEmpty
                   ? context.t(
