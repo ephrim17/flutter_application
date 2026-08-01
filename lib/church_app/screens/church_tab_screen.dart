@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/feed_screen.dart';
@@ -115,6 +118,27 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(appUserProvider, (previous, next) {
+      final previousUser = previous?.asData?.value;
+      final nextUser = next.asData?.value;
+      if (nextUser == null ||
+          (previousUser?.uid == nextUser.uid &&
+              _sameGroups(
+                previousUser?.churchGroupIds ?? const [],
+                nextUser.churchGroupIds,
+              ))) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          syncNotificationTopicIfAuthorized(
+            ProviderScope.containerOf(context, listen: false),
+          ),
+        );
+      });
+    });
+
     final isAdmin = ref.watch(isAdminProvider);
     final config = ref.watch(appConfigProvider).asData?.value;
     final selectedChurch = ref.watch(selectedChurchProvider);
@@ -178,4 +202,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       ),
     );
   }
+
+  bool _sameGroups(List<String> left, List<String> right) =>
+      left.length == right.length && left.toSet().containsAll(right);
 }

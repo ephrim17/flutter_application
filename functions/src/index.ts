@@ -391,6 +391,20 @@ async function sendTopicNotification(
   });
 }
 
+function notificationTopicSegment(value: string): string {
+  return value.trim().replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
+}
+
+function churchGroupTopic(churchId: string, groupId: string): string {
+  return `church_${notificationTopicSegment(churchId)}_group_` +
+    notificationTopicSegment(groupId);
+}
+
+function churchUserTopic(churchId: string, uid: string): string {
+  return `church_${notificationTopicSegment(churchId)}_user_` +
+    notificationTopicSegment(uid);
+}
+
 async function sendFeedPostNotification(
   payload: FeedPostNotificationPayload,
 ): Promise<number> {
@@ -581,6 +595,81 @@ export const notifyChurchMembersOnArticleCreated = onDocumentCreated(
     logger.info("New article notification sent to church members.", {
       churchId,
       articleId,
+    });
+  },
+);
+
+export const notifyCircleMembersOnResponseCreated = onDocumentCreated(
+  {
+    document:
+      "churches/{churchId}/youth_circles/{circleId}/responses/{responseId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const responseSnapshot = event.data;
+    if (!responseSnapshot) {
+      logger.warn("Circle response trigger fired without snapshot data.", {
+        params: event.params,
+      });
+      return;
+    }
+
+    const churchId = readUnknownString(event.params.churchId);
+    const circleId = readUnknownString(event.params.circleId);
+    const responseId = readUnknownString(event.params.responseId);
+    const response = responseSnapshot.data();
+    const authorId = readUnknownString(response.userId);
+    const notificationBody = readUnknownString(response.notificationBody);
+    if (!churchId || !circleId || !responseId || !authorId) {
+      logger.warn("Circle response trigger is missing required data.", {
+        churchId,
+        circleId,
+        responseId,
+      });
+      return;
+    }
+
+    const circleSnapshot = await admin.firestore()
+      .collection("churches")
+      .doc(churchId)
+      .collection("youth_circles")
+      .doc(circleId)
+      .get();
+    const circle = circleSnapshot.data();
+    const groupId = readUnknownString(circle?.audienceGroupId);
+    const circleTitle = readUnknownString(circle?.title);
+    if (!circleSnapshot.exists || !groupId || !circleTitle) {
+      logger.warn("Circle response notification has no valid audience.", {
+        churchId,
+        circleId,
+        responseId,
+      });
+      return;
+    }
+
+    const groupTopic = churchGroupTopic(churchId, groupId);
+    const authorTopic = churchUserTopic(churchId, authorId);
+    await admin.messaging().send({
+      notification: {
+        title: circleTitle,
+        body: notificationBody || "A new response was shared in your Circle.",
+      },
+      data: {
+        kind: "circle_response_created",
+        churchId,
+        circleId,
+        groupId,
+      },
+      condition: `'${groupTopic}' in topics && ` +
+        `!('${authorTopic}' in topics)`,
+    });
+
+    logger.info("Circle response notification sent to its group.", {
+      churchId,
+      circleId,
+      responseId,
+      groupId,
+      authorId,
     });
   },
 );

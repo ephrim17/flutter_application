@@ -177,6 +177,55 @@ class QuizAttempt {
       );
 }
 
+class QuizParticipantResult {
+  const QuizParticipantResult({
+    required this.userId,
+    required this.attempt,
+    required this.submittedAt,
+  });
+
+  final String userId;
+  final QuizAttempt attempt;
+  final DateTime? submittedAt;
+
+  factory QuizParticipantResult.fromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) =>
+      QuizParticipantResult(
+        userId: doc.id,
+        attempt: QuizAttempt.fromMap(doc.data()),
+        submittedAt: _date(doc.data()?['submittedAt']),
+      );
+}
+
+class QuizDashboardResult {
+  const QuizDashboardResult({
+    required this.challenge,
+    required this.participants,
+  });
+
+  final QuizChallenge challenge;
+  final List<QuizParticipantResult> participants;
+
+  int get participantCount => participants.length;
+
+  double get averagePercentage {
+    if (participants.isEmpty) return 0;
+    final total = participants.fold<double>(
+      0,
+      (accumulated, result) =>
+          accumulated + (result.attempt.score / result.attempt.total * 100),
+    );
+    return total / participants.length;
+  }
+
+  int get highestScore => participants.isEmpty
+      ? 0
+      : participants
+          .map((result) => result.attempt.score)
+          .reduce((a, b) => a > b ? a : b);
+}
+
 class FaithReflection {
   const FaithReflection({
     required this.id,
@@ -316,4 +365,54 @@ class DailyFaithProgress {
           : <String>{},
     );
   }
+}
+
+class DailyFaithProgressRecord {
+  const DailyFaithProgressRecord({
+    required this.userId,
+    required this.date,
+    required this.updatedAt,
+    required this.completedSteps,
+  });
+
+  final String userId;
+  final DateTime? date;
+  final DateTime? updatedAt;
+  final Set<String> completedSteps;
+
+  bool get isComplete =>
+      const {'reflect', 'pray', 'challenge'}.every(completedSteps.contains);
+
+  bool isForDay(DateTime day) =>
+      date != null &&
+      date!.year == day.year &&
+      date!.month == day.month &&
+      date!.day == day.day;
+
+  factory DailyFaithProgressRecord.fromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? const <String, dynamic>{};
+    final rawSteps = data['completedSteps'];
+    return DailyFaithProgressRecord(
+      userId: _text(data['userId']),
+      date: _date(data['date']),
+      updatedAt: _date(data['updatedAt']),
+      completedSteps: rawSteps is Iterable
+          ? rawSteps.map((step) => step.toString()).toSet()
+          : <String>{},
+    );
+  }
+}
+
+class FaithLoopDashboardUpdate {
+  const FaithLoopDashboardUpdate({required this.records});
+
+  final List<DailyFaithProgressRecord> records;
+
+  List<DailyFaithProgressRecord> recordsForDay(DateTime day) =>
+      records.where((record) => record.isForDay(day)).toList(growable: false);
+
+  int completedForDay(DateTime day) =>
+      recordsForDay(day).where((record) => record.isComplete).length;
 }

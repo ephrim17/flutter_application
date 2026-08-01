@@ -49,6 +49,47 @@ void main() {
     expect(incomplete.isValid, isFalse);
   });
 
+  test('quiz dashboard result aggregates participation and scores', () {
+    final result = QuizDashboardResult(
+      challenge: QuizChallenge(
+        id: 'quiz',
+        title: 'Quiz',
+        description: '',
+        questions: const [
+          QuizQuestion(
+            prompt: 'Question',
+            options: ['One', 'Two'],
+            correctOptionIndex: 0,
+          ),
+          QuizQuestion(
+            prompt: 'Question two',
+            options: ['One', 'Two'],
+            correctOptionIndex: 1,
+          ),
+        ],
+        startAt: null,
+        endAt: null,
+        enabled: true,
+      ),
+      participants: const [
+        QuizParticipantResult(
+          userId: 'one',
+          attempt: QuizAttempt(answers: [0, 1], score: 2, total: 2),
+          submittedAt: null,
+        ),
+        QuizParticipantResult(
+          userId: 'two',
+          attempt: QuizAttempt(answers: [0, 0], score: 1, total: 2),
+          submittedAt: null,
+        ),
+      ],
+    );
+
+    expect(result.participantCount, 2);
+    expect(result.highestScore, 2);
+    expect(result.averagePercentage, 75);
+  });
+
   test('daily faith progress requires all three meaningful steps', () {
     const partial = DailyFaithProgress(
       completedSteps: {'reflect', 'pray'},
@@ -59,6 +100,30 @@ void main() {
 
     expect(partial.isComplete, isFalse);
     expect(complete.isComplete, isTrue);
+  });
+
+  test('faith loop dashboard groups daily completion records', () {
+    final day = DateTime(2026, 8, 2);
+    final updates = FaithLoopDashboardUpdate(
+      records: [
+        DailyFaithProgressRecord(
+          userId: 'one',
+          date: day,
+          updatedAt: day,
+          completedSteps: const {'reflect', 'pray', 'challenge'},
+        ),
+        DailyFaithProgressRecord(
+          userId: 'two',
+          date: day,
+          updatedAt: day,
+          completedSteps: const {'reflect'},
+        ),
+      ],
+    );
+
+    expect(updates.recordsForDay(day), hasLength(2));
+    expect(updates.completedForDay(day), 1);
+    expect(updates.recordsForDay(day.add(const Duration(days: 1))), isEmpty);
   });
 
   test('reflection matches only its configured calendar day', () {

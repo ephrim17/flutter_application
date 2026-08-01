@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
+import 'package:flutter_application/church_app/models/faith_engagement_models.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -25,6 +26,8 @@ import 'package:intl/intl.dart';
 part 'views/dashboard_overview_views.dart';
 part 'views/dashboard_member_views.dart';
 part 'views/dashboard_quick_look_views.dart';
+part 'views/dashboard_quiz_views.dart';
+part 'views/dashboard_faith_loop_views.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -33,6 +36,8 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardStateAsync = ref.watch(dashboardViewModelProvider);
     final dashboardMembersAsync = ref.watch(dashboardMembersProvider);
+    final quizResultsAsync = ref.watch(dashboardQuizResultsProvider);
+    final faithLoopUpdatesAsync = ref.watch(dashboardFaithLoopUpdatesProvider);
     final homeSectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
     final forYouSectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
     final homeSectionConfigs =
@@ -155,6 +160,24 @@ class DashboardScreen extends ConsumerWidget {
             subtitle: context.t('dashboard.insights_subtitle'),
             child: _DashboardHealthSignalsPanel(
               state: dashboardState,
+            ),
+          ),
+          const SizedBox(height: 18),
+          _DashboardSectionCard(
+            title: context.t('dashboard.quiz_results_title'),
+            subtitle: context.t('dashboard.quiz_results_subtitle'),
+            child: _DashboardQuizResultsSection(
+              resultsAsync: quizResultsAsync,
+              members: dashboardMembers,
+            ),
+          ),
+          const SizedBox(height: 18),
+          _DashboardSectionCard(
+            title: context.t('dashboard.faith_loop_updates_title'),
+            subtitle: context.t('dashboard.faith_loop_updates_subtitle'),
+            child: _DashboardFaithLoopUpdatesSection(
+              updatesAsync: faithLoopUpdatesAsync,
+              members: dashboardMembers,
             ),
           ),
           const SizedBox(height: 18),

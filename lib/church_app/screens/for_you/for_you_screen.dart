@@ -102,6 +102,8 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
         }).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
 
+        _movePrayForOthersAbovePlans(activeSections);
+
         final slivers = <Widget>[];
 
         for (final ordered in activeSections) {
@@ -128,6 +130,21 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
       },
     );
   }
+}
+
+void _movePrayForOthersAbovePlans(
+  List<OrderedSectionForYou> sections,
+) {
+  final prayerIndex =
+      sections.indexWhere((item) => item.section.id == 'prayForOthers');
+  final plansIndex =
+      sections.indexWhere((item) => item.section.id == 'featured');
+  if (prayerIndex < 0 || plansIndex < 0 || prayerIndex < plansIndex) return;
+
+  final prayerSection = sections.removeAt(prayerIndex);
+  final updatedPlansIndex =
+      sections.indexWhere((item) => item.section.id == 'featured');
+  sections.insert(updatedPlansIndex, prayerSection);
 }
 
 class ForYouSectionRegistry {

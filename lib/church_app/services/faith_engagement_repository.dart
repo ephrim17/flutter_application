@@ -76,6 +76,7 @@ class FaithEngagementRepository {
     required String circleId,
     required AppUser user,
     required String message,
+    required String notificationBody,
   }) async {
     final normalized = message.trim();
     if (normalized.isEmpty) return;
@@ -84,6 +85,7 @@ class FaithEngagementRepository {
       'userName': user.name,
       'userPhotoUrl': user.profilePhotoUrl,
       'message': normalized,
+      'notificationBody': notificationBody.trim(),
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -148,6 +150,66 @@ class FaithEngagementRepository {
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       watchAdminReflections() =>
           _reflections.snapshots().map((snapshot) => snapshot.docs);
+
+  Future<List<QuizDashboardResult>> getQuizDashboardResults() async {
+    final quizSnapshot = await _challenges.get();
+    final quizzes = quizSnapshot.docs
+        .map(QuizChallenge.fromDoc)
+        .where((quiz) => quiz.isConfigured)
+        .toList()
+      ..sort((a, b) {
+        final aDate = a.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+
+    return Future.wait(
+      quizzes.map((quiz) async {
+        final snapshot =
+            await _challenges.doc(quiz.id).collection('completions').get();
+        final participants = snapshot.docs
+            .map(QuizParticipantResult.fromDoc)
+            .where((result) => result.attempt.isValid)
+            .toList()
+          ..sort((a, b) {
+            final aDate =
+                a.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bDate =
+                b.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return bDate.compareTo(aDate);
+          });
+        return QuizDashboardResult(
+          challenge: quiz,
+          participants: participants,
+        );
+      }),
+    );
+  }
+
+  Future<FaithLoopDashboardUpdate> getFaithLoopDashboardUpdate({
+    DateTime? now,
+    int days = 7,
+  }) async {
+    final current = now ?? DateTime.now();
+    final firstDay = DateTime(current.year, current.month, current.day)
+        .subtract(Duration(days: days - 1));
+    final snapshot = await _engagement
+        .where(
+          'date',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(firstDay),
+        )
+        .get();
+    final records = snapshot.docs
+        .map(DailyFaithProgressRecord.fromDoc)
+        .where((record) => record.userId.isNotEmpty && record.date != null)
+        .toList()
+      ..sort((a, b) {
+        final aDate = a.updatedAt ?? a.date!;
+        final bDate = b.updatedAt ?? b.date!;
+        return bDate.compareTo(aDate);
+      });
+    return FaithLoopDashboardUpdate(records: records);
+  }
 
   Future<void> saveCircle(String? id, Map<String, dynamic> data) =>
       _save(_circles, id, data);

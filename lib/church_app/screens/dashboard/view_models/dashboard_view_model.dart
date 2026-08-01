@@ -76,6 +76,8 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
     ref.invalidate(dashboardAnnouncementsProvider);
     ref.invalidate(dashboardEventsProvider);
     ref.invalidate(dashboardAppConfigProvider);
+    ref.invalidate(dashboardQuizResultsProvider);
+    ref.invalidate(dashboardFaithLoopUpdatesProvider);
     ref.invalidateSelf();
     await future;
   }

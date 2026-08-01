@@ -904,6 +904,10 @@ const Map<String, String> defaultChurchTextContents = {
   'for_you.pray_for_others.anonymous': 'Anonymous request',
   'for_you.pray_for_others.member': 'Church member',
   'for_you.pray_for_others.ends_today': 'Ends today',
+  'for_you.pray_for_others.one_day_left': '1 day left',
+  'for_you.pray_for_others.days_left': '{count} days left',
+  'for_you.pray_for_others.request_label': 'Community prayer',
+  'for_you.pray_for_others.open_action': 'Read & pray',
 
   // Dashboard
   'dashboard.admin_only': 'Dashboard is available only for admins.',
@@ -926,6 +930,57 @@ const Map<String, String> defaultChurchTextContents = {
   'dashboard.insights_title': 'Church Insights',
   'dashboard.insights_subtitle':
       'A quick read on approvals, engagement, content readiness, and recent movement.',
+  'dashboard.quiz_results_title': 'Quiz Results',
+  'dashboard.quiz_results_subtitle':
+      'Track participation, scores, and individual answers for every quiz challenge.',
+  'dashboard.quiz_results_failed': 'Quiz results are unavailable',
+  'dashboard.quiz_results_failed_hint':
+      'Refresh the dashboard to try loading the results again.',
+  'dashboard.quiz_results_empty': 'No quiz results yet',
+  'dashboard.quiz_results_empty_hint':
+      'Configured quizzes and member submissions will appear here.',
+  'dashboard.quiz_participants': 'Participants',
+  'dashboard.quiz_submissions': 'Submissions',
+  'dashboard.quiz_average': 'Average',
+  'dashboard.quiz_highest': 'Highest',
+  'dashboard.quiz_summary': '{participants} participants • {average}% average',
+  'dashboard.quiz_daily_updates': 'Daily quiz updates',
+  'dashboard.quiz_today_summary':
+      'Today: {participants} participants • {submissions} submissions • {average}% average',
+  'dashboard.quiz_daily_submissions_hint':
+      'Submission totals for the last seven days.',
+  'dashboard.today_short': 'Today',
+  'dashboard.quiz_details_title': 'Quiz Results',
+  'dashboard.quiz_member_results': 'Member results',
+  'dashboard.quiz_no_submissions': 'No submissions yet',
+  'dashboard.quiz_no_submissions_hint':
+      'Member scores will appear after someone completes this quiz.',
+  'dashboard.unknown_member': 'Unknown member',
+  'dashboard.submission_time_unknown': 'Submission time unavailable',
+  'dashboard.quiz_question_with_prompt': 'Question {number}: {question}',
+  'dashboard.quiz_selected_answer': 'Selected: {selected}',
+  'dashboard.quiz_answer_correction':
+      'Selected: {selected}\nCorrect: {correct}',
+  'dashboard.quiz_no_answer': 'No answer recorded',
+  'dashboard.faith_loop_updates_title': '3-minute Faith Loop Updates',
+  'dashboard.faith_loop_updates_subtitle':
+      'See today’s progress and completion activity from the last seven days.',
+  'dashboard.faith_loop_failed': 'Faith Loop updates are unavailable',
+  'dashboard.faith_loop_failed_hint':
+      'Refresh the dashboard to try loading progress again.',
+  'dashboard.faith_loop_empty': 'No Faith Loop activity yet',
+  'dashboard.faith_loop_empty_hint':
+      'Member progress will appear after someone starts a daily Faith Loop.',
+  'dashboard.faith_loop_started': 'Started today',
+  'dashboard.faith_loop_completed': 'Completed',
+  'dashboard.faith_loop_rate': 'Completion',
+  'dashboard.faith_loop_steps_today': 'Today’s step progress',
+  'dashboard.faith_loop_seven_day_history': 'Completed loops — last 7 days',
+  'dashboard.faith_loop_view_members': 'View today’s member progress',
+  'dashboard.faith_loop_member_progress': 'Today’s Faith Loop Progress',
+  'dashboard.faith_loop_reflect': 'Reflect',
+  'dashboard.faith_loop_prayer': 'Prayer',
+  'dashboard.faith_loop_action': 'Live it out',
   'dashboard.members_snapshot_title': 'Members Snapshot',
   'dashboard.members_snapshot_subtitle':
       'Approved, pending, families, and ministry reach.',
@@ -1887,6 +1942,16 @@ const Map<String, String> defaultChurchTextContents = {
   'faith.delete_failed': 'Could not delete this item. Please try again.',
   'faith.update_failed': 'Unable to update your progress. Please try again.',
   'faith.response_failed': 'Unable to share your response. Please try again.',
+  'faith.circle_response_notification_body':
+      '{name} shared a new response in your Circle.',
+  'time.just_now': 'Just now',
+  'time.minute_ago': '1 minute ago',
+  'time.minutes_ago': '{count} minutes ago',
+  'time.hour_ago': '1 hour ago',
+  'time.hours_ago': '{count} hours ago',
+  'time.yesterday_at': 'Yesterday at {time}',
+  'time.weekday_at': '{day} at {time}',
+  'time.date_at': '{date} at {time}',
   'faith.save_failed': 'Unable to save this content. Please try again.',
   'faith.notification_failed':
       'Content saved, but its notification could not be sent.',

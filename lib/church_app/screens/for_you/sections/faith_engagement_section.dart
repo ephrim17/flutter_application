@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/providers/faith_engagement_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class FaithEngagementSection implements MasterSection {
   const FaithEngagementSection({this.anchorKey});
@@ -59,15 +61,16 @@ class _FaithEngagementContent extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(
-            text: context.t('faith.today_heading'),
-            padding: 16,
-          ),
-          if (reflection != null)
+          if (reflection != null) ...[
+            SectionHeader(
+              text: context.t('faith.today_heading'),
+              padding: 16,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
               child: _TodayFaithCard(reflection: reflection),
             ),
+          ],
           if (activeQuiz != null) ...[
             SectionHeader(
               text: context.t('faith.quiz_challenge_heading'),
@@ -93,14 +96,15 @@ class _FaithEngagementContent extends ConsumerWidget {
               ),
             ),
             SizedBox(
-              height: 210,
+              height: 184,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: circles.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) => SizedBox(
-                  width: 300,
+                  width: 184,
                   child: _YouthCircleCard(circle: circles[index]),
                 ),
               ),
@@ -123,79 +127,85 @@ class _TodayFaithCard extends ConsumerWidget {
         const DailyFaithProgress(completedSteps: {});
     final completed = progress.completedSteps.length.clamp(0, 3);
     final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        onTap: () => showAppModalBottomSheet<void>(
-          context: context,
-          heightFactor: 0.88,
-          builder: (_) => _DailyFaithLoop(reflection: reflection),
-        ),
-        child: Ink(
-          padding: const EdgeInsets.all(18),
-          decoration: welcomeBackCardDecoration(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(15),
+    return SizedBox(
+      height: forYouPrimaryCardHeight,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(cornerRadius),
+          onTap: () => showAppModalBottomSheet<void>(
+            context: context,
+            heightFactor: 0.88,
+            builder: (_) => _DailyFaithLoop(reflection: reflection),
+          ),
+          child: Ink(
+            padding: const EdgeInsets.all(18),
+            decoration: welcomeBackCardDecoration(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child:
+                          const Icon(Icons.bolt_rounded, color: Colors.white),
                     ),
-                    child: const Icon(Icons.bolt_rounded, color: Colors.white),
-                  ),
-                  const Spacer(),
-                  Text(
-                    context.t('faith.minutes_label'),
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                reflection.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
+                    const Spacer(),
+                    Text(
+                      context.t('faith.minutes_label'),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.t('faith.loop_summary'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: completed / 3,
-                  minHeight: 7,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  color: colors.surface,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.t(
-                  'faith.steps_completed',
-                  parameters: {'count': completed},
+                const SizedBox(height: 14),
+                Text(
+                  reflection.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                 ),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white,
-                    ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  context.t('faith.loop_summary'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                ),
+                const Spacer(),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: completed / 3,
+                    minHeight: 7,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    color: colors.surface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.t(
+                    'faith.steps_completed',
+                    parameters: {'count': completed},
+                  ),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Colors.white,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -210,69 +220,78 @@ class _QuizChallengeCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final attempt = ref.watch(quizAttemptProvider(challenge.id)).asData?.value;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: carouselBoxDecoration(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.quiz_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  challenge.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+    return SizedBox(
+      height: forYouPrimaryCardHeight,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: carouselBoxDecoration(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.quiz_outlined,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              ),
-              if (attempt != null)
-                Chip(
-                  label: Text('${attempt.score}/${attempt.total}'),
-                  avatar: const Icon(Icons.check_circle_rounded, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    challenge.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
                 ),
+                if (attempt != null)
+                  Chip(
+                    label: Text('${attempt.score}/${attempt.total}'),
+                    avatar: const Icon(Icons.check_circle_rounded, size: 18),
+                  ),
+              ],
+            ),
+            if (challenge.description.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                challenge.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
-          ),
-          if (challenge.description.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(challenge.description),
+            const Spacer(),
+            Text(
+              context.t(
+                'faith.quiz_question_count',
+                parameters: {'count': challenge.questions.length},
+              ),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: () => showAppModalBottomSheet<void>(
+                  context: context,
+                  heightFactor: 0.92,
+                  builder: (_) => _QuizChallengeSheet(
+                    challenge: challenge,
+                    attempt: attempt,
+                  ),
+                ),
+                icon: Icon(
+                  attempt == null ? Icons.play_arrow_rounded : Icons.insights,
+                ),
+                label: Text(
+                  context.t(
+                    attempt == null ? 'faith.start_quiz' : 'faith.view_result',
+                  ),
+                ),
+              ),
+            ),
           ],
-          const SizedBox(height: 8),
-          Text(
-            context.t(
-              'faith.quiz_question_count',
-              parameters: {'count': challenge.questions.length},
-            ),
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
-              onPressed: () => showAppModalBottomSheet<void>(
-                context: context,
-                heightFactor: 0.92,
-                builder: (_) => _QuizChallengeSheet(
-                  challenge: challenge,
-                  attempt: attempt,
-                ),
-              ),
-              icon: Icon(
-                attempt == null ? Icons.play_arrow_rounded : Icons.insights,
-              ),
-              label: Text(
-                context.t(
-                  attempt == null ? 'faith.start_quiz' : 'faith.view_result',
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -487,45 +506,95 @@ class _YouthCircleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.secondaryContainer,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => showAppModalBottomSheet<void>(
-          context: context,
-          heightFactor: 0.9,
-          builder: (_) => _YouthCircleSheet(circle: circle),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.groups_2_rounded, size: 30),
-              const SizedBox(height: 14),
-              Text(
-                circle.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.14),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colors.primaryContainer,
+                colors.secondaryContainer,
+              ],
+            ),
+            border: Border.all(
+              color: colors.primary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => _CircleDiscussionScreen(circle: circle),
               ),
-              const SizedBox(height: 8),
-              Text(
-                circle.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: 140,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.groups_2_rounded,
+                        size: 28,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        circle.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.15,
+                                ),
+                      ),
+                      if (circle.description.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          circle.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colors.onSecondaryContainer,
+                                    height: 1.2,
+                                  ),
+                        ),
+                      ],
+                      const SizedBox(height: 7),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 19,
+                        color: colors.primary,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const Spacer(),
-              Text(
-                context.t('faith.open_discussion'),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -533,15 +602,17 @@ class _YouthCircleCard extends StatelessWidget {
   }
 }
 
-class _YouthCircleSheet extends ConsumerStatefulWidget {
-  const _YouthCircleSheet({required this.circle});
+class _CircleDiscussionScreen extends ConsumerStatefulWidget {
+  const _CircleDiscussionScreen({required this.circle});
   final YouthCircle circle;
 
   @override
-  ConsumerState<_YouthCircleSheet> createState() => _YouthCircleSheetState();
+  ConsumerState<_CircleDiscussionScreen> createState() =>
+      _CircleDiscussionScreenState();
 }
 
-class _YouthCircleSheetState extends ConsumerState<_YouthCircleSheet> {
+class _CircleDiscussionScreenState
+    extends ConsumerState<_CircleDiscussionScreen> {
   final _controller = TextEditingController();
   bool _sending = false;
 
@@ -556,84 +627,110 @@ class _YouthCircleSheetState extends ConsumerState<_YouthCircleSheet> {
     final responses = ref.watch(circleResponsesProvider(widget.circle.id));
     final currentUser = ref.watch(appUserProvider).asData?.value;
     final isAdmin = ref.watch(isAdminProvider);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.circle.title,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(widget.circle.description),
-            const SizedBox(height: 14),
-            Expanded(
-              child: responses.when(
-                loading: () => const Center(child: AppLoadingIndicator()),
-                error: (_, __) => Center(
-                  child: Text(context.t('faith.responses_failed')),
-                ),
-                data: (items) => items.isEmpty
-                    ? Center(child: Text(context.t('faith.no_responses')))
-                    : ListView.separated(
-                        reverse: true,
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final item = items[items.length - index - 1];
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: AppProfileAvatar(
-                              name: item.userName,
-                              imageUrl: item.userPhotoUrl,
-                            ),
-                            title: Text(item.userName),
-                            subtitle: Text(item.message),
-                            trailing: isAdmin || item.userId == currentUser?.uid
-                                ? IconButton(
-                                    tooltip: context.t('common.delete'),
-                                    onPressed: () => ref
-                                        .read(faithEngagementRepositoryProvider)
-                                        ?.deleteResponse(
-                                          widget.circle.id,
-                                          item.id,
-                                        ),
-                                    icon: const Icon(Icons.delete_outline),
-                                  )
-                                : null,
-                          );
-                        },
-                      ),
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.circle.title)),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.circle.title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _controller,
-                    label: context.t('faith.response_label'),
-                    maxLines: 2,
+              const SizedBox(height: 6),
+              Text(widget.circle.description),
+              const SizedBox(height: 14),
+              Expanded(
+                child: responses.when(
+                  loading: () => const Center(child: AppLoadingIndicator()),
+                  error: (_, __) => Center(
+                    child: Text(context.t('faith.responses_failed')),
                   ),
+                  data: (items) => items.isEmpty
+                      ? Center(child: Text(context.t('faith.no_responses')))
+                      : ListView.separated(
+                          reverse: true,
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final item = items[items.length - index - 1];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: AppProfileAvatar(
+                                name: item.userName,
+                                imageUrl: item.userPhotoUrl,
+                              ),
+                              title: Text(item.userName),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.message),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatCircleResponseTime(
+                                      context,
+                                      item.createdAt,
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              trailing: isAdmin ||
+                                      item.userId == currentUser?.uid
+                                  ? IconButton(
+                                      tooltip: context.t('common.delete'),
+                                      onPressed: () => ref
+                                          .read(
+                                              faithEngagementRepositoryProvider)
+                                          ?.deleteResponse(
+                                            widget.circle.id,
+                                            item.id,
+                                          ),
+                                      icon: const Icon(Icons.delete_outline),
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _sending || currentUser == null ? null : _send,
-                  icon: _sending
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send_rounded),
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      controller: _controller,
+                      label: context.t('faith.response_label'),
+                      maxLines: 2,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _sending || currentUser == null ? null : _send,
+                    icon: _sending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send_rounded),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -651,6 +748,10 @@ class _YouthCircleSheetState extends ConsumerState<_YouthCircleSheet> {
         circleId: widget.circle.id,
         user: user,
         message: _controller.text,
+        notificationBody: context.t(
+          'faith.circle_response_notification_body',
+          parameters: {'name': user.name},
+        ),
       );
       _controller.clear();
     } catch (_) {
@@ -945,4 +1046,54 @@ class _LiveItOutStep extends StatelessWidget {
           ],
         ),
       );
+}
+
+String _formatCircleResponseTime(BuildContext context, DateTime? value) {
+  if (value == null) return context.t('time.just_now');
+  final timestamp = value.toLocal();
+  final now = DateTime.now();
+  final difference = now.difference(timestamp);
+  if (difference.isNegative || difference.inMinutes < 1) {
+    return context.t('time.just_now');
+  }
+  if (difference.inMinutes < 60) {
+    final minutes = difference.inMinutes;
+    return context.t(
+      minutes == 1 ? 'time.minute_ago' : 'time.minutes_ago',
+      parameters: {'count': minutes},
+    );
+  }
+  if (difference.inHours < 24) {
+    final hours = difference.inHours;
+    return context.t(
+      hours == 1 ? 'time.hour_ago' : 'time.hours_ago',
+      parameters: {'count': hours},
+    );
+  }
+  final today = DateTime(now.year, now.month, now.day);
+  final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
+  final daysAgo = today.difference(messageDay).inDays;
+  final time = DateFormat.jm().format(timestamp);
+  if (daysAgo == 1) {
+    return context.t(
+      'time.yesterday_at',
+      parameters: {'time': time},
+    );
+  }
+  if (daysAgo < 7) {
+    return context.t(
+      'time.weekday_at',
+      parameters: {
+        'day': DateFormat.EEEE().format(timestamp),
+        'time': time,
+      },
+    );
+  }
+  return context.t(
+    'time.date_at',
+    parameters: {
+      'date': DateFormat.yMMMd().format(timestamp),
+      'time': time,
+    },
+  );
 }

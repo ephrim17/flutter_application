@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +30,7 @@ bool _notificationPresentationInitialized = false;
 bool _notificationListenersAttached = false;
 bool _notificationInitialMessageHandled = false;
 Future<void>? _activeNotificationSetup;
+StreamSubscription<String>? _tokenRefreshSubscription;
 final ValueNotifier<int?> notificationTabRequest = ValueNotifier<int?>(null);
 final ValueNotifier<NotificationDestination?> notificationDestinationRequest =
     ValueNotifier<NotificationDestination?>(null);
@@ -223,6 +226,9 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
     churchId: churchId,
   );
   final localStorage = ChurchLocalStorage();
+  final userSnapshot = await repo.userDoc(firebaseUser.uid).get();
+  final appUser = userSnapshot.data();
+  if (appUser == null) return;
 
   final existingToken = await repo.getExistingAuthToken(firebaseUser.uid);
 
@@ -233,28 +239,47 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
     );
   }
 
-  final previousTopic = await localStorage.getSubscribedChurchTopic();
-  if (previousTopic != null &&
-      previousTopic.isNotEmpty &&
-      previousTopic != churchTopic) {
-    await messaging.unsubscribeFromTopic(previousTopic);
-  }
+  final desiredTopics = <String>{
+    churchTopic,
+    _churchUserTopic(churchId, firebaseUser.uid),
+    ...appUser.churchGroupIds.map(
+      (groupId) => _churchGroupTopic(churchId, groupId),
+    ),
+  };
+  final previousTopics = await localStorage.getSubscribedNotificationTopics();
 
-  if (previousTopic != churchTopic) {
-    await messaging.subscribeToTopic(churchTopic);
-    await localStorage.saveSubscribedChurchTopic(churchTopic);
-  }
+  await Future.wait(
+    previousTopics
+        .difference(desiredTopics)
+        .map(messaging.unsubscribeFromTopic),
+  );
+  await Future.wait(
+    desiredTopics.difference(previousTopics).map(messaging.subscribeToTopic),
+  );
+  await localStorage.saveSubscribedNotificationTopics(desiredTopics);
 
-  FirebaseMessaging.instance.onTokenRefresh.listen(
+  await _tokenRefreshSubscription?.cancel();
+  _tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
     (newToken) async {
       await repo.updateAuthToken(
         uid: firebaseUser.uid,
         token: newToken,
       );
-      await messaging.subscribeToTopic(churchTopic);
+      await Future.wait(desiredTopics.map(messaging.subscribeToTopic));
     },
   );
 }
+
+String _churchGroupTopic(String churchId, String groupId) =>
+    'church_${_notificationTopicSegment(churchId)}_group_'
+    '${_notificationTopicSegment(groupId)}';
+
+String _churchUserTopic(String churchId, String uid) =>
+    'church_${_notificationTopicSegment(churchId)}_user_'
+    '${_notificationTopicSegment(uid)}';
+
+String _notificationTopicSegment(String value) =>
+    value.trim().replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
 
 Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
   if (_notificationListenersAttached) {
@@ -299,6 +324,7 @@ void _handleNotificationKind(String? kind) {
       notificationDestinationRequest.value =
           NotificationDestination.prayForOthers;
     case 'faith_engagement':
+    case 'circle_response_created':
       notificationDestinationRequest.value =
           NotificationDestination.faithEngagement;
   }

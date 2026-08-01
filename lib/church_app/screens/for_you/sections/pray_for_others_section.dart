@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
@@ -69,7 +70,7 @@ class _PrayForOthersContent extends ConsumerWidget {
                 ),
               ),
               SizedBox(
-                height: 238,
+                height: forYouPrimaryCardHeight,
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   scrollDirection: Axis.horizontal,
@@ -107,84 +108,163 @@ class _PrayerForOthersCard extends ConsumerWidget {
     );
     final daysLeft = expiry.difference(today).inDays.clamp(0, 999);
 
-    return Material(
-      color: colors.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _showPrayerForOthersDetails(context, prayer),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.09),
+            blurRadius: 22,
+            offset: const Offset(0, 9),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colors.surfaceContainerLowest,
+                colors.primaryContainer.withValues(alpha: 0.48),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: colors.outlineVariant.withValues(alpha: 0.7),
+              color: colors.primary.withValues(alpha: 0.16),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
+          child: InkWell(
+            onTap: () => _showPrayerForOthersDetails(context, prayer),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -30,
+                  top: -36,
+                  child: Container(
+                    width: 112,
+                    height: 112,
                     decoration: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Icon(
-                      Icons.volunteer_activism_rounded,
-                      color: colors.onPrimaryContainer,
-                      size: 20,
+                      shape: BoxShape.circle,
+                      color: colors.primary.withValues(alpha: 0.07),
                     ),
                   ),
-                  const Spacer(),
-                  _ExpiryPill(daysLeft: daysLeft),
-                ],
-              ),
-              const SizedBox(height: 13),
-              Text(
-                prayer.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
                 ),
-              ),
-              const SizedBox(height: 7),
-              Expanded(
-                child: Text(
-                  prayer.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    height: 1.4,
+                Padding(
+                  padding: const EdgeInsets.all(17),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.surface.withValues(alpha: 0.82),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.volunteer_activism_rounded,
+                                  color: colors.primary,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  context.t(
+                                    'for_you.pray_for_others.request_label',
+                                  ),
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: colors.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          _ExpiryPill(daysLeft: daysLeft),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        prayer.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          height: 1.18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Text(
+                          prayer.description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(12, 9, 7, 9),
+                        decoration: BoxDecoration(
+                          color: colors.surface.withValues(alpha: 0.74),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: colors.primary.withValues(alpha: 0.10),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                prayer.isAnonymous
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.person_outline_rounded,
+                                size: 17,
+                                color: colors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 9),
+                            Expanded(
+                              child: _PrayerAuthorLabel(prayer: prayer),
+                            ),
+                            Text(
+                              context.t('for_you.pray_for_others.open_action'),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 17,
+                              color: colors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Divider(color: colors.outlineVariant.withValues(alpha: 0.65)),
-              Row(
-                children: [
-                  Icon(
-                    prayer.isAnonymous
-                        ? Icons.visibility_off_outlined
-                        : Icons.person_outline_rounded,
-                    size: 17,
-                    color: colors.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(child: _PrayerAuthorLabel(prayer: prayer)),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 19,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -242,18 +322,28 @@ class _ExpiryPill extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final text = daysLeft == 0
         ? context.t('for_you.pray_for_others.ends_today')
-        : '$daysLeft ${context.t('prayer.days_left')}';
+        : context.t(
+            daysLeft == 1
+                ? 'for_you.pray_for_others.one_day_left'
+                : 'for_you.pray_for_others.days_left',
+            parameters: {'count': daysLeft},
+          );
+    final isUrgent = daysLeft <= 1;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: colors.primaryContainer.withValues(alpha: 0.72),
+        color: isUrgent
+            ? colors.errorContainer.withValues(alpha: 0.82)
+            : colors.primaryContainer.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(99),
       ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colors.onPrimaryContainer,
+              color: isUrgent
+                  ? colors.onErrorContainer
+                  : colors.onPrimaryContainer,
               fontWeight: FontWeight.w800,
             ),
       ),
