@@ -34,6 +34,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'common.enabled': 'Enabled',
   'common.active': 'Active',
   'common.close': 'Close',
+  'common.clear': 'Clear',
   'common.download': 'Download',
   'common.send': 'Send',
   'common.search': 'Search',
@@ -722,9 +723,6 @@ const Map<String, String> defaultChurchTextContents = {
   'for_you.featured.plan_description':
       "Reading the Bible in a year won't just change what you know; it will change how you think. You are trading 15 minutes of scrolling for a lifetime of wisdom",
   'for_you.featured.plan_button': 'Explore Now',
-  'for_you.featured.youtube_title':
-      'Deepen the Word, One Video at a Time. Follow us on YouTube.',
-  'for_you.featured.youtube_button': 'Start Watching',
   'for_you.featured.swipe_title':
       'Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.',
   'for_you.featured.swipe_button': 'Let’s Go',
@@ -1323,6 +1321,8 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.announcement_upload_image': 'Upload image',
   'studio.announcement_replace_image': 'Replace image',
   'studio.announcement_change_image': 'Change image',
+  'studio.announcement_save_failed':
+      'Unable to save this announcement. Please try again.',
   'studio.priority_label': 'Priority',
   'studio.event_create': 'Create event',
   'studio.event_edit': 'Edit event',

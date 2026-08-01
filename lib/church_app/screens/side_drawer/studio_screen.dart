@@ -3955,6 +3955,7 @@ Future<void> _showAnnouncementEditor(
   final expiryController = TextEditingController(
     text: _formatOptionalDateTime((data['expiryAt'] as Timestamp?)?.toDate()),
   );
+  final formKey = GlobalKey<FormState>();
   PickedImageData? selectedImage;
   bool isActive = (data['isActive'] ?? true) as bool;
   DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
@@ -3963,256 +3964,308 @@ Future<void> _showAnnouncementEditor(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    heightFactor: 0.94,
     builder: (context) {
-      return FractionallySizedBox(
-        heightFactor: 0.95,
-        child: StatefulBuilder(builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
+      return StatefulBuilder(builder: (context, setState) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        context.t(
-                          doc == null
-                              ? 'studio.announcement_create'
-                              : 'studio.announcement_edit',
-                          fallback: doc == null
-                              ? 'Create announcement'
-                              : 'Edit announcement',
-                        ),
-                        style: Theme.of(context).textTheme.titleLarge,
+                  Expanded(
+                    child: Text(
+                      context.t(
+                        doc == null
+                            ? 'studio.announcement_create'
+                            : 'studio.announcement_edit',
                       ),
-                      const Spacer(),
-                      OutlinedButton(
-                        onPressed:
-                            isSaving ? null : () => Navigator.of(context).pop(),
-                        child: Text(context.t('settings.cancel')),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.title'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
-                  AppTextField(
-                    controller: bodyController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.announcement_body'),
-                    ),
-                    maxLines: 4,
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final picker = ImagePicker();
-                      final picked = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 85,
-                      );
-                      if (picked != null) {
-                        final imageData =
-                            await PickedImageData.fromXFile(picked);
-                        if (imageData == null) return;
-                        setState(() {
-                          selectedImage = imageData;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.image_outlined),
-                    label: Text(
-                      selectedImage == null
-                          ? (existingImageUrl.isEmpty
-                              ? context.t('studio.announcement_upload_image')
-                              : context.t('studio.announcement_replace_image'))
-                          : context.t('studio.announcement_change_image'),
-                    ),
-                  ),
-                  if (selectedImage != null) ...[
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: double.infinity,
-                        constraints: const BoxConstraints(maxHeight: 280),
-                        color: Colors.black12,
-                        child: Image.memory(
-                          selectedImage!.bytes,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ] else if (existingImageUrl.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: double.infinity,
-                        constraints: const BoxConstraints(maxHeight: 280),
-                        color: Colors.black12,
-                        child: Image.network(
-                          existingImageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ],
-                  AppTextField(
-                    controller: priorityController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.priority_label'),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.t('common.active')),
-                    value: isActive,
-                    onChanged: (value) => setState(() => isActive = value),
-                  ),
-                  AppTextField(
-                    controller: expiryController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.expiry_at_label'),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (expiryController.text.trim().isNotEmpty)
-                            IconButton(
-                              onPressed: isSaving
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        expiryAt = null;
-                                        expiryController.clear();
-                                      });
-                                    },
-                              icon: const Icon(Icons.clear),
-                            ),
-                          IconButton(
-                            onPressed: isSaving
-                                ? null
-                                : () async {
-                                    final now = DateTime.now();
-                                    final pickedDate = await showDatePicker(
-                                      context: context,
-                                      initialDate: expiryAt ?? now,
-                                      firstDate: DateTime(now.year - 1),
-                                      lastDate: DateTime(now.year + 10),
-                                    );
-                                    if (pickedDate == null ||
-                                        !context.mounted) {
-                                      return;
-                                    }
-
-                                    final pickedTime = await showTimePicker(
-                                      context: context,
-                                      initialTime: expiryAt == null
-                                          ? TimeOfDay.fromDateTime(now)
-                                          : TimeOfDay.fromDateTime(expiryAt!),
-                                    );
-                                    if (!context.mounted) return;
-
-                                    final resolved = DateTime(
-                                      pickedDate.year,
-                                      pickedDate.month,
-                                      pickedDate.day,
-                                      pickedTime?.hour ?? 23,
-                                      pickedTime?.minute ?? 59,
-                                    );
-
-                                    setState(() {
-                                      expiryAt = resolved;
-                                      expiryController.text =
-                                          _formatOptionalDateTime(resolved);
-                                    });
-                                  },
-                            icon: const Icon(Icons.event_outlined),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              setState(() => isSaving = true);
-                              try {
-                                final payload = {
-                                  'title': titleController.text.trim(),
-                                  'body': bodyController.text.trim(),
-                                  'priority': int.tryParse(
-                                          priorityController.text.trim()) ??
-                                      0,
-                                  'isActive': isActive,
-                                  'expiryAt': expiryAt == null
-                                      ? null
-                                      : Timestamp.fromDate(expiryAt!),
-                                };
-                                if (doc == null) {
-                                  await repository.createAnnouncement(
-                                    data: payload,
-                                    imageFile: selectedImage,
-                                  );
-                                } else {
-                                  await repository.updateAnnouncement(
-                                    id: doc.id,
-                                    data: payload,
-                                    imageFile: selectedImage,
-                                    existingImageUrl: existingImageUrl,
-                                  );
-                                }
-                                if (context.mounted) Navigator.pop(context);
-                              } catch (error) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(error.toString())),
-                                );
-                              } finally {
-                                if (context.mounted) {
-                                  setState(() => isSaving = false);
-                                }
-                              }
-                            },
-                      child: isSaving
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              context.t(
-                                doc == null ? 'common.create' : 'common.save',
-                                fallback: doc == null ? 'Create' : 'Save',
-                              ),
-                            ),
-                    ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    tooltip: context.t('settings.cancel'),
+                    onPressed:
+                        isSaving ? null : () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
-            ),
-          );
-        }),
-      );
+              const SizedBox(height: 14),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppTextField(
+                          controller: titleController,
+                          label: context.t('common.title'),
+                          textInputAction: TextInputAction.next,
+                          validator: (value) => value?.trim().isEmpty ?? true
+                              ? context.t('faith.field_required')
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        AppTextField(
+                          controller: bodyController,
+                          label: context.t('studio.announcement_body'),
+                          keyboardType: TextInputType.multiline,
+                          minLines: 3,
+                          maxLines: 5,
+                          validator: (value) => value?.trim().isEmpty ?? true
+                              ? context.t('faith.field_required')
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    final picked =
+                                        await ImagePicker().pickImage(
+                                      source: ImageSource.gallery,
+                                      imageQuality: 85,
+                                    );
+                                    if (picked == null || !context.mounted) {
+                                      return;
+                                    }
+                                    final imageData =
+                                        await PickedImageData.fromXFile(picked);
+                                    if (imageData == null || !context.mounted) {
+                                      return;
+                                    }
+                                    setState(() => selectedImage = imageData);
+                                  },
+                            icon:
+                                const Icon(Icons.add_photo_alternate_outlined),
+                            label: Text(
+                              selectedImage == null
+                                  ? (existingImageUrl.isEmpty
+                                      ? context
+                                          .t('studio.announcement_upload_image')
+                                      : context.t(
+                                          'studio.announcement_replace_image'))
+                                  : context
+                                      .t('studio.announcement_change_image'),
+                            ),
+                          ),
+                        ),
+                        if (selectedImage != null) ...[
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.memory(
+                                selectedImage!.bytes,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ] else if (existingImageUrl.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.network(
+                                existingImageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => ColoredBox(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image_outlined),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        AppTextField(
+                          controller: priorityController,
+                          label: context.t('studio.priority_label'),
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                        ),
+                        const SizedBox(height: 14),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: SwitchListTile.adaptive(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 4,
+                            ),
+                            title: Text(context.t('common.active')),
+                            secondary: const Icon(Icons.visibility_outlined),
+                            value: isActive,
+                            onChanged: isSaving
+                                ? null
+                                : (value) => setState(() => isActive = value),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        AppTextField(
+                          controller: expiryController,
+                          readOnly: true,
+                          label: context.t('studio.expiry_at_label'),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (expiryController.text.trim().isNotEmpty)
+                                IconButton(
+                                  tooltip: context.t('common.clear'),
+                                  onPressed: isSaving
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            expiryAt = null;
+                                            expiryController.clear();
+                                          });
+                                        },
+                                  icon: const Icon(Icons.clear_rounded),
+                                ),
+                              IconButton(
+                                onPressed: isSaving
+                                    ? null
+                                    : () async {
+                                        final now = DateTime.now();
+                                        final pickedDate = await showDatePicker(
+                                          context: context,
+                                          initialDate: expiryAt ?? now,
+                                          firstDate: DateTime(now.year - 1),
+                                          lastDate: DateTime(now.year + 10),
+                                        );
+                                        if (pickedDate == null ||
+                                            !context.mounted) {
+                                          return;
+                                        }
+
+                                        final pickedTime = await showTimePicker(
+                                          context: context,
+                                          initialTime: expiryAt == null
+                                              ? TimeOfDay.fromDateTime(now)
+                                              : TimeOfDay.fromDateTime(
+                                                  expiryAt!),
+                                        );
+                                        if (!context.mounted) return;
+
+                                        final resolved = DateTime(
+                                          pickedDate.year,
+                                          pickedDate.month,
+                                          pickedDate.day,
+                                          pickedTime?.hour ?? 23,
+                                          pickedTime?.minute ?? 59,
+                                        );
+
+                                        setState(() {
+                                          expiryAt = resolved;
+                                          expiryController.text =
+                                              _formatOptionalDateTime(resolved);
+                                        });
+                                      },
+                                icon: const Icon(Icons.event_outlined),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          if (!(formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
+                          final failureMessage =
+                              context.t('studio.announcement_save_failed');
+                          setState(() => isSaving = true);
+                          try {
+                            final payload = {
+                              'title': titleController.text.trim(),
+                              'body': bodyController.text.trim(),
+                              'priority': int.tryParse(
+                                    priorityController.text.trim(),
+                                  ) ??
+                                  0,
+                              'isActive': isActive,
+                              'expiryAt': expiryAt == null
+                                  ? null
+                                  : Timestamp.fromDate(expiryAt!),
+                            };
+                            if (doc == null) {
+                              await repository.createAnnouncement(
+                                data: payload,
+                                imageFile: selectedImage,
+                              );
+                            } else {
+                              await repository.updateAnnouncement(
+                                id: doc.id,
+                                data: payload,
+                                imageFile: selectedImage,
+                                existingImageUrl: existingImageUrl,
+                              );
+                            }
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (_) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(failureMessage)),
+                            );
+                          } finally {
+                            if (context.mounted) {
+                              setState(() => isSaving = false);
+                            }
+                          }
+                        },
+                  child: isSaving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          context.t(
+                            doc == null ? 'common.create' : 'common.save',
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+      });
     },
   );
 }

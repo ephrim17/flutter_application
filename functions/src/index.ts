@@ -9,16 +9,9 @@ import {
 import {defineSecret, defineString} from "firebase-functions/params";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import nodemailer from "nodemailer";
-export {
-  deleteFinancialBank,
-  deleteFinancialTransaction,
-  getFinancialSetup,
-  getFinancialTransactions,
-  saveFinancialConfig,
-  upsertFinancialBank,
-  upsertFinancialLedger,
-  upsertFinancialTransaction,
-} from "./financial";
+// Financial callable implementations remain in source for the planned future
+// release, but are intentionally not exported or deployed while the feature is
+// dormant in the app.
 export {
   notifyChurchWhenYouTubeLive,
   refreshKnownYouTubeBroadcasts,
