@@ -17,7 +17,9 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
+import 'package:flutter_application/church_app/services/faith_engagement_repository.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/faith_engagement_studio_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/admin_email_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -345,6 +347,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             subtitle: context
                 .t('ui.studio.control_prompts_notifications_and_live_sections'),
             items: [
+              _StudioToolItem(
+                title: context.t('faith.studio_title'),
+                subtitle: context.t('faith.engagement_studio_subtitle'),
+                icon: Icons.diversity_3_outlined,
+                builder: (_) => FaithEngagementStudioScreen(
+                  repository: FaithEngagementRepository(
+                    firestore: ref.read(firestoreProvider),
+                    churchId: churchId,
+                  ),
+                ),
+              ),
               _StudioToolItem(
                 title: ref.t('studio.tab_live_church'),
                 subtitle: context.t(
@@ -1773,24 +1786,25 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                                     onPressed: parsed == null
                                         ? null
                                         : () => showBibleVersePickerSheet(
-                                      context,
-                                      title: context
-                                          .t('studio.bible_swipe_edit_single'),
-                                      initialBook: parsed.book,
-                                      initialChapter: parsed.chapter,
-                                      initialVerse: parsed.verse,
-                                      onSave: ({
-                                        required book,
-                                        required chapter,
-                                        required verse,
-                                      }) {
-                                        final updated = [...verses];
-                                        updated[index] =
-                                            '$book $chapter:$verse';
-                                        return repository
-                                            .updateBibleSwipeVerses(updated);
-                                      },
-                                    ),
+                                              context,
+                                              title: context.t(
+                                                  'studio.bible_swipe_edit_single'),
+                                              initialBook: parsed.book,
+                                              initialChapter: parsed.chapter,
+                                              initialVerse: parsed.verse,
+                                              onSave: ({
+                                                required book,
+                                                required chapter,
+                                                required verse,
+                                              }) {
+                                                final updated = [...verses];
+                                                updated[index] =
+                                                    '$book $chapter:$verse';
+                                                return repository
+                                                    .updateBibleSwipeVerses(
+                                                        updated);
+                                              },
+                                            ),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline),

@@ -76,6 +76,10 @@ class FirestorePaths {
   static const dashboardMetrics = 'dashboard_metrics';
   static const equipments = 'equipments';
   static const financialTransactions = 'financial_transactions';
+  static const youthCircles = 'youth_circles';
+  static const weeklyChallenges = 'weekly_challenges';
+  static const faithReflections = 'faith_reflections';
+  static const faithEngagement = 'faith_engagement';
   static CollectionReference<Map<String, dynamic>> bibleVersionsCollection(
     FirebaseFirestore firestore,
   ) {
@@ -164,6 +168,30 @@ class FirestorePaths {
   ) {
     return churchDoc(firestore, churchId).collection(financialTransactions);
   }
+
+  static CollectionReference<Map<String, dynamic>> churchYouthCircles(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) =>
+      churchDoc(firestore, churchId).collection(youthCircles);
+
+  static CollectionReference<Map<String, dynamic>> churchWeeklyChallenges(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) =>
+      churchDoc(firestore, churchId).collection(weeklyChallenges);
+
+  static CollectionReference<Map<String, dynamic>> churchFaithReflections(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) =>
+      churchDoc(firestore, churchId).collection(faithReflections);
+
+  static CollectionReference<Map<String, dynamic>> churchFaithEngagement(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) =>
+      churchDoc(firestore, churchId).collection(faithEngagement);
 
   static DocumentReference<Map<String, dynamic>> churchDashboardMetricDoc(
     FirebaseFirestore firestore,

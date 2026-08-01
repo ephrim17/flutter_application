@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/screens/footer_sections/footer_se
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/faith_engagement_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/live_church_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/pray_for_others_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -24,6 +25,7 @@ class ForYouScreen extends ConsumerStatefulWidget {
 class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   final _scrollController = ScrollController();
   final _prayForOthersKey = GlobalKey();
+  final _faithEngagementKey = GlobalKey();
 
   @override
   void initState() {
@@ -41,14 +43,18 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   }
 
   void _handleSectionRequest() {
-    if (notificationDestinationRequest.value !=
-        NotificationDestination.prayForOthers) {
+    final destination = notificationDestinationRequest.value;
+    if (destination != NotificationDestination.prayForOthers &&
+        destination != NotificationDestination.faithEngagement) {
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final sectionContext = _prayForOthersKey.currentContext;
+      final sectionContext =
+          destination == NotificationDestination.faithEngagement
+              ? _faithEngagementKey.currentContext
+              : _prayForOthersKey.currentContext;
       if (sectionContext == null) return;
 
       notificationDestinationRequest.value = null;
@@ -77,6 +83,7 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
         );
         final registry = ForYouSectionRegistry.all(
           prayForOthersKey: _prayForOthersKey,
+          faithEngagementKey: _faithEngagementKey,
         );
 
         // 🔹 Enable / disable + order
@@ -87,6 +94,7 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
             return false;
           }
           if (section.id == 'prayForOthers') return true;
+          if (section.id == 'faithEngagement') return true;
           return config?.enabled ?? false;
         }).map((section) {
           final config = configs.where((c) => c.id == section.id).firstOrNull;
@@ -125,10 +133,12 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
 class ForYouSectionRegistry {
   static List<MasterSection> all({
     GlobalKey? prayForOthersKey,
+    GlobalKey? faithEngagementKey,
   }) =>
       [
         const LiveChurchSection(),
         DailyVerseSection(),
+        FaithEngagementSection(anchorKey: faithEngagementKey),
         FeaturedSection(),
         PrayForOthersSection(anchorKey: prayForOthersKey),
         FooterSection(),

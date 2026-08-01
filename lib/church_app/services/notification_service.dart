@@ -35,6 +35,7 @@ final ValueNotifier<NotificationDestination?> notificationDestinationRequest =
 enum NotificationDestination {
   articles,
   prayForOthers,
+  faithEngagement,
 }
 
 Future<void> initializeNotificationPresentation() async {
@@ -297,5 +298,8 @@ void _handleNotificationKind(String? kind) {
     case 'prayer_request_visible':
       notificationDestinationRequest.value =
           NotificationDestination.prayForOthers;
+    case 'faith_engagement':
+      notificationDestinationRequest.value =
+          NotificationDestination.faithEngagement;
   }
 }

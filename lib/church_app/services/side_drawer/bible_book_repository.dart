@@ -93,6 +93,51 @@ class BibleRepository {
       'reference': '$book $chapter:$verse',
     };
   }
+
+  Future<Map<String, String>> getVerseRange({
+    required String book,
+    required int chapter,
+    required int startVerse,
+    required int endVerse,
+  }) async {
+    final data = await loadBook(book);
+    final chapters = data['chapters'];
+    if (chapters is! List || chapter < 1 || chapter > chapters.length) {
+      throw FormatException('Invalid Bible chapter: $book $chapter');
+    }
+    final chapterData = chapters[chapter - 1];
+    if (chapterData is! Map || chapterData['verses'] is! List) {
+      throw FormatException('Invalid Bible chapter data: $book $chapter');
+    }
+    final verses = chapterData['verses'] as List;
+    if (startVerse < 1 || endVerse < startVerse || endVerse > verses.length) {
+      throw FormatException(
+        'Invalid Bible verse range: $book $chapter:$startVerse-$endVerse',
+      );
+    }
+
+    final tamil = <String>[];
+    final english = <String>[];
+    for (var verse = startVerse; verse <= endVerse; verse++) {
+      final verseData = verses[verse - 1];
+      if (verseData is! Map || verseData['text'] is! Map) {
+        throw FormatException(
+            'Invalid Bible verse data: $book $chapter:$verse');
+      }
+      final text = verseData['text'] as Map;
+      final tamilText = text['tamil']?.toString().trim() ?? '';
+      final englishText = text['english']?.toString().trim() ?? '';
+      if (tamilText.isNotEmpty) tamil.add('$verse. $tamilText');
+      if (englishText.isNotEmpty) english.add('$verse. $englishText');
+    }
+    final range =
+        startVerse == endVerse ? '$startVerse' : '$startVerse-$endVerse';
+    return {
+      'tamil': tamil.join('\n\n'),
+      'english': english.join('\n\n'),
+      'reference': '$book $chapter:$range',
+    };
+  }
 }
 
 final bibleBooks = catalog.bibleBooks;

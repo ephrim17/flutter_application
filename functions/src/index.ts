@@ -671,7 +671,15 @@ export const processQueuedChurchNotification = onDocumentCreated(
             memberTitle: title,
             memberBody: body,
           }) :
-          (await sendTopicNotification({title, body, topic}), null);
+          (await sendTopicNotification({
+            title,
+            body,
+            topic,
+            data: {
+              ...(kind ? {kind} : {}),
+              churchId: event.params.churchId,
+            },
+          }), null);
 
       await snapshot.ref.update({
         status: "sent",

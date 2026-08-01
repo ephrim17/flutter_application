@@ -1,0 +1,918 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/services/faith_engagement_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/widgets/bible_verse_picker_sheet.dart';
+import 'package:intl/intl.dart';
+
+enum _FaithContentType { circle, challenge, reflection }
+
+class FaithEngagementStudioScreen extends StatelessWidget {
+  const FaithEngagementStudioScreen({
+    super.key,
+    required this.repository,
+  });
+
+  final FaithEngagementRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          Material(
+            color: Theme.of(context).colorScheme.surface,
+            child: TabBar(
+              isScrollable: true,
+              tabs: [
+                Tab(text: context.t('faith.circles_studio_tab')),
+                Tab(text: context.t('faith.studio_quizzes')),
+                Tab(text: context.t('faith.studio_daily')),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _FaithContentList(
+                  type: _FaithContentType.circle,
+                  stream: repository.watchAdminCircles(),
+                  repository: repository,
+                ),
+                _FaithContentList(
+                  type: _FaithContentType.challenge,
+                  stream: repository.watchAdminChallenges(),
+                  repository: repository,
+                ),
+                _FaithContentList(
+                  type: _FaithContentType.reflection,
+                  stream: repository.watchAdminReflections(),
+                  repository: repository,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FaithContentList extends StatelessWidget {
+  const _FaithContentList({
+    required this.type,
+    required this.stream,
+    required this.repository,
+  });
+
+  final _FaithContentType type;
+  final Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> stream;
+  final FaithEngagementRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(child: AppLoadingIndicator());
+        }
+        final items = snapshot.data ?? const [];
+        return Stack(
+          children: [
+            if (items.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_iconFor(type), size: 52),
+                      const SizedBox(height: 14),
+                      Text(
+                        context.t(_emptyKeyFor(type)),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final doc = items[index];
+                  final data = doc.data();
+                  return Container(
+                    decoration: carouselBoxDecoration(context),
+                    child: ListTile(
+                      leading: CircleAvatar(child: Icon(_iconFor(type))),
+                      title: Text(
+                        (data['title'] ?? '').toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        _subtitleFor(type, data, context),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: AppPopupMenu<String>(
+                        actions: [
+                          AppPopupMenuAction(
+                            value: 'edit',
+                            icon: Icons.edit_outlined,
+                            label: context.t('common.edit'),
+                          ),
+                          AppPopupMenuAction(
+                            value: 'delete',
+                            icon: Icons.delete_outline,
+                            label: context.t('common.delete'),
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ],
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _showEditor(context, doc: doc);
+                          } else {
+                            _confirmDelete(context, doc.id);
+                          }
+                        },
+                      ),
+                      onTap: () => _showEditor(context, doc: doc),
+                    ),
+                  );
+                },
+              ),
+            Positioned(
+              right: 18,
+              bottom: 18,
+              child: FloatingActionButton.extended(
+                heroTag: 'faith-studio-${type.name}',
+                onPressed: () => _showEditor(context),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(context.t('common.create')),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditor(
+    BuildContext context, {
+    QueryDocumentSnapshot<Map<String, dynamic>>? doc,
+  }) async {
+    await showAppModalBottomSheet<void>(
+      context: context,
+      heightFactor: 0.92,
+      builder: (_) => _FaithContentEditor(
+        type: type,
+        repository: repository,
+        doc: doc,
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failureMessage = context.t('faith.delete_failed');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.t('faith.delete_title')),
+        content: Text(context.t('faith.delete_message')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.t('common.delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      switch (type) {
+        case _FaithContentType.circle:
+          await repository.deleteCircle(id);
+        case _FaithContentType.challenge:
+          await repository.deleteChallenge(id);
+        case _FaithContentType.reflection:
+          await repository.deleteReflection(id);
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(failureMessage)));
+    }
+  }
+}
+
+class _FaithContentEditor extends StatefulWidget {
+  const _FaithContentEditor({
+    required this.type,
+    required this.repository,
+    this.doc,
+  });
+
+  final _FaithContentType type;
+  final FaithEngagementRepository repository;
+  final QueryDocumentSnapshot<Map<String, dynamic>>? doc;
+
+  @override
+  State<_FaithContentEditor> createState() => _FaithContentEditorState();
+}
+
+class _FaithContentEditorState extends State<_FaithContentEditor> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _title;
+  late final TextEditingController _description;
+  late final TextEditingController _prayerPoints;
+  late final TextEditingController _liveItOut;
+  late final List<_QuizQuestionDraft> _quizQuestions;
+  String _scriptureBook = '';
+  int _scriptureChapter = 1;
+  int _scriptureStartVerse = 1;
+  int _scriptureEndVerse = 1;
+  String _audienceGroupId = '';
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late DateTime _activeDate;
+  bool _enabled = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.doc?.data() ?? const <String, dynamic>{};
+    _title = TextEditingController(text: (data['title'] ?? '').toString());
+    _description = TextEditingController(
+      text: (data[_descriptionKey] ?? '').toString(),
+    );
+    final rawPrayerPoints = data['prayerPoints'];
+    _prayerPoints = TextEditingController(
+      text: rawPrayerPoints is Iterable
+          ? rawPrayerPoints.map((item) => item.toString()).join('\n')
+          : (rawPrayerPoints ?? '').toString(),
+    );
+    _liveItOut = TextEditingController(
+      text: (data['liveItOut'] ?? '').toString(),
+    );
+    final rawQuestions = data['questions'];
+    _quizQuestions = rawQuestions is Iterable
+        ? rawQuestions
+            .whereType<Map>()
+            .map(
+              (question) => _QuizQuestionDraft.fromMap(
+                Map<String, dynamic>.from(question),
+              ),
+            )
+            .toList()
+        : <_QuizQuestionDraft>[];
+    if (widget.type == _FaithContentType.challenge && _quizQuestions.isEmpty) {
+      _quizQuestions.add(_QuizQuestionDraft.empty());
+    }
+    final legacyScripture = _parseScriptureReference(
+      (data['scriptureReference'] ?? '').toString(),
+    );
+    _scriptureBook = (data['scriptureBook'] ?? '').toString().trim();
+    if (_scriptureBook.isEmpty) {
+      _scriptureBook = legacyScripture?.book ?? '';
+    }
+    _scriptureChapter =
+        _positiveInt(data['scriptureChapter']) ?? legacyScripture?.chapter ?? 1;
+    _scriptureStartVerse = _positiveInt(data['scriptureStartVerse']) ??
+        legacyScripture?.startVerse ??
+        1;
+    _scriptureEndVerse = _positiveInt(data['scriptureEndVerse']) ??
+        legacyScripture?.endVerse ??
+        _scriptureStartVerse;
+    _audienceGroupId = (data['audienceGroupId'] ?? '').toString();
+    if (_audienceGroupId.isNotEmpty &&
+        !churchGroupDefinitions.any(
+          (group) => group.id == _audienceGroupId,
+        )) {
+      _audienceGroupId = '';
+    }
+    final now = DateTime.now();
+    _startDate = _readDate(data['startAt']) ?? now;
+    _endDate = _readDate(data['endAt']) ?? now.add(const Duration(days: 7));
+    _activeDate = _readDate(data['activeDate']) ?? now;
+    _enabled = data['enabled'] != false;
+  }
+
+  String get _descriptionKey =>
+      widget.type == _FaithContentType.reflection ? 'body' : 'description';
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _prayerPoints.dispose();
+    _liveItOut.dispose();
+    for (final question in _quizQuestions) {
+      question.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+          children: [
+            Text(
+              context.t(_editorTitleKey(widget.type)),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 18),
+            AppTextField(
+              controller: _title,
+              label: context.t('common.title'),
+              validator: _requiredValidator,
+            ),
+            const SizedBox(height: 12),
+            AppTextField(
+              controller: _description,
+              label: context.t(
+                widget.type == _FaithContentType.reflection
+                    ? 'common.content'
+                    : 'common.description',
+              ),
+              maxLines: 5,
+              validator: _requiredValidator,
+            ),
+            if (widget.type == _FaithContentType.circle) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue:
+                    _audienceGroupId.isEmpty ? null : _audienceGroupId,
+                decoration: appTextFieldDecoration(
+                  context,
+                  labelText: context.t('faith.audience_group'),
+                ),
+                items: [
+                  ...churchGroupDefinitions.map(
+                    (group) => DropdownMenuItem(
+                      value: group.id,
+                      child: Text(group.label),
+                    ),
+                  ),
+                ],
+                onChanged: (value) =>
+                    setState(() => _audienceGroupId = value ?? ''),
+                validator: (value) => value == null || value.isEmpty
+                    ? context.t('faith.group_required')
+                    : null,
+              ),
+            ],
+            if (widget.type == _FaithContentType.challenge) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.t('faith.quiz_questions'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _addQuizQuestion,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(context.t('faith.add_question')),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              for (var index = 0; index < _quizQuestions.length; index++) ...[
+                _QuizQuestionEditor(
+                  key: ObjectKey(_quizQuestions[index]),
+                  index: index,
+                  draft: _quizQuestions[index],
+                  canDelete: _quizQuestions.length > 1,
+                  onDelete: () => _removeQuizQuestion(index),
+                ),
+                const SizedBox(height: 12),
+              ],
+              _DateTile(
+                label: context.t('faith.start_date'),
+                date: _startDate,
+                onTap: () =>
+                    _pickDate(_startDate, (value) => _startDate = value),
+              ),
+              const SizedBox(height: 10),
+              _DateTile(
+                label: context.t('faith.end_date'),
+                date: _endDate,
+                onTap: () => _pickDate(_endDate, (value) => _endDate = value),
+              ),
+            ],
+            if (widget.type == _FaithContentType.reflection) ...[
+              const SizedBox(height: 12),
+              AppTextField(
+                controller: _prayerPoints,
+                label: context.t('faith.prayer_points'),
+                decoration: appTextFieldDecoration(
+                  context,
+                  labelText: context.t('faith.prayer_points'),
+                  helperText: context.t('faith.prayer_points_helper'),
+                ),
+                maxLines: 5,
+                validator: _requiredValidator,
+              ),
+              const SizedBox(height: 12),
+              AppTextField(
+                controller: _liveItOut,
+                label: context.t('faith.live_it_out_action'),
+                decoration: appTextFieldDecoration(
+                  context,
+                  labelText: context.t('faith.live_it_out_action'),
+                  helperText: context.t('faith.live_it_out_helper'),
+                ),
+                maxLines: 3,
+                validator: _requiredValidator,
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                title: Text(context.t('faith.bible_passage')),
+                subtitle: Text(
+                  _scriptureBook.isEmpty
+                      ? context.t('faith.choose_bible_passage')
+                      : _scriptureReference,
+                ),
+                trailing: const Icon(Icons.menu_book_outlined),
+                onTap: _pickScripture,
+              ),
+              const SizedBox(height: 10),
+              _DateTile(
+                label: context.t('faith.active_date'),
+                date: _activeDate,
+                onTap: () =>
+                    _pickDate(_activeDate, (value) => _activeDate = value),
+              ),
+            ],
+            const SizedBox(height: 8),
+            SwitchListTile.adaptive(
+              value: _enabled,
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.t('common.enabled')),
+              onChanged: (value) => setState(() => _enabled = value),
+            ),
+            const SizedBox(height: 14),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(context.t('common.save')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _requiredValidator(String? value) =>
+      (value ?? '').trim().isEmpty ? context.t('faith.field_required') : null;
+
+  void _addQuizQuestion() {
+    setState(() => _quizQuestions.add(_QuizQuestionDraft.empty()));
+  }
+
+  void _removeQuizQuestion(int index) {
+    if (_quizQuestions.length <= 1) return;
+    final removed = _quizQuestions.removeAt(index);
+    removed.dispose();
+    setState(() {});
+  }
+
+  Future<void> _pickDate(
+    DateTime initial,
+    void Function(DateTime value) assign,
+  ) async {
+    final value = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 730)),
+    );
+    if (value == null || !mounted) return;
+    setState(() => assign(value));
+  }
+
+  String get _scriptureReference {
+    if (_scriptureBook.isEmpty) return '';
+    final verses = _scriptureStartVerse == _scriptureEndVerse
+        ? '$_scriptureStartVerse'
+        : '$_scriptureStartVerse-$_scriptureEndVerse';
+    return '$_scriptureBook $_scriptureChapter:$verses';
+  }
+
+  Future<void> _pickScripture() => showBibleVerseRangePickerSheet(
+        context,
+        title: context.t('faith.bible_passage'),
+        initialBook: _scriptureBook,
+        initialChapter: _scriptureChapter,
+        initialStartVerse: _scriptureStartVerse,
+        initialEndVerse: _scriptureEndVerse,
+        onSave: ({
+          required book,
+          required chapter,
+          required startVerse,
+          required endVerse,
+        }) async {
+          if (!mounted) return;
+          setState(() {
+            _scriptureBook = book;
+            _scriptureChapter = chapter;
+            _scriptureStartVerse = startVerse;
+            _scriptureEndVerse = endVerse;
+          });
+        },
+      );
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (widget.type == _FaithContentType.challenge &&
+        _quizQuestions.any((question) => !question.isValid)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('faith.quiz_configuration_invalid'))),
+      );
+      return;
+    }
+    if (widget.type == _FaithContentType.reflection && _scriptureBook.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('faith.choose_passage_required'))),
+      );
+      return;
+    }
+    if (widget.type == _FaithContentType.challenge &&
+        _endDate.isBefore(_startDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('faith.invalid_date_range'))),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final notificationBody = context.t(_notificationBodyKey(widget.type));
+    final notificationFailedMessage = context.t('faith.notification_failed');
+    var notificationFailed = false;
+    final data = <String, dynamic>{
+      'title': _title.text.trim(),
+      _descriptionKey: _description.text.trim(),
+      'enabled': _enabled,
+      if (widget.type == _FaithContentType.circle) ...{
+        'audienceGroupId': _audienceGroupId,
+        'order': 100,
+      },
+      if (widget.type == _FaithContentType.challenge) ...{
+        'questions': _quizQuestions
+            .map((question) => question.toMap())
+            .toList(growable: false),
+        'startAt': Timestamp.fromDate(_startDate),
+        'endAt': Timestamp.fromDate(
+          DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59),
+        ),
+      },
+      if (widget.type == _FaithContentType.reflection) ...{
+        'activeDate': Timestamp.fromDate(_activeDate),
+        'scriptureBook': _scriptureBook,
+        'scriptureChapter': _scriptureChapter,
+        'scriptureStartVerse': _scriptureStartVerse,
+        'scriptureEndVerse': _scriptureEndVerse,
+        'scriptureReference': _scriptureReference,
+        'prayerPoints': _prayerPoints.text
+            .split('\n')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: false),
+        'liveItOut': _liveItOut.text.trim(),
+      },
+    };
+    try {
+      switch (widget.type) {
+        case _FaithContentType.circle:
+          await widget.repository.saveCircle(widget.doc?.id, data);
+        case _FaithContentType.challenge:
+          await widget.repository.saveChallenge(widget.doc?.id, data);
+        case _FaithContentType.reflection:
+          await widget.repository.saveReflection(widget.doc?.id, data);
+      }
+      final shouldNotifyChurch = widget.doc == null &&
+          _enabled &&
+          (widget.type != _FaithContentType.circle || _audienceGroupId.isEmpty);
+      if (shouldNotifyChurch) {
+        try {
+          await widget.repository.queueFaithNotification(
+            title: _title.text.trim(),
+            body: notificationBody,
+          );
+        } catch (_) {
+          notificationFailed = true;
+        }
+      }
+      if (notificationFailed) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(notificationFailedMessage)),
+        );
+      }
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.t('faith.save_failed'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
+class _QuizQuestionDraft {
+  _QuizQuestionDraft({
+    required String prompt,
+    required List<String> options,
+    required this.correctOptionIndex,
+  })  : prompt = TextEditingController(text: prompt),
+        options = List.generate(
+          4,
+          (index) => TextEditingController(
+            text: index < options.length ? options[index] : '',
+          ),
+        );
+
+  factory _QuizQuestionDraft.empty() => _QuizQuestionDraft(
+        prompt: '',
+        options: const ['', '', '', ''],
+        correctOptionIndex: 0,
+      );
+
+  factory _QuizQuestionDraft.fromMap(Map<String, dynamic> data) {
+    final rawOptions = data['options'];
+    return _QuizQuestionDraft(
+      prompt: (data['prompt'] ?? '').toString(),
+      options: rawOptions is Iterable
+          ? rawOptions.map((option) => option.toString()).take(4).toList()
+          : const [],
+      correctOptionIndex:
+          _positiveIntOrZero(data['correctOptionIndex']).clamp(0, 3),
+    );
+  }
+
+  final TextEditingController prompt;
+  final List<TextEditingController> options;
+  int correctOptionIndex;
+
+  List<String> get normalizedOptions => options
+      .map((controller) => controller.text.trim())
+      .where((option) => option.isNotEmpty)
+      .toList(growable: false);
+
+  bool get isValid =>
+      prompt.text.trim().isNotEmpty &&
+      normalizedOptions.length >= 2 &&
+      options[correctOptionIndex].text.trim().isNotEmpty;
+
+  Map<String, dynamic> toMap() {
+    final selectedAnswer = options[correctOptionIndex].text.trim();
+    final serializedOptions = normalizedOptions;
+    return {
+      'prompt': prompt.text.trim(),
+      'options': serializedOptions,
+      'correctOptionIndex': serializedOptions.indexOf(selectedAnswer),
+    };
+  }
+
+  void dispose() {
+    prompt.dispose();
+    for (final option in options) {
+      option.dispose();
+    }
+  }
+}
+
+class _QuizQuestionEditor extends StatefulWidget {
+  const _QuizQuestionEditor({
+    super.key,
+    required this.index,
+    required this.draft,
+    required this.canDelete,
+    required this.onDelete,
+  });
+
+  final int index;
+  final _QuizQuestionDraft draft;
+  final bool canDelete;
+  final VoidCallback onDelete;
+
+  @override
+  State<_QuizQuestionEditor> createState() => _QuizQuestionEditorState();
+}
+
+class _QuizQuestionEditorState extends State<_QuizQuestionEditor> {
+  @override
+  Widget build(BuildContext context) {
+    final optionLabels = [
+      context.t('faith.option_a'),
+      context.t('faith.option_b'),
+      context.t('faith.option_c'),
+      context.t('faith.option_d'),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.t(
+                    'faith.quiz_question_number',
+                    parameters: {'number': widget.index + 1},
+                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+              if (widget.canDelete)
+                IconButton(
+                  tooltip: context.t('common.delete'),
+                  onPressed: widget.onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+            ],
+          ),
+          AppTextField(
+            controller: widget.draft.prompt,
+            label: context.t('faith.question_prompt'),
+          ),
+          const SizedBox(height: 10),
+          for (var index = 0; index < widget.draft.options.length; index++) ...[
+            AppTextField(
+              controller: widget.draft.options[index],
+              label: context.t(
+                'faith.answer_option',
+                parameters: {'option': optionLabels[index]},
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          DropdownButtonFormField<int>(
+            initialValue: widget.draft.correctOptionIndex,
+            decoration: appTextFieldDecoration(
+              context,
+              labelText: context.t('faith.correct_answer'),
+            ),
+            items: List.generate(
+              optionLabels.length,
+              (index) => DropdownMenuItem(
+                value: index,
+                child: Text(
+                  context.t(
+                    'faith.option_value',
+                    parameters: {'option': optionLabels[index]},
+                  ),
+                ),
+              ),
+            ),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => widget.draft.correctOptionIndex = value);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateTile extends StatelessWidget {
+  const _DateTile({
+    required this.label,
+    required this.date,
+    required this.onTap,
+  });
+  final String label;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        title: Text(label),
+        subtitle: Text(DateFormat.yMMMMd().format(date)),
+        trailing: const Icon(Icons.calendar_month_outlined),
+        onTap: onTap,
+      );
+}
+
+DateTime? _readDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  return null;
+}
+
+int? _positiveInt(dynamic value) {
+  final parsed = value is num
+      ? value.toInt()
+      : int.tryParse(value?.toString().trim() ?? '');
+  return parsed != null && parsed > 0 ? parsed : null;
+}
+
+int _positiveIntOrZero(dynamic value) {
+  final parsed = value is num
+      ? value.toInt()
+      : int.tryParse(value?.toString().trim() ?? '');
+  return parsed != null && parsed >= 0 ? parsed : 0;
+}
+
+({String book, int chapter, int startVerse, int endVerse})?
+    _parseScriptureReference(String value) {
+  final match =
+      RegExp(r'^(.+?)\s+(\d+):(\d+)(?:-(\d+))?$').firstMatch(value.trim());
+  if (match == null) return null;
+  final chapter = int.tryParse(match.group(2) ?? '');
+  final start = int.tryParse(match.group(3) ?? '');
+  final end = int.tryParse(match.group(4) ?? '') ?? start;
+  if (chapter == null || start == null || end == null) return null;
+  return (
+    book: match.group(1)?.trim() ?? '',
+    chapter: chapter,
+    startVerse: start,
+    endVerse: end,
+  );
+}
+
+IconData _iconFor(_FaithContentType type) => switch (type) {
+      _FaithContentType.circle => Icons.groups_2_outlined,
+      _FaithContentType.challenge => Icons.flag_outlined,
+      _FaithContentType.reflection => Icons.bolt_outlined,
+    };
+
+String _emptyKeyFor(_FaithContentType type) => switch (type) {
+      _FaithContentType.circle => 'faith.circles_empty',
+      _FaithContentType.challenge => 'faith.no_quizzes',
+      _FaithContentType.reflection => 'faith.no_reflections',
+    };
+
+String _editorTitleKey(_FaithContentType type) => switch (type) {
+      _FaithContentType.circle => 'faith.circle_editor_title',
+      _FaithContentType.challenge => 'faith.edit_quiz',
+      _FaithContentType.reflection => 'faith.edit_reflection',
+    };
+
+String _notificationBodyKey(_FaithContentType type) => switch (type) {
+      _FaithContentType.circle => 'faith.circles_notification_body',
+      _FaithContentType.challenge => 'faith.quiz_notification_body',
+      _FaithContentType.reflection => 'faith.reflection_notification_body',
+    };
+
+String _subtitleFor(
+  _FaithContentType type,
+  Map<String, dynamic> data,
+  BuildContext context,
+) {
+  if (type == _FaithContentType.reflection) {
+    final date = _readDate(data['activeDate']);
+    return date == null
+        ? context.t('faith.date_not_set')
+        : DateFormat.yMMMd().format(date);
+  }
+  return (data['description'] ?? '').toString();
+}

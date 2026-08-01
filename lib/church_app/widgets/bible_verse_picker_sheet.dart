@@ -29,6 +29,76 @@ Future<void> showBibleVersePickerSheet(
     required int verse,
   }) onSave,
 }) {
+  return _showBibleVersePickerSheet(
+    context,
+    title: title,
+    initialBook: initialBook,
+    initialChapter: initialChapter,
+    initialVerse: initialVerse,
+    initialEndVerse: initialVerse,
+    allowVerseRange: false,
+    onSave: ({
+      required book,
+      required chapter,
+      required verse,
+      required endVerse,
+    }) =>
+        onSave(book: book, chapter: chapter, verse: verse),
+  );
+}
+
+Future<void> showBibleVerseRangePickerSheet(
+  BuildContext context, {
+  required String title,
+  required String initialBook,
+  required int initialChapter,
+  required int initialStartVerse,
+  required int initialEndVerse,
+  required Future<void> Function({
+    required String book,
+    required int chapter,
+    required int startVerse,
+    required int endVerse,
+  }) onSave,
+}) {
+  return _showBibleVersePickerSheet(
+    context,
+    title: title,
+    initialBook: initialBook,
+    initialChapter: initialChapter,
+    initialVerse: initialStartVerse,
+    initialEndVerse: initialEndVerse,
+    allowVerseRange: true,
+    onSave: ({
+      required book,
+      required chapter,
+      required verse,
+      required endVerse,
+    }) =>
+        onSave(
+      book: book,
+      chapter: chapter,
+      startVerse: verse,
+      endVerse: endVerse,
+    ),
+  );
+}
+
+Future<void> _showBibleVersePickerSheet(
+  BuildContext context, {
+  required String title,
+  required String initialBook,
+  required int initialChapter,
+  required int initialVerse,
+  required int initialEndVerse,
+  required bool allowVerseRange,
+  required Future<void> Function({
+    required String book,
+    required int chapter,
+    required int verse,
+    required int endVerse,
+  }) onSave,
+}) {
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -38,6 +108,8 @@ Future<void> showBibleVersePickerSheet(
       initialBook: initialBook,
       initialChapter: initialChapter,
       initialVerse: initialVerse,
+      initialEndVerse: initialEndVerse,
+      allowVerseRange: allowVerseRange,
       onSave: onSave,
     ),
   );
@@ -49,6 +121,8 @@ class _BibleVersePickerSheet extends StatefulWidget {
     required this.initialBook,
     required this.initialChapter,
     required this.initialVerse,
+    required this.initialEndVerse,
+    required this.allowVerseRange,
     required this.onSave,
   });
 
@@ -56,10 +130,13 @@ class _BibleVersePickerSheet extends StatefulWidget {
   final String initialBook;
   final int initialChapter;
   final int initialVerse;
+  final int initialEndVerse;
+  final bool allowVerseRange;
   final Future<void> Function({
     required String book,
     required int chapter,
     required int verse,
+    required int endVerse,
   }) onSave;
 
   @override
@@ -72,6 +149,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   late BibleBook _selectedBook;
   late int _selectedChapter;
   late int _selectedVerse;
+  late int _selectedEndVerse;
   int _chapterCount = 1;
   int _verseCount = 1;
   bool _isLoadingStructure = true;
@@ -87,6 +165,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
     );
     _selectedChapter = widget.initialChapter;
     _selectedVerse = widget.initialVerse;
+    _selectedEndVerse = widget.initialEndVerse;
     _loadStructure();
   }
 
@@ -105,6 +184,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
         _verseCount = structure.verseCount;
         _selectedChapter = structure.chapter;
         _selectedVerse = structure.verse;
+        _selectedEndVerse = structure.endVerse;
         _isLoadingStructure = false;
       });
     } catch (_) {
@@ -136,11 +216,13 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
       throw const FormatException('Bible chapter has no verses.');
     }
     final verse = _selectedVerse.clamp(1, rawVerses.length);
+    final endVerse = _selectedEndVerse.clamp(verse, rawVerses.length);
     return _BibleStructure(
       chapterCount: rawChapters.length,
       verseCount: rawVerses.length,
       chapter: chapter,
       verse: verse,
+      endVerse: endVerse,
     );
   }
 
@@ -179,6 +261,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
       _selectedBook = pickedBook;
       _selectedChapter = 1;
       _selectedVerse = 1;
+      _selectedEndVerse = 1;
     });
     await _loadStructure();
   }
@@ -219,6 +302,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
     setState(() {
       _selectedChapter = pickedChapter;
       _selectedVerse = 1;
+      _selectedEndVerse = 1;
     });
     await _reloadVerseCount();
   }
@@ -258,7 +342,43 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
 
     setState(() {
       _selectedVerse = pickedVerse;
+      if (_selectedEndVerse < pickedVerse) {
+        _selectedEndVerse = pickedVerse;
+      }
     });
+  }
+
+  Future<void> _pickEndVerse() async {
+    if (_isLoadingStructure) return;
+
+    final pickedVerse = await showAppModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            itemCount: _verseCount - _selectedVerse + 1,
+            itemBuilder: (context, index) {
+              final verse = _selectedVerse + index;
+              return ListTile(
+                title: Text('${context.t('studio.verse_prefix')} $verse'),
+                trailing: verse == _selectedEndVerse
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => Navigator.of(context).pop(verse),
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    if (pickedVerse == null) return;
+    setState(() => _selectedEndVerse = pickedVerse);
   }
 
   @override
@@ -302,7 +422,10 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${_selectedBook.key}:$_selectedChapter:$_selectedVerse',
+                      widget.allowVerseRange &&
+                              _selectedEndVerse != _selectedVerse
+                          ? '${_selectedBook.key} $_selectedChapter:$_selectedVerse-$_selectedEndVerse'
+                          : '${_selectedBook.key} $_selectedChapter:$_selectedVerse',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -351,7 +474,11 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
               ),
               const SizedBox(height: 12),
               _VersePickerTile(
-                label: context.t('studio.verse_verse'),
+                label: context.t(
+                  widget.allowVerseRange
+                      ? 'faith.verse_start'
+                      : 'studio.verse_verse',
+                ),
                 value: '$_selectedVerse',
                 subtitle: _isLoadingStructure
                     ? context.t('ui.bible_verse_picker.loading_verses')
@@ -361,6 +488,21 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                       ),
                 onTap: _pickVerse,
               ),
+              if (widget.allowVerseRange) ...[
+                const SizedBox(height: 12),
+                _VersePickerTile(
+                  label: context.t('faith.verse_end'),
+                  value: '$_selectedEndVerse',
+                  subtitle: context.t(
+                    'faith.verse_range_available',
+                    parameters: {
+                      'start': _selectedVerse,
+                      'count': _verseCount,
+                    },
+                  ),
+                  onTap: _pickEndVerse,
+                ),
+              ],
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -374,6 +516,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                               book: _selectedBook.key,
                               chapter: _selectedChapter,
                               verse: _selectedVerse,
+                              endVerse: _selectedEndVerse,
                             );
                             if (context.mounted) Navigator.pop(context);
                           } finally {
@@ -405,12 +548,14 @@ class _BibleStructure {
     required this.verseCount,
     required this.chapter,
     required this.verse,
+    required this.endVerse,
   });
 
   final int chapterCount;
   final int verseCount;
   final int chapter;
   final int verse;
+  final int endVerse;
 }
 
 class _VersePickerTile extends StatelessWidget {
