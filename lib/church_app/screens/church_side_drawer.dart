@@ -35,7 +35,7 @@ class ChurchSideDrawer extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                context.t('drawer.title', fallback: 'Church'),
+                context.t('drawer.title'),
                 style: TextStyle(
                   color: Theme.of(context).primaryColorDark,
                   fontSize: 24,
@@ -49,7 +49,7 @@ class ChurchSideDrawer extends StatelessWidget {
               leading: Icon(
                 item.icon,
               ),
-              title: Text(item.label),
+              title: Text(context.t(item.labelKey)),
               onTap: () => _handleTap(context, item),
             ),
           ),
@@ -79,13 +79,9 @@ class AppDrawer extends ConsumerWidget {
     final userAsync = ref.watch(appUserProvider);
     final isAdmin = ref.watch(isAdminProvider);
     final config = ref.watch(appConfigProvider).asData?.value;
-    final canAccessFinanceDashboard = ref.watch(financeDashboardAccessProvider);
     final items = DrawerMenuItem.values.where((item) {
       if (config != null && !item.isEnabledBy(config)) {
         return false;
-      }
-      if (item == DrawerMenuItem.financialDashboard) {
-        return canAccessFinanceDashboard;
       }
       return isAdmin || !item.adminOnly;
     }).toList();
@@ -127,10 +123,7 @@ class AppDrawer extends ConsumerWidget {
             ),
             error: (_, __) => DrawerHeader(
               child: Text(
-                context.t(
-                  'drawer.error_loading_user',
-                  fallback: 'Error loading user',
-                ),
+                context.t('drawer.error_loading_user'),
               ),
             ),
             data: (user) {
@@ -171,12 +164,12 @@ class AppDrawer extends ConsumerWidget {
               leading: Icon(
                 item.icon,
               ),
-              title: Text(item.label),
+              title: Text(context.t(item.labelKey)),
               trailing: badgeCounts[item] == null
                   ? null
                   : AppCountBadge(
                       count: badgeCounts[item]!,
-                      semanticLabel: item.label,
+                      semanticLabel: context.t(item.labelKey),
                     ),
               onTap: () => _handleTap(context, item),
             ),

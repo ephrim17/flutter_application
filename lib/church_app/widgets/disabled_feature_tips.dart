@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 
 class DisabledFeatureTip {
   const DisabledFeatureTip({required this.title, required this.icon});
@@ -115,14 +116,18 @@ class _DisabledFeatureTipStackState extends State<_DisabledFeatureTipStack> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${tip.title} is not added yet',
+                              context.t(
+                                'features.not_added_yet',
+                                parameters: {'feature': tip.title},
+                              ),
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Enable this feature from Studio when it is ready.',
+                              context.t(
+                                  'ui.disabled_feature_tips.enable_this_feature_from_studio_when_it_is_ready'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colors.onSurfaceVariant,
                               ),

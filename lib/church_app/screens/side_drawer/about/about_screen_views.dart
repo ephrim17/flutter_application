@@ -37,7 +37,7 @@ class _AboutHeroCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              'ABOUT THIS CHURCH',
+              context.t('ui.about_screen_views.about_this_church'),
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w800,

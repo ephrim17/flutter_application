@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +21,7 @@ class PrayerNotificationService {
   static const String _enabledKey = "prayer_reminder_enabled";
 
   Future<void> init() async {
+    if (kIsWeb) return;
     tz.initializeTimeZones();
 
     final String currentTimeZone = DateTime.now().timeZoneName;
@@ -44,18 +47,15 @@ class PrayerNotificationService {
   // ================= PERMISSIONS =================
 
   Future<bool> requestPermissions(BuildContext context) async {
+    if (kIsWeb) return false;
     if (Platform.isAndroid) {
       if (await Permission.notification.isDenied) {
         final result = await Permission.notification.request();
         if (!result.isGranted) {
+          if (!context.mounted) return false;
           _showPermissionDialog(context);
           return false;
         }
-      }
-
-      // Android 12+ exact alarms
-      if (!await Permission.scheduleExactAlarm.isGranted) {
-        await Permission.scheduleExactAlarm.request();
       }
     }
 
@@ -66,6 +66,7 @@ class PrayerNotificationService {
           ?.requestPermissions(alert: true, badge: true, sound: true);
 
       if (result != true) {
+        if (!context.mounted) return false;
         _showPermissionDialog(context);
         return false;
       }
@@ -78,17 +79,17 @@ class PrayerNotificationService {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Permission Required"),
-        content:
-            const Text("Prayer reminders require notification permission."),
+        title: Text(context.t('ui.prayer_notification.permission_required')),
+        content: Text(context.t(
+            'ui.prayer_notification.prayer_reminders_require_notification_permission')),
         actions: [
           TextButton(
             onPressed: () => openAppSettings(),
-            child: const Text("Open Settings"),
+            child: Text(context.t('ui.prayer_notification.open_settings')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(context.t('ui.prayer_notification.cancel')),
           ),
         ],
       ),
@@ -98,6 +99,11 @@ class PrayerNotificationService {
   // ================= SCHEDULE =================
 
   Future<void> scheduleDaily(TimeOfDay time) async {
+    if (kIsWeb) {
+      throw UnsupportedError(
+        defaultChurchTextContents['prayer.reminders_not_supported']!,
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
 
     final now = tz.TZDateTime.now(tz.local);
@@ -113,49 +119,27 @@ class PrayerNotificationService {
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
-    print("Prayer notification scheduled at $scheduled");
-
-    print("Local time: ${scheduled.toLocal()}");
-    print("Time zone: ${scheduled.location}");
-
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'prayer_channel',
-        'Prayer Reminders',
+        defaultChurchTextContents['prayer.reminder_channel']!,
         importance: Importance.max,
         priority: Priority.high,
       ),
       iOS: DarwinNotificationDetails(),
     );
 
-    try {
-      await _plugin.zonedSchedule(
-        _notificationId,
-        "Prayer Time 🙏",
-        "Take a moment to pray and reflect.",
-        scheduled,
-        details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-    } on PlatformException {
-      rethrow;
-    } catch (_) {
-      // Fallback when exact alarms are not allowed on the device.
-      await _plugin.zonedSchedule(
-        _notificationId,
-        "Prayer Time 🙏",
-        "Take a moment to pray and reflect.",
-        scheduled,
-        details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-    }
+    await _plugin.zonedSchedule(
+      _notificationId,
+      defaultChurchTextContents['prayer.reminder_title']!,
+      defaultChurchTextContents['prayer.reminder_body']!,
+      scheduled,
+      details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
 
     await prefs.setBool(_enabledKey, true);
     await prefs.setString(_timeKey, "${time.hour}:${time.minute}");
@@ -163,7 +147,7 @@ class PrayerNotificationService {
 
   Future<void> cancel() async {
     final prefs = await SharedPreferences.getInstance();
-    await _plugin.cancel(_notificationId);
+    if (!kIsWeb) await _plugin.cancel(_notificationId);
     await prefs.setBool(_enabledKey, false);
   }
 
@@ -174,9 +158,15 @@ class PrayerNotificationService {
     if (stored == null) return null;
 
     final parts = stored.split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null || hour > 23 || minute > 59) {
+      return null;
+    }
     return TimeOfDay(
-      hour: int.parse(parts[0]),
-      minute: int.parse(parts[1]),
+      hour: hour,
+      minute: minute,
     );
   }
 

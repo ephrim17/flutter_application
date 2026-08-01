@@ -195,10 +195,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
                       .replaceAll('{group}', group.label),
                 ),
                 subtitle: Text(
-                  context.t(
-                    'groups.remove_from_group_message',
-                    fallback: 'This removes the member only from this group.',
-                  ),
+                  context.t('groups.remove_from_group_message'),
                 ),
                 onTap: () => Navigator.of(context).pop(true),
               ),
@@ -269,15 +266,12 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
       return Scaffold(
         appBar: AppBar(
           title: AppBarTitle(
-            text: context.t('groups.title', fallback: 'Church Groups'),
+            text: context.t('groups.title'),
           ),
         ),
         body: Center(
           child: Text(
-            context.t(
-              'groups.empty_state',
-              fallback: 'No church groups are assigned yet.',
-            ),
+            context.t('groups.empty_state'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
@@ -298,7 +292,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('groups.title', fallback: 'Church Groups'),
+          text: context.t('groups.title'),
         ),
         actions: [
           if (canManageCurrentGroup)
@@ -505,7 +499,8 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Search by name, email, or phone. Members already in this group are hidden for faster selection.',
+            context.t(
+                'ui.church_groups.search_by_name_email_or_phone_members_already_in_this_g'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
             ),
@@ -515,7 +510,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
             controller: _searchController,
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
-              hintText: 'Search members',
+              hintText: context.t('ui.church_groups.search_members'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _query.isEmpty
                   ? null
@@ -542,7 +537,8 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'No available members found',
+                              context.t(
+                                  'ui.church_groups.no_available_members_found'),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -550,11 +546,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
                             const SizedBox(height: 8),
                             Text(
                               _query.isEmpty
-                                  ? context.t(
-                                      'groups.all_members_assigned',
-                                      fallback:
-                                          'All members are already assigned to this group.',
-                                    )
+                                  ? context.t('groups.all_members_assigned')
                                   : 'Try a different search term.',
                               style: theme.textTheme.bodyMedium,
                             ),
@@ -626,7 +618,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
                                         ),
                                       )
                                     : const Icon(Icons.add_rounded),
-                                label: const Text('Add'),
+                                label: Text(context.t('ui.church_groups.add')),
                               ),
                             ),
                           );
@@ -669,7 +661,7 @@ class _GroupOverviewCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Current Group',
+                      context.t('ui.church_groups.current_group'),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.66),
@@ -689,7 +681,7 @@ class _GroupOverviewCard extends ConsumerWidget {
               FilledButton.tonalIcon(
                 onPressed: onOpenAllGroups,
                 icon: const Icon(Icons.swap_horiz_rounded),
-                label: const Text('Change'),
+                label: Text(context.t('ui.church_groups.change')),
               ),
             ],
           ),
@@ -707,14 +699,16 @@ class _GroupOverviewCard extends ConsumerWidget {
               ),
             ),
             error: (_, __) => Text(
-              context.t(
-                'groups.group_load_failed',
-                fallback: 'Unable to load this group right now.',
-              ),
+              context.t('groups.group_load_failed'),
               style: theme.textTheme.bodyMedium,
             ),
             data: (members) => Text(
-              '${members.length} member${members.length == 1 ? '' : 's'} in this group',
+              context.t(
+                members.length == 1
+                    ? 'groups.member_count_singular'
+                    : 'groups.member_count_plural',
+                parameters: {'count': '${members.length}'},
+              ),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.76),
               ),
@@ -737,7 +731,10 @@ class _GroupOverviewCard extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Browsing 1 of $totalGroupCount groups. Use Change to open the full list.',
+                    context.t(
+                      'groups.browsing_summary',
+                      parameters: {'total': '$totalGroupCount'},
+                    ),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color:
                           theme.colorScheme.onSurface.withValues(alpha: 0.74),
@@ -795,14 +792,14 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Browse Groups',
+            context.t('ui.church_groups.browse_groups'),
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Pick a group from one simple list.',
+            context.t('ui.church_groups.pick_a_group_from_one_simple_list'),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
             ),
@@ -812,7 +809,7 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
             controller: _searchController,
             onChanged: (value) => setState(() => _query = value.trim()),
             decoration: InputDecoration(
-              hintText: 'Search groups',
+              hintText: context.t('ui.church_groups.search_groups'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _query.isEmpty
                   ? null
@@ -830,7 +827,7 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
             child: filteredGroups.isEmpty
                 ? Center(
                     child: Text(
-                      'No groups match your search.',
+                      context.t('ui.church_groups.no_groups_match_your_search'),
                       style: theme.textTheme.bodyMedium,
                     ),
                   )
@@ -919,10 +916,7 @@ class _GroupMembersTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      context.t(
-                        'groups.empty_group_members',
-                        fallback: 'No members are assigned to this group yet.',
-                      ),
+                      context.t('groups.empty_group_members'),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -983,18 +977,18 @@ class _GroupMembersTab extends ConsumerWidget {
 
 String _formatCategory(BuildContext context, String category) {
   final normalized = category.trim().toLowerCase();
-  if (normalized.isEmpty) return 'Member';
+  if (normalized.isEmpty) return context.t('common.member');
   if (normalized == 'male') {
-    return context.t('common.male', fallback: 'Male');
+    return context.t('common.male');
   }
   if (normalized == 'female') {
-    return context.t('common.female', fallback: 'Female');
+    return context.t('common.female');
   }
   if (normalized == 'individual') {
-    return context.t('common.individual', fallback: 'Individual');
+    return context.t('common.individual');
   }
   if (normalized == 'married') {
-    return context.t('common.married', fallback: 'Married');
+    return context.t('common.married');
   }
   return normalized[0].toUpperCase() + normalized.substring(1);
 }

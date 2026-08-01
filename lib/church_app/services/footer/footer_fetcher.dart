@@ -11,23 +11,21 @@ class FooterSupportRepository extends ChurchScopedRepository {
   });
 
   CollectionReference<ContactItem> _contactsRef() {
-    return FirestorePaths
-        .churchContactItems(firestore, churchId)
+    return FirestorePaths.churchContactItems(firestore, churchId)
         .withConverter<ContactItem>(
-          fromFirestore: (snap, _) =>
-              ContactItem.fromFirestore(snap.id, snap.data()!),
-          toFirestore: (model, _) => model.toMap(),
-        );
+      fromFirestore: (snap, _) =>
+          ContactItem.fromFirestore(snap.id, snap.data()!),
+      toFirestore: (model, _) => model.toMap(),
+    );
   }
 
   CollectionReference<SocialIconModel> _socialRef() {
-    return FirestorePaths
-        .churchSocialItems(firestore, churchId)
+    return FirestorePaths.churchSocialItems(firestore, churchId)
         .withConverter<SocialIconModel>(
-          fromFirestore: (snap, _) =>
-              SocialIconModel.fromFirestore(snap.id, snap.data()!),
-          toFirestore: (model, _) => model.toMap(),
-        );
+      fromFirestore: (snap, _) =>
+          SocialIconModel.fromFirestore(snap.id, snap.data()!),
+      toFirestore: (model, _) => model.toMap(),
+    );
   }
 
   Stream<List<ContactItem>> watchActiveContacts() {

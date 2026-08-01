@@ -5,4 +5,4 @@ final dailyVerseLanguageProvider =
     StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);
 
 //final chapterReaderLanguageProvider =
-    //StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);
+//StateProvider<BibleLanguage>((ref) => BibleLanguage.tamil);

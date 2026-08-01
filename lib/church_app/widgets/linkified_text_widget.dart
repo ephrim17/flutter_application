@@ -1,8 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class LinkifiedText extends StatefulWidget {
   const LinkifiedText({
@@ -113,23 +112,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
   }
 
   Future<void> _openLink(Uri uri) async {
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.t(
-              'common.open_link_failed',
-              fallback: 'Unable to open link',
-            ),
-          ),
-        ),
-      );
-    }
+    await launchExternalUri(context, uri);
   }
 
   List<_InlineMatch> _inlineMatches(String text) {

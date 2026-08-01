@@ -1,5 +1,58 @@
 # Church Tree App Guide
 
+## Repository Map and Working Rules
+
+This section is the durable project memory for future implementation sessions.
+
+### Source boundaries
+
+- `lib/main.dart` initializes Flutter and Firebase and launches the selected app.
+- `lib/church_app/screens/entry/` owns bootstrap, authentication, church
+  selection handoff, registration, approval, and maintenance-mode flows.
+- `lib/church_app/screens/church_tab_screen.dart` is the authenticated church
+  shell. It owns bottom-tab selection and notification destinations.
+- `lib/church_app/screens/home/`, `for_you/`, `dashboard/`, and `side_drawer/`
+  contain feature-level presentation.
+- `lib/church_app/widgets/` contains reusable visual and interaction components.
+- `lib/church_app/providers/` owns Riverpod state, Firebase dependency wiring,
+  current-church resolution, and feature controllers.
+- `lib/church_app/services/` owns Firestore, Storage, notification, analytics,
+  and domain mutations. UI should not reproduce repository queries.
+- `lib/church_app/models/` owns Firestore/domain serialization and app config.
+- `lib/church_app/helpers/` owns stateless validation, formatting, localization,
+  contact launching, and shared utilities.
+- `functions/src/` contains Firebase Cloud Functions; `firestore.indexes.json`
+  contains required composite indexes; `test/` contains Flutter regression tests.
+
+### Text-content architecture
+
+The church app does not treat English widget literals as the source of truth.
+
+1. Pre-church defaults live in `preAuthDefaultTextContents`.
+2. Church-scoped and post-login defaults live in `defaultChurchTextContents`.
+3. `TextContent.fromMap` merges those defaults with per-church Firestore text
+   overrides.
+4. Widgets read keys with `context.t('feature.key')` or
+   `ref.t('feature.key')`.
+5. Dynamic copy uses placeholders in the defaults map and the `parameters`
+   argument, for example:
+   `context.t('dashboard.approved_count', parameters: {'count': count})`.
+
+Never add raw user-visible strings to `Text`, buttons, labels, tooltips,
+dialogs, snackbars, empty states, or navigation items. Firestore keys,
+analytics names, URLs, storage enum values, and user/backend content are
+technical data and are not localization entries.
+
+### Lifecycle and verification rules
+
+- Preserve `churchId` scoping for church data.
+- Keep church-admin and super-admin authorization paths separate.
+- After asynchronous work, verify `mounted` before using `context` or `ref`.
+- Never use a Riverpod `ref` from `dispose` or after deactivation.
+- Prefer shared app controls and modal helpers over local visual variants.
+- Before completion, run Dart formatting, focused `flutter analyze`, the full
+  `flutter test` suite, and `git diff --check`.
+
 ## What This App Is
 
 This project is a Flutter-based church platform with 3 main operating modes:

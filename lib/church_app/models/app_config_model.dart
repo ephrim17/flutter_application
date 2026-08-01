@@ -82,41 +82,61 @@ class AppConfig {
   }
 
   factory AppConfig.fromFirestore(Map<String, dynamic> data) {
-    final features = data['features'] as Map<String, dynamic>? ?? {};
+    final features = _stringMap(data['features']);
+    final onboarding = _stringMap(data['onboarding']);
+    final theme = _stringMap(data['theme']);
     return AppConfig(
-      admins: List<String>.from(data['admins'] ?? []),
-      dailyVerseRef: DailyVerseRef.fromMap(data['dailyVerse'] ?? {}),
-      promiseVerseRef: PromiseVerseRef.fromMap(data['promiseWord'] ?? {}),
-      promptSheet: PromptSheetModel.fromMap(data['promptSheet'] ?? {}),
-      adminMode: AdminModeModel.fromMap(data['adminMode'] ?? {}),
-      superAdminDisabled: data['superAdminDisabled'] as bool? ?? false,
-      membersEnabled: data['features']?['membersEnabled'] ?? false,
-      dashboardEnabled: data['features']?['dashboardEnabled'] ?? false,
-      financialDashboardEnabled:
-          features['financialDashboardEnabled'] as bool? ?? false,
-      equipmentEnabled: features['equipmentEnabled'] as bool? ?? false,
-      studioEnabled: features['studioEnabled'] as bool? ?? true,
-      globalFeedEnabled: data['features']?['globalFeedEnabled'] ?? false,
-      bibleSwipeFetchEnabled:
-          data['features']?['bibleSwipeFetchEnabled'] ?? false,
+      admins: (data['admins'] as Iterable? ?? const [])
+          .map((value) => value.toString().trim().toLowerCase())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false),
+      dailyVerseRef: DailyVerseRef.fromMap(_stringMap(data['dailyVerse'])),
+      promiseVerseRef: PromiseVerseRef.fromMap(_stringMap(data['promiseWord'])),
+      promptSheet: PromptSheetModel.fromMap(_stringMap(data['promptSheet'])),
+      adminMode: AdminModeModel.fromMap(_stringMap(data['adminMode'])),
+      superAdminDisabled: data['superAdminDisabled'] == true,
+      membersEnabled: features['membersEnabled'] == true,
+      dashboardEnabled: features['dashboardEnabled'] == true,
+      // Retain the field for stored-config compatibility, but keep the
+      // unfinished dashboard disabled until a future release.
+      financialDashboardEnabled: false,
+      equipmentEnabled: features['equipmentEnabled'] == true,
+      studioEnabled: features['studioEnabled'] != false,
+      globalFeedEnabled: features['globalFeedEnabled'] == true,
+      bibleSwipeFetchEnabled: features['bibleSwipeFetchEnabled'] == true,
       bibleSwipeFetchVersion:
           (features['bibleSwipeVersion'] as num?)?.toInt() ?? 0,
-      eventsEnabled: data['features']?['eventsEnabled'] ?? false,
-      onboardingTitle: data['onboarding']?['title'] ?? '',
-      onboardingSubtitle: data['onboarding']?['subtitle'] ?? '',
-      textContent:
-          TextContent.fromMap(data['textContent'] as Map<String, dynamic>?),
-      primaryColorHex: data['theme']?['primaryColor'] ?? '#000000',
-      secondaryColorHex: data['theme']?['secondaryColor'] ?? '#000000',
-      backgroundColorHex: data['theme']?['backgroundColor'] ?? '#000000',
-      cardColorHex: data['theme']?['cardBackgroundColor'] ?? '#000000',
-      churchLogo: data['churchLogo'] ?? "",
-      youtubeLink: data['youtubeLink'] ?? "",
+      eventsEnabled: features['eventsEnabled'] == true,
+      onboardingTitle: _string(onboarding['title']),
+      onboardingSubtitle: _string(onboarding['subtitle']),
+      textContent: TextContent.fromMap(_stringMapOrNull(data['textContent'])),
+      primaryColorHex: _string(theme['primaryColor'], fallback: '#000000'),
+      secondaryColorHex: _string(theme['secondaryColor'], fallback: '#000000'),
+      backgroundColorHex:
+          _string(theme['backgroundColor'], fallback: '#FFFFFF'),
+      cardColorHex: _string(theme['cardBackgroundColor'], fallback: '#FFFFFF'),
+      churchLogo: _string(data['churchLogo']),
+      youtubeLink: _string(data['youtubeLink']),
       //logoUrl: data['theme']?['logoUrl'] ?? '',
     );
   }
 
   bool isAdmin(String email) => admins.contains(email);
+}
+
+Map<String, dynamic> _stringMap(dynamic value) {
+  if (value is! Map) return <String, dynamic>{};
+  return value.map((key, item) => MapEntry(key.toString(), item));
+}
+
+Map<String, dynamic>? _stringMapOrNull(dynamic value) {
+  if (value is! Map) return null;
+  return _stringMap(value);
+}
+
+String _string(dynamic value, {String fallback = ''}) {
+  final result = value?.toString().trim() ?? '';
+  return result.isEmpty ? fallback : result;
 }
 
 class DailyVerseRef {
@@ -140,7 +160,7 @@ class DailyVerseRef {
 
   factory DailyVerseRef.fromMap(Map<String, dynamic> map) {
     return DailyVerseRef(
-      book: (map['book'] ?? '') as String,
+      book: _string(map['book']),
       chapter: (map['chapter'] as num?)?.toInt() ?? 0,
       verse: (map['verse'] as num?)?.toInt() ?? 0,
     );
@@ -168,7 +188,7 @@ class PromiseVerseRef {
 
   factory PromiseVerseRef.fromMap(Map<String, dynamic> map) {
     return PromiseVerseRef(
-      book: (map['book'] ?? '') as String,
+      book: _string(map['book']),
       chapter: (map['chapter'] as num?)?.toInt() ?? 0,
       verse: (map['verse'] as num?)?.toInt() ?? 0,
     );
@@ -196,9 +216,9 @@ class PromptSheetModel {
 
   factory PromptSheetModel.fromMap(Map<String, dynamic> map) {
     return PromptSheetModel(
-      title: (map['title'] ?? '') as String,
-      desc: (map['desc'] ?? '') as String,
-      enabled: map['enabled'] as bool? ?? false,
+      title: _string(map['title']),
+      desc: _string(map['desc']),
+      enabled: map['enabled'] == true,
     );
   }
 }
@@ -218,7 +238,7 @@ class AdminModeModel {
 
   factory AdminModeModel.fromMap(Map<String, dynamic> map) {
     return AdminModeModel(
-      enabled: map['enabled'] as bool? ?? false,
+      enabled: map['enabled'] == true,
     );
   }
 }
@@ -243,7 +263,15 @@ class TextContent {
     return TextContent(values);
   }
 
-  String get(String key, {required String fallback}) {
-    return _values[key] ?? fallback;
+  String get(
+    String key, {
+    String? fallback,
+    Map<String, Object?> parameters = const {},
+  }) {
+    var value = _values[key] ?? fallback ?? key;
+    parameters.forEach((name, replacement) {
+      value = value.replaceAll('{$name}', replacement?.toString() ?? '');
+    });
+    return value;
   }
 }

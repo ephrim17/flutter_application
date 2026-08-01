@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 
 class AnnouncemnetCardWidget extends StatefulWidget {
@@ -75,8 +76,8 @@ class _AnnouncemnetCardWidgetState extends State<AnnouncemnetCardWidget> {
                   ),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "OKAY",
+                child: Text(
+                  context.t('ui.announcement_card.okay'),
                   style: TextStyle(fontSize: 16),
                 ),
               ),

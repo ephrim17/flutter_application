@@ -21,9 +21,9 @@ class ShortModel {
 
     return ShortModel(
       id: doc.id,
-      videoId: data['videoId'] as String,
-      channelId: data['channelId'] as String,
-      title: data['title'] as String? ?? '',
+      videoId: data['videoId']?.toString().trim() ?? '',
+      channelId: data['channelId']?.toString().trim() ?? '',
+      title: data['title']?.toString().trim() ?? '',
     );
   }
 

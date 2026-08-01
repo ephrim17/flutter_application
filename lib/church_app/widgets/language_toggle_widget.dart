@@ -33,13 +33,14 @@ class BibleLanguageToggle extends ConsumerWidget {
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
-          alignment:
-              isEnglish ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: isEnglish ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: isEnglish ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
+              color: isEnglish
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.secondary,
               borderRadius: BorderRadius.circular(cornerRadius),
             ),
             child: Text(

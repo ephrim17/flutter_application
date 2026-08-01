@@ -1,4 +1,3 @@
-
 const Map<String, dynamic> bibleVerseSwipesJson = {
   "toggleLabel": "Toggle English ↔ Tamil",
   "verses": [
@@ -17,14 +16,11 @@ const Map<String, dynamic> bibleVerseSwipesJson = {
       "reference": "Joshua 1:9",
       "english":
           "Be strong and of a good courage; be not afraid, neither be thou dismayed...",
-      "tamil":
-          "திடமாய் இரு; மனத்தளர்ச்சியடையாதே; பயப்படாதே..."
+      "tamil": "திடமாய் இரு; மனத்தளர்ச்சியடையாதே; பயப்படாதே..."
     }
     // remaining verses...
   ]
 };
-
-
 
 // {
 //   "toggleLabel": "Toggle English ↔ Tamil",

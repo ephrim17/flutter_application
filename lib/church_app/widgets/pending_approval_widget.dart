@@ -19,10 +19,7 @@ class PendingApprovalWidget extends ConsumerWidget {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t(
-            'approval.pending_title',
-            fallback: 'Approval Pending',
-          ),
+          text: context.t('approval.pending_title'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -62,10 +59,7 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      context.t(
-                        'approval.waiting_title',
-                        fallback: 'Your access is waiting for approval',
-                      ),
+                      context.t('approval.waiting_title'),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
@@ -73,11 +67,7 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      context.t(
-                        'approval.waiting_message',
-                        fallback:
-                            'If an admin turned access off for this church, you can refresh your status here or go back and choose another church so you are not blocked.',
-                      ),
+                      context.t('approval.waiting_message'),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             height: 1.45,
@@ -85,20 +75,14 @@ class PendingApprovalWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     SolidButton(
-                      label: context.t(
-                        'approval.refresh_status',
-                        fallback: 'Refresh Status',
-                      ),
+                      label: context.t('approval.refresh_status'),
                       onPressed: () {
                         ref.invalidate(appUserProvider);
                       },
                     ),
                     const SizedBox(height: 12),
                     SolidButton(
-                      label: context.t(
-                        'approval.choose_another_church',
-                        fallback: 'Choose Another Church',
-                      ),
+                      label: context.t('approval.choose_another_church'),
                       onPressed: () async {
                         final storage = ChurchLocalStorage();
                         await storage.clearChurch();

@@ -48,7 +48,15 @@ final textContentProvider = Provider<TextContent>((ref) {
 });
 
 extension AppTextRef on WidgetRef {
-  String t(String key, {required String fallback}) {
-    return watch(textContentProvider).get(key, fallback: fallback);
+  String t(
+    String key, {
+    String? fallback,
+    Map<String, Object?> parameters = const {},
+  }) {
+    return watch(textContentProvider).get(
+      key,
+      fallback: fallback,
+      parameters: parameters,
+    );
   }
 }

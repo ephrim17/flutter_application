@@ -29,7 +29,7 @@ final pastorViewStateProvider = Provider<AsyncValue<PastorViewState>>((ref) {
     return viewModel.toViewState(
       pastors: pastors,
       appConfig: appConfig,
-    );  
+    );
   });
 });
 

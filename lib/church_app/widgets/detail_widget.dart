@@ -42,7 +42,7 @@ class DetailWidget extends StatelessWidget {
       if (hasLocation)
         ContactItem(
           id: 'detail-location',
-          label: context.t('common.open_location', fallback: 'Open location'),
+          label: context.t('common.open_location'),
           type: 'location',
           action: location!.trim(),
           order: 1,

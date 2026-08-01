@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
@@ -43,8 +44,8 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
 
       // ✅ Show snackbar using captured messenger
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text("Saved to gallery 🎉"),
+        SnackBar(
+          content: Text(context.t('ui.birthday_card.saved_to_gallery')),
         ),
       );
     } catch (e) {
@@ -53,7 +54,11 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(
+          content: Text(
+            context.t('common.error_with_details', parameters: {'error': '$e'}),
+          ),
+        ),
       );
     }
   }
@@ -76,10 +81,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
             padding: EdgeInsets.all(20),
             child: Center(
               child: Text(
-                context.t(
-                  'birthday.card_no_verse',
-                  fallback: 'No verse available right now.',
-                ),
+                context.t('birthday.card_no_verse'),
               ),
             ),
           );
@@ -101,10 +103,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      context.t(
-                        'birthday.card_title',
-                        fallback: 'BIRTHDAY WISHES',
-                      ),
+                      context.t('birthday.card_title'),
                       textAlign: TextAlign.center,
                       style:
                           Theme.of(context).textTheme.headlineLarge!.copyWith(
@@ -127,7 +126,8 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                       child: SizedBox(
                         width: width - 32,
                         child: BirthdayBlessingCard(
-                          userName: user?.name ?? 'Dear Friend',
+                          userName:
+                              user?.name ?? context.t('birthday.dear_friend'),
                           verse: verse,
                         ),
                       ),
@@ -144,10 +144,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
                         ),
                         onPressed: _saveAsImage,
                         child: Text(
-                          context.t(
-                            'birthday.save_image',
-                            fallback: 'Save as Image',
-                          ),
+                          context.t('birthday.save_image'),
                           style: const TextStyle(fontSize: 16),
                         ),
                       ),
@@ -169,15 +166,15 @@ class BirthdayBlessingCard extends StatelessWidget {
     super.key,
     required this.userName,
     required this.verse,
-    this.eyebrow = 'Celebrating You',
-    this.headline = 'Happy Birthday',
+    this.eyebrow,
+    this.headline,
     this.backgroundImageBytes,
   });
 
   final String userName;
   final Map<String, String> verse;
-  final String eyebrow;
-  final String headline;
+  final String? eyebrow;
+  final String? headline;
   final Uint8List? backgroundImageBytes;
 
   @override
@@ -231,7 +228,7 @@ class BirthdayBlessingCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              eyebrow,
+              eyebrow ?? context.t('birthday.celebrating_you'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14,
@@ -242,7 +239,7 @@ class BirthdayBlessingCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              headline,
+              headline ?? context.t('birthday.happy_birthday'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 28,
@@ -316,9 +313,12 @@ class BirthdayBlessingCard extends StatelessWidget {
 String buildBirthdayPostTitle(String userName, DateTime? dob) {
   final age = birthdayAge(dob);
   if (age == null) {
-    return 'Happy Birthday $userName';
+    return defaultChurchTextContents['birthday.generated_post_title']!
+        .replaceAll('{name}', userName);
   }
-  return 'Happy ${_ordinal(age)} Birthday $userName';
+  return defaultChurchTextContents['birthday.age_post_title']!
+      .replaceAll('{age}', _ordinal(age))
+      .replaceAll('{name}', userName);
 }
 
 int? birthdayAge(DateTime? dob) {

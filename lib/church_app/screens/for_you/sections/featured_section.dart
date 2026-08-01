@@ -32,31 +32,15 @@ class FeaturedSection implements MasterSection {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               SectionHeader(
-                text: context.t(
-                  'for_you.featured.plans_section_title',
-                  fallback: 'Plans for you ✮',
-                ),
+                text: context.t('for_you.featured.plans_section_title'),
                 padding: 0.0,
               ),
               const SizedBox(height: 10),
               FeaturedCard(
-                badgeText: context.t(
-                  'for_you.featured.plan_badge',
-                  fallback: 'Challenge Yourself to do',
-                ),
-                title: context.t(
-                  'for_you.featured.plan_title',
-                  fallback: 'Bible in a year',
-                ),
-                description: context.t(
-                  'for_you.featured.plan_description',
-                  fallback:
-                      "Reading the Bible in a year won't just change what you know; it will change how you think. You are trading 15 minutes of scrolling for a lifetime of wisdom",
-                ),
-                buttonText: context.t(
-                  'for_you.featured.plan_button',
-                  fallback: 'Explore Now',
-                ),
+                badgeText: context.t('for_you.featured.plan_badge'),
+                title: context.t('for_you.featured.plan_title'),
+                description: context.t('for_you.featured.plan_description'),
+                buttonText: context.t('for_you.featured.plan_button'),
                 imagePath: "assets/images/bible_read.png",
                 onPressed: () {
                   Navigator.push(
@@ -69,10 +53,7 @@ class FeaturedSection implements MasterSection {
               ),
               const SizedBox(height: 10),
               SectionHeader(
-                text: context.t(
-                  'for_you.featured.section_title',
-                  fallback: 'Featured for you ✮',
-                ),
+                text: context.t('for_you.featured.section_title'),
                 padding: 0.0,
               ),
               const SizedBox(height: 10),
@@ -93,15 +74,8 @@ class FeaturedSection implements MasterSection {
                   }
 
                   return CardLinkButtonWidget(
-                    title: context.t(
-                      'for_you.featured.youtube_title',
-                      fallback:
-                          'Deepen the Word, One Video at a Time. Follow us on YouTube.',
-                    ),
-                    buttonText: context.t(
-                      'for_you.featured.youtube_button',
-                      fallback: 'Start Watching',
-                    ),
+                    title: context.t('for_you.featured.youtube_title'),
+                    buttonText: context.t('for_you.featured.youtube_button'),
                     iconStyle: Icon(
                       Icons.video_collection,
                       color: Theme.of(context).colorScheme.primary,
@@ -129,15 +103,8 @@ class FeaturedSection implements MasterSection {
                 },
               ),
               CardLinkButtonWidget(
-                title: context.t(
-                  'for_you.featured.swipe_title',
-                  fallback:
-                      'Got 2 minutes? That’s enough to fuel your soul. Swipe some verses.',
-                ),
-                buttonText: context.t(
-                  'for_you.featured.swipe_button',
-                  fallback: 'Let’s Go',
-                ),
+                title: context.t('for_you.featured.swipe_title'),
+                buttonText: context.t('for_you.featured.swipe_button'),
                 iconStyle: Icon(
                   Icons.swipe_up,
                   color: Theme.of(context).colorScheme.primary,

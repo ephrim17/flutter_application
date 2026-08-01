@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -44,13 +45,24 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: _readingPlan?.month ?? "${widget.month} Plan"),
+        title: AppBarTitle(
+          text: _readingPlan?.month ??
+              context.t(
+                'reading_plan.month_plan',
+                parameters: {'month': widget.month},
+              ),
+        ),
       ),
       body: _readingPlan == null
           ? const Center(child: AppLoadingIndicator())
           : progressState.when(
               loading: () => const Center(child: AppLoadingIndicator()),
-              error: (e, _) => Center(child: Text("Error: $e")),
+              error: (e, _) => Center(
+                child: Text(
+                  context.t('common.error_with_details',
+                      parameters: {'error': '$e'}),
+                ),
+              ),
               data: (completedDays) {
                 final totalDays = _readingPlan!.days.length;
                 final completedCount = completedDays.length;
@@ -97,7 +109,12 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text("Day ${dayPlan.day}"),
+                                      Text(
+                                        context.t(
+                                          'reading_plan.day',
+                                          parameters: {'day': '${dayPlan.day}'},
+                                        ),
+                                      ),
                                       IconButton(
                                         icon: Icon(
                                           isCompleted
@@ -120,8 +137,14 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                                   children: dayPlan.readings.map((reading) {
                                     return ListTile(
                                       title: Text(reading.book),
-                                      trailing:
-                                          Text("Chapters: ${reading.chapters}"),
+                                      trailing: Text(
+                                        context.t(
+                                          'reading_plan.chapters',
+                                          parameters: {
+                                            'chapters': reading.chapters,
+                                          },
+                                        ),
+                                      ),
                                       onTap: () {
                                         final range =
                                             parseChapterRange(reading.chapters);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -21,7 +22,7 @@ Future<void> showUserQuickCardWithChurch(
   bool showPhone = true,
 }) {
   final theme = Theme.of(context);
-  final subtitle = showCategory ? _formatCategory(user.category) : '';
+  final subtitle = showCategory ? _formatCategory(context, user.category) : '';
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -53,7 +54,7 @@ Future<void> showUserQuickCardWithChurch(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _valueOrFallback(user.name),
+                          _valueOrFallback(context, user.name),
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
@@ -74,38 +75,38 @@ Future<void> showUserQuickCardWithChurch(
               if ((churchName ?? '').trim().isNotEmpty)
                 _UserDetailRow(
                   icon: Icons.church_outlined,
-                  label: 'Church',
-                  value: _valueOrFallback(churchName ?? ''),
+                  label: context.t('members.church_label'),
+                  value: _valueOrFallback(context, churchName ?? ''),
                 ),
               if ((churchPastorName ?? '').trim().isNotEmpty)
                 _UserDetailRow(
                   icon: Icons.person_outline,
-                  label: 'Church Pastor',
-                  value: _valueOrFallback(churchPastorName ?? ''),
+                  label: context.t('members.church_pastor_label'),
+                  value: _valueOrFallback(context, churchPastorName ?? ''),
                 ),
               if (showAddress)
                 _UserDetailRow(
                   icon: Icons.location_on_outlined,
-                  label: 'Address',
-                  value: _valueOrFallback(user.address),
+                  label: context.t('members.address_label'),
+                  value: _valueOrFallback(context, user.address),
                 ),
               if (showDob)
                 _UserDetailRow(
                   icon: Icons.cake_outlined,
-                  label: 'DOB',
-                  value: _formatDob(user.dob),
+                  label: context.t('members.date_of_birth_label'),
+                  value: _formatDob(context, user.dob),
                 ),
               if (showEmail)
                 _UserDetailRow(
                   icon: Icons.email_outlined,
-                  label: 'Email',
-                  value: _valueOrFallback(user.email),
+                  label: context.t('members.email_label'),
+                  value: _valueOrFallback(context, user.email),
                 ),
               if (showPhone)
                 _UserDetailRow(
                   icon: Icons.phone_outlined,
-                  label: 'Phone',
-                  value: _valueOrFallback(user.phone),
+                  label: context.t('members.phone_label'),
+                  value: _valueOrFallback(context, user.phone),
                   onActionTap: user.phone.trim().isEmpty
                       ? null
                       : () => launchPhoneCall(context, user.phone),
@@ -152,7 +153,7 @@ class _UserDetailRow extends StatelessWidget {
             )
           else
             Tooltip(
-              message: 'Call',
+              message: context.t('ui.user_quick_card.call'),
               child: InkResponse(
                 onTap: onActionTap,
                 radius: 22,
@@ -192,18 +193,18 @@ class _UserDetailRow extends StatelessWidget {
   }
 }
 
-String _formatDob(DateTime? date) {
-  if (date == null) return 'Not provided';
+String _formatDob(BuildContext context, DateTime? date) {
+  if (date == null) return context.t('common.not_provided');
   return DateFormat('dd MMM yyyy').format(date);
 }
 
-String _formatCategory(String category) {
+String _formatCategory(BuildContext context, String category) {
   final normalized = category.trim().toLowerCase();
-  if (normalized.isEmpty) return 'Not provided';
+  if (normalized.isEmpty) return context.t('common.not_provided');
   return normalized[0].toUpperCase() + normalized.substring(1);
 }
 
-String _valueOrFallback(String value) {
+String _valueOrFallback(BuildContext context, String value) {
   final trimmed = value.trim();
-  return trimmed.isEmpty ? 'Not provided' : trimmed;
+  return trimmed.isEmpty ? context.t('common.not_provided') : trimmed;
 }

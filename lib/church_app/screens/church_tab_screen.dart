@@ -27,6 +27,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   int selectedIndex = 0;
 
   Future<void> setActiveScreen(int index) async {
+    if (!mounted) return;
     setState(() {
       selectedIndex = index;
     });
@@ -76,11 +77,13 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         .addListener(_handleNotificationDestinationRequest);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       await handleNotificationSetup(
         context: context,
         container: ProviderScope.containerOf(context, listen: false),
         promptIfNeeded: true,
       );
+      if (!mounted) return;
       await _logTabOpen(selectedIndex);
     });
   }
@@ -94,6 +97,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   }
 
   Future<void> _logTabOpen(int index) async {
+    if (!mounted) return;
     final eventName = switch (index) {
       0 => 'home_opened',
       1 => 'for_you_opened',
@@ -126,28 +130,28 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       AppBottomTabItem(
         icon: Icons.home_outlined,
         selectedIcon: Icons.home_rounded,
-        label: ref.t('church_tab.home', fallback: 'Home'),
+        label: ref.t('church_tab.home'),
       ),
       AppBottomTabItem(
         icon: Icons.star_outline_rounded,
         selectedIcon: Icons.star_rounded,
-        label: ref.t('church_tab.for_you', fallback: 'For You'),
+        label: ref.t('church_tab.for_you'),
       ),
       AppBottomTabItem(
         icon: Icons.newspaper_outlined,
         selectedIcon: Icons.newspaper_rounded,
-        label: ref.t('church_tab.feeds', fallback: 'Feeds'),
+        label: ref.t('church_tab.feeds'),
       ),
-      const AppBottomTabItem(
+      AppBottomTabItem(
         icon: Icons.travel_explore_outlined,
         selectedIcon: Icons.travel_explore_rounded,
-        label: 'Go Further',
+        label: ref.t('church_tab.go_further'),
       ),
       if (canSeeDashboard)
-        const AppBottomTabItem(
+        AppBottomTabItem(
           icon: Icons.dashboard_customize_outlined,
           selectedIcon: Icons.dashboard_customize_rounded,
-          label: 'Dashboard',
+          label: ref.t('church_tab.dashboard'),
         ),
     ];
 
@@ -160,7 +164,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         centerTitle: true,
         toolbarHeight: 88,
         title: ChurchAppBarBrandTitle(
-          text: ref.t('church_tab.app_title', fallback: 'TNBM'),
+          text: ref.t('church_tab.app_title'),
           logo: selectedChurch?.logo ?? '',
           maxWidth: MediaQuery.of(context).size.width * 0.68,
         ),

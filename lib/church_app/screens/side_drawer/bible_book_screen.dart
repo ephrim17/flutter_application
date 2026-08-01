@@ -27,7 +27,7 @@ class BibleBookScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('bible.title', fallback: 'Holy Bible'),
+          text: context.t('bible.title'),
         ),
       ),
       body: ListView.builder(
@@ -102,7 +102,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
           return Scaffold(
             body: Center(
               child: Text(
-                "${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}",
+                "${context.t('common.error_prefix')}: ${snapshot.error}",
               ),
             ),
           );
@@ -229,7 +229,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  "${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}",
+                  "${context.t('common.error_prefix')}: ${snapshot.error}",
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -253,10 +253,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
             ),
             body: Center(
               child: Text(
-                context.t(
-                  'common.no_data',
-                  fallback: 'No data found',
-                ),
+                context.t('common.no_data'),
               ),
             ),
           );

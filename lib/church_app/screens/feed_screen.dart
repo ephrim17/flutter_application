@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -82,7 +83,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       error: (error, stack) => Scaffold(
         body: Center(
           child: Text(
-            ref.t('feed.error_load', fallback: 'Unable to load feed'),
+            ref.t('feed.error_load'),
           ),
         ),
       ),
@@ -91,10 +92,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           return Scaffold(
             body: Center(
               child: Text(
-                ref.t(
-                  'feed.no_church_selected',
-                  fallback: 'No church selected',
-                ),
+                ref.t('feed.no_church_selected'),
               ),
             ),
           );
@@ -140,14 +138,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         });
                       },
                       tabs: [
-                        const _FeedScopeTab(
+                        _FeedScopeTab(
                           icon: Icons.church_outlined,
-                          title: 'Your Church',
+                          title: context.t('ui.feed.your_church'),
                         ),
                         if (globalFeedEnabled)
-                          const _FeedScopeTab(
+                          _FeedScopeTab(
                             icon: Icons.public_outlined,
-                            title: 'Global Churches',
+                            title: context.t('ui.feed.global_churches'),
                           ),
                       ],
                     ),
@@ -212,7 +210,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ElevatedButton(
               onPressed: () => _refreshFeed(churchId, isGlobal: isGlobal),
               child: Text(
-                ref.t('feed.retry', fallback: 'Retry'),
+                ref.t('feed.retry'),
               ),
             ),
           ],
@@ -229,9 +227,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             const SizedBox(height: 280),
             Center(
               child: Text(
-                isGlobal
-                    ? 'No global posts yet'
-                    : ref.t('feed.no_posts', fallback: 'No posts yet'),
+                isGlobal ? 'No global posts yet' : ref.t('feed.no_posts'),
               ),
             ),
           ],
@@ -287,7 +283,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 96),
                   child: Center(
                     child: Text(
-                      'No posts found',
+                      context.t('ui.feed.no_posts_found'),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
@@ -325,8 +321,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             bottom: 84,
             child: FeedScrollNavigation(
               controller: scrollController,
-              latestLabel: ref.t('feed.jump_latest', fallback: 'Latest'),
-              olderLabel: ref.t('feed.jump_older', fallback: 'Older posts'),
+              latestLabel: ref.t('feed.jump_latest'),
+              olderLabel: ref.t('feed.jump_older'),
             ),
           ),
       ],
@@ -510,7 +506,7 @@ class _FeedSearchField extends StatelessWidget {
           suffixIcon: controller.text.trim().isEmpty
               ? null
               : IconButton(
-                  tooltip: 'Clear search',
+                  tooltip: context.t('ui.feed.clear_search'),
                   icon: const Icon(Icons.close_rounded),
                   onPressed: onClear,
                 ),
@@ -608,7 +604,10 @@ class _FeedHashtagScreenState extends ConsumerState<FeedHashtagScreen> {
           if (posts.isEmpty) {
             return Center(
               child: Text(
-                'No posts found for #$normalizedTag',
+                context.t(
+                  'feed.no_hashtag_posts',
+                  parameters: {'tag': normalizedTag},
+                ),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             );
@@ -653,9 +652,8 @@ class _FeedHashtagScreenState extends ConsumerState<FeedHashtagScreen> {
                   bottom: 12,
                   child: FeedScrollNavigation(
                     controller: _scrollController,
-                    latestLabel: ref.t('feed.jump_latest', fallback: 'Latest'),
-                    olderLabel:
-                        ref.t('feed.jump_older', fallback: 'Older posts'),
+                    latestLabel: ref.t('feed.jump_latest'),
+                    olderLabel: ref.t('feed.jump_older'),
                   ),
                 ),
             ],

@@ -43,10 +43,8 @@ class ChurchRepository {
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
     int limit = defaultChurchPageSize,
   }) async {
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('churches')
-        .orderBy('name')
-        .limit(limit);
+    Query<Map<String, dynamic>> query =
+        _firestore.collection('churches').orderBy('name').limit(limit);
 
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
@@ -65,7 +63,8 @@ class ChurchRepository {
   }
 
   Future<Church?> getChurchById(String churchId) async {
-    final snapshot = await _firestore.collection('churches').doc(churchId).get();
+    final snapshot =
+        await _firestore.collection('churches').doc(churchId).get();
     if (!snapshot.exists) return null;
     return Church.fromFirestore(
       snapshot.id,

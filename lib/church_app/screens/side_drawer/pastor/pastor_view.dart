@@ -24,7 +24,7 @@ class PastorWidget extends ConsumerWidget {
       error: (e, _) => Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          "${context.t('common.error_prefix', fallback: 'Error')}: $e",
+          "${context.t('common.error_prefix')}: $e",
         ),
       ),
       data: _PastorList.new,
@@ -42,7 +42,7 @@ class _PastorList extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          context.t('pastor.empty_error', fallback: 'Something went wrong'),
+          context.t('pastor.empty_error'),
         ),
       );
     }
@@ -51,7 +51,7 @@ class _PastorList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          text: context.t('pastor.section_title', fallback: 'Our Pastors'),
+          text: context.t('pastor.section_title'),
           padding: 16.0,
         ),
         const SizedBox(

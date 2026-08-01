@@ -4,14 +4,18 @@ class ReadingPlan {
   final int monthIndex;
   final List<DayPlan> days;
 
-  ReadingPlan({required this.month, required this.monthIndex, required this.days});
+  ReadingPlan(
+      {required this.month, required this.monthIndex, required this.days});
 
   factory ReadingPlan.fromJson(Map<String, dynamic> json) {
-    var daysFromJson = json['days'] as List;
-    List<DayPlan> daysList = daysFromJson.map((i) => DayPlan.fromJson(i)).toList();
+    final daysFromJson = json['days'] as Iterable? ?? const [];
+    final daysList = daysFromJson
+        .whereType<Map>()
+        .map((item) => DayPlan.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
     return ReadingPlan(
-      month: json['month'],
-      monthIndex: json['monthIndex'],
+      month: json['month']?.toString().trim() ?? '',
+      monthIndex: (json['monthIndex'] as num?)?.toInt() ?? 0,
       days: daysList,
     );
   }
@@ -24,10 +28,13 @@ class DayPlan {
   DayPlan({required this.day, required this.readings});
 
   factory DayPlan.fromJson(Map<String, dynamic> json) {
-    var readingsFromJson = json['readings'] as List;
-    List<Reading> readingsList = readingsFromJson.map((i) => Reading.fromJson(i)).toList();
+    final readingsFromJson = json['readings'] as Iterable? ?? const [];
+    final readingsList = readingsFromJson
+        .whereType<Map>()
+        .map((item) => Reading.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
     return DayPlan(
-      day: json['day'],
+      day: (json['day'] as num?)?.toInt() ?? 0,
       readings: readingsList,
     );
   }
@@ -41,8 +48,8 @@ class Reading {
 
   factory Reading.fromJson(Map<String, dynamic> json) {
     return Reading(
-      book: json['book'],
-      chapters: json['chapters'],
+      book: json['book']?.toString().trim() ?? '',
+      chapters: json['chapters']?.toString().trim() ?? '',
     );
   }
 }

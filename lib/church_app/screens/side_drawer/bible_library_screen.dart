@@ -59,8 +59,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text:
-              context.t('bible.available_title', fallback: 'Available Bibles'),
+          text: context.t('bible.available_title'),
         ),
       ),
       body: ref.watch(bibleVersionsProvider).when(
@@ -69,7 +68,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+                  '${context.t('common.error_prefix')}: $error',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -84,7 +83,8 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        'No Bible versions are available right now.',
+                        context.t(
+                            'ui.bible_library.no_bible_versions_are_available_right_now'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
@@ -101,7 +101,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        '${context.t('common.error_prefix', fallback: 'Error')}: '
+                        '${context.t('common.error_prefix')}: '
                         '${snapshot.error}',
                         textAlign: TextAlign.center,
                       ),
@@ -136,7 +136,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Text(
-                            '${context.t('common.error_prefix', fallback: 'Error')}: '
+                            '${context.t('common.error_prefix')}: '
                             '${stateSnapshot.error}',
                             textAlign: TextAlign.center,
                           ),
@@ -192,20 +192,24 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Update Bible?'),
+          title: Text(context.t('ui.bible_library.update_bible')),
           content: Text(
-            '${version.title} has a newer version available. '
-            'You can update all ${state.totalFiles} books now, or continue '
-            'reading your downloaded version.',
+            context.t(
+              'bible.update_available_message',
+              parameters: {
+                'title': version.title,
+                'count': '${state.totalFiles}',
+              },
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Continue current'),
+              child: Text(context.t('ui.bible_library.continue_current')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Update now'),
+              child: Text(context.t('ui.bible_library.update_now')),
             ),
           ],
         );
@@ -251,7 +255,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+            '${context.t('common.error_prefix')}: $error',
           ),
         ),
       );
@@ -378,9 +382,7 @@ class _BibleVersionTile extends StatelessWidget {
                     width: 52,
                     height: 52,
                     alignment: Alignment.center,
-                    decoration: carouselBoxDecoration(
-                      context
-                    ),
+                    decoration: carouselBoxDecoration(context),
                     child: Text(
                       version.languageLabel,
                       style: theme.textTheme.labelLarge?.copyWith(

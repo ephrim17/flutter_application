@@ -9,14 +9,16 @@ class SwipeVerseRepository extends ChurchScopedRepository {
   });
 
   Future<List<BibleSwipeVerseModel>> fetchVerseRefs() async {
-    final doc = await FirestorePaths
-        .churchBibleRandomSwipeDoc(firestore, churchId)
-        .get();
+    final doc =
+        await FirestorePaths.churchBibleRandomSwipeDoc(firestore, churchId)
+            .get();
 
-    final raw = (doc.data())?['verses'] ?? [];
+    final raw = (doc.data())?['verses'];
+    if (raw is! Iterable) return const [];
 
-    return (raw as List<dynamic>)
-        .map((e) => BibleSwipeVerseModel.fromString(e as String))
-        .toList();
+    return raw
+        .map((value) => BibleSwipeVerseModel.tryParse(value.toString()))
+        .whereType<BibleSwipeVerseModel>()
+        .toList(growable: false);
   }
 }

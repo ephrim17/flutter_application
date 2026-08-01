@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -49,7 +50,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: ref.t('settings.title', fallback: 'Settings'),
+          text: ref.t('settings.title'),
         ),
       ),
       body: Scrollbar(
@@ -63,11 +64,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             _SettingsSectionLabel(
-              title: ref.t('settings.profile_title', fallback: 'Profile'),
-              subtitle: ref.t(
-                'settings.profile_subtitle',
-                fallback: 'Your identity and personal details.',
-              ),
+              title: ref.t('settings.profile_title'),
+              subtitle: ref.t('settings.profile_subtitle'),
             ),
             const SizedBox(height: 10),
             const _SettingsGroupCard(
@@ -77,12 +75,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             _SettingsSectionLabel(
-              title:
-                  ref.t('settings.preferences_title', fallback: 'Preferences'),
-              subtitle: ref.t(
-                'settings.preferences_subtitle',
-                fallback: 'Appearance, notifications, and reminders.',
-              ),
+              title: ref.t('settings.preferences_title'),
+              subtitle: ref.t('settings.preferences_subtitle'),
             ),
             const SizedBox(height: 10),
             const _SettingsGroupCard(
@@ -94,11 +88,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             _SettingsSectionLabel(
-              title: ref.t('settings.feedback_title', fallback: 'Feedback'),
-              subtitle: ref.t(
-                'settings.feedback_subtitle',
-                fallback: 'Share ideas that can make the app better.',
-              ),
+              title: ref.t('settings.feedback_title'),
+              subtitle: ref.t('settings.feedback_subtitle'),
             ),
             const SizedBox(height: 10),
             const _SettingsGroupCard(
@@ -108,11 +99,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             _SettingsSectionLabel(
-              title: ref.t('settings.account_title', fallback: 'Account'),
-              subtitle: ref.t(
-                'settings.account_subtitle',
-                fallback: 'Manage local data and sign out safely.',
-              ),
+              title: ref.t('settings.account_title'),
+              subtitle: ref.t('settings.account_subtitle'),
             ),
             const SizedBox(height: 10),
             const _SettingsGroupCard(
@@ -158,7 +146,7 @@ class _SettingsHeroCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Settings',
+              context.t('ui.settings.settings'),
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: onPrimary,
@@ -166,7 +154,8 @@ class _SettingsHeroCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Manage your app preferences and account details.',
+              context.t(
+                  'ui.settings.manage_your_app_preferences_and_account_details'),
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: onPrimary.withValues(alpha: 0.88),
               ),
@@ -440,11 +429,8 @@ class _EditProfileSection extends ConsumerWidget {
     return userAsync.when(
       loading: () => _SettingsTile(
         icon: Icons.person_outline,
-        title: ref.t('settings.loading_profile', fallback: 'Loading...'),
-        subtitle: ref.t(
-          'settings.loading_profile_subtitle',
-          fallback: 'Fetching your current profile details.',
-        ),
+        title: ref.t('settings.loading_profile'),
+        subtitle: ref.t('settings.loading_profile_subtitle'),
         trailing: const SizedBox(
           height: 20,
           width: 20,
@@ -453,7 +439,7 @@ class _EditProfileSection extends ConsumerWidget {
       ),
       error: (error, _) => _SettingsTile(
         icon: Icons.person_outline,
-        title: ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
+        title: ref.t('settings.edit_profile_title'),
         subtitle: ref
             .t('settings.error_loading_profile', fallback: 'Error: {error}')
             .replaceAll('{error}', '$error'),
@@ -463,12 +449,8 @@ class _EditProfileSection extends ConsumerWidget {
 
         return _SettingsTile(
           icon: Icons.person_outline,
-          title: ref.t('settings.edit_profile_title', fallback: 'Edit Profile'),
-          subtitle: ref.t(
-            'settings.edit_profile_subtitle',
-            fallback:
-                'Update your profile photo, phone, birthday, and location.',
-          ),
+          title: ref.t('settings.edit_profile_title'),
+          subtitle: ref.t('settings.edit_profile_subtitle'),
           onTap: () => showAppModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
@@ -488,11 +470,8 @@ class _LogoutSection extends ConsumerWidget {
     return _SettingsTile(
       icon: Icons.logout_rounded,
       iconColor: Colors.redAccent,
-      title: ref.t('drawer.logout', fallback: 'Logout'),
-      subtitle: ref.t(
-        'settings.logout_subtitle',
-        fallback: 'Sign out of the current church session.',
-      ),
+      title: ref.t('drawer.logout'),
+      subtitle: ref.t('settings.logout_subtitle'),
       onTap: () async {
         final navigator = Navigator.of(context);
         ref.read(logginAccessLoadingProvider.notifier).state = false;
@@ -550,11 +529,8 @@ class _AppearanceSection extends ConsumerWidget {
 
     return _SettingsTile(
       icon: Icons.dark_mode_outlined,
-      title: ref.t('settings.dark_mode', fallback: 'Dark Mode'),
-      subtitle: ref.t(
-        'settings.dark_mode_subtitle',
-        fallback: 'Switch between a lighter and darker app appearance.',
-      ),
+      title: ref.t('settings.dark_mode'),
+      subtitle: ref.t('settings.dark_mode_subtitle'),
       trailing: Switch(
         value: isDarkModeEnabled,
         onChanged: (value) {
@@ -621,10 +597,7 @@ class _PushNotificationSectionState
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = ref.t(
-          'settings.push_status_unavailable',
-          fallback: 'Unable to check notification status right now',
-        );
+        _errorMessage = ref.t('settings.push_status_unavailable');
       });
     }
   }
@@ -641,30 +614,18 @@ class _PushNotificationSectionState
     }
 
     if (_settings == null) {
-      return ref.t('common.loading', fallback: 'Loading...');
+      return ref.t('common.loading');
     }
 
     switch (_settings!.authorizationStatus) {
       case AuthorizationStatus.authorized:
-        return ref.t(
-          'settings.push_enabled',
-          fallback: 'Enabled and synced for church updates',
-        );
+        return ref.t('settings.push_enabled');
       case AuthorizationStatus.provisional:
-        return ref.t(
-          'settings.push_provisional',
-          fallback: 'Enabled with provisional permission',
-        );
+        return ref.t('settings.push_provisional');
       case AuthorizationStatus.denied:
-        return ref.t(
-          'settings.push_blocked',
-          fallback: 'Blocked at system level. Open settings to enable.',
-        );
+        return ref.t('settings.push_blocked');
       case AuthorizationStatus.notDetermined:
-        return ref.t(
-          'settings.push_not_determined',
-          fallback: 'Not enabled yet',
-        );
+        return ref.t('settings.push_not_determined');
     }
   }
 
@@ -677,10 +638,7 @@ class _PushNotificationSectionState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.push_not_signed_in',
-              fallback: 'Sign in to manage push notifications',
-            ),
+            ref.t('settings.push_not_signed_in'),
           ),
         ),
       );
@@ -693,10 +651,7 @@ class _PushNotificationSectionState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.push_no_church',
-              fallback: 'Select a church before enabling notifications',
-            ),
+            ref.t('settings.push_no_church'),
           ),
         ),
       );
@@ -732,15 +687,14 @@ class _PushNotificationSectionState
   Widget build(BuildContext context) {
     final actionLabel =
         _settings?.authorizationStatus == AuthorizationStatus.denied
-            ? ref.t('settings.push_manage', fallback: 'Manage')
+            ? ref.t('settings.push_manage')
             : _isAuthorized
-                ? ref.t('settings.push_refresh', fallback: 'Refresh')
-                : ref.t('settings.push_enable', fallback: 'Enable');
+                ? ref.t('settings.push_refresh')
+                : ref.t('settings.push_enable');
 
     return _SettingsTile(
       icon: Icons.notifications_outlined,
-      title:
-          ref.t('settings.push_notifications', fallback: 'Push Notifications'),
+      title: ref.t('settings.push_notifications'),
       subtitle: _subtitleText(),
       trailing: _isLoading
           ? const SizedBox(
@@ -810,7 +764,7 @@ class _PrayerReminderSectionState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "${ref.t('settings.prayer_schedule_failed', fallback: 'Failed to schedule reminder')}: $e",
+              "${ref.t('settings.prayer_schedule_failed')}: $e",
             ),
           ),
         );
@@ -824,14 +778,10 @@ class _PrayerReminderSectionState
       children: [
         _SettingsTile(
           icon: Icons.notifications_active_outlined,
-          title:
-              ref.t('settings.prayer_reminders', fallback: 'Prayer Reminders'),
+          title: ref.t('settings.prayer_reminders'),
           subtitle: enabled && selectedTime != null
-              ? "${ref.t('settings.prayer_daily_at_prefix', fallback: 'Daily at')} ${selectedTime!.format(context)}"
-              : ref.t(
-                  'settings.prayer_reminders_subtitle_off',
-                  fallback: 'Enable daily prayer reminder',
-                ),
+              ? "${ref.t('settings.prayer_daily_at_prefix')} ${selectedTime!.format(context)}"
+              : ref.t('settings.prayer_reminders_subtitle_off'),
           trailing: Switch(
             value: enabled,
             onChanged: (value) async {
@@ -862,10 +812,7 @@ class _PrayerReminderSectionState
                 onPressed: _pickTime,
                 icon: const Icon(Icons.schedule_outlined),
                 label: Text(
-                  ref.t(
-                    'settings.edit_reminder_time',
-                    fallback: 'Edit Reminder Time',
-                  ),
+                  ref.t('settings.edit_reminder_time'),
                 ),
               ),
             ),
@@ -883,11 +830,8 @@ class _FeedbackSection extends ConsumerWidget {
     return _SettingsTile(
       icon: Icons.favorite_rounded,
       iconColor: Colors.redAccent,
-      title: ref.t('settings.feedback_tile_title', fallback: 'Write Feedback'),
-      subtitle: ref.t(
-        'settings.feedback_tile_subtitle',
-        fallback: 'Suggest improvements or features you would like to see.',
-      ),
+      title: ref.t('settings.feedback_tile_title'),
+      subtitle: ref.t('settings.feedback_tile_subtitle'),
       onTap: () => showAppModalBottomSheet<void>(
         context: context,
         heightFactor: 0.72,
@@ -967,7 +911,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t('settings.feedback_sent', fallback: 'Feedback sent'),
+            ref.t('settings.feedback_sent'),
           ),
         ),
       );
@@ -976,10 +920,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.feedback_failed',
-              fallback: 'Unable to send feedback right now',
-            ),
+            ref.t('settings.feedback_failed'),
           ),
         ),
       );
@@ -1014,10 +955,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             ),
             const SizedBox(height: 28),
             Text(
-              ref.t(
-                'settings.feedback_sheet_title',
-                fallback: 'Your feedback matters',
-              ),
+              ref.t('settings.feedback_sheet_title'),
               textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w900,
@@ -1026,11 +964,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              ref.t(
-                'settings.feedback_sheet_subtitle',
-                fallback:
-                    'Help us improve Church Tree by suggesting features you would like to see next.',
-              ),
+              ref.t('settings.feedback_sheet_subtitle'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
@@ -1044,10 +978,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
               maxLines: 7,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: ref.t(
-                  'settings.feedback_hint',
-                  fallback: 'Type your idea here...',
-                ),
+                hintText: ref.t('settings.feedback_hint'),
                 filled: true,
                 fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                 border: OutlineInputBorder(
@@ -1083,7 +1014,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        ref.t('common.send', fallback: 'Send'),
+                        ref.t('common.send'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: canSend
                               ? theme.colorScheme.onPrimary
@@ -1098,7 +1029,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             TextButton(
               onPressed: _isSending ? null : () => Navigator.of(context).pop(),
               child: Text(
-                ref.t('settings.not_now', fallback: 'Not now'),
+                ref.t('settings.not_now'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
@@ -1211,37 +1142,30 @@ class _StorageSection extends ConsumerWidget {
     return _SettingsTile(
       icon: Icons.delete_outline,
       iconColor: Colors.red,
-      title:
-          ref.t('settings.clear_local_data', fallback: 'Clear All Local Data'),
-      subtitle: ref.t(
-        'settings.clear_local_data_subtitle',
-        fallback: 'Remove stored preferences and cached local app data.',
-      ),
+      title: ref.t('settings.clear_local_data'),
+      subtitle: ref.t('settings.clear_local_data_subtitle'),
       onTap: () async {
         final confirm = await showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: Text(
-              ref.t('settings.confirm', fallback: 'Confirm'),
+              ref.t('settings.confirm'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             content: Text(
-              ref.t(
-                'settings.clear_confirm_message',
-                fallback: 'Are you sure you want to clear all local data?',
-              ),
+              ref.t('settings.clear_confirm_message'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  ref.t('settings.cancel', fallback: 'Cancel'),
+                  ref.t('settings.cancel'),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
-                  ref.t('settings.clear', fallback: 'Clear'),
+                  ref.t('settings.clear'),
                 ),
               ),
             ],
@@ -1268,10 +1192,7 @@ class _StorageSection extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                ref.t(
-                  'settings.local_data_cleared',
-                  fallback: 'All local data cleared',
-                ),
+                ref.t('settings.local_data_cleared'),
               ),
             ),
           );
@@ -1337,10 +1258,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.profile_photo_too_large',
-              fallback: 'Choose an image smaller than 5 MB.',
-            ),
+            ref.t('settings.profile_photo_too_large'),
           ),
         ),
       );
@@ -1361,23 +1279,11 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 
   Future<void> _fillCurrentLocation() async {
-    final serviceDisabledMessage = ref.t(
-      'auth.location_service_disabled',
-      fallback: 'Location services are disabled',
-    );
-    final permissionDeniedMessage = ref.t(
-      'auth.location_permission_denied',
-      fallback: 'Location permission denied',
-    );
-    final permissionDeniedForeverMessage = ref.t(
-      'auth.location_permission_denied_forever',
-      fallback:
-          'Location permission denied permanently. Enable it from settings.',
-    );
-    final fetchFailedMessage = ref.t(
-      'auth.location_fetch_failed',
-      fallback: 'Unable to fetch current location',
-    );
+    final serviceDisabledMessage = ref.t('auth.location_service_disabled');
+    final permissionDeniedMessage = ref.t('auth.location_permission_denied');
+    final permissionDeniedForeverMessage =
+        ref.t('auth.location_permission_denied_forever');
+    final fetchFailedMessage = ref.t('auth.location_fetch_failed');
 
     setState(() {
       _isFetchingLocation = true;
@@ -1435,10 +1341,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.profile_phone_invalid',
-              fallback: 'Enter a valid 10-digit phone number',
-            ),
+            ref.t('settings.profile_phone_invalid'),
           ),
         ),
       );
@@ -1449,10 +1352,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.profile_address_location_required',
-              fallback: 'Address and maps location are required',
-            ),
+            ref.t('settings.profile_address_location_required'),
           ),
         ),
       );
@@ -1462,10 +1362,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'settings.profile_birthday_required',
-              fallback: 'Please select your birthday',
-            ),
+            ref.t('settings.profile_birthday_required'),
           ),
         ),
       );
@@ -1504,7 +1401,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t('settings.profile_updated', fallback: 'Profile updated'),
+            ref.t('settings.profile_updated'),
           ),
         ),
       );
@@ -1539,8 +1436,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ref.t('settings.edit_profile_title',
-                        fallback: 'Edit Profile'),
+                    ref.t('settings.edit_profile_title'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                           color: Theme.of(context).colorScheme.onPrimary,
@@ -1548,11 +1444,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    ref.t(
-                      'settings.edit_profile_sheet_subtitle',
-                      fallback:
-                          'Keep your photo and personal information up to date.',
-                    ),
+                    ref.t('settings.edit_profile_sheet_subtitle'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
@@ -1586,10 +1478,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         right: -4,
                         bottom: -4,
                         child: IconButton.filled(
-                          tooltip: ref.t(
-                            'settings.profile_photo_change',
-                            fallback: 'Change profile photo',
-                          ),
+                          tooltip: ref.t('settings.profile_photo_change'),
                           onPressed: _isSaving ? null : _pickProfilePhoto,
                           icon: const Icon(Icons.camera_alt_outlined),
                         ),
@@ -1605,10 +1494,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         onPressed: _isSaving ? null : _pickProfilePhoto,
                         icon: const Icon(Icons.photo_library_outlined),
                         label: Text(
-                          ref.t(
-                            'settings.profile_photo_choose',
-                            fallback: 'Choose photo',
-                          ),
+                          ref.t('settings.profile_photo_choose'),
                         ),
                       ),
                       if (_profilePhoto != null ||
@@ -1619,10 +1505,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                               _isSaving ? null : _removeSelectedProfilePhoto,
                           icon: const Icon(Icons.delete_outline_rounded),
                           label: Text(
-                            ref.t(
-                              'settings.profile_photo_remove',
-                              fallback: 'Remove',
-                            ),
+                            ref.t('settings.profile_photo_remove'),
                           ),
                           style: TextButton.styleFrom(
                             foregroundColor:
@@ -1638,15 +1521,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             _SettingsReviewCard(
               rows: [
                 _SettingsReviewRow(
-                  ref.t('members.name_label', fallback: 'Name'),
+                  ref.t('members.name_label'),
                   widget.user.name,
                 ),
                 _SettingsReviewRow(
-                  ref.t('members.email_label', fallback: 'Email'),
+                  ref.t('members.email_label'),
                   widget.user.email,
                 ),
                 _SettingsReviewRow(
-                  ref.t('members.category_label', fallback: 'Category'),
+                  ref.t('members.category_label'),
                   widget.user.category,
                 ),
               ],
@@ -1656,7 +1539,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                labelText: ref.t('auth.phone_label', fallback: 'Phone Number'),
+                labelText: ref.t('auth.phone_label'),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -1677,16 +1560,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               },
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: ref.t('auth.birthday_label', fallback: 'Birthday'),
+                  labelText: ref.t('auth.birthday_label'),
                   border: OutlineInputBorder(),
                   suffixIcon: Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(
                   _formatDob(_dob).isEmpty
-                      ? ref.t(
-                          'auth.birthday_hint',
-                          fallback: 'Select your birthday',
-                        )
+                      ? ref.t('auth.birthday_hint')
                       : _formatDob(_dob),
                 ),
               ),
@@ -1696,15 +1576,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               controller: _locationController,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: ref.t(
-                  'auth.location_label',
-                  fallback: 'Google Maps Location',
-                ),
-                helperText: ref.t(
-                  'auth.location_helper',
-                  fallback:
-                      'Use current location or paste your Google Maps link',
-                ),
+                labelText: ref.t('auth.location_label'),
+                helperText: ref.t('auth.location_helper'),
                 border: const OutlineInputBorder(),
                 suffixIcon: _isFetchingLocation
                     ? const Padding(
@@ -1728,10 +1601,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 onPressed: _isFetchingLocation ? null : _fillCurrentLocation,
                 icon: const Icon(Icons.location_searching_outlined),
                 label: Text(
-                  ref.t(
-                    'auth.location_use_current',
-                    fallback: 'Use Current Location',
-                  ),
+                  ref.t('auth.location_use_current'),
                 ),
               ),
             ),
@@ -1740,11 +1610,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               keyboardType: TextInputType.streetAddress,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: ref.t('auth.address_label', fallback: 'Address'),
-                helperText: ref.t(
-                  'auth.address_helper',
-                  fallback: 'Enter your address manually',
-                ),
+                labelText: ref.t('auth.address_label'),
+                helperText: ref.t('auth.address_helper'),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -1759,7 +1626,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(ref.t('feed.update_action', fallback: 'Update')),
+                    : Text(ref.t('feed.update_action')),
               ),
             ),
           ],

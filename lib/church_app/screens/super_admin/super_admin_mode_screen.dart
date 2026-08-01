@@ -16,10 +16,7 @@ class SuperAdminModeScreen extends ConsumerWidget {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t(
-            'super_admin.choose_flow_title',
-            fallback: 'Choose your flow',
-          ),
+          text: context.t('super_admin.choose_flow_title'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -44,10 +41,7 @@ class SuperAdminModeScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            context.t(
-                              'super_admin.choose_flow_title',
-                              fallback: 'Choose your flow',
-                            ),
+                            context.t('super_admin.choose_flow_title'),
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall
@@ -55,19 +49,12 @@ class SuperAdminModeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            context.t(
-                              'super_admin.choose_flow_subtitle',
-                              fallback:
-                                  'You have super admin access. Continue with the normal church flow or open the super admin space.',
-                            ),
+                            context.t('super_admin.choose_flow_subtitle'),
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 22),
                           SolidButton(
-                            label: context.t(
-                              'super_admin.normal_flow',
-                              fallback: 'Normal Flow',
-                            ),
+                            label: context.t('super_admin.normal_flow'),
                             onPressed: () async {
                               await ref
                                   .read(superAdminEntryModeProvider.notifier)
@@ -76,11 +63,7 @@ class SuperAdminModeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            context.t(
-                              'super_admin.normal_flow_desc',
-                              fallback:
-                                  'Go to church selection and continue like a regular signed-in user.',
-                            ),
+                            context.t('super_admin.normal_flow_desc'),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 18),
@@ -91,19 +74,12 @@ class SuperAdminModeScreen extends ConsumerWidget {
                                   .setMode(SuperAdminEntryMode.superAdmin);
                             },
                             child: Text(
-                              context.t(
-                                'super_admin.super_flow',
-                                fallback: 'Super Admin Flow',
-                              ),
+                              context.t('super_admin.super_flow'),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            context.t(
-                              'super_admin.super_flow_desc',
-                              fallback:
-                                  'Open the platform-level church management dashboard.',
-                            ),
+                            context.t('super_admin.super_flow_desc'),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],

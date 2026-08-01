@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
@@ -43,20 +44,14 @@ class _TodayBirthdaysModal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.t('birthday.today_title', fallback: "Today's Birthdays"),
+            context.t('birthday.today_title'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 6),
           Text(
             members.isEmpty
-                ? context.t(
-                    'birthday.none_subtitle',
-                    fallback: 'No members have birthdays today.',
-                  )
-                : context.t(
-                    'birthday.pick_member_subtitle',
-                    fallback: 'Choose a member to prepare a birthday post.',
-                  ),
+                ? context.t('birthday.none_subtitle')
+                : context.t('birthday.pick_member_subtitle'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -64,10 +59,7 @@ class _TodayBirthdaysModal extends StatelessWidget {
             child: members.isEmpty
                 ? Center(
                     child: Text(
-                      context.t(
-                        'birthday.none_today',
-                        fallback: 'No birthdays today',
-                      ),
+                      context.t('birthday.none_today'),
                     ),
                   )
                 : ListView.separated(
@@ -97,7 +89,7 @@ class _TodayBirthdaysModal extends StatelessWidget {
                               );
                             },
                             child: Text(
-                              context.t('common.send', fallback: 'Send'),
+                              context.t('common.send'),
                             ),
                           ),
                         ),
@@ -149,13 +141,16 @@ class _BirthdayPostComposerModalState
   String _textKey(String suffix) =>
       '${_isAnniversary ? 'anniversary' : 'birthday'}.$suffix';
 
-  String get _occasionName => _isAnniversary ? 'Anniversary' : 'Birthday';
+  String get _occasionName => defaultChurchTextContents[
+      _isAnniversary ? 'anniversary.name' : 'birthday.name']!;
 
-  String get _cardEyebrow =>
-      _isAnniversary ? 'Celebrating Love' : 'Celebrating You';
+  String get _cardEyebrow => defaultChurchTextContents[_isAnniversary
+      ? 'anniversary.celebrating_love'
+      : 'birthday.celebrating_you']!;
 
-  String get _cardHeadline =>
-      _isAnniversary ? 'Happy Anniversary' : 'Happy Birthday';
+  String get _cardHeadline => defaultChurchTextContents[_isAnniversary
+      ? 'anniversary.happy_anniversary'
+      : 'birthday.happy_birthday']!;
 
   @override
   void initState() {
@@ -165,8 +160,10 @@ class _BirthdayPostComposerModalState
             widget.member.name, widget.member.weddingDay)
         : buildBirthdayPostTitle(widget.member.name, widget.member.dob);
     _descriptionController.text = _isAnniversary
-        ? 'Wishing ${widget.member.name} a joyful and blessed wedding anniversary.'
-        : 'Wishing ${widget.member.name} a joyful and blessed birthday.';
+        ? defaultChurchTextContents['anniversary.post_description']!
+            .replaceAll('{name}', widget.member.name)
+        : defaultChurchTextContents['birthday.post_description']!
+            .replaceAll('{name}', widget.member.name);
   }
 
   @override
@@ -278,10 +275,7 @@ class _BirthdayPostComposerModalState
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'birthday.title_required',
-              fallback: 'Title and description are required',
-            ),
+            context.t('birthday.title_required'),
           ),
         ),
       );
@@ -350,7 +344,7 @@ class _BirthdayPostComposerModalState
                       ? null
                       : () => Navigator.of(context).pop(),
                   child: Text(
-                    context.t('birthday.close', fallback: 'Close'),
+                    context.t('birthday.close'),
                   ),
                 ),
               ],
@@ -360,10 +354,7 @@ class _BirthdayPostComposerModalState
               controller: _titleController,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText: context.t(
-                  'birthday.title_label',
-                  fallback: 'Title',
-                ),
+                labelText: context.t('birthday.title_label'),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -373,10 +364,7 @@ class _BirthdayPostComposerModalState
               minLines: 3,
               maxLines: null,
               decoration: InputDecoration(
-                labelText: context.t(
-                  'birthday.description_label',
-                  fallback: 'Description',
-                ),
+                labelText: context.t('birthday.description_label'),
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -392,7 +380,7 @@ class _BirthdayPostComposerModalState
               error: (error, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  '${context.t('birthday.verse_load_error', fallback: 'Unable to load birthday verse:')} $error',
+                  '${context.t('birthday.verse_load_error')} $error',
                 ),
               ),
               data: (verses) {
@@ -403,11 +391,7 @@ class _BirthdayPostComposerModalState
                   return Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      context.t(
-                        'birthday.no_verse_available',
-                        fallback:
-                            'No verse available for birthday posts right now.',
-                      ),
+                      context.t('birthday.no_verse_available'),
                     ),
                   );
                 }
@@ -439,14 +423,8 @@ class _BirthdayPostComposerModalState
                           icon: const Icon(Icons.image_outlined),
                           label: Text(
                             _selectedBackgroundImage == null
-                                ? context.t(
-                                    'birthday.choose_image',
-                                    fallback: 'Choose image',
-                                  )
-                                : context.t(
-                                    'birthday.change_image',
-                                    fallback: 'Change image',
-                                  ),
+                                ? context.t('birthday.choose_image')
+                                : context.t('birthday.change_image'),
                           ),
                         ),
                       ],
@@ -507,12 +485,9 @@ bool isAnniversaryToday(DateTime? weddingDay) {
 
 String _formatDob(BuildContext context, DateTime? dob) {
   if (dob == null) {
-    return context.t(
-      'birthday.date_unavailable',
-      fallback: 'Birthday date unavailable',
-    );
+    return context.t('birthday.date_unavailable');
   }
-  return '${context.t('birthday.date_prefix', fallback: 'Birthday')}: ${dob.day}/${dob.month}';
+  return '${context.t('birthday.date_prefix')}: ${dob.day}/${dob.month}';
 }
 
 String _formatBirthdayMoment(BuildContext context, DateTime? dob) {
@@ -523,15 +498,18 @@ String _formatBirthdayMoment(BuildContext context, DateTime? dob) {
   final now = DateTime.now();
   final turningAge = now.year - dob.year;
 
-  return '${context.t('birthday.turning_prefix', fallback: 'Turning')} $turningAge';
+  return '${context.t('birthday.turning_prefix')} $turningAge';
 }
 
 String buildAnniversaryPostTitle(String userName, DateTime? weddingDay) {
   final years = birthdayAge(weddingDay);
   if (years == null) {
-    return 'Happy Anniversary $userName';
+    return defaultChurchTextContents['anniversary.post_title']!
+        .replaceAll('{name}', userName);
   }
-  return 'Happy ${_anniversaryOrdinal(years)} Anniversary $userName';
+  return defaultChurchTextContents['anniversary.years_post_title']!
+      .replaceAll('{years}', _anniversaryOrdinal(years))
+      .replaceAll('{name}', userName);
 }
 
 String _anniversaryOrdinal(int value) {

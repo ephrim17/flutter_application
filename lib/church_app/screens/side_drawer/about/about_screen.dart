@@ -26,7 +26,7 @@ class AboutScreen extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              "${context.t('common.error_prefix', fallback: 'Error')}: $e",
+              "${context.t('common.error_prefix')}: $e",
               textAlign: TextAlign.center,
             ),
           ),
@@ -37,10 +37,7 @@ class AboutScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  context.t(
-                    'about.empty_error',
-                    fallback: 'About content is not available yet.',
-                  ),
+                  context.t('about.empty_error'),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -57,41 +54,32 @@ class AboutScreen extends ConsumerWidget {
                 _AboutNarrativeCard(text: state.description),
                 const SizedBox(height: 24),
                 _AboutSectionHeading(
-                  eyebrow:
-                      context.t('about.our_mission', fallback: 'Our Mission'),
-                  title: 'What guides how we serve.',
+                  eyebrow: context.t('about.our_mission'),
+                  title: context.t('ui.about.what_guides_how_we_serve'),
                 ),
                 const SizedBox(height: 14),
                 _AboutInsightCard(
                   icon: Icons.church_outlined,
-                  title: context.t(
-                    'about.our_mission',
-                    fallback: 'Our Mission',
-                  ),
+                  title: context.t('about.our_mission'),
                   description: state.mission,
                 ),
                 const SizedBox(height: 14),
                 _AboutInsightCard(
                   icon: Icons.groups_2_outlined,
-                  title: context.t(
-                    'about.our_community',
-                    fallback: 'Our Community',
-                  ),
+                  title: context.t('about.our_community'),
                   description: state.community,
                 ),
                 const SizedBox(height: 14),
                 _AboutInsightCard(
                   icon: Icons.favorite_outline,
-                  title: context.t(
-                    'about.our_values',
-                    fallback: 'Our Values',
-                  ),
+                  title: context.t('about.our_values'),
                   description: state.values,
                 ),
                 const SizedBox(height: 28),
                 _AboutSectionHeading(
-                  eyebrow: 'Leadership',
-                  title: 'Meet the people caring for this church family.',
+                  eyebrow: context.t('about.leadership'),
+                  title: context.t(
+                      'ui.about.meet_the_people_caring_for_this_church_family'),
                 ),
                 const SizedBox(height: 14),
                 const PastorWidget(),

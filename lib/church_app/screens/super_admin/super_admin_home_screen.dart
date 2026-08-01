@@ -26,49 +26,43 @@ import 'package:intl/intl.dart';
 const List<_FeatureToggleSpec> _superAdminFeatureSpecs = <_FeatureToggleSpec>[
   _FeatureToggleSpec(
     key: 'dashboardEnabled',
-    label: 'Dashboard',
+    labelKey: 'super_admin.feature_dashboard_short',
     icon: Icons.dashboard_customize_outlined,
     color: Colors.indigo,
   ),
   _FeatureToggleSpec(
-    key: 'financialDashboardEnabled',
-    label: 'Finance',
-    icon: Icons.account_balance_wallet_outlined,
-    color: Colors.deepPurple,
-  ),
-  _FeatureToggleSpec(
     key: 'equipmentEnabled',
-    label: 'Equipment',
+    labelKey: 'super_admin.feature_equipment',
     icon: Icons.inventory_2_outlined,
     color: Colors.teal,
   ),
   _FeatureToggleSpec(
     key: 'studioEnabled',
-    label: 'Studio',
+    labelKey: 'super_admin.feature_studio',
     icon: Icons.design_services_outlined,
     color: Colors.orange,
   ),
   _FeatureToggleSpec(
     key: 'membersEnabled',
-    label: 'Members',
+    labelKey: 'super_admin.feature_members',
     icon: Icons.people_outline,
     color: Colors.blue,
   ),
   _FeatureToggleSpec(
     key: 'eventsEnabled',
-    label: 'Events',
+    labelKey: 'super_admin.feature_events',
     icon: Icons.event_outlined,
     color: Colors.pink,
   ),
   _FeatureToggleSpec(
     key: 'globalFeedEnabled',
-    label: 'Global Feed',
+    labelKey: 'super_admin.feature_global_feed',
     icon: Icons.feed_outlined,
     color: Colors.green,
   ),
   _FeatureToggleSpec(
     key: 'bibleSwipeFetchEnabled',
-    label: 'Bible Swipe',
+    labelKey: 'super_admin.feature_bible_swipe',
     icon: Icons.menu_book_outlined,
     color: Colors.brown,
   ),
@@ -78,8 +72,6 @@ bool _isFeatureEnabled(AppConfig config, String key) {
   switch (key) {
     case 'dashboardEnabled':
       return config.dashboardEnabled;
-    case 'financialDashboardEnabled':
-      return config.financialDashboardEnabled;
     case 'equipmentEnabled':
       return config.equipmentEnabled;
     case 'studioEnabled':
@@ -159,17 +151,14 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('super_admin.title', fallback: 'Super Admin'),
+          text: context.t('super_admin.title'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            tooltip: context.t(
-              'super_admin.back_to_normal_flow',
-              fallback: 'Back To Church Selection',
-            ),
+            tooltip: context.t('super_admin.back_to_normal_flow'),
             onPressed: () async => _openNormalFlow(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),
@@ -185,7 +174,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                   loading: () => const Center(child: AppLoadingIndicator()),
                   error: (error, _) => Center(
                     child: Text(
-                      '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+                      '${context.t('common.error_prefix')}: $error',
                     ),
                   ),
                   data: (churches) {
@@ -223,10 +212,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            context.t(
-                                              'super_admin.title',
-                                              fallback: 'Super Admin',
-                                            ),
+                                            context.t('super_admin.title'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .headlineSmall
@@ -236,11 +222,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            context.t(
-                                              'super_admin.subtitle',
-                                              fallback:
-                                                  'Manage platform-level churches before entering the church app.',
-                                            ),
+                                            context.t('super_admin.subtitle'),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyMedium,
@@ -250,9 +232,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                             width: double.infinity,
                                             child: SolidButton(
                                               label: context.t(
-                                                'super_admin.create_church',
-                                                fallback: 'Create Church',
-                                              ),
+                                                  'super_admin.create_church'),
                                               onPressed: () async {
                                                 final createResult =
                                                     await Navigator.of(context)
@@ -278,21 +258,12 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                                     switch (createResult) {
                                                   'created_with_email' =>
                                                     context.t(
-                                                      'super_admin.create_success',
-                                                      fallback:
-                                                          'Church created successfully. Password setup email sent to the admin.',
-                                                    ),
+                                                        'super_admin.create_success'),
                                                   'created_email_failed' =>
                                                     context.t(
-                                                      'super_admin.create_success_email_failed',
-                                                      fallback:
-                                                          'Church created successfully, but the password setup email could not be sent to the admin.',
-                                                    ),
+                                                        'super_admin.create_success_email_failed'),
                                                   _ => context.t(
-                                                      'super_admin.create_success_no_account',
-                                                      fallback:
-                                                          'Church created successfully without account setup.',
-                                                    ),
+                                                      'super_admin.create_success_no_account'),
                                                 };
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(
@@ -322,10 +293,8 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                           });
                                         },
                                         decoration: InputDecoration(
-                                          hintText: context.t(
-                                            'super_admin.search_hint',
-                                            fallback: 'Search churches',
-                                          ),
+                                          hintText: context
+                                              .t('super_admin.search_hint'),
                                           prefixIcon: const Icon(Icons.search),
                                           suffixIcon: _query.isEmpty
                                               ? null
@@ -412,19 +381,13 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                           children: [
                             _ChurchListTab(
                               churches: pendingChurches,
-                              emptyMessage: context.t(
-                                'super_admin.pending_section_empty',
-                                fallback:
-                                    'No churches are waiting for approval right now.',
-                              ),
+                              emptyMessage: context
+                                  .t('super_admin.pending_section_empty'),
                             ),
                             _ChurchListTab(
                               churches: approvedChurches,
-                              emptyMessage: context.t(
-                                'super_admin.approved_section_empty',
-                                fallback:
-                                    'No approved churches match your search yet.',
-                              ),
+                              emptyMessage: context
+                                  .t('super_admin.approved_section_empty'),
                             ),
                             _FeedbackListTab(feedbackAsync: feedbackAsync),
                           ],
@@ -513,10 +476,7 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        context.t(
-                          'super_admin.status_updated',
-                          fallback: 'Church status updated',
-                        ),
+                        context.t('super_admin.status_updated'),
                       ),
                     ),
                   );
@@ -549,20 +509,14 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      context.t(
-                        'super_admin.edit_success',
-                        fallback: 'Church updated successfully',
-                      ),
+                      context.t('super_admin.edit_success'),
                     ),
                   ),
                 );
               },
               icon: const Icon(Icons.edit_outlined),
               label: Text(
-                context.t(
-                  'super_admin.edit_church',
-                  fallback: 'Edit Church',
-                ),
+                context.t('super_admin.edit_church'),
               ),
             ),
           ),
@@ -622,7 +576,7 @@ class _FeedbackListTab extends ConsumerWidget {
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
-          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+          '${context.t('common.error_prefix')}: $error',
         ),
       ),
       data: (items) {
@@ -633,7 +587,8 @@ class _FeedbackListTab extends ConsumerWidget {
               Container(
                 decoration: carouselBoxDecoration(context),
                 padding: const EdgeInsets.all(18),
-                child: const Text('No feedback has been submitted yet.'),
+                child: Text(context.t(
+                    'ui.super_admin_home.no_feedback_has_been_submitted_yet')),
               ),
             ],
           );
@@ -655,7 +610,9 @@ class _FeedbackListTab extends ConsumerWidget {
                   await doc.reference.delete();
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Feedback deleted')),
+                    SnackBar(
+                        content: Text(
+                            context.t('ui.super_admin_home.feedback_deleted'))),
                   );
                 },
                 child: _FeedbackTile(doc: doc),
@@ -776,11 +733,13 @@ class _FeedbackTile extends ConsumerWidget {
                   );
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Feedback marked reviewed')),
+                    SnackBar(
+                        content: Text(context.t(
+                            'ui.super_admin_home.feedback_marked_reviewed'))),
                   );
                 },
                 icon: const Icon(Icons.done_rounded),
-                label: const Text('Mark reviewed'),
+                label: Text(context.t('ui.super_admin_home.mark_reviewed')),
               ),
             ),
           ],
@@ -823,7 +782,7 @@ Future<bool?> _confirmDeleteFeedback(
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Delete feedback?'),
+        title: Text(context.t('ui.super_admin_home.delete_feedback')),
         content: Text(
           [
             if (userName.isNotEmpty) 'From: $userName',
@@ -834,7 +793,7 @@ Future<bool?> _confirmDeleteFeedback(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.t('ui.super_admin_home.cancel')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -842,7 +801,7 @@ Future<bool?> _confirmDeleteFeedback(
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.t('ui.super_admin_home.delete')),
           ),
         ],
       );
@@ -961,8 +920,6 @@ class _FeatureOverviewPanel extends ConsumerWidget {
         .toList(growable: false);
     final dashboardCount =
         configs.where((config) => config.dashboardEnabled).length;
-    final financeCount =
-        configs.where((config) => config.financialDashboardEnabled).length;
     final equipmentCount =
         configs.where((config) => config.equipmentEnabled).length;
     final studioCount = configs.where((config) => config.studioEnabled).length;
@@ -974,14 +931,15 @@ class _FeatureOverviewPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Feature map',
+            context.t('ui.super_admin_home.feature_map'),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Quick view of which modules are enabled across churches.',
+            context.t(
+                'ui.super_admin_home.quick_view_of_which_modules_are_enabled_across_churches'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -990,28 +948,21 @@ class _FeatureOverviewPanel extends ConsumerWidget {
             runSpacing: 10,
             children: [
               _FeatureStatChip(
-                label: 'Dashboard',
+                label: context.t('super_admin.feature_dashboard_short'),
                 count: dashboardCount,
                 total: churches.length,
                 icon: Icons.dashboard_customize_outlined,
                 color: Colors.indigo,
               ),
               _FeatureStatChip(
-                label: 'Finance',
-                count: financeCount,
-                total: churches.length,
-                icon: Icons.account_balance_wallet_outlined,
-                color: Colors.deepPurple,
-              ),
-              _FeatureStatChip(
-                label: 'Equipment',
+                label: context.t('super_admin.feature_equipment'),
                 count: equipmentCount,
                 total: churches.length,
                 icon: Icons.inventory_2_outlined,
                 color: Colors.teal,
               ),
               _FeatureStatChip(
-                label: 'Studio',
+                label: context.t('super_admin.feature_studio'),
                 count: studioCount,
                 total: churches.length,
                 icon: Icons.design_services_outlined,
@@ -1133,7 +1084,14 @@ class _FeatureToggleChip extends ConsumerWidget {
           );
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${item.label} updated')),
+            SnackBar(
+              content: Text(
+                context.t(
+                  'super_admin.feature_updated',
+                  parameters: {'feature': context.t(item.labelKey)},
+                ),
+              ),
+            ),
           );
         },
         child: Padding(
@@ -1148,7 +1106,7 @@ class _FeatureToggleChip extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                item.label,
+                context.t(item.labelKey),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: enabled
                           ? item.color
@@ -1175,13 +1133,13 @@ class _FeatureToggleChip extends ConsumerWidget {
 class _FeatureToggleSpec {
   const _FeatureToggleSpec({
     required this.key,
-    required this.label,
+    required this.labelKey,
     required this.icon,
     required this.color,
   });
 
   final String key;
-  final String label;
+  final String labelKey;
   final IconData icon;
   final Color color;
 }

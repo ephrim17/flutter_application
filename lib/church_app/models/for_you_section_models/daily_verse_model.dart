@@ -24,10 +24,7 @@ class DailyVerse {
   }
 
   /// For writing to Firestore (id is not stored inside fields)
-  Map<String, dynamic> toMap() => {
-        'title': title,
-        'description': description
-      };
+  Map<String, dynamic> toMap() => {'title': title, 'description': description};
 
   /// For reading from Firestore
   static DailyVerse fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -35,8 +32,8 @@ class DailyVerse {
 
     return DailyVerse(
       id: doc.id,
-      title: (data['title'] ?? '') as String,
-      description: (data['description'] ?? '') as String,
+      title: data['title']?.toString().trim() ?? '',
+      description: data['description']?.toString().trim() ?? '',
     );
   }
 }

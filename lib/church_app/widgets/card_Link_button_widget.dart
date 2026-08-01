@@ -20,42 +20,44 @@ class CardLinkButtonWidget extends StatelessWidget {
 
   @override
   @override
-Widget build(BuildContext context) {
-  return Container(
-    padding: const EdgeInsets.all(24),
-    decoration: carouselBoxDecoration(context),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        iconStyle,
-        const SizedBox(width: 16),
-
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // 👈 important
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Title
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: carouselBoxDecoration(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          iconStyle,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // 👈 important
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// Title
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       //fontWeight: FontWeight.bold,
-                    ),
-              ),
-
-              /// Button aligned right
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: onPressed,
-                  child: ColorText(badgeText: buttonText, fontSize: 15,),
+                      ),
                 ),
-              ),
-            ],
+
+                /// Button aligned right
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: onPressed,
+                    child: ColorText(
+                      badgeText: buttonText,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

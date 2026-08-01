@@ -1,24 +1,35 @@
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
+
 class ChurchGroupDefinition {
   const ChurchGroupDefinition({
     required this.id,
-    required this.label,
+    required this.labelKey,
   });
 
   final String id;
-  final String label;
+  final String labelKey;
+
+  String get label => defaultChurchTextContents[labelKey] ?? labelKey;
 }
 
 const churchGroupDefinitions = <ChurchGroupDefinition>[
-  ChurchGroupDefinition(id: 'pastors', label: 'Pastors'),
-  ChurchGroupDefinition(id: 'elders', label: 'Elders'),
-  ChurchGroupDefinition(id: 'carecell_leaders', label: 'Carecell Leaders'),
-  ChurchGroupDefinition(id: 'music_ministry', label: 'Music Ministry'),
-  ChurchGroupDefinition(id: 'media_ministry', label: 'Media Ministry'),
-  ChurchGroupDefinition(id: 'children_ministry', label: 'Children Ministry'),
-  ChurchGroupDefinition(id: 'youth_ministry', label: 'Youth Ministry'),
-  ChurchGroupDefinition(id: 'administration', label: 'Administration'),
-  ChurchGroupDefinition(id: 'finance', label: 'Finance'),
-  ChurchGroupDefinition(id: 'social_service', label: 'Social Service'),
+  ChurchGroupDefinition(id: 'pastors', labelKey: 'groups.pastors'),
+  ChurchGroupDefinition(id: 'elders', labelKey: 'groups.elders'),
+  ChurchGroupDefinition(
+      id: 'carecell_leaders', labelKey: 'groups.carecell_leaders'),
+  ChurchGroupDefinition(
+      id: 'music_ministry', labelKey: 'groups.music_ministry'),
+  ChurchGroupDefinition(
+      id: 'media_ministry', labelKey: 'groups.media_ministry'),
+  ChurchGroupDefinition(
+      id: 'children_ministry', labelKey: 'groups.children_ministry'),
+  ChurchGroupDefinition(
+      id: 'youth_ministry', labelKey: 'groups.youth_ministry'),
+  ChurchGroupDefinition(
+      id: 'administration', labelKey: 'groups.administration'),
+  ChurchGroupDefinition(id: 'finance', labelKey: 'groups.finance'),
+  ChurchGroupDefinition(
+      id: 'social_service', labelKey: 'groups.social_service'),
 ];
 
 String churchGroupLabel(String groupId) {

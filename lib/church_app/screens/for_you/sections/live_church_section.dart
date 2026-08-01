@@ -128,7 +128,7 @@ class _LiveChurchCardState extends State<_LiveChurchCard> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    context.t('for_you.live_church.live', fallback: 'LIVE'),
+                    context.t('for_you.live_church.live'),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onError,
                       fontWeight: FontWeight.w800,
@@ -138,10 +138,7 @@ class _LiveChurchCardState extends State<_LiveChurchCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    context.t(
-                      'for_you.live_church.title',
-                      fallback: 'Live Church',
-                    ),
+                    context.t('for_you.live_church.title'),
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -149,7 +146,7 @@ class _LiveChurchCardState extends State<_LiveChurchCard> {
                 ),
                 if (widget.status.canEmbed)
                   IconButton(
-                    tooltip: 'Full screen',
+                    tooltip: context.t('ui.live_church_section.full_screen'),
                     onPressed: _openFullscreen,
                     icon: const Icon(Icons.fullscreen_rounded),
                   ),
@@ -243,7 +240,7 @@ class _LiveChurchFullscreenPageState extends State<_LiveChurchFullscreenPage> {
             left: 12,
             child: SafeArea(
               child: IconButton.filledTonal(
-                tooltip: 'Close full screen',
+                tooltip: context.t('ui.live_church_section.close_full_screen'),
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -277,10 +274,7 @@ class _YouTubeFallback extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            context.t(
-              'for_you.live_church.youtube_only',
-              fallback: 'This service is available live on YouTube.',
-            ),
+            context.t('for_you.live_church.youtube_only'),
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium,
           ),
@@ -294,10 +288,7 @@ class _YouTubeFallback extends StatelessWidget {
             },
             icon: const Icon(Icons.open_in_new_rounded),
             label: Text(
-              context.t(
-                'for_you.live_church.watch_youtube',
-                fallback: 'Watch live on YouTube',
-              ),
+              context.t('for_you.live_church.watch_youtube'),
             ),
           ),
         ],

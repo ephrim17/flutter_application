@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -26,7 +27,9 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
 
     if (!isAdmin) {
       return DashboardViewState.accessDenied(
-        churchTitle: title.isEmpty ? 'Church' : title,
+        churchTitle: title.isEmpty
+            ? defaultChurchTextContents['dashboard.church_fallback']!
+            : title,
         selectedChartMode:
             previous?.selectedChartMode ?? DashboardMemberChartMode.gender,
       );
@@ -50,7 +53,9 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
 
     final nextState = DashboardViewState(
       isAdmin: true,
-      churchTitle: title.isEmpty ? 'Church' : title,
+      churchTitle: title.isEmpty
+          ? defaultChurchTextContents['dashboard.church_fallback']!
+          : title,
       churchId: churchId,
       memberMetrics: results[0] as DashboardMemberMetrics,
       prayers: results[1] as List<PrayerRequest>,

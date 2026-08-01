@@ -31,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       _announcementListener = ref.listenManual<PromptSheetModel?>(
         isAnnouncementEnabledProvider,
         (previous, next) async {
@@ -72,6 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
+    if (!mounted) return;
     if (ref.read(isBirthdayProvider) == true) {
       await _maybeShowPrompt(PromptType.birthday);
     }
@@ -106,6 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      heightFactor: sheetType == PromptType.announcement ? 0.55 : 0.9,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -124,8 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return sectionConfigsAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Center(
-        child:
-            Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+        child: Text("${context.t('common.error_prefix')}: $e"),
       ),
       data: (configs) {
         final registry = HomeSectionRegistry.all();
@@ -217,23 +219,38 @@ class _WelcomeCard extends StatelessWidget {
   final String userName;
   final int dayStreak;
 
-  ({IconData icon, String label}) _greetingVisualForHour(int hour) {
+  ({IconData icon, String label}) _greetingVisualForHour(
+    BuildContext context,
+    int hour,
+  ) {
     if (hour < 5) {
-      return (icon: Icons.nightlight_round, label: 'Late night');
+      return (
+        icon: Icons.nightlight_round,
+        label: context.t('ui.home.late_night')
+      );
     }
     if (hour < 8) {
-      return (icon: Icons.wb_twilight_outlined, label: 'Early morning');
+      return (
+        icon: Icons.wb_twilight_outlined,
+        label: context.t('ui.home.early_morning')
+      );
     }
     if (hour < 12) {
-      return (icon: Icons.wb_sunny_outlined, label: 'Morning');
+      return (
+        icon: Icons.wb_sunny_outlined,
+        label: context.t('ui.home.morning')
+      );
     }
     if (hour < 17) {
-      return (icon: Icons.light_mode_outlined, label: 'Afternoon');
+      return (
+        icon: Icons.light_mode_outlined,
+        label: context.t('ui.home.afternoon')
+      );
     }
     if (hour < 20) {
-      return (icon: Icons.wb_twilight, label: 'Evening');
+      return (icon: Icons.wb_twilight, label: context.t('ui.home.evening'));
     }
-    return (icon: Icons.dark_mode_outlined, label: 'Night');
+    return (icon: Icons.dark_mode_outlined, label: context.t('ui.home.night'));
   }
 
   @override
@@ -242,7 +259,10 @@ class _WelcomeCard extends StatelessWidget {
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
     final onPrimary = theme.colorScheme.onPrimary;
-    final greetingVisual = _greetingVisualForHour(DateTime.now().hour);
+    final greetingVisual = _greetingVisualForHour(
+      context,
+      DateTime.now().hour,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -311,7 +331,7 @@ class _WelcomeCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'Welcome back',
+                          context.t('ui.home.welcome_back'),
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: onPrimary.withValues(alpha: 0.96),
                             fontWeight: FontWeight.w700,
@@ -353,7 +373,10 @@ class _WelcomeCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Your current streak $dayStreak days',
+                                context.t(
+                                  'home.current_streak',
+                                  parameters: {'count': '$dayStreak'},
+                                ),
                                 style: theme.textTheme.labelLarge?.copyWith(
                                   color: onPrimary,
                                   fontWeight: FontWeight.w800,

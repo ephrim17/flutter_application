@@ -67,29 +67,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(
-              context.t(
-                'auth.user_not_found_title',
-                fallback: 'User not found',
-              ),
+              context.t('auth.user_not_found_title'),
             ),
             content: Text(
-              context.t(
-                'auth.user_not_found_message',
-                fallback:
-                    'No registered user was found for this church. Would you like to register as a new user?',
-              ),
+              context.t('auth.user_not_found_message'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
                 child: Text(
-                  context.t('settings.cancel', fallback: 'Cancel'),
+                  context.t('settings.cancel'),
                 ),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: Text(
-                  context.t('auth.register', fallback: 'Register'),
+                  context.t('auth.register'),
                 ),
               ),
             ],
@@ -120,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: ref.t('auth.login', fallback: 'Login'),
+          text: ref.t('auth.login'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -156,10 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       AppTextField(
                         controller: _emailCtrl,
                         decoration: InputDecoration(
-                          labelText: context.t(
-                            'auth.email_label',
-                            fallback: 'Email',
-                          ),
+                          labelText: context.t('auth.email_label'),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -169,10 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         controller: _passCtrl,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: context.t(
-                            'auth.password_label',
-                            fallback: 'Password',
-                          ),
+                          labelText: context.t('auth.password_label'),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -193,10 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   );
                                 },
                           child: Text(
-                            context.t(
-                              'auth.forgot_password_title',
-                              fallback: 'Forgot Password',
-                            ),
+                            context.t('auth.forgot_password_title'),
                           ),
                         ),
                       ),
@@ -208,7 +192,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 /// 🚀 Login
                 SolidButton(
-                  label: ref.t('auth.login', fallback: 'Login'),
+                  label: ref.t('auth.login'),
                   isLoading: isLoading,
                   onPressed: isLoading
                       ? null
@@ -220,11 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  context.t(
-                                    'auth.login_screen_email_required',
-                                    fallback:
-                                        'Please enter your email address.',
-                                  ),
+                                  context.t('auth.login_screen_email_required'),
                                 ),
                               ),
                             );
@@ -235,10 +215,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  context.t(
-                                    'auth.email_invalid',
-                                    fallback: 'Please enter a valid email.',
-                                  ),
+                                  context.t('auth.email_invalid'),
                                 ),
                               ),
                             );
@@ -249,10 +226,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  context.t(
-                                    'auth.login_screen_password_required',
-                                    fallback: 'Please enter your password.',
-                                  ),
+                                  context
+                                      .t('auth.login_screen_password_required'),
                                 ),
                               ),
                             );
@@ -260,10 +235,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           }
                           ref.read(logginAccessLoadingProvider.notifier).state =
                               true;
-                          final loginFetchUserFailedMessage = context.t(
-                            'auth.login_fetch_user_failed',
-                            fallback: 'Unable to fetch logged in user',
-                          );
+                          final loginFetchUserFailedMessage =
+                              context.t('auth.login_fetch_user_failed');
                           try {
                             await ref.read(authRepositoryProvider).signIn(
                                   email: email,

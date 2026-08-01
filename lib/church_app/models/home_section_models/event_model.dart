@@ -62,7 +62,7 @@ class Event {
         'location': location,
         'timing': timing,
         'startAt': startAt == null ? null : Timestamp.fromDate(startAt!),
-        'type': type,
+        'type': EventType.firestoreKey[type] ?? type.name,
         'isActive': isActive,
         'expiryAt': expiryAt == null ? null : Timestamp.fromDate(expiryAt!),
       };
@@ -73,15 +73,22 @@ class Event {
 
     return Event(
       id: doc.id,
-      title: (data['title'] ?? '') as String,
-      description: (data['description'] ?? '') as String,
-      contact: (data['contact'] ?? '') as String,
-      location: (data['location'] ?? '') as String,
-      timing: (data['timing'] ?? '') as String,
-      startAt: (data['startAt'] as Timestamp?)?.toDate(),
-      type: EventTypeX.fromString(data['type'] as String?),
-      isActive: (data['isActive'] ?? true) as bool,
-      expiryAt: (data['expiryAt'] as Timestamp?)?.toDate(),
+      title: data['title']?.toString().trim() ?? '',
+      description: data['description']?.toString().trim() ?? '',
+      contact: data['contact']?.toString().trim() ?? '',
+      location: data['location']?.toString().trim() ?? '',
+      timing: data['timing']?.toString().trim() ?? '',
+      startAt: _parseDate(data['startAt']),
+      type: EventTypeX.fromString(data['type']?.toString()),
+      isActive: data['isActive'] != false,
+      expiryAt: _parseDate(data['expiryAt']),
     );
   }
+}
+
+DateTime? _parseDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  return null;
 }

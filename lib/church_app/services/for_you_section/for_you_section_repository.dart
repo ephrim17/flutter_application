@@ -10,13 +10,11 @@ class ForYouSectionConfigRepository extends ChurchScopedRepository {
   });
 
   CollectionReference<ForYouSectionConfigModel> collectionRef() {
-    return FirestorePaths
-        .churchForYouSections(firestore, churchId)
+    return FirestorePaths.churchForYouSections(firestore, churchId)
         .withConverter<ForYouSectionConfigModel>(
-          fromFirestore: (snap, _) =>
-              ForYouSectionConfigModel.fromFirestore(snap),
-              toFirestore: (model, _) => model.toMap(),
-        );
+      fromFirestore: (snap, _) => ForYouSectionConfigModel.fromFirestore(snap),
+      toFirestore: (model, _) => model.toMap(),
+    );
   }
 
   Stream<List<ForYouSectionConfigModel>> watchAll({

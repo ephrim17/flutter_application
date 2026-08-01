@@ -70,10 +70,7 @@ class PromiseVerseCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SectionHeader(
-                      text: context.t(
-                        'promise.section_title',
-                        fallback: 'Promise Word 2026',
-                      ),
+                      text: context.t('promise.section_title'),
                       padding: 0.0,
                     ),
                     const SizedBox(height: 10),

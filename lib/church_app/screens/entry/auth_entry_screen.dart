@@ -17,7 +17,7 @@ class AuthEntryScreen extends StatelessWidget {
               const Icon(Icons.church, size: 72),
               const SizedBox(height: 16),
               Text(
-                context.t('auth_entry.welcome', fallback: 'Welcome'),
+                context.t('auth_entry.welcome'),
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 32),
@@ -31,7 +31,7 @@ class AuthEntryScreen extends StatelessWidget {
                   );
                 },
                 child: Text(
-                  context.t('auth_entry.continue', fallback: 'Continue'),
+                  context.t('auth_entry.continue'),
                 ),
               )
             ],

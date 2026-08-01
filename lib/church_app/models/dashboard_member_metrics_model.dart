@@ -216,14 +216,13 @@ class DashboardMemberMetrics {
       activeStreakRate: (map['activeStreakRate'] as num?)?.round() ?? 0,
       topStreakValue: (map['topStreakValue'] as num?)?.round() ?? 0,
       firstRecordedAt: readDate(map['firstRecordedAt']),
-      topStreakMember:
-          topStreakMemberRaw is Map<String, dynamic>
-              ? DashboardPreviewMember.fromMap(topStreakMemberRaw)
-              : topStreakMemberRaw is Map
-                  ? DashboardPreviewMember.fromMap(
-                      Map<String, dynamic>.from(topStreakMemberRaw),
-                    )
-                  : null,
+      topStreakMember: topStreakMemberRaw is Map<String, dynamic>
+          ? DashboardPreviewMember.fromMap(topStreakMemberRaw)
+          : topStreakMemberRaw is Map
+              ? DashboardPreviewMember.fromMap(
+                  Map<String, dynamic>.from(topStreakMemberRaw),
+                )
+              : null,
       recentMembers: recentMembers,
       genderBuckets: readMetricBuckets('genderBuckets'),
       ageBuckets: readMetricBuckets('ageBuckets'),

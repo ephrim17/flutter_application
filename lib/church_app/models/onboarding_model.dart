@@ -15,8 +15,7 @@ class OnboardingModel {
     required this.isActive,
   });
 
-  factory OnboardingModel.fromFirestore(
-      DocumentSnapshot doc) {
+  factory OnboardingModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
     return OnboardingModel(

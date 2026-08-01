@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
@@ -59,8 +60,8 @@ class DailyVerseCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  const SectionHeader(
-                    text: 'Daily verse',
+                  SectionHeader(
+                    text: context.t('daily_verse.title'),
                     padding: 0.0,
                   ),
                   const Spacer(),

@@ -147,24 +147,24 @@ class DashboardViewState {
 }
 
 enum DashboardMemberChartMode {
-  gender('Gender View', 'See how member records are distributed by gender.'),
+  gender('dashboard.gender_view', 'dashboard.gender_view_description'),
   age(
-    'Age View',
-    'Track the age mix across children, youth, adults, and seniors.',
+    'dashboard.age_view',
+    'dashboard.age_view_description',
   ),
   family(
-    'Family Mode',
-    'Understand how many profiles are registered as families or individuals.',
+    'dashboard.family_view',
+    'dashboard.family_view_description',
   ),
   solemnized(
-    'Solemnized View',
-    'See how many members are solemnized across the recorded membership base.',
+    'dashboard.solemnized_view',
+    'dashboard.solemnized_view_description',
   );
 
-  const DashboardMemberChartMode(this.label, this.description);
+  const DashboardMemberChartMode(this.labelKey, this.descriptionKey);
 
-  final String label;
-  final String description;
+  final String labelKey;
+  final String descriptionKey;
 }
 
 @immutable
@@ -236,7 +236,7 @@ class DashboardOverviewMetrics {
 String formatDashboardCategory(String value) {
   final normalized = value.trim().toLowerCase();
   if (normalized.isEmpty) {
-    return 'Not provided';
+    return '';
   }
   return normalized[0].toUpperCase() + normalized.substring(1);
 }

@@ -10,13 +10,11 @@ class HomeSectionConfigRepository extends ChurchScopedRepository {
   });
 
   CollectionReference<HomeSectionConfigModel> collectionRef() {
-    return FirestorePaths
-        .churchHomeSections(firestore, churchId)
+    return FirestorePaths.churchHomeSections(firestore, churchId)
         .withConverter<HomeSectionConfigModel>(
-          fromFirestore: (snap, _) =>
-              HomeSectionConfigModel.fromFirestore(snap),
-          toFirestore: (model, _) => model.toMap(),
-        );
+      fromFirestore: (snap, _) => HomeSectionConfigModel.fromFirestore(snap),
+      toFirestore: (model, _) => model.toMap(),
+    );
   }
 
   Stream<List<HomeSectionConfigModel>> watchAll({

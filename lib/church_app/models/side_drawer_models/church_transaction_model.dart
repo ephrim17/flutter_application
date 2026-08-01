@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 
 class FinanceConfig {
   const FinanceConfig({
@@ -318,26 +319,26 @@ extension ChurchVoucherTypeX on ChurchVoucherType {
   String get label {
     switch (this) {
       case ChurchVoucherType.receipt:
-        return 'Receipt';
+        return defaultChurchTextContents['finance.voucher_receipt']!;
       case ChurchVoucherType.payment:
-        return 'Payment';
+        return defaultChurchTextContents['finance.voucher_payment']!;
       case ChurchVoucherType.contra:
-        return 'Contra';
+        return defaultChurchTextContents['finance.voucher_contra']!;
       case ChurchVoucherType.journal:
-        return 'Journal';
+        return defaultChurchTextContents['finance.voucher_journal']!;
     }
   }
 
   String get friendlyLabel {
     switch (this) {
       case ChurchVoucherType.receipt:
-        return 'Money received';
+        return defaultChurchTextContents['finance.money_received']!;
       case ChurchVoucherType.payment:
-        return 'Money paid';
+        return defaultChurchTextContents['finance.money_paid']!;
       case ChurchVoucherType.contra:
-        return 'Cash / bank transfer';
+        return defaultChurchTextContents['finance.cash_bank_transfer']!;
       case ChurchVoucherType.journal:
-        return 'Adjustment entry';
+        return defaultChurchTextContents['finance.adjustment_entry']!;
     }
   }
 
@@ -375,9 +376,9 @@ extension ChurchTransactionTypeX on ChurchTransactionType {
   String get label {
     switch (this) {
       case ChurchTransactionType.income:
-        return 'Income';
+        return defaultChurchTextContents['finance.income']!;
       case ChurchTransactionType.expense:
-        return 'Expense';
+        return defaultChurchTextContents['finance.expense']!;
     }
   }
 
@@ -410,9 +411,9 @@ extension ChurchTransactionStatusX on ChurchTransactionStatus {
   String get label {
     switch (this) {
       case ChurchTransactionStatus.cleared:
-        return 'Cleared';
+        return defaultChurchTextContents['finance.cleared']!;
       case ChurchTransactionStatus.pending:
-        return 'Pending';
+        return defaultChurchTextContents['finance.pending']!;
     }
   }
 
@@ -499,64 +500,64 @@ String _defaultFinancialYear() {
   return '$startYear-${startYear + 1}';
 }
 
-const List<String> financeLedgerGroups = <String>[
-  'Current Assets',
-  'Fixed Assets',
-  'Direct Expenses',
-  'Indirect Expenses',
-  'Direct Income',
-  'Indirect Income',
-  'Cash in Hand',
-  'Bank Accounts',
-  'Current Liabilities',
-  'Deposit Assets',
-  'Capital Account',
-  'Duties & Taxes',
-  'Deposits',
-  'Loans (Liability & Asset)',
+final List<String> financeLedgerGroups = <String>[
+  defaultChurchTextContents['finance.group_current_assets']!,
+  defaultChurchTextContents['finance.group_fixed_assets']!,
+  defaultChurchTextContents['finance.group_direct_expenses']!,
+  defaultChurchTextContents['finance.group_indirect_expenses']!,
+  defaultChurchTextContents['finance.group_direct_income']!,
+  defaultChurchTextContents['finance.group_indirect_income']!,
+  defaultChurchTextContents['finance.group_cash_in_hand']!,
+  defaultChurchTextContents['finance.group_bank_accounts']!,
+  defaultChurchTextContents['finance.group_current_liabilities']!,
+  defaultChurchTextContents['finance.group_deposit_assets']!,
+  defaultChurchTextContents['finance.group_capital_account']!,
+  defaultChurchTextContents['finance.group_duties_taxes']!,
+  defaultChurchTextContents['finance.group_deposits']!,
+  defaultChurchTextContents['finance.group_loans']!,
 ];
 
-const List<FinanceLedger> defaultFinanceLedgers = <FinanceLedger>[
+final List<FinanceLedger> defaultFinanceLedgers = <FinanceLedger>[
   FinanceLedger(
     id: 'tithe',
-    name: 'Tithe',
-    group: 'Direct Income',
+    name: defaultChurchTextContents['finance.ledger_tithe']!,
+    group: defaultChurchTextContents['finance.group_direct_income']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'offering',
-    name: 'Offering',
-    group: 'Direct Income',
+    name: defaultChurchTextContents['finance.ledger_offering']!,
+    group: defaultChurchTextContents['finance.group_direct_income']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'pledge',
-    name: 'Pledge',
-    group: 'Direct Income',
+    name: defaultChurchTextContents['finance.ledger_pledge']!,
+    group: defaultChurchTextContents['finance.group_direct_income']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'project',
-    name: 'Project',
-    group: 'Direct Income',
+    name: defaultChurchTextContents['finance.ledger_project']!,
+    group: defaultChurchTextContents['finance.group_direct_income']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'events',
-    name: 'Events',
-    group: 'Indirect Income',
+    name: defaultChurchTextContents['finance.ledger_events']!,
+    group: defaultChurchTextContents['finance.group_indirect_income']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'utilities',
-    name: 'Utilities',
-    group: 'Indirect Expenses',
+    name: defaultChurchTextContents['finance.ledger_utilities']!,
+    group: defaultChurchTextContents['finance.group_indirect_expenses']!,
     isSystem: true,
   ),
   FinanceLedger(
     id: 'cash',
-    name: 'Cash',
-    group: 'Cash in Hand',
+    name: defaultChurchTextContents['finance.ledger_cash']!,
+    group: defaultChurchTextContents['finance.group_cash_in_hand']!,
     isSystem: true,
   ),
 ];

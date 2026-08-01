@@ -34,5 +34,4 @@ class AboutModel {
         'community': community,
         'values': values,
       };
-  }
-
+}

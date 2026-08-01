@@ -42,6 +42,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       await logChurchAnalyticsEvent(
         ref,
         name: 'members_opened',
@@ -91,15 +92,12 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           scrolledUnderElevation: 0,
           elevation: 0,
           title: AppBarTitle(
-            text: context.t('members.title', fallback: 'Members'),
+            text: context.t('members.title'),
           ),
           actions: [
             if (isAdmin && currentChurch != null)
               IconButton(
-                tooltip: context.t(
-                  'members.create_member',
-                  fallback: 'Create Member',
-                ),
+                tooltip: context.t('members.create_member'),
                 onPressed: () => _showCreateMemberOptions(currentChurch),
                 icon: const Icon(Icons.person_add_alt_1),
               ),
@@ -145,11 +143,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                           });
                         },
                         decoration: InputDecoration(
-                          hintText: context.t(
-                            'members.search_hint',
-                            fallback:
-                                'Search members, family ID, email or phone',
-                          ),
+                          hintText: context.t('members.search_hint'),
                           prefixIcon: Padding(
                             padding: const EdgeInsets.only(left: 10, right: 6),
                             child: Icon(
@@ -201,23 +195,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                   TabBar(
                     isScrollable: true,
                     tabs: [
-                      Tab(text: context.t('members.all_tab', fallback: 'All')),
+                      Tab(text: context.t('members.all_tab')),
                       Tab(
-                        text: context.t('members.families_tab',
-                            fallback: 'Families'),
+                        text: context.t('members.families_tab'),
                       ),
                       Tab(
-                        text: context.t(
-                          'members.individuals_tab',
-                          fallback: 'Individuals',
-                        ),
+                        text: context.t('members.individuals_tab'),
                       ),
                       Tab(
                         child: _CountBadgeTabLabel(
-                          label: context.t(
-                            'members.special_days_tab',
-                            fallback: 'Special Day',
-                          ),
+                          label: context.t('members.special_days_tab'),
                           count: specialDayCount,
                         ),
                       ),
@@ -232,15 +219,14 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           loading: () => const Center(child: AppLoadingIndicator()),
           error: (_, __) => Center(
             child: Text(
-              context.t('members.error_loading',
-                  fallback: 'Error loading members'),
+              context.t('members.error_loading'),
             ),
           ),
           data: (members) {
             if (members.isEmpty) {
               return Center(
                 child: Text(
-                  context.t('members.none', fallback: 'No members found'),
+                  context.t('members.none'),
                 ),
               );
             }
@@ -269,24 +255,15 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         runSpacing: 8,
                         children: [
                           _CountChip(
-                            label: context.t(
-                              'members.all_tab',
-                              fallback: 'All',
-                            ),
+                            label: context.t('members.all_tab'),
                             count: filteredMembers.length,
                           ),
                           _CountChip(
-                            label: context.t(
-                              'members.families_tab',
-                              fallback: 'Families',
-                            ),
+                            label: context.t('members.families_tab'),
                             count: groupedFamilies.length,
                           ),
                           _CountChip(
-                            label: context.t(
-                              'members.individuals_tab',
-                              fallback: 'Individuals',
-                            ),
+                            label: context.t('members.individuals_tab'),
                             count: individualMembers.length,
                           ),
                         ],
@@ -343,19 +320,13 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                 ListTile(
                   leading: const Icon(Icons.mail_outline),
                   title: Text(
-                    context.t(
-                      'members.create_with_email',
-                      fallback: 'Create with email',
-                    ),
+                    context.t('members.create_with_email'),
                   ),
                   subtitle: Text(
-                    context.t(
-                      'members.create_with_email_subtitle',
-                      fallback:
-                          'Create Church Tree account first, then complete member details.',
-                    ),
+                    context.t('members.create_with_email_subtitle'),
                   ),
                   onTap: () async {
+                    final rootNavigator = Navigator.of(this.context);
                     await logChurchAnalyticsEvent(
                       ref,
                       name: 'member_create_started',
@@ -363,8 +334,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         'method': 'with_email',
                       },
                     );
+                    if (!mounted || !context.mounted) return;
                     Navigator.of(context).pop();
-                    Navigator.of(this.context).push(
+                    rootNavigator.push(
                       MaterialPageRoute(
                         builder: (_) => CreateAuthAccountScreen(
                           adminCreateMode: true,
@@ -379,19 +351,13 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                 ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text(
-                    context.t(
-                      'members.create_without_email',
-                      fallback: 'Create without email',
-                    ),
+                    context.t('members.create_without_email'),
                   ),
                   subtitle: Text(
-                    context.t(
-                      'members.create_without_email_subtitle',
-                      fallback:
-                          'Add the member directly using church details only.',
-                    ),
+                    context.t('members.create_without_email_subtitle'),
                   ),
                   onTap: () async {
+                    final rootNavigator = Navigator.of(this.context);
                     await logChurchAnalyticsEvent(
                       ref,
                       name: 'member_create_started',
@@ -399,8 +365,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         'method': 'without_email',
                       },
                     );
+                    if (!mounted || !context.mounted) return;
                     Navigator.of(context).pop();
-                    Navigator.of(this.context).push(
+                    rootNavigator.push(
                       MaterialPageRoute(
                         builder: (_) => LoginRequestScreen(
                           churchId: selectedChurch.id,
@@ -437,10 +404,7 @@ class _MembersListView extends StatelessWidget {
     if (members.isEmpty) {
       return Center(
         child: Text(
-          context.t(
-            'members.no_matching_members',
-            fallback: 'No matching members',
-          ),
+          context.t('members.no_matching_members'),
         ),
       );
     }
@@ -476,10 +440,7 @@ class _SpecialDaysView extends StatelessWidget {
     if (birthdays.isEmpty && anniversaries.isEmpty) {
       return Center(
         child: Text(
-          context.t(
-            'members.no_special_days_today',
-            fallback: 'No special days today',
-          ),
+          context.t('members.no_special_days_today'),
         ),
       );
     }
@@ -488,25 +449,16 @@ class _SpecialDaysView extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       children: [
         _SpecialDaySection(
-          title: context.t('members.birthdays_tab', fallback: 'Birthdays'),
-          emptyMessage: context.t(
-            'members.no_birthdays_today',
-            fallback: 'No birthdays today',
-          ),
+          title: context.t('members.birthdays_tab'),
+          emptyMessage: context.t('members.no_birthdays_today'),
           members: birthdays,
           isAdmin: isAdmin,
           currentUid: currentUid,
           postType: SpecialPostType.birthday,
         ),
         _SpecialDaySection(
-          title: context.t(
-            'members.anniversaries_tab',
-            fallback: 'Anniversaries',
-          ),
-          emptyMessage: context.t(
-            'members.no_anniversaries_today',
-            fallback: 'No anniversaries today',
-          ),
+          title: context.t('members.anniversaries_tab'),
+          emptyMessage: context.t('members.no_anniversaries_today'),
           members: anniversaries,
           isAdmin: isAdmin,
           currentUid: currentUid,
@@ -650,10 +602,7 @@ class _FamilyGroupsView extends StatelessWidget {
     if (groups.isEmpty) {
       return Center(
         child: Text(
-          context.t(
-            'members.no_family_groups_found',
-            fallback: 'No family groups found',
-          ),
+          context.t('members.no_family_groups_found'),
         ),
       );
     }
@@ -676,7 +625,7 @@ class _FamilyGroupsView extends StatelessWidget {
               collapsedShape: const Border(),
               title: Text(_formatFamilyHeader(context, entry.key)),
               subtitle: Text(
-                '${members.length} ${context.t('members.member_count_suffix', fallback: 'member(s)')}',
+                '${members.length} ${context.t('members.member_count_suffix')}',
               ),
               children: members
                   .map(
@@ -742,7 +691,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
               );
             },
             child: Text(
-              context.t('common.send', fallback: 'Send'),
+              context.t('common.send'),
             ),
           )
         : (widget.isAdmin && widget.member.uid != widget.currentUid)
@@ -758,7 +707,6 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
 
                         final success = await _updateMemberApproval(
                           context,
-                          ref,
                           userId: widget.member.uid,
                           value: val,
                         );
@@ -799,8 +747,10 @@ Future<void> _showMemberDetailsSheet(
   required bool isAdmin,
   required String? currentUid,
 }) {
-  logChurchAnalyticsEvent(
-    ref,
+  final container = ProviderScope.containerOf(context, listen: false);
+  final rootNavigator = Navigator.of(context);
+  logChurchAnalyticsEventFromContainer(
+    container,
     name: 'member_profile_opened',
     parameters: {
       'member_id': member.uid,
@@ -816,11 +766,11 @@ Future<void> _showMemberDetailsSheet(
     isScrollControlled: true,
     showDragHandle: true,
     builder: (context) {
-      final churchId = ref.read(currentChurchIdProvider).asData?.value;
+      final churchId = container.read(currentChurchIdProvider).asData?.value;
       final repo = churchId == null
           ? null
           : MembersRepository(
-              firestore: ref.read(firestoreProvider),
+              firestore: container.read(firestoreProvider),
               churchId: churchId,
             );
       final brightness = Theme.of(context).brightness;
@@ -896,19 +846,12 @@ Future<void> _showMemberDetailsSheet(
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: Text(
-                                context.t(
-                                  'members.approve_member',
-                                  fallback: 'Approve member',
-                                ),
+                                context.t('members.approve_member'),
                               ),
                               subtitle: Text(
                                 approvedValue
-                                    ? context.t('common.approved',
-                                        fallback: 'Approved')
-                                    : context.t(
-                                        'common.pending_approval',
-                                        fallback: 'Pending approval',
-                                      ),
+                                    ? context.t('common.approved')
+                                    : context.t('common.pending_approval'),
                               ),
                               value: approvedValue,
                               onChanged: (val) async {
@@ -918,7 +861,6 @@ Future<void> _showMemberDetailsSheet(
 
                                 final success = await _updateMemberApproval(
                                   context,
-                                  ref,
                                   userId: member.uid,
                                   value: val,
                                 );
@@ -932,24 +874,19 @@ Future<void> _showMemberDetailsSheet(
                             ),
                           const SizedBox(height: 20),
                           _MemberDetailSection(
-                            title: context.t(
-                              'members.basic_details_title',
-                              fallback: 'Basic Details',
-                            ),
+                            title: context.t('members.basic_details_title'),
                             initiallyExpanded: true,
                             child: Column(
                               children: [
                                 _MemberDetailRow(
                                   icon: Icons.badge_outlined,
-                                  label: context.t('members.name_label',
-                                      fallback: 'Name'),
+                                  label: context.t('members.name_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.name),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.phone_outlined,
-                                  label: context.t('members.phone_label',
-                                      fallback: 'Phone'),
+                                  label: context.t('members.phone_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.phone),
                                   onActionTap:
@@ -962,19 +899,13 @@ Future<void> _showMemberDetailsSheet(
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.contact_phone_outlined,
-                                  label: context.t(
-                                    'members.contact_label',
-                                    fallback: 'Contact',
-                                  ),
+                                  label: context.t('members.contact_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.contact),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.person_outline,
-                                  label: context.t(
-                                    'members.gender_label',
-                                    fallback: 'Gender',
-                                  ),
+                                  label: context.t('members.gender_label'),
                                   value: _valueOrFallback(
                                     context,
                                     _formatCategory(
@@ -983,25 +914,19 @@ Future<void> _showMemberDetailsSheet(
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.email_outlined,
-                                  label: context.t('members.email_label',
-                                      fallback: 'Email'),
+                                  label: context.t('members.email_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.email),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.cake_outlined,
-                                  label: context.t(
-                                    'members.date_of_birth_label',
-                                    fallback: 'Date of Birth',
-                                  ),
+                                  label:
+                                      context.t('members.date_of_birth_label'),
                                   value: _formatDob(context, currentMember.dob),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.category_outlined,
-                                  label: context.t(
-                                    'members.category_label',
-                                    fallback: 'Category',
-                                  ),
+                                  label: context.t('members.category_label'),
                                   value: _valueOrFallback(
                                     context,
                                     _formatCategory(
@@ -1010,10 +935,8 @@ Future<void> _showMemberDetailsSheet(
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.favorite_border,
-                                  label: context.t(
-                                    'members.marital_status_label',
-                                    fallback: 'Marital Status',
-                                  ),
+                                  label:
+                                      context.t('members.marital_status_label'),
                                   value: _valueOrFallback(
                                     context,
                                     _formatCategory(
@@ -1024,28 +947,19 @@ Future<void> _showMemberDetailsSheet(
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.celebration_outlined,
-                                  label: context.t(
-                                    'members.wedding_day_label',
-                                    fallback: 'Wedding Day',
-                                  ),
+                                  label: context.t('members.wedding_day_label'),
                                   value: _formatDob(
                                       context, currentMember.weddingDay),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.family_restroom_outlined,
-                                  label: context.t(
-                                    'members.family_id_label',
-                                    fallback: 'Family ID',
-                                  ),
+                                  label: context.t('members.family_id_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.familyId),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.location_on_outlined,
-                                  label: context.t(
-                                    'members.address_label',
-                                    fallback: 'Address',
-                                  ),
+                                  label: context.t('members.address_label'),
                                   value: _valueOrFallback(
                                       context, currentMember.address),
                                 ),
@@ -1054,46 +968,34 @@ Future<void> _showMemberDetailsSheet(
                           ),
                           if (isAdmin)
                             _MemberDetailSection(
-                              title: context.t(
-                                'members.extended_information_title',
-                                fallback: 'Extended Information',
-                              ),
+                              title: context
+                                  .t('members.extended_information_title'),
                               child: Column(
                                 children: [
                                   _MemberDetailRow(
                                     icon: Icons.account_balance_wallet_outlined,
-                                    label: context.t(
-                                      'members.financial_stability_label',
-                                      fallback: 'Financial Stability',
-                                    ),
+                                    label: context
+                                        .t('members.financial_stability_label'),
                                     value: currentMember
                                                 .financialStabilityRating ==
                                             0
-                                        ? context.t(
-                                            'members.financial_not_rated',
-                                            fallback: 'Not rated',
-                                          )
+                                        ? context
+                                            .t('members.financial_not_rated')
                                         : '${currentMember.financialStabilityRating}/5',
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.volunteer_activism_outlined,
                                     label: context.t(
-                                      'members.financial_support_required',
-                                      fallback: 'Financial Support Required',
-                                    ),
+                                        'members.financial_support_required'),
                                     value:
                                         currentMember.financialSupportRequired
-                                            ? context.t('common.yes',
-                                                fallback: 'Yes')
-                                            : context.t('common.no',
-                                                fallback: 'No'),
+                                            ? context.t('common.yes')
+                                            : context.t('common.no'),
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.school_outlined,
-                                    label: context.t(
-                                      'members.educational_qualification',
-                                      fallback: 'Educational Qualification',
-                                    ),
+                                    label: context
+                                        .t('members.educational_qualification'),
                                     value: _valueOrFallback(
                                       context,
                                       currentMember.educationalQualification,
@@ -1101,24 +1003,17 @@ Future<void> _showMemberDetailsSheet(
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.auto_awesome_outlined,
-                                    label: context.t(
-                                      'members.talents_and_gifts',
-                                      fallback: 'Talents & Gifts',
-                                    ),
+                                    label:
+                                        context.t('members.talents_and_gifts'),
                                     value: currentMember.talentsAndGifts.isEmpty
-                                        ? context.t(
-                                            'common.not_provided',
-                                            fallback: 'Not provided',
-                                          )
+                                        ? context.t('common.not_provided')
                                         : currentMember.talentsAndGifts
                                             .join(', '),
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.sticky_note_2_outlined,
-                                    label: context.t(
-                                      'members.additional_notes_label',
-                                      fallback: 'Additional Notes',
-                                    ),
+                                    label: context
+                                        .t('members.additional_notes_label'),
                                     value: _valueOrFallback(
                                       context,
                                       currentMember.additionalNotes,
@@ -1128,10 +1023,7 @@ Future<void> _showMemberDetailsSheet(
                               ),
                             ),
                           _MemberDetailSection(
-                            title: context.t(
-                              'members.church_records_title',
-                              fallback: 'Church Records',
-                            ),
+                            title: context.t('members.church_records_title'),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1151,10 +1043,7 @@ Future<void> _showMemberDetailsSheet(
                                     ),
                                     child: Text(
                                       context.t(
-                                        'members.church_records_contact_banner',
-                                        fallback:
-                                            'Please contact Church Pastor for change in details',
-                                      ),
+                                          'members.church_records_contact_banner'),
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
                                         color: theme.colorScheme.onSurface,
@@ -1165,30 +1054,24 @@ Future<void> _showMemberDetailsSheet(
                                 ],
                                 _MemberDetailRow(
                                   icon: Icons.water_drop_outlined,
-                                  label: context.t(
-                                    'members.solemnized_baptism_label',
-                                    fallback: 'Solemnized Baptism',
-                                  ),
+                                  label: context
+                                      .t('members.solemnized_baptism_label'),
                                   value: member.solemnizedBaptism
-                                      ? context.t('common.yes', fallback: 'Yes')
-                                      : context.t('common.no', fallback: 'No'),
+                                      ? context.t('common.yes')
+                                      : context.t('common.no'),
                                 ),
                                 if (member.solemnizedBaptism) ...[
                                   _MemberDetailRow(
                                     icon: Icons.event_outlined,
-                                    label: context.t(
-                                      'members.baptism_date_label',
-                                      fallback: 'Baptism Date',
-                                    ),
+                                    label:
+                                        context.t('members.baptism_date_label'),
                                     value:
                                         _formatDob(context, member.baptismDate),
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.confirmation_number_outlined,
                                     label: context.t(
-                                      'members.baptism_certificate_number_label',
-                                      fallback: 'Baptism Certificate Number',
-                                    ),
+                                        'members.baptism_certificate_number_label'),
                                     value: _valueOrFallback(
                                       context,
                                       member.baptismCertificateNumber,
@@ -1196,10 +1079,8 @@ Future<void> _showMemberDetailsSheet(
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.church_outlined,
-                                    label: context.t(
-                                      'members.baptism_church_name_label',
-                                      fallback: 'Church Name',
-                                    ),
+                                    label: context
+                                        .t('members.baptism_church_name_label'),
                                     value: _valueOrFallback(
                                       context,
                                       member.baptismChurchName,
@@ -1207,10 +1088,8 @@ Future<void> _showMemberDetailsSheet(
                                   ),
                                   _MemberDetailRow(
                                     icon: Icons.person_2_outlined,
-                                    label: context.t(
-                                      'members.baptism_pastor_name_label',
-                                      fallback: 'Pastor Name',
-                                    ),
+                                    label: context
+                                        .t('members.baptism_pastor_name_label'),
                                     value: _valueOrFallback(
                                       context,
                                       member.baptismPastorName,
@@ -1222,9 +1101,7 @@ Future<void> _showMemberDetailsSheet(
                                   _MemberDetailRow(
                                     icon: Icons.favorite_outline,
                                     label: context.t(
-                                      'members.marriage_solemnization_title',
-                                      fallback: 'Marriage Solemnization',
-                                    ),
+                                        'members.marriage_solemnization_title'),
                                     value: _valueOrFallback(
                                       context,
                                       member.marriageSolemnizationChurchType ==
@@ -1234,9 +1111,7 @@ Future<void> _showMemberDetailsSheet(
                                                   .trim()
                                                   .isEmpty
                                           ? context.t(
-                                              'members.current_church_option',
-                                              fallback: 'Current Church',
-                                            )
+                                              'members.current_church_option')
                                           : member
                                               .marriageSolemnizationChurchName,
                                     ),
@@ -1245,9 +1120,7 @@ Future<void> _showMemberDetailsSheet(
                                 _MemberDetailRow(
                                   icon: Icons.badge_outlined,
                                   label: context.t(
-                                    'members.membership_current_status_label',
-                                    fallback: 'Membership Current Status',
-                                  ),
+                                      'members.membership_current_status_label'),
                                   value: _valueOrFallback(
                                     context,
                                     _formatCategory(
@@ -1259,10 +1132,8 @@ Future<void> _showMemberDetailsSheet(
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.notes_outlined,
-                                  label: context.t(
-                                    'members.membership_notes_label',
-                                    fallback: 'Additional Note',
-                                  ),
+                                  label: context
+                                      .t('members.membership_notes_label'),
                                   value: _valueOrFallback(
                                     context,
                                     member.membershipNotes,
@@ -1273,16 +1144,11 @@ Future<void> _showMemberDetailsSheet(
                           ),
                           if (isAdmin)
                             _MemberDetailSection(
-                              title: context.t(
-                                'members.church_groups_title',
-                                fallback: 'Church Groups',
-                              ),
+                              title: context.t('members.church_groups_title'),
                               child: member.churchGroupIds.isEmpty
                                   ? Text(
                                       context.t(
-                                        'members.no_church_groups_assigned',
-                                        fallback: 'No church groups assigned',
-                                      ),
+                                          'members.no_church_groups_assigned'),
                                       style: theme.textTheme.bodyMedium,
                                     )
                                   : Wrap(
@@ -1305,10 +1171,11 @@ Future<void> _showMemberDetailsSheet(
                               child: OutlinedButton.icon(
                                 onPressed: () async {
                                   final selectedChurch =
-                                      ref.read(selectedChurchProvider);
-                                  final currentChurchId = await ref
+                                      container.read(selectedChurchProvider);
+                                  final currentChurchId = await container
                                       .read(currentChurchIdProvider.future);
-                                  final availableChurches = ref
+                                  if (!rootNavigator.mounted) return;
+                                  final availableChurches = container
                                           .read(churchesProvider)
                                           .asData
                                           ?.value ??
@@ -1338,17 +1205,11 @@ Future<void> _showMemberDetailsSheet(
                                                 AlertDialog(
                                               title: Text(
                                                 context.t(
-                                                  'members.create_church_connect_account',
-                                                  fallback:
-                                                      'Create Church Tree account?',
-                                                ),
+                                                    'members.create_church_connect_account'),
                                               ),
                                               content: Text(
                                                 context.t(
-                                                  'members.create_church_connect_account_message',
-                                                  fallback:
-                                                      'This member does not have a Church Tree account yet. Do you want to create it first?',
-                                                ),
+                                                    'members.create_church_connect_account_message'),
                                               ),
                                               actions: [
                                                 TextButton(
@@ -1356,10 +1217,7 @@ Future<void> _showMemberDetailsSheet(
                                                           dialogContext)
                                                       .pop(false),
                                                   child: Text(
-                                                    context.t(
-                                                      'common.no',
-                                                      fallback: 'No',
-                                                    ),
+                                                    context.t('common.no'),
                                                   ),
                                                 ),
                                                 FilledButton(
@@ -1367,10 +1225,7 @@ Future<void> _showMemberDetailsSheet(
                                                           dialogContext)
                                                       .pop(true),
                                                   child: Text(
-                                                    context.t(
-                                                      'common.yes',
-                                                      fallback: 'Yes',
-                                                    ),
+                                                    context.t('common.yes'),
                                                   ),
                                                 ),
                                               ],
@@ -1381,15 +1236,16 @@ Future<void> _showMemberDetailsSheet(
                                   if (!context.mounted) return;
                                   Navigator.of(context).pop();
                                   if (shouldCreateLoginFirst) {
-                                    await logChurchAnalyticsEvent(
-                                      ref,
+                                    await logChurchAnalyticsEventFromContainer(
+                                      container,
                                       name: 'member_edit_started',
                                       parameters: {
                                         'member_id': member.uid,
                                         'with_auth_setup': true,
                                       },
                                     );
-                                    Navigator.of(context).push(
+                                    if (!rootNavigator.mounted) return;
+                                    rootNavigator.push(
                                       MaterialPageRoute(
                                         builder: (_) => CreateAuthAccountScreen(
                                           adminCreateMode: true,
@@ -1403,15 +1259,16 @@ Future<void> _showMemberDetailsSheet(
                                     );
                                     return;
                                   }
-                                  await logChurchAnalyticsEvent(
-                                    ref,
+                                  await logChurchAnalyticsEventFromContainer(
+                                    container,
                                     name: 'member_edit_started',
                                     parameters: {
                                       'member_id': member.uid,
                                       'with_auth_setup': false,
                                     },
                                   );
-                                  Navigator.of(context).push(
+                                  if (!rootNavigator.mounted) return;
+                                  rootNavigator.push(
                                     MaterialPageRoute(
                                       builder: (_) => LoginRequestScreen(
                                         churchId: currentChurch.id,
@@ -1425,10 +1282,7 @@ Future<void> _showMemberDetailsSheet(
                                 },
                                 icon: const Icon(Icons.edit_outlined),
                                 label: Text(
-                                  context.t(
-                                    'members.edit_member',
-                                    fallback: 'Edit Member',
-                                  ),
+                                  context.t('members.edit_member'),
                                 ),
                               ),
                             ),
@@ -1443,20 +1297,13 @@ Future<void> _showMemberDetailsSheet(
                                     context: context,
                                     builder: (dialogContext) => AlertDialog(
                                       title: Text(
-                                        context.t(
-                                          'members.delete_title',
-                                          fallback: 'Delete member?',
-                                        ),
+                                        context.t('members.delete_title'),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium,
                                       ),
                                       content: Text(
-                                        context.t(
-                                          'members.delete_message',
-                                          fallback:
-                                              'This will remove the member from this church.',
-                                        ),
+                                        context.t('members.delete_message'),
                                       ),
                                       actions: [
                                         TextButton(
@@ -1464,10 +1311,7 @@ Future<void> _showMemberDetailsSheet(
                                               Navigator.of(dialogContext)
                                                   .pop(false),
                                           child: Text(
-                                            context.t(
-                                              'settings.cancel',
-                                              fallback: 'Cancel',
-                                            ),
+                                            context.t('settings.cancel'),
                                           ),
                                         ),
                                         FilledButton(
@@ -1479,10 +1323,7 @@ Future<void> _showMemberDetailsSheet(
                                                 theme.colorScheme.error,
                                           ),
                                           child: Text(
-                                            context.t(
-                                              'common.delete',
-                                              fallback: 'Delete',
-                                            ),
+                                            context.t('common.delete'),
                                           ),
                                         ),
                                       ],
@@ -1491,18 +1332,22 @@ Future<void> _showMemberDetailsSheet(
 
                                   if (shouldDelete != true) return;
 
-                                  final churchId = await ref
+                                  final churchId = await container
                                       .read(currentChurchIdProvider.future);
-                                  if (churchId == null) return;
+                                  if (churchId == null ||
+                                      !rootNavigator.mounted) {
+                                    return;
+                                  }
 
                                   final repo = MembersRepository(
-                                    firestore: ref.read(firestoreProvider),
+                                    firestore:
+                                        container.read(firestoreProvider),
                                     churchId: churchId,
                                   );
 
                                   await repo.deleteMember(member.uid);
-                                  await logChurchAnalyticsEvent(
-                                    ref,
+                                  await logChurchAnalyticsEventFromContainer(
+                                    container,
                                     name: 'member_deleted',
                                     parameters: {
                                       'member_id': member.uid,
@@ -1510,24 +1355,20 @@ Future<void> _showMemberDetailsSheet(
                                   );
 
                                   if (!context.mounted) return;
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
                                   Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  messenger.showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        context.t(
-                                          'members.delete_success',
-                                          fallback: 'Member deleted',
-                                        ),
+                                        context.t('members.delete_success'),
                                       ),
                                     ),
                                   );
                                 },
                                 icon: const Icon(Icons.delete_outline),
                                 label: Text(
-                                  context.t(
-                                    'common.delete',
-                                    fallback: 'Delete',
-                                  ),
+                                  context.t('common.delete'),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: theme.colorScheme.error,
@@ -1611,39 +1452,36 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
 }
 
 Future<bool> _updateMemberApproval(
-  BuildContext context,
-  WidgetRef ref, {
+  BuildContext context, {
   required String userId,
   required bool value,
 }) async {
   try {
-    final churchId = await ref.read(currentChurchIdProvider.future);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final churchId = await container.read(currentChurchIdProvider.future);
     if (churchId == null) return false;
 
     final repo = MembersRepository(
-      firestore: ref.read(firestoreProvider),
+      firestore: container.read(firestoreProvider),
       churchId: churchId,
     );
 
     await repo.approveMember(userId, value);
-    await logChurchAnalyticsEvent(
-      ref,
+    await logChurchAnalyticsEventFromContainer(
+      container,
       name: value ? 'member_approved' : 'member_rejected',
       parameters: {
         'member_id': userId,
       },
     );
-    ref.invalidate(membersProvider);
+    container.invalidate(membersProvider);
     return true;
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'members.approval_update_failed',
-              fallback: 'Could not update member approval. Please try again.',
-            ),
+            context.t('members.approval_update_failed'),
           ),
         ),
       );
@@ -1655,7 +1493,7 @@ Future<bool> _updateMemberApproval(
 String _formatFamilyHeader(BuildContext context, String familyId) {
   final normalized = familyId.trim().toLowerCase();
   if (normalized.isEmpty || normalized == 'no family id') {
-    return context.t('members.unknown_family', fallback: 'Unknown family');
+    return context.t('members.unknown_family');
   }
 
   var cleaned = normalized
@@ -1673,7 +1511,7 @@ String _formatFamilyHeader(BuildContext context, String familyId) {
       .trim();
 
   if (displayName.isEmpty) {
-    return context.t('members.unknown_family', fallback: 'Unknown family');
+    return context.t('members.unknown_family');
   }
 
   final suffix = displayName.endsWith('s') ? "'" : "'s";
@@ -1784,7 +1622,7 @@ class _MemberDetailRow extends StatelessWidget {
 
 String _formatDob(BuildContext context, DateTime? date) {
   if (date == null) {
-    return context.t('common.not_provided', fallback: 'Not provided');
+    return context.t('common.not_provided');
   }
   return DateFormat('dd MMM yyyy').format(date);
 }
@@ -1804,26 +1642,24 @@ bool _isAnniversaryToday(DateTime? weddingDay) {
 String _formatCategory(BuildContext context, String category) {
   final normalized = category.trim().toLowerCase();
   if (normalized.isEmpty) {
-    return context.t('common.not_provided', fallback: 'Not provided');
+    return context.t('common.not_provided');
   }
   if (normalized == 'male') {
-    return context.t('common.male', fallback: 'Male');
+    return context.t('common.male');
   }
   if (normalized == 'female') {
-    return context.t('common.female', fallback: 'Female');
+    return context.t('common.female');
   }
   if (normalized == 'individual') {
-    return context.t('common.individual', fallback: 'Individual');
+    return context.t('common.individual');
   }
   if (normalized == 'married') {
-    return context.t('common.married', fallback: 'Married');
+    return context.t('common.married');
   }
   return normalized[0].toUpperCase() + normalized.substring(1);
 }
 
 String _valueOrFallback(BuildContext context, String value) {
   final trimmed = value.trim();
-  return trimmed.isEmpty
-      ? context.t('common.not_provided', fallback: 'Not provided')
-      : trimmed;
+  return trimmed.isEmpty ? context.t('common.not_provided') : trimmed;
 }

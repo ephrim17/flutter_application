@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/church_user_repository.dart';
@@ -15,11 +16,11 @@ import 'package:flutter_application/firebase_options.dart';
 final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
 
-const AndroidNotificationChannel _churchMessageChannel =
+final AndroidNotificationChannel _churchMessageChannel =
     AndroidNotificationChannel(
   'church_messages',
-  'Church Messages',
-  description: 'Push notifications for church updates and activity',
+  defaultChurchTextContents['notifications.channel_name']!,
+  description: defaultChurchTextContents['notifications.channel_description'],
   importance: Importance.max,
 );
 

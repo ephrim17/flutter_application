@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
@@ -73,13 +74,17 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
   Future<void> _submit() async {
     final email = _emailController.text.trim().toLowerCase();
     if (!InputValidators.isValidEmail(email)) {
-      setState(() => _errorText = 'Enter a valid email address.');
+      setState(
+        () => _errorText = context.t('studio.admin_email_invalid'),
+      );
       return;
     }
 
     final duplicateIndex = _admins.indexOf(email);
     if (duplicateIndex != -1 && duplicateIndex != _editingIndex) {
-      setState(() => _errorText = 'This admin is already in the list.');
+      setState(
+        () => _errorText = context.t('studio.admin_email_duplicate'),
+      );
       return;
     }
 
@@ -96,8 +101,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
   Future<void> _delete(int index) async {
     if (_admins.length == 1) {
       setState(() {
-        _errorText =
-            'Add another admin before removing the last administrator.';
+        _errorText = context.t('studio.admin_last_remove_error');
       });
       return;
     }
@@ -107,18 +111,21 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.person_remove_outlined),
-        title: const Text('Remove administrator?'),
+        title: Text(context.t('studio.admin_remove_title')),
         content: Text(
-          '$email will lose Studio and church administration access.',
+          context.t(
+            'studio.admin_remove_message',
+            parameters: {'email': email},
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.t('common.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Remove'),
+            child: Text(context.t('studio.admin_remove_action')),
           ),
         ],
       ),
@@ -143,12 +150,12 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
         _emailController.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Administrator access updated.')),
+        SnackBar(content: Text(context.t('studio.admin_updated'))),
       );
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorText = 'Could not update administrators. Please try again.';
+        _errorText = context.t('studio.admin_update_failed');
       });
     } finally {
       if (mounted) {
@@ -166,14 +173,14 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
         Text(
-          'Administrators',
+          context.t('studio.admins_title'),
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          'Add, update, or remove the people who can manage this church.',
+          context.t('studio.admins_description'),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -185,7 +192,9 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) => _isSaving ? null : _submit(),
           decoration: InputDecoration(
-            labelText: editing ? 'Update admin email' : 'New admin email',
+            labelText: context.t(
+              editing ? 'studio.admin_update_label' : 'studio.admin_add_label',
+            ),
             prefixIcon: const Icon(Icons.alternate_email_rounded),
             errorText: _errorText,
           ),
@@ -207,14 +216,20 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
                             ? Icons.check_rounded
                             : Icons.person_add_alt_1_rounded,
                       ),
-                label: Text(editing ? 'Update admin' : 'Add admin'),
+                label: Text(
+                  context.t(
+                    editing
+                        ? 'studio.admin_update_action'
+                        : 'studio.admin_add_action',
+                  ),
+                ),
               ),
             ),
             if (editing) ...[
               const SizedBox(width: 10),
               OutlinedButton(
                 onPressed: _isSaving ? null : _cancelEditing,
-                child: const Text('Cancel'),
+                child: Text(context.t('common.cancel')),
               ),
             ],
           ],
@@ -223,7 +238,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
         Row(
           children: [
             Text(
-              'Current admins',
+              context.t('studio.admins_current'),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -246,7 +261,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
               color: theme.colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text('No administrators have been added yet.'),
+            child: Text(context.t('studio.admins_empty')),
           )
         else
           ...List.generate(_admins.length, (index) {
@@ -271,18 +286,18 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  subtitle: const Text('Church administrator'),
+                  subtitle: Text(context.t('studio.admin_role')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: 'Edit admin',
+                        tooltip: context.t('studio.admin_edit_tooltip'),
                         onPressed:
                             _isSaving ? null : () => _beginEditing(index),
                         icon: const Icon(Icons.edit_outlined),
                       ),
                       IconButton(
-                        tooltip: 'Remove admin',
+                        tooltip: context.t('studio.admin_remove_tooltip'),
                         onPressed: _isSaving ? null : () => _delete(index),
                         icon: Icon(
                           Icons.delete_outline_rounded,

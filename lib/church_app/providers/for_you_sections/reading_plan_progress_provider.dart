@@ -25,12 +25,8 @@ final readingPlanProgressRepositoryProvider =
   );
 });
 
-final readingPlanProgressProvider =
-    StateNotifierProvider.family<
-        ReadingPlanProgressNotifier,
-        AsyncValue<List<int>>,
-        String>((ref, month) {
-
+final readingPlanProgressProvider = StateNotifierProvider.family<
+    ReadingPlanProgressNotifier, AsyncValue<List<int>>, String>((ref, month) {
   final repo = ref.watch(readingPlanProgressRepositoryProvider);
 
   return ReadingPlanProgressNotifier(
@@ -39,9 +35,7 @@ final readingPlanProgressProvider =
   );
 });
 
-class ReadingPlanProgressNotifier
-    extends StateNotifier<AsyncValue<List<int>>> {
-
+class ReadingPlanProgressNotifier extends StateNotifier<AsyncValue<List<int>>> {
   final String month;
   final ReadingPlanProgressRepository? repository;
 
@@ -59,8 +53,7 @@ class ReadingPlanProgressNotifier
     }
 
     try {
-      final days =
-          await repository!.fetchCompletedDays(month);
+      final days = await repository!.fetchCompletedDays(month);
       state = AsyncValue.data(days);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -81,7 +74,6 @@ class ReadingPlanProgressNotifier
 
     state = AsyncValue.data(updated);
 
-    await repository!
-        .updateCompletedDays(month, updated);
+    await repository!.updateCompletedDays(month, updated);
   }
 }

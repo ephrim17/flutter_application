@@ -10,8 +10,18 @@ class PlanListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String> months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
 
     final List<Gradient> gradients = [
@@ -32,7 +42,7 @@ class PlanListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('reading_plan.title', fallback: 'Bible in a year'),
+          text: context.t('reading_plan.title'),
         ),
       ),
       body: ListView.builder(

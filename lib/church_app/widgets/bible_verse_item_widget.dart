@@ -31,23 +31,25 @@ class BibleVerseItemWidget extends ConsumerWidget {
         const SizedBox(height: 6),
         Text(
           versePrimary,
-           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: BibleFontConfig.tamil(size),
-            fontWeight: FontWeight.w100,
-            height: 1.5,  
-            letterSpacing: 0.5
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontSize: BibleFontConfig.tamil(size),
+              fontWeight: FontWeight.w100,
+              height: 1.5,
+              letterSpacing: 0.5),
         ),
         const SizedBox(height: 6),
         Text(
           verseSecondary,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: BibleFontConfig.english(size),
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            fontWeight: FontWeight.w100,
-            height: 1.5,  
-            letterSpacing: 0.5
-          ),
+              fontSize: BibleFontConfig.english(size),
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w100,
+              height: 1.5,
+              letterSpacing: 0.5),
         ),
       ],
     );

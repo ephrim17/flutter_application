@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application/church_app/models/onboarding_model.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,25 +31,24 @@ final onboardingPagesProvider =
 final _defaultOnboardingPages = [
   OnboardingModel(
     id: 'daily-word',
-    title: 'Daily Word',
+    title: defaultChurchTextContents['onboarding.daily_word_title']!,
     description:
-        'Begin each day with scripture, reflections, and encouragement from your church.',
+        defaultChurchTextContents['onboarding.daily_word_description']!,
     imageUrl: '',
     isActive: true,
   ),
   OnboardingModel(
     id: 'church-events',
-    title: 'Church Events',
+    title: defaultChurchTextContents['onboarding.church_events_title']!,
     description:
-        'Stay connected with services, gatherings, announcements, and upcoming events.',
+        defaultChurchTextContents['onboarding.church_events_description']!,
     imageUrl: '',
     isActive: true,
   ),
   OnboardingModel(
     id: 'community',
-    title: 'Church Community',
-    description:
-        'Find your church family, prayer updates, groups, and ways to grow together.',
+    title: defaultChurchTextContents['onboarding.community_title']!,
+    description: defaultChurchTextContents['onboarding.community_description']!,
     imageUrl: '',
     isActive: true,
   ),

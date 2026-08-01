@@ -20,9 +20,7 @@ class ReadingPlanProgressRepository {
       );
 
   Future<List<int>> fetchCompletedDays(String month) async {
-    final doc = await _collection
-        .doc(month.toLowerCase())
-        .get();
+    final doc = await _collection.doc(month.toLowerCase()).get();
 
     if (!doc.exists) return [];
 
@@ -38,9 +36,7 @@ class ReadingPlanProgressRepository {
     String month,
     List<int> days,
   ) async {
-    await _collection
-        .doc(month.toLowerCase())
-        .set({
+    await _collection.doc(month.toLowerCase()).set({
       'completedDays': days,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

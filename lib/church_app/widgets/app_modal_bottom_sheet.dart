@@ -49,69 +49,74 @@ Future<T?> showAppModalBottomSheet<T>({
       final child = _unwrapExistingFractionalSheet(builder(context));
       final shouldShowGrabHandle = showDragHandle ?? true;
       final usesCustomSheetSurface = effectiveSheetColor == Colors.transparent;
-      final handleLaneHeight =
-          shouldShowGrabHandle && !usesCustomSheetSurface ? 36.0 : 0.0;
-      return BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          child: FractionallySizedBox(
-            heightFactor: heightFactor,
-            alignment: Alignment.bottomCenter,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(34),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: usesCustomSheetSurface
-                      ? Colors.transparent
-                      : effectiveSheetColor.withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(34),
-                  border: usesCustomSheetSurface
-                      ? null
-                      : Border.all(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.08),
-                        ),
-                  boxShadow: usesCustomSheetSurface
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.20),
-                            blurRadius: 38,
-                            offset: const Offset(0, 18),
+      final handleLaneHeight = shouldShowGrabHandle ? 36.0 : 0.0;
+      final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: FractionallySizedBox(
+              heightFactor: heightFactor.clamp(0.1, 1.0),
+              alignment: Alignment.bottomCenter,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(34),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: usesCustomSheetSurface
+                        ? Colors.transparent
+                        : effectiveSheetColor.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(34),
+                    border: usesCustomSheetSurface
+                        ? null
+                        : Border.all(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.08),
                           ),
-                        ],
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      top: handleLaneHeight,
-                      child: child,
-                    ),
-                    if (shouldShowGrabHandle)
-                      Positioned(
-                        top: 14,
-                        left: 0,
-                        right: 0,
-                        child: IgnorePointer(
-                          child: Center(
-                            child: Container(
-                              key: const ValueKey<String>(
-                                'app-modal-drag-handle',
-                              ),
-                              width: 56,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.34),
-                                borderRadius: BorderRadius.circular(999),
+                    boxShadow: usesCustomSheetSurface
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.20),
+                              blurRadius: 38,
+                              offset: const Offset(0, 18),
+                            ),
+                          ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        top: handleLaneHeight,
+                        child: child,
+                      ),
+                      if (shouldShowGrabHandle)
+                        Positioned(
+                          top: 14,
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: Center(
+                              child: Container(
+                                key: const ValueKey<String>(
+                                  'app-modal-drag-handle',
+                                ),
+                                width: 56,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.34),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

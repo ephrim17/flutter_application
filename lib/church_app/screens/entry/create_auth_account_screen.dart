@@ -82,15 +82,11 @@ class _CreateAuthAccountScreenState
     final confirmPassword = _confirmPasswordController.text;
 
     if (email.isEmpty) {
-      return context.t('auth.email_required',
-          fallback: 'Please enter your email');
+      return context.t('auth.email_required');
     }
 
     if (!InputValidators.isValidEmail(email)) {
-      return context.t(
-        'auth.email_address_invalid',
-        fallback: 'Please enter a valid email address',
-      );
+      return context.t('auth.email_address_invalid');
     }
 
     if (widget.adminCreateMode) {
@@ -98,36 +94,21 @@ class _CreateAuthAccountScreenState
     }
 
     if (password.isEmpty) {
-      return context.t(
-        'auth.password_required',
-        fallback: 'Please enter a password',
-      );
+      return context.t('auth.password_required');
     }
 
     if (!_isLoginMode) {
       if (password.length < 8) {
-        return context.t(
-          'auth.password_min_length',
-          fallback: 'Password must be at least 8 characters',
-        );
+        return context.t('auth.password_min_length');
       }
       if (!RegExp(r'[A-Z]').hasMatch(password)) {
-        return context.t(
-          'auth.password_uppercase_required',
-          fallback: 'Include at least one uppercase letter',
-        );
+        return context.t('auth.password_uppercase_required');
       }
       if (!RegExp(r'\d').hasMatch(password)) {
-        return context.t(
-          'auth.password_number_required',
-          fallback: 'Include at least one number',
-        );
+        return context.t('auth.password_number_required');
       }
       if (confirmPassword != password) {
-        return context.t(
-          'auth.passwords_mismatch',
-          fallback: 'Passwords do not match',
-        );
+        return context.t('auth.passwords_mismatch');
       }
     }
 
@@ -182,15 +163,10 @@ class _CreateAuthAccountScreenState
     try {
       if (widget.adminCreateMode) {
         final temporaryPassword = _generateTemporaryPassword();
-        final passwordEmailSentMessage = context.t(
-          'members.create_member_password_email_sent',
-          fallback: ' Password setup email sent to the member.',
-        );
-        final passwordEmailFailedMessage = context.t(
-          'members.create_member_password_email_failed',
-          fallback:
-              ' Member login created, but the password setup email could not be sent.',
-        );
+        final passwordEmailSentMessage =
+            context.t('members.create_member_password_email_sent');
+        final passwordEmailFailedMessage =
+            context.t('members.create_member_password_email_failed');
         final createdAccount = await ref
             .read(authRepositoryProvider)
             .createFirebaseAccountForAdmin(
@@ -240,7 +216,7 @@ class _CreateAuthAccountScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${context.t('members.create_member_login_success', fallback: 'Member login created successfully.')}$passwordEmailFeedback',
+                '${context.t('members.create_member_login_success')}$passwordEmailFeedback',
               ),
             ),
           );
@@ -308,15 +284,11 @@ class _CreateAuthAccountScreenState
         title: AppBarTitle(
           text: widget.adminCreateMode
               ? widget.existingMember != null
-                  ? context.t(
-                      'members.create_member_login_title',
-                      fallback: 'Create Member Login',
-                    )
-                  : context.t('members.create_member',
-                      fallback: 'Create Member')
+                  ? context.t('members.create_member_login_title')
+                  : context.t('members.create_member')
               : _isLoginMode
-                  ? context.t('auth.login', fallback: 'Login')
-                  : context.t('auth.register', fallback: 'Register'),
+                  ? context.t('auth.login')
+                  : context.t('auth.register'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -339,52 +311,25 @@ class _CreateAuthAccountScreenState
                     children: [
                       Text(
                         widget.existingMember != null
-                            ? context.t(
-                                'members.create_member_login_heading',
-                                fallback: 'Create member login',
-                              )
+                            ? context.t('members.create_member_login_heading')
                             : widget.adminCreateMode
-                                ? context.t(
-                                    'members.create_member_account_heading',
-                                    fallback: 'Create member account',
-                                  )
+                                ? context
+                                    .t('members.create_member_account_heading')
                                 : _isLoginMode
-                                    ? context.t(
-                                        'auth.welcome_back_heading',
-                                        fallback: 'Welcome back',
-                                      )
-                                    : context.t(
-                                        'auth.create_account_heading',
-                                        fallback:
-                                            'Create your Church Tree account',
-                                      ),
+                                    ? context.t('auth.welcome_back_heading')
+                                    : context.t('auth.create_account_heading'),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         widget.existingMember != null
-                            ? context.t(
-                                'members.create_member_login_subtitle',
-                                fallback:
-                                    'Create a Church Tree login for this member.',
-                              )
+                            ? context.t('members.create_member_login_subtitle')
                             : widget.adminCreateMode
-                                ? context.t(
-                                    'members.create_member_account_subtitle',
-                                    fallback:
-                                        'Enter the member email. We will create the account and send a password setup email.',
-                                  )
+                                ? context
+                                    .t('members.create_member_account_subtitle')
                                 : _isLoginMode
-                                    ? context.t(
-                                        'auth.login_subtitle',
-                                        fallback:
-                                            'Sign in with your Church Tree account to continue.',
-                                      )
-                                    : context.t(
-                                        'auth.register_subtitle',
-                                        fallback:
-                                            'Create your Church Tree first, then request access to your church.',
-                                      ),
+                                    ? context.t('auth.login_subtitle')
+                                    : context.t('auth.register_subtitle'),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
@@ -392,16 +337,9 @@ class _CreateAuthAccountScreenState
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: context.t(
-                            'auth.email_address_label',
-                            fallback: 'Email Address',
-                          ),
+                          labelText: context.t('auth.email_address_label'),
                           helperText: widget.adminCreateMode
-                              ? context.t(
-                                  'members.create_member_email_helper',
-                                  fallback:
-                                      'Church Account will use this email and block duplicate accounts automatically.',
-                                )
+                              ? context.t('members.create_member_email_helper')
                               : null,
                         ),
                       ),
@@ -411,17 +349,10 @@ class _CreateAuthAccountScreenState
                           controller: _passwordController,
                           obscureText: _hidePassword,
                           decoration: InputDecoration(
-                            labelText: context.t(
-                              'auth.password_label',
-                              fallback: 'Password',
-                            ),
+                            labelText: context.t('auth.password_label'),
                             helperText: _isLoginMode
                                 ? null
-                                : context.t(
-                                    'auth.password_helper',
-                                    fallback:
-                                        'Min 8 chars, 1 uppercase, 1 number',
-                                  ),
+                                : context.t('auth.password_helper'),
                             suffixIcon: IconButton(
                               onPressed: () {
                                 setState(() {
@@ -454,10 +385,7 @@ class _CreateAuthAccountScreenState
                                       );
                                     },
                               child: Text(
-                                context.t(
-                                  'auth.forgot_password_title',
-                                  fallback: 'Forgot Password',
-                                ),
+                                context.t('auth.forgot_password_title'),
                               ),
                             ),
                           ),
@@ -468,10 +396,8 @@ class _CreateAuthAccountScreenState
                             controller: _confirmPasswordController,
                             obscureText: _hideConfirmPassword,
                             decoration: InputDecoration(
-                              labelText: context.t(
-                                'auth.confirm_password_label',
-                                fallback: 'Confirm Password',
-                              ),
+                              labelText:
+                                  context.t('auth.confirm_password_label'),
                               suffixIcon: IconButton(
                                 onPressed: () {
                                   setState(() {
@@ -496,17 +422,11 @@ class _CreateAuthAccountScreenState
                 SolidButton(
                   label: widget.adminCreateMode
                       ? widget.existingMember != null
-                          ? context.t(
-                              'members.create_member_login_action',
-                              fallback: 'Create member login',
-                            )
-                          : context.t(
-                              'members.create_member_account_action',
-                              fallback: 'Create member account',
-                            )
+                          ? context.t('members.create_member_login_action')
+                          : context.t('members.create_member_account_action')
                       : _isLoginMode
-                          ? context.t('auth.login', fallback: 'Login')
-                          : context.t('auth.register', fallback: 'Register'),
+                          ? context.t('auth.login')
+                          : context.t('auth.register'),
                   isLoading: isLoading,
                   onPressed: isLoading ? null : _submit,
                 ),
@@ -524,27 +444,11 @@ class _CreateAuthAccountScreenState
                   child: Text(
                     widget.adminCreateMode
                         ? widget.existingMember != null
-                            ? context.t(
-                                'members.create_member_login_footer',
-                                fallback:
-                                    'This will create login access and send a password setup email.',
-                              )
-                            : context.t(
-                                'members.create_member_account_footer',
-                                fallback:
-                                    'Member account will be created with this email and Church Account will send a password setup email.',
-                              )
+                            ? context.t('members.create_member_login_footer')
+                            : context.t('members.create_member_account_footer')
                         : _isLoginMode
-                            ? context.t(
-                                'auth.login_toggle_register',
-                                fallback:
-                                    'Need a new Church Tree account? Register',
-                              )
-                            : context.t(
-                                'auth.register_toggle_login',
-                                fallback:
-                                    'Already have a Church Tree account? Login',
-                              ),
+                            ? context.t('auth.login_toggle_register')
+                            : context.t('auth.register_toggle_login'),
                   ),
                 ),
               ],

@@ -10,13 +10,11 @@ class AboutRepository extends ChurchScopedRepository {
   });
 
   DocumentReference<AboutModel> docRef() {
-    return FirestorePaths
-        .churchAboutDoc(firestore, churchId)
+    return FirestorePaths.churchAboutDoc(firestore, churchId)
         .withConverter<AboutModel>(
-          fromFirestore: (snap, _) =>
-              AboutModel.fromFirestore(snap.data()!),
-          toFirestore: (model, _) => model.toMap(),
-        );
+      fromFirestore: (snap, _) => AboutModel.fromFirestore(snap.data()!),
+      toFirestore: (model, _) => model.toMap(),
+    );
   }
 
   Future<AboutModel> fetchAbout() async {

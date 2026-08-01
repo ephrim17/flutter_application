@@ -62,31 +62,32 @@ class FeedPost {
   factory FeedPost.fromJson(String id, Map<String, dynamic> json) {
     return FeedPost(
       id: id,
-      userId: json['userId'],
-      userName: json['userName'],
-      userPhoto: json['userPhoto'],
-      churchId: json['churchId'],
-      churchName: json['churchName'],
-      churchPastorName: json['churchPastorName'],
-      sharePersonalDetails: json['sharePersonalDetails'] ?? false,
-      userCategory: json['userCategory'],
-      userAddress: json['userAddress'],
-      userEmail: json['userEmail'],
-      userPhone: json['userPhone'],
+      userId: _string(json['userId']),
+      userName: _string(json['userName']),
+      userPhoto: _nullableString(json['userPhoto']),
+      churchId: _nullableString(json['churchId']),
+      churchName: _nullableString(json['churchName']),
+      churchPastorName: _nullableString(json['churchPastorName']),
+      sharePersonalDetails: json['sharePersonalDetails'] == true,
+      userCategory: _nullableString(json['userCategory']),
+      userAddress: _nullableString(json['userAddress']),
+      userEmail: _nullableString(json['userEmail']),
+      userPhone: _nullableString(json['userPhone']),
       userDob: _parseDate(json['userDob']),
-      title: json['title'],
-      description: json['description'],
+      title: _string(json['title']),
+      description: _string(json['description']),
       hashtags: _parseStringList(json['hashtags']),
       isGlobal: json['isGlobal'] == true,
       sourceChurchId: (json['sourceChurchId'] ?? '').toString().trim(),
       sourcePostId: (json['sourcePostId'] ?? '').toString().trim(),
-      isPinned: json['isPinned'] ?? false,
+      isPinned: json['isPinned'] == true,
       pinnedAt: _parseDate(json['pinnedAt']),
-      imageUrl: json['imageUrl'],
+      imageUrl: _nullableString(json['imageUrl']),
       imageUrls: _parseImageUrls(json),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      likeCount: json['likeCount'] ?? 0,
-      commentCount: json['commentCount'] ?? 0,
+      createdAt: _parseDate(json['createdAt']) ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
+      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -94,6 +95,13 @@ class FeedPost {
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
     return null;
+  }
+
+  static String _string(dynamic value) => value?.toString().trim() ?? '';
+
+  static String? _nullableString(dynamic value) {
+    final result = _string(value);
+    return result.isEmpty ? null : result;
   }
 
   static List<String> _parseStringList(dynamic value) {

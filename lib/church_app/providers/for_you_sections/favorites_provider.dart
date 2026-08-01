@@ -6,9 +6,7 @@ final favoritesProvider =
     AsyncNotifierProvider<FavoritesNotifier, List<Map<String, String>>>(
         FavoritesNotifier.new);
 
-class FavoritesNotifier
-    extends AsyncNotifier<List<Map<String, String>>> {
-
+class FavoritesNotifier extends AsyncNotifier<List<Map<String, String>>> {
   @override
   Future<List<Map<String, String>>> build() async {
     return loadFavorites();
@@ -23,10 +21,12 @@ class FavoritesNotifier
 
     for (var key in stored) {
       final parts = key.split('_');
+      if (parts.length < 3) continue;
 
-      final book = parts[0];
-      final chapter = int.parse(parts[1]);
-      final verse = int.parse(parts[2]);
+      final book = parts.sublist(0, parts.length - 2).join('_');
+      final chapter = int.tryParse(parts[parts.length - 2]);
+      final verse = int.tryParse(parts.last);
+      if (book.isEmpty || chapter == null || verse == null) continue;
 
       final verseData = await repo.getVerse(
         book: book,
@@ -55,14 +55,17 @@ class FavoritesNotifier
 
     final reference = verse['reference'] ?? '';
     final parts = reference.split(' ');
+    if (parts.length < 2) return;
 
-    final book = parts.first;
+    final book = parts.sublist(0, parts.length - 1).join(' ');
     final chapterVerse = parts.last.split(':');
+    if (chapterVerse.length != 2) return;
 
-    final chapter = int.parse(chapterVerse[0]);
-    final verseNumber = int.parse(chapterVerse[1]);
+    final chapter = int.tryParse(chapterVerse[0]);
+    final verseNumber = int.tryParse(chapterVerse[1]);
+    if (chapter == null || verseNumber == null) return;
 
-    final key = "${book}_${chapter}_${verseNumber}";
+    final key = "${book}_${chapter}_$verseNumber";
 
     // 1️⃣ Remove from global highlights
     final global = prefs.getStringList('all_highlights') ?? [];
@@ -74,7 +77,8 @@ class FavoritesNotifier
     final chapterHighlights = prefs.getStringList(chapterKey) ?? [];
 
     chapterHighlights.removeWhere(
-        (v) => int.parse(v) == verseNumber - 1);
+      (value) => int.tryParse(value) == verseNumber - 1,
+    );
 
     await prefs.setStringList(chapterKey, chapterHighlights);
 
@@ -87,11 +91,13 @@ class FavoritesNotifier
 /// Highlight helpers for use in VerseScreen and elsewhere
 Future<Set<int>> loadHighlights(String bookKey, int actualChapterIndex) async {
   final prefs = await SharedPreferences.getInstance();
-  final stored = prefs.getStringList('highlight_${bookKey}_$actualChapterIndex');
-  return (stored?.map(int.parse).toSet() ?? <int>{});
+  final stored =
+      prefs.getStringList('highlight_${bookKey}_$actualChapterIndex');
+  return stored?.map(int.tryParse).whereType<int>().toSet() ?? <int>{};
 }
 
-Future<void> saveHighlights(String bookKey, int actualChapterIndex, Set<int> highlightedVerses) async {
+Future<void> saveHighlights(
+    String bookKey, int actualChapterIndex, Set<int> highlightedVerses) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setStringList(
     'highlight_${bookKey}_$actualChapterIndex',
@@ -99,10 +105,11 @@ Future<void> saveHighlights(String bookKey, int actualChapterIndex, Set<int> hig
   );
 }
 
-Future<void> toggleGlobalHighlight(String bookKey, int chapter, int verse) async {
+Future<void> toggleGlobalHighlight(
+    String bookKey, int chapter, int verse) async {
   final prefs = await SharedPreferences.getInstance();
   final stored = prefs.getStringList('all_highlights') ?? [];
-  final key = "${bookKey}_${chapter}_${verse}";
+  final key = "${bookKey}_${chapter}_$verse";
   if (stored.contains(key)) {
     stored.remove(key);
   } else {

@@ -17,7 +17,33 @@ Future<void> logChurchAnalyticsEvent(
   required String name,
   Map<String, Object?> parameters = const {},
 }) async {
-  final churchId = await ref.read(currentChurchIdProvider.future);
+  final churchIdFuture = ref.read(currentChurchIdProvider.future);
+  final churchId = await churchIdFuture;
+  await _logChurchAnalyticsEvent(
+    churchId: churchId,
+    name: name,
+    parameters: parameters,
+  );
+}
+
+Future<void> logChurchAnalyticsEventFromContainer(
+  ProviderContainer container, {
+  required String name,
+  Map<String, Object?> parameters = const {},
+}) async {
+  final churchId = await container.read(currentChurchIdProvider.future);
+  await _logChurchAnalyticsEvent(
+    churchId: churchId,
+    name: name,
+    parameters: parameters,
+  );
+}
+
+Future<void> _logChurchAnalyticsEvent({
+  required String? churchId,
+  required String name,
+  required Map<String, Object?> parameters,
+}) async {
   final merged = <String, Object?>{
     if (churchId != null && churchId.trim().isNotEmpty) 'church_id': churchId,
     ...parameters,

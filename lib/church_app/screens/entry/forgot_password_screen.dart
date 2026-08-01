@@ -69,10 +69,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.t(
-                'auth.reset_email_sent',
-                fallback: 'Password reset email sent. Check your inbox.',
-              ),
+              context.t('auth.reset_email_sent'),
             ),
           ),
         );
@@ -84,10 +81,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           SnackBar(
             content: Text(
               e.toString().replaceFirst('Exception: ', '').trim().isEmpty
-                  ? context.t(
-                      'common.unknown_error',
-                      fallback: 'An unknown error occurred.',
-                    )
+                  ? context.t('common.unknown_error')
                   : e.toString().replaceFirst('Exception: ', ''),
             ),
           ),
@@ -107,8 +101,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('auth.forgot_password_title',
-              fallback: 'Forgot Password'),
+          text: context.t('auth.forgot_password_title'),
         ),
       ),
       body: Padding(
@@ -136,15 +129,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               AppTextField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: context.t('auth.email_label', fallback: 'Email'),
+                  labelText: context.t('auth.email_label'),
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || !InputValidators.isValidEmail(value)) {
-                    return context.t(
-                      'auth.email_invalid',
-                      fallback: 'Please enter a valid email.',
-                    );
+                    return context.t('auth.email_invalid');
                   }
                   return null;
                 },
@@ -152,10 +142,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 20),
               SolidButton(
-                label: context.t(
-                  'auth.send_reset_email',
-                  fallback: 'Send Reset Email',
-                ),
+                label: context.t('auth.send_reset_email'),
                 isLoading: _isLoading,
                 onPressed: _sendResetEmail,
               ),

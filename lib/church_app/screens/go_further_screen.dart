@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -10,7 +11,6 @@ import 'package:flutter_application/church_app/providers/go_further_provider.dar
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class GoFurtherScreen extends ConsumerStatefulWidget {
@@ -107,8 +107,8 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText:
-                      'Search churches with Facebook, Instagram or YouTube...',
+                  hintText: context.t(
+                      'ui.go_further.search_churches_with_facebook_instagram_or_youtube'),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 10, right: 6),
                     child: Icon(
@@ -192,7 +192,8 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(
-                                  'Add your social media entry to display the church here.',
+                                  context.t(
+                                      'ui.go_further.add_your_social_media_entry_to_display_the_church_here'),
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -228,7 +229,10 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: carouselBoxDecoration(context),
                 child: Text(
-                  'Unable to load churches right now.\n${paginationState.errorMessage}',
+                  context.t(
+                    'go_further.load_failed',
+                    parameters: {'error': paginationState.errorMessage!},
+                  ),
                   textAlign: TextAlign.center,
                 ),
               )
@@ -327,17 +331,17 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                 const SizedBox(height: 20),
                 _GoFurtherDetailRow(
                   icon: Icons.person_outline_rounded,
-                  label: 'Pastor',
+                  label: context.t('ui.go_further.pastor'),
                   value: _valueOrFallback(church.pastorName),
                 ),
                 _GoFurtherDetailRow(
                   icon: Icons.location_on_outlined,
-                  label: 'Address',
+                  label: context.t('ui.go_further.address'),
                   value: _valueOrFallback(church.address),
                 ),
                 _GoFurtherDetailRow(
                   icon: Icons.phone_outlined,
-                  label: 'Contact',
+                  label: context.t('ui.go_further.contact'),
                   value: _valueOrFallback(church.contact),
                   onActionTap: church.contact.trim().isEmpty
                       ? null
@@ -345,7 +349,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                 ),
                 _GoFurtherDetailRow(
                   icon: Icons.email_outlined,
-                  label: 'Email',
+                  label: context.t('ui.go_further.email'),
                   value: _valueOrFallback(church.email),
                 ),
                 const SizedBox(height: 12),
@@ -355,19 +359,19 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   children: [
                     if (church.facebookLink.trim().isNotEmpty)
                       _SocialActionChip(
-                        label: 'Facebook',
+                        label: context.t('ui.go_further.facebook'),
                         icon: Icons.facebook,
                         onTap: () => _openSocialLink(church.facebookLink),
                       ),
                     if (church.instagramLink.trim().isNotEmpty)
                       _SocialActionChip(
-                        label: 'Instagram',
+                        label: context.t('ui.go_further.instagram'),
                         icon: Icons.camera_alt_outlined,
                         onTap: () => _openSocialLink(church.instagramLink),
                       ),
                     if (church.youtubeLink.trim().isNotEmpty)
                       _SocialActionChip(
-                        label: 'YouTube',
+                        label: context.t('ui.go_further.youtube'),
                         icon: Icons.play_circle_outline_rounded,
                         onTap: () => _openSocialLink(church.youtubeLink),
                       ),
@@ -378,7 +382,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: () => Navigator.of(sheetContext).pop(),
-                    child: const Text('Close'),
+                    child: Text(context.t('ui.go_further.close_aec0')),
                   ),
                 ),
               ],
@@ -402,8 +406,9 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
               .refresh();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Church social details updated'),
+            SnackBar(
+              content: Text(
+                  context.t('ui.go_further.church_social_details_updated')),
             ),
           );
         },
@@ -416,7 +421,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
     final uri = Uri.tryParse(normalized);
     if (uri == null) return;
 
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await launchExternalUri(context, uri);
   }
 }
 
@@ -481,7 +486,7 @@ class _GoFurtherChurchCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  'Current church',
+                                  context.t('ui.go_further.current_church'),
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w700,
@@ -504,7 +509,7 @@ class _GoFurtherChurchCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    'Edit',
+                                    context.t('ui.go_further.edit'),
                                     style:
                                         theme.textTheme.labelMedium?.copyWith(
                                       color: theme.colorScheme.secondary,
@@ -554,19 +559,19 @@ class _GoFurtherChurchCard extends StatelessWidget {
                 runSpacing: 10,
                 children: [
                   if (church.facebookLink.trim().isNotEmpty)
-                    const _SocialBadge(
+                    _SocialBadge(
                       icon: Icons.facebook,
-                      label: 'Facebook',
+                      label: context.t('ui.go_further.facebook_82da'),
                     ),
                   if (church.instagramLink.trim().isNotEmpty)
-                    const _SocialBadge(
+                    _SocialBadge(
                       icon: Icons.camera_alt_outlined,
-                      label: 'Instagram',
+                      label: context.t('ui.go_further.instagram_5721'),
                     ),
                   if (church.youtubeLink.trim().isNotEmpty)
-                    const _SocialBadge(
+                    _SocialBadge(
                       icon: Icons.play_circle_outline_rounded,
-                      label: 'YouTube',
+                      label: context.t('ui.go_further.youtube_5588'),
                     ),
                 ],
               ),
@@ -629,7 +634,7 @@ Future<void> _showPastorPhotoPreview(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Close'),
+                  child: Text(context.t('ui.go_further.close_aec0')),
                 ),
               ),
             ],
@@ -959,48 +964,49 @@ class _ChurchDiscoveryEditorSheetState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Church Discovery Details',
+              context.t('ui.go_further.church_discovery_details'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 10),
             Text(
-              'Update your church details and add Facebook, Instagram, or YouTube links so the church can appear here.',
+              context.t(
+                  'ui.go_further.update_your_church_details_and_add_facebook_instagram_o'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 18),
             _EditorField(
               controller: _nameController,
-              label: 'Church name',
+              label: context.t('ui.go_further.church_name'),
             ),
             _EditorField(
               controller: _pastorController,
-              label: 'Pastor name',
+              label: context.t('ui.go_further.pastor_name'),
             ),
             _EditorField(
               controller: _addressController,
-              label: 'Address',
+              label: context.t('ui.go_further.address_d70f'),
             ),
             _EditorField(
               controller: _contactController,
-              label: 'Contact',
+              label: context.t('ui.go_further.contact_b374'),
             ),
             _EditorField(
               controller: _emailController,
-              label: 'Email',
+              label: context.t('ui.go_further.email_84ad'),
             ),
             _EditorField(
               controller: _facebookController,
-              label: 'Facebook link',
+              label: context.t('ui.go_further.facebook_link'),
             ),
             _EditorField(
               controller: _instagramController,
-              label: 'Instagram link',
+              label: context.t('ui.go_further.instagram_link'),
             ),
             _EditorField(
               controller: _youtubeController,
-              label: 'YouTube link',
+              label: context.t('ui.go_further.youtube_link'),
             ),
             const SizedBox(height: 10),
             SizedBox(
@@ -1013,7 +1019,7 @@ class _ChurchDiscoveryEditorSheetState
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Save'),
+                    : Text(context.t('ui.go_further.save')),
               ),
             ),
           ],

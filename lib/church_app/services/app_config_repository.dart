@@ -12,16 +12,15 @@ class AppConfigRepository {
   });
 
   Stream<AppConfig> watchAppConfig() {
-    return FirestorePaths
-        .churchAppConfig(firestore, churchId)
+    return FirestorePaths.churchAppConfig(firestore, churchId)
         .snapshots()
         .map((snapshot) {
-          final data = snapshot.data();
-          if (data == null) {
-            throw Exception('App config does not exist');
-          }
-          return AppConfig.fromFirestore(data);
-        });
+      final data = snapshot.data();
+      if (data == null) {
+        throw Exception('App config does not exist');
+      }
+      return AppConfig.fromFirestore(data);
+    });
   }
 
   Future<AppConfig> getAppConfigOnce() async {

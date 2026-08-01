@@ -19,17 +19,7 @@ class PromptSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var screenHeight = MediaQuery.of(context).size.height;
-
-    final height = switch (type) {
-      PromptType.birthday => screenHeight * 0.8,
-      PromptType.announcement => screenHeight * 0.3,
-    };
-
-    return SizedBox(
-      height: height,
-      child: _buildContent(),
-    );
+    return _buildContent();
   }
 
   Widget _buildContent() {
@@ -38,7 +28,9 @@ class PromptSheet extends StatelessWidget {
         return const BirthDayCard();
 
       case PromptType.announcement:
-        return AnnouncemnetCardWidget(promptSheetModel: promptSheetModel!);
+        final model = promptSheetModel;
+        if (model == null) return const SizedBox.shrink();
+        return AnnouncemnetCardWidget(promptSheetModel: model);
     }
   }
 }
@@ -74,15 +66,12 @@ final isBirthdayProvider = Provider<bool>((ref) {
   return dob.day == today.day && dob.month == today.month;
 });
 
-
 final todayProvider = StreamProvider<DateTime>((ref) async* {
   while (true) {
     yield DateTime.now();
     await Future.delayed(const Duration(hours: 1));
   }
 });
-
-
 
 final isAnnouncementEnabledProvider = Provider<PromptSheetModel?>((ref) {
   final configAsync = ref.watch(appConfigProvider);

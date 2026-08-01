@@ -1,6 +1,6 @@
 class BibleBook {
-  final String key;   // Genesis
-  final String name;  // ஆதியாகமம்
+  final String key; // Genesis
+  final String name; // ஆதியாகமம்
 
   BibleBook({required this.key, required this.name});
 }

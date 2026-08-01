@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -47,7 +48,9 @@ class _FinancialDashboardScreenState
     if (!state.isAdmin) {
       return Scaffold(
         appBar: AppBar(
-          title: const AppBarTitle(text: 'Financial Dashboard'),
+          title: AppBarTitle(
+            text: context.t('finance.title'),
+          ),
         ),
         body: Center(
           child: Container(
@@ -55,7 +58,8 @@ class _FinancialDashboardScreenState
             padding: const EdgeInsets.all(24),
             decoration: carouselBoxDecoration(context),
             child: Text(
-              'Financial dashboard is available only for members of the Finance group.',
+              context.t(
+                  'ui.financial_dashboard.financial_dashboard_is_available_only_for_members_of_th'),
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -66,7 +70,9 @@ class _FinancialDashboardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppBarTitle(text: 'Financial Dashboard'),
+        title: AppBarTitle(
+          text: context.t('finance.title'),
+        ),
       ),
       body: Stack(
         children: [
@@ -98,31 +104,51 @@ class _FinancialDashboardScreenState
                           childAspectRatio: wide ? 1.35 : 0.86,
                           children: [
                             _FinanceSummaryCard(
-                              title: 'Total Income',
+                              title: context
+                                  .t('ui.financial_dashboard.total_income'),
                               value: _currency(state.totalIncome),
-                              subtitle:
-                                  '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.income).length} income records',
+                              subtitle: context.t(
+                                'finance.income_record_count',
+                                parameters: {
+                                  'count':
+                                      '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.income).length}',
+                                },
+                              ),
                               icon: Icons.arrow_downward_rounded,
                               accent: const Color(0xFF28A26A),
                             ),
                             _FinanceSummaryCard(
-                              title: 'Total Expenses',
+                              title: context
+                                  .t('ui.financial_dashboard.total_expenses'),
                               value: _currency(state.totalExpense),
-                              subtitle:
-                                  '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.expense).length} expense records',
+                              subtitle: context.t(
+                                'finance.expense_record_count',
+                                parameters: {
+                                  'count':
+                                      '${state.financialYearTransactions.where((item) => item.type == ChurchTransactionType.expense).length}',
+                                },
+                              ),
                               icon: Icons.arrow_upward_rounded,
                               accent: const Color(0xFFD66C4A),
                             ),
                             _FinanceSummaryCard(
-                              title: 'Bank Balance',
+                              title: context
+                                  .t('ui.financial_dashboard.bank_balance'),
                               value: _currency(state.bankBalance),
-                              subtitle:
-                                  '${state.setup.banks.length} bank account${state.setup.banks.length == 1 ? '' : 's'} configured',
+                              subtitle: context.t(
+                                state.setup.banks.length == 1
+                                    ? 'finance.bank_configured_singular'
+                                    : 'finance.bank_configured_plural',
+                                parameters: {
+                                  'count': '${state.setup.banks.length}'
+                                },
+                              ),
                               icon: Icons.account_balance_outlined,
                               accent: const Color(0xFF5878F0),
                             ),
                             _FinanceSummaryCard(
-                              title: 'Cash in Hand',
+                              title: context
+                                  .t('ui.financial_dashboard.cash_in_hand'),
                               value: _currency(state.cashInHand),
                               subtitle: state.setup.config.currentFinancialYear,
                               icon: Icons.payments_outlined,
@@ -149,14 +175,16 @@ class _FinancialDashboardScreenState
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _DashboardSectionCard(
-                      title: 'Ledger Dashboards',
-                      subtitle:
-                          'Track how each finance bucket is performing across recorded transactions.',
+                      title:
+                          context.t('ui.financial_dashboard.ledger_dashboards'),
+                      subtitle: context.t(
+                          'ui.financial_dashboard.track_how_each_finance_bucket_is_performing_across_r'),
                       child: state.categorySummaries.isEmpty
-                          ? const _FinanceEmptyState(
-                              title: 'No ledger data yet',
-                              subtitle:
-                                  'Recorded transactions will automatically build ledger dashboards here.',
+                          ? _FinanceEmptyState(
+                              title: context.t(
+                                  'ui.financial_dashboard.no_ledger_data_yet'),
+                              subtitle: context.t(
+                                  'ui.financial_dashboard.recorded_transactions_will_automatically_build_ledge'),
                             )
                           : LayoutBuilder(
                               builder: (context, constraints) {
@@ -192,9 +220,9 @@ class _FinancialDashboardScreenState
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _DashboardSectionCard(
-                      title: 'Monthly Trends',
-                      subtitle:
-                          'Income and expense flow across the last six months. Tap a month to inspect its values.',
+                      title: context.t('ui.financial_dashboard.monthly_trends'),
+                      subtitle: context.t(
+                          'ui.financial_dashboard.income_and_expense_flow_across_the_last_six_months_t'),
                       child: _MonthlyTrendChart(
                         summaries: state.monthlySummaries,
                       ),
@@ -205,9 +233,9 @@ class _FinancialDashboardScreenState
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _DashboardSectionCard(
-                      title: 'Day Book',
-                      subtitle:
-                          'Daily income and expense movement for the selected financial year.',
+                      title: context.t('ui.financial_dashboard.day_book'),
+                      subtitle: context.t(
+                          'ui.financial_dashboard.daily_income_and_expense_movement_for_the_selected_f'),
                       child: _DayBookSection(
                         state: state,
                         onPickRange: () => _pickDayBookRange(context),
@@ -225,9 +253,10 @@ class _FinancialDashboardScreenState
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: _DashboardSectionCard(
-                      title: 'Manage Transactions',
-                      subtitle:
-                          'Search, filter, and maintain church finance records in one place.',
+                      title: context
+                          .t('ui.financial_dashboard.manage_transactions'),
+                      subtitle: context.t(
+                          'ui.financial_dashboard.search_filter_and_maintain_church_finance_records_in'),
                       child: Column(
                         children: [
                           Row(
@@ -253,7 +282,8 @@ class _FinancialDashboardScreenState
                                               currentUser?.name ?? '',
                                         ),
                                 icon: const Icon(Icons.add_rounded),
-                                label: const Text('Add Transaction'),
+                                label: Text(context.t(
+                                    'ui.financial_dashboard.add_transaction')),
                               ),
                             ],
                           ),
@@ -263,8 +293,8 @@ class _FinancialDashboardScreenState
                             controller: _searchController,
                             onChanged: viewModel.setQuery,
                             decoration: InputDecoration(
-                              hintText:
-                                  'Search by title, ledger, party, payment method, reference, or recorder...',
+                              hintText: context.t(
+                                  'ui.financial_dashboard.search_by_title_ledger_party_payment_method_referenc'),
                               prefixIcon: Padding(
                                 padding:
                                     const EdgeInsets.only(left: 10, right: 6),
@@ -318,7 +348,8 @@ class _FinancialDashboardScreenState
                                 return Column(
                                   children: [
                                     AppDropdownField<String>(
-                                      labelText: 'Type',
+                                      labelText: context
+                                          .t('ui.financial_dashboard.type'),
                                       initialValue: state.selectedType,
                                       items: state.types
                                           .map(
@@ -335,7 +366,8 @@ class _FinancialDashboardScreenState
                                     ),
                                     const SizedBox(height: 12),
                                     AppDropdownField<String>(
-                                      labelText: 'Status',
+                                      labelText: context
+                                          .t('ui.financial_dashboard.status'),
                                       initialValue: state.selectedStatus,
                                       items: state.statuses
                                           .map(
@@ -352,7 +384,8 @@ class _FinancialDashboardScreenState
                                     ),
                                     const SizedBox(height: 12),
                                     AppDropdownField<String>(
-                                      labelText: 'Ledger',
+                                      labelText: context
+                                          .t('ui.financial_dashboard.ledger'),
                                       initialValue: state.selectedCategory,
                                       items: state.categories
                                           .map(
@@ -369,14 +402,17 @@ class _FinancialDashboardScreenState
                                     ),
                                     const SizedBox(height: 12),
                                     AppDropdownField<TransactionSortOption>(
-                                      labelText: 'Sort by',
+                                      labelText: context
+                                          .t('ui.financial_dashboard.sort_by'),
                                       initialValue: state.sortOption,
                                       items: TransactionSortOption.values
                                           .map(
                                             (value) => DropdownMenuItem<
                                                 TransactionSortOption>(
                                               value: value,
-                                              child: Text(_sortLabel(value)),
+                                              child: Text(
+                                                context.t(_sortTextKey(value)),
+                                              ),
                                             ),
                                           )
                                           .toList(growable: false),
@@ -392,7 +428,8 @@ class _FinancialDashboardScreenState
                                 children: [
                                   Expanded(
                                     child: AppDropdownField<String>(
-                                      labelText: 'Type',
+                                      labelText: context.t(
+                                          'ui.financial_dashboard.type_3deb'),
                                       initialValue: state.selectedType,
                                       items: state.types
                                           .map(
@@ -411,7 +448,8 @@ class _FinancialDashboardScreenState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: AppDropdownField<String>(
-                                      labelText: 'Status',
+                                      labelText: context.t(
+                                          'ui.financial_dashboard.status_bae7'),
                                       initialValue: state.selectedStatus,
                                       items: state.statuses
                                           .map(
@@ -430,7 +468,8 @@ class _FinancialDashboardScreenState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: AppDropdownField<String>(
-                                      labelText: 'Ledger',
+                                      labelText: context
+                                          .t('ui.financial_dashboard.ledger'),
                                       initialValue: state.selectedCategory,
                                       items: state.categories
                                           .map(
@@ -450,14 +489,17 @@ class _FinancialDashboardScreenState
                                   Expanded(
                                     child:
                                         AppDropdownField<TransactionSortOption>(
-                                      labelText: 'Sort by',
+                                      labelText: context.t(
+                                          'ui.financial_dashboard.sort_by_a2a5'),
                                       initialValue: state.sortOption,
                                       items: TransactionSortOption.values
                                           .map(
                                             (value) => DropdownMenuItem<
                                                 TransactionSortOption>(
                                               value: value,
-                                              child: Text(_sortLabel(value)),
+                                              child: Text(
+                                                context.t(_sortTextKey(value)),
+                                              ),
                                             ),
                                           )
                                           .toList(growable: false),
@@ -486,7 +528,14 @@ class _FinancialDashboardScreenState
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  '${state.activeFilterCount} active filter${state.activeFilterCount == 1 ? '' : 's'}',
+                                  context.t(
+                                    state.activeFilterCount == 1
+                                        ? 'finance.active_filter_singular'
+                                        : 'finance.active_filter_plural',
+                                    parameters: {
+                                      'count': '${state.activeFilterCount}',
+                                    },
+                                  ),
                                   style: theme.textTheme.labelLarge?.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w800,
@@ -507,24 +556,26 @@ class _FinancialDashboardScreenState
                   )
                 else if (transactionsAsync.hasError &&
                     state.transactions.isEmpty)
-                  const SliverPadding(
+                  SliverPadding(
                     padding: EdgeInsets.fromLTRB(16, 18, 16, 100),
                     sliver: SliverToBoxAdapter(
                       child: _FinanceEmptyState(
-                        title: 'Unable to load transactions',
-                        subtitle:
-                            'Check your connection or try again in a moment.',
+                        title: context.t(
+                            'ui.financial_dashboard.unable_to_load_transactions'),
+                        subtitle: context.t(
+                            'ui.financial_dashboard.check_your_connection_or_try_again_in_a_moment'),
                       ),
                     ),
                   )
                 else if (state.filteredTransactionCount == 0)
-                  const SliverPadding(
+                  SliverPadding(
                     padding: EdgeInsets.fromLTRB(16, 18, 16, 100),
                     sliver: SliverToBoxAdapter(
                       child: _FinanceEmptyState(
-                        title: 'No matching transactions',
-                        subtitle:
-                            'Adjust the filters or add a new transaction to get started.',
+                        title: context.t(
+                            'ui.financial_dashboard.no_matching_transactions'),
+                        subtitle: context.t(
+                            'ui.financial_dashboard.adjust_the_filters_or_add_a_new_transaction_to_get_s'),
                       ),
                     ),
                   )
@@ -622,7 +673,8 @@ class _FinancialDashboardScreenState
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'Saving transaction...',
+                            context
+                                .t('ui.financial_dashboard.saving_transaction'),
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -672,13 +724,25 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save transaction: $error')),
+        SnackBar(
+          content: Text(
+            context.t(
+              'finance.save_transaction_failed',
+              parameters: {'error': '$error'},
+            ),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${form.title} added.')),
+      SnackBar(
+        content: Text(
+          context.t('finance.transaction_added',
+              parameters: {'title': form.title}),
+        ),
+      ),
     );
   }
 
@@ -715,16 +779,20 @@ class _FinancialDashboardScreenState
                     ],
                   ),
                   const SizedBox(height: 18),
-                  _DetailRow(label: 'Amount', value: _currency(item.amount)),
-                  _DetailRow(label: 'Date', value: _date(item.transactionDate)),
                   _DetailRow(
-                    label: 'Voucher',
+                      label: context.t('ui.financial_dashboard.amount'),
+                      value: _currency(item.amount)),
+                  _DetailRow(
+                      label: context.t('ui.financial_dashboard.date'),
+                      value: _date(item.transactionDate)),
+                  _DetailRow(
+                    label: context.t('ui.financial_dashboard.voucher'),
                     value: item.voucherNumber.trim().isEmpty
                         ? item.voucherType.label
                         : '${item.voucherType.label} • ${item.voucherNumber}',
                   ),
                   _DetailRow(
-                    label: 'Debit',
+                    label: context.t('ui.financial_dashboard.debit'),
                     value: item.debitLedgerName.trim().isEmpty
                         ? (item.type == ChurchTransactionType.income
                             ? item.paymentMethod
@@ -732,7 +800,7 @@ class _FinancialDashboardScreenState
                         : item.debitLedgerName,
                   ),
                   _DetailRow(
-                    label: 'Credit',
+                    label: context.t('ui.financial_dashboard.credit'),
                     value: item.creditLedgerName.trim().isEmpty
                         ? (item.type == ChurchTransactionType.income
                             ? item.ledgerName
@@ -740,34 +808,37 @@ class _FinancialDashboardScreenState
                         : item.creditLedgerName,
                   ),
                   _DetailRow(
-                    label: 'Party Name',
+                    label: context.t('ui.financial_dashboard.party_name'),
                     value: item.partyName.trim().isEmpty
                         ? 'Not provided'
                         : item.partyName,
                   ),
-                  _DetailRow(label: 'Ledger', value: item.ledgerName),
                   _DetailRow(
-                    label: 'Ledger Group',
+                      label: context.t('ui.financial_dashboard.ledger'),
+                      value: item.ledgerName),
+                  _DetailRow(
+                    label: context.t('ui.financial_dashboard.ledger_group'),
                     value: item.ledgerGroup.trim().isEmpty
                         ? 'Not provided'
                         : item.ledgerGroup,
                   ),
                   _DetailRow(
-                      label: 'Payment Method', value: item.paymentMethod),
+                      label: context.t('ui.financial_dashboard.payment_method'),
+                      value: item.paymentMethod),
                   _DetailRow(
-                    label: 'Reference',
+                    label: context.t('ui.financial_dashboard.reference'),
                     value: item.reference.trim().isEmpty
                         ? 'Not provided'
                         : item.reference,
                   ),
                   _DetailRow(
-                    label: 'Recorded By',
+                    label: context.t('ui.financial_dashboard.recorded_by'),
                     value: item.recordedBy.trim().isEmpty
                         ? 'Not provided'
                         : item.recordedBy,
                   ),
                   _DetailRow(
-                    label: 'Description',
+                    label: context.t('ui.financial_dashboard.description'),
                     value: item.description.trim().isEmpty
                         ? 'No notes added'
                         : item.description,
@@ -782,7 +853,7 @@ class _FinancialDashboardScreenState
                             await _showEditTransactionSheet(context, item);
                           },
                           icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Edit'),
+                          label: Text(context.t('ui.financial_dashboard.edit')),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -793,7 +864,8 @@ class _FinancialDashboardScreenState
                             await _deleteTransaction(context, item);
                           },
                           icon: const Icon(Icons.delete_outline_rounded),
-                          label: const Text('Delete'),
+                          label: Text(
+                              context.t('ui.financial_dashboard.delete_79b1')),
                         ),
                       ),
                     ],
@@ -833,13 +905,25 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to update transaction: $error')),
+        SnackBar(
+          content: Text(
+            context.t(
+              'finance.update_transaction_failed',
+              parameters: {'error': '$error'},
+            ),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${form.title} updated.')),
+      SnackBar(
+        content: Text(
+          context.t('finance.transaction_updated',
+              parameters: {'title': form.title}),
+        ),
+      ),
     );
   }
 
@@ -858,7 +942,12 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save finance settings: $error')),
+        SnackBar(
+          content: Text(
+            context.t('finance.save_settings_failed',
+                parameters: {'error': '$error'}),
+          ),
+        ),
       );
     }
   }
@@ -877,7 +966,12 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save bank account: $error')),
+        SnackBar(
+          content: Text(
+            context
+                .t('finance.save_bank_failed', parameters: {'error': '$error'}),
+          ),
+        ),
       );
     }
   }
@@ -896,7 +990,12 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save ledger: $error')),
+        SnackBar(
+          content: Text(
+            context.t('finance.save_ledger_failed',
+                parameters: {'error': '$error'}),
+          ),
+        ),
       );
     }
   }
@@ -943,16 +1042,21 @@ class _FinancialDashboardScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete transaction?'),
-        content: Text('This will permanently remove ${item.title}.'),
+        title: Text(context.t('ui.financial_dashboard.delete_transaction')),
+        content: Text(
+          context.t(
+            'finance.delete_transaction_message',
+            parameters: {'title': item.title},
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.t('ui.financial_dashboard.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.t('ui.financial_dashboard.delete_79b1')),
           ),
         ],
       ),
@@ -966,13 +1070,23 @@ class _FinancialDashboardScreenState
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to delete transaction: $error')),
+        SnackBar(
+          content: Text(
+            context.t('finance.delete_transaction_failed',
+                parameters: {'error': '$error'}),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.title} deleted.')),
+      SnackBar(
+        content: Text(
+          context.t('finance.transaction_deleted',
+              parameters: {'title': item.title}),
+        ),
+      ),
     );
   }
 }
@@ -1002,7 +1116,7 @@ class _FinancialHeroCard extends StatelessWidget {
             children: [
               _HeroChip(
                 icon: Icons.groups_2_outlined,
-                label: 'Finance Team',
+                label: context.t('ui.financial_dashboard.finance_team'),
                 color: onPrimary,
               ),
               _HeroChip(
@@ -1025,7 +1139,8 @@ class _FinancialHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Track offerings, expenses, project spend, and overall cash movement without leaving the app.',
+            context.t(
+                'ui.financial_dashboard.track_offerings_expenses_project_spend_and_overall_cash'),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: onPrimary.withValues(alpha: 0.88),
               height: 1.35,
@@ -1055,9 +1170,9 @@ class _FinanceSetupCard extends StatelessWidget {
     final theme = Theme.of(context);
     final config = setup.config;
     return _DashboardSectionCard(
-      title: 'Config Settings',
-      subtitle:
-          'Trust details, financial year, bank accounts, and custom ledgers.',
+      title: context.t('ui.financial_dashboard.config_settings'),
+      subtitle: context.t(
+          'ui.financial_dashboard.trust_details_financial_year_bank_accounts_and_custo'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1067,12 +1182,27 @@ class _FinanceSetupCard extends StatelessWidget {
             children: [
               _MetaPill(
                 label: config.trustName.trim().isEmpty
-                    ? 'Trust name not set'
+                    ? context.t('finance.trust_name_not_set')
                     : config.trustName,
               ),
-              _MetaPill(label: 'FY ${config.currentFinancialYear}'),
-              _MetaPill(label: '${setup.banks.length} bank accounts'),
-              _MetaPill(label: '${setup.ledgers.length} ledgers'),
+              _MetaPill(
+                label: context.t(
+                  'finance.financial_year_short',
+                  parameters: {'year': config.currentFinancialYear},
+                ),
+              ),
+              _MetaPill(
+                label: context.t(
+                  'finance.bank_account_count',
+                  parameters: {'count': '${setup.banks.length}'},
+                ),
+              ),
+              _MetaPill(
+                label: context.t(
+                  'finance.ledger_count',
+                  parameters: {'count': '${setup.ledgers.length}'},
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1083,24 +1213,24 @@ class _FinanceSetupCard extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onEditConfig,
                 icon: const Icon(Icons.tune_rounded),
-                label: const Text('Edit Config'),
+                label: Text(context.t('ui.financial_dashboard.edit_config')),
               ),
               OutlinedButton.icon(
                 onPressed: onAddBank,
                 icon: const Icon(Icons.account_balance_outlined),
-                label: const Text('Add Bank'),
+                label: Text(context.t('ui.financial_dashboard.add_bank')),
               ),
               OutlinedButton.icon(
                 onPressed: onAddLedger,
                 icon: const Icon(Icons.book_outlined),
-                label: const Text('Add Ledger'),
+                label: Text(context.t('ui.financial_dashboard.add_ledger')),
               ),
             ],
           ),
           if (setup.banks.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              'Bank Accounts',
+              context.t('ui.financial_dashboard.bank_accounts'),
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w900,
               ),
@@ -1145,17 +1275,17 @@ class _DayBookSection extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _TrendMetricPill(
-              label: 'Income',
+              label: context.t('ui.financial_dashboard.income'),
               value: _currency(state.dayBookIncome),
               color: const Color(0xFF28A26A),
             ),
             _TrendMetricPill(
-              label: 'Expense',
+              label: context.t('ui.financial_dashboard.expense'),
               value: _currency(state.dayBookExpense),
               color: const Color(0xFFD66C4A),
             ),
             _TrendMetricPill(
-              label: 'Closing',
+              label: context.t('ui.financial_dashboard.closing'),
               value: _currency(state.dayBookClosingBalance),
               color: theme.colorScheme.primary,
             ),
@@ -1169,9 +1299,10 @@ class _DayBookSection extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         if (state.dayBookTransactions.isEmpty)
-          const _FinanceEmptyState(
-            title: 'No day book entries',
-            subtitle: 'Pick another date range or add a transaction.',
+          _FinanceEmptyState(
+            title: context.t('ui.financial_dashboard.no_day_book_entries'),
+            subtitle: context.t(
+                'ui.financial_dashboard.pick_another_date_range_or_add_a_transaction'),
           )
         else
           ...state.dayBookTransactions.take(12).map(
@@ -1224,7 +1355,7 @@ class _DayBookRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${item.partyName.trim().isEmpty ? 'No party' : item.partyName} • ${item.paymentMethod}',
+                  '${item.partyName.trim().isEmpty ? context.t('finance.no_party') : item.partyName} • ${item.paymentMethod}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1252,9 +1383,9 @@ class _AccountingReportsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DashboardSectionCard(
-      title: 'Accounting Reports',
-      subtitle:
-          'Tally-style essentials generated from every debit and credit entry.',
+      title: context.t('ui.financial_dashboard.accounting_reports'),
+      subtitle: context.t(
+          'ui.financial_dashboard.tally_style_essentials_generated_from_every_debit_an'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1263,17 +1394,17 @@ class _AccountingReportsSection extends StatelessWidget {
             runSpacing: 10,
             children: [
               _TrendMetricPill(
-                label: 'Trial Dr',
+                label: context.t('ui.financial_dashboard.trial_dr'),
                 value: _currency(state.trialDebitTotal),
                 color: const Color(0xFF28A26A),
               ),
               _TrendMetricPill(
-                label: 'Trial Cr',
+                label: context.t('ui.financial_dashboard.trial_cr'),
                 value: _currency(state.trialCreditTotal),
                 color: const Color(0xFFD66C4A),
               ),
               _TrendMetricPill(
-                label: 'Difference',
+                label: context.t('ui.financial_dashboard.difference'),
                 value: _currency(
                   (state.trialDebitTotal - state.trialCreditTotal).abs(),
                 ),
@@ -1283,10 +1414,13 @@ class _AccountingReportsSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _MiniReportCard(
-            title: 'Trial Balance',
-            subtitle: 'Every ledger should balance debit and credit totals.',
-            emptyTitle: 'No trial balance yet',
-            emptySubtitle: 'Record transactions to generate trial balance.',
+            title: context.t('ui.financial_dashboard.trial_balance'),
+            subtitle: context.t(
+                'ui.financial_dashboard.every_ledger_should_balance_debit_and_credit_totals'),
+            emptyTitle:
+                context.t('ui.financial_dashboard.no_trial_balance_yet'),
+            emptySubtitle: context.t(
+                'ui.financial_dashboard.record_transactions_to_generate_trial_balance'),
             child: Column(
               children: state.trialBalanceRows
                   .take(8)
@@ -1296,10 +1430,12 @@ class _AccountingReportsSection extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _MiniReportCard(
-            title: 'Cash Book',
-            subtitle: 'Cash in hand movement from receipts and payments.',
-            emptyTitle: 'No cash entries yet',
-            emptySubtitle: 'Cash transactions will appear here.',
+            title: context.t('ui.financial_dashboard.cash_book'),
+            subtitle: context.t(
+                'ui.financial_dashboard.cash_in_hand_movement_from_receipts_and_payments'),
+            emptyTitle: context.t('ui.financial_dashboard.no_cash_entries_yet'),
+            emptySubtitle: context
+                .t('ui.financial_dashboard.cash_transactions_will_appear_here'),
             child: Column(
               children: state.cashBookRows
                   .take(6)
@@ -1309,10 +1445,11 @@ class _AccountingReportsSection extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _MiniReportCard(
-            title: 'Bank Book',
-            subtitle: 'Bank-account movement across configured accounts.',
-            emptyTitle: 'No bank entries yet',
-            emptySubtitle: 'Bank transactions will appear here.',
+            title: context.t('ui.financial_dashboard.bank_book'),
+            subtitle: context.t(
+                'ui.financial_dashboard.bank_account_movement_across_configured_accounts'),
+            emptyTitle: context.t('finance.no_bank_entries'),
+            emptySubtitle: context.t('finance.bank_entries_description'),
             child: Column(
               children: state.bankBookRows
                   .take(6)
@@ -1408,7 +1545,10 @@ class _TrialBalanceTile extends StatelessWidget {
             ),
           ),
           Text(
-            'Dr ${_currency(row.debit)}',
+            context.t(
+              'finance.debit_short_value',
+              parameters: {'value': _currency(row.debit)},
+            ),
             style: theme.textTheme.labelLarge?.copyWith(
               color: const Color(0xFF28A26A),
               fontWeight: FontWeight.w900,
@@ -1416,7 +1556,10 @@ class _TrialBalanceTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            'Cr ${_currency(row.credit)}',
+            context.t(
+              'finance.credit_short_value',
+              parameters: {'value': _currency(row.credit)},
+            ),
             style: theme.textTheme.labelLarge?.copyWith(
               color: const Color(0xFFD66C4A),
               fontWeight: FontWeight.w900,
@@ -1454,7 +1597,13 @@ class _LedgerStatementTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${row.ledgerName} • Balance ${_currency(row.runningBalance)}',
+                  context.t(
+                    'finance.ledger_balance',
+                    parameters: {
+                      'ledger': row.ledgerName,
+                      'balance': _currency(row.runningBalance),
+                    },
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -1668,7 +1817,12 @@ class _LedgerDashboardTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${summary.transactionCount} transaction${summary.transactionCount == 1 ? '' : 's'}',
+                  context.t(
+                    summary.transactionCount == 1
+                        ? 'finance.transaction_count_singular'
+                        : 'finance.transaction_count_plural',
+                    parameters: {'count': '${summary.transactionCount}'},
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
                   ),
@@ -1707,9 +1861,10 @@ class _MonthlyTrendChartState extends State<_MonthlyTrendChart> {
     final summaries = widget.summaries;
 
     if (summaries.every((item) => item.total <= 0)) {
-      return const _FinanceEmptyState(
-        title: 'No trend data yet',
-        subtitle: 'Monthly charts will appear as transactions are recorded.',
+      return _FinanceEmptyState(
+        title: context.t('ui.financial_dashboard.no_trend_data_yet'),
+        subtitle: context.t(
+            'ui.financial_dashboard.monthly_charts_will_appear_as_transactions_are_recor'),
       );
     }
 
@@ -1726,10 +1881,14 @@ class _MonthlyTrendChartState extends State<_MonthlyTrendChart> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
-            _LegendDot(label: 'Income', color: Color(0xFF28A26A)),
+          children: [
+            _LegendDot(
+                label: context.t('ui.financial_dashboard.income_1c89'),
+                color: Color(0xFF28A26A)),
             SizedBox(width: 16),
-            _LegendDot(label: 'Expenses', color: Color(0xFFD66C4A)),
+            _LegendDot(
+                label: context.t('ui.financial_dashboard.expenses'),
+                color: Color(0xFFD66C4A)),
           ],
         ),
         if (selectedSummary != null) ...[
@@ -1915,17 +2074,17 @@ class _MonthlyTrendDetail extends StatelessWidget {
             runSpacing: 10,
             children: [
               _TrendMetricPill(
-                label: 'Income',
+                label: context.t('ui.financial_dashboard.income_1c89'),
                 value: _currency(summary.income),
                 color: const Color(0xFF28A26A),
               ),
               _TrendMetricPill(
-                label: 'Expenses',
+                label: context.t('ui.financial_dashboard.expenses_8d43'),
                 value: _currency(summary.expense),
                 color: const Color(0xFFD66C4A),
               ),
               _TrendMetricPill(
-                label: 'Net',
+                label: context.t('ui.financial_dashboard.net'),
                 value: _currency(summary.income - summary.expense),
                 color: theme.colorScheme.primary,
               ),
@@ -2010,7 +2169,10 @@ class _DebitCreditPreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${voucherType.label} voucher',
+            context.t(
+              'finance.voucher_type',
+              parameters: {'type': voucherType.label},
+            ),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.w900,
@@ -2018,21 +2180,28 @@ class _DebitCreditPreview extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Debit: $debitLedger',
+            context.t(
+              'finance.debit_ledger',
+              parameters: {'ledger': debitLedger},
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Credit: $creditLedger',
+            context.t(
+              'finance.credit_ledger',
+              parameters: {'ledger': creditLedger},
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'We post this automatically. No accounting knowledge needed.',
+            context.t(
+                'ui.financial_dashboard.we_post_this_automatically_no_accounting_knowledge_need'),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
             ),
@@ -2393,14 +2562,15 @@ class _TransactionTypePickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'What are we recording?',
+              context.t('ui.financial_dashboard.what_are_we_recording'),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w900,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Use plain choices. We will create the debit and credit entry.',
+              context.t(
+                  'ui.financial_dashboard.use_plain_choices_we_will_create_the_debit_and_credit_e'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
               ),
@@ -2408,8 +2578,9 @@ class _TransactionTypePickerSheet extends StatelessWidget {
             const SizedBox(height: 18),
             _TransactionTypeOption(
               icon: Icons.arrow_downward_rounded,
-              title: 'Money received',
-              subtitle: 'Receipt voucher: cash/bank Dr, income ledger Cr',
+              title: context.t('ui.financial_dashboard.money_received'),
+              subtitle: context.t(
+                  'ui.financial_dashboard.receipt_voucher_cash_bank_dr_income_ledger_cr'),
               color: const Color(0xFF28A26A),
               onTap: () => Navigator.of(context).pop(
                 ChurchTransactionType.income,
@@ -2418,8 +2589,9 @@ class _TransactionTypePickerSheet extends StatelessWidget {
             const SizedBox(height: 12),
             _TransactionTypeOption(
               icon: Icons.arrow_upward_rounded,
-              title: 'Money paid',
-              subtitle: 'Payment voucher: expense ledger Dr, cash/bank Cr',
+              title: context.t('ui.financial_dashboard.money_paid'),
+              subtitle: context.t(
+                  'ui.financial_dashboard.payment_voucher_expense_ledger_dr_cash_bank_cr'),
               color: const Color(0xFFD66C4A),
               onTap: () => Navigator.of(context).pop(
                 ChurchTransactionType.expense,
@@ -2556,32 +2728,36 @@ class _FinanceConfigSheetState extends State<_FinanceConfigSheet> {
               children: [
                 AppTextField(
                   controller: _trustNameController,
-                  label: 'Trust / Account Name',
+                  label: context.t('ui.financial_dashboard.trust_account_name'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _registrationController,
-                  label: 'Trust Registration Number',
+                  label: context
+                      .t('ui.financial_dashboard.trust_registration_number'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _panController,
-                  label: 'Trust PAN Number',
+                  label: context.t('ui.financial_dashboard.trust_pan_number'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _mainAccountController,
-                  label: 'Main Bank Account Number',
+                  label: context
+                      .t('ui.financial_dashboard.main_bank_account_number'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _branchController,
-                  label: 'Bank Branch Details',
+                  label:
+                      context.t('ui.financial_dashboard.bank_branch_details'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _yearController,
-                  label: 'Current Financial Year',
+                  label: context
+                      .t('ui.financial_dashboard.current_financial_year'),
                   hintText: '2025-2026',
                 ),
                 const SizedBox(height: 18),
@@ -2589,7 +2765,8 @@ class _FinanceConfigSheetState extends State<_FinanceConfigSheet> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: _submit,
-                    child: const Text('Save Config'),
+                    child:
+                        Text(context.t('ui.financial_dashboard.save_config')),
                   ),
                 ),
               ],
@@ -2645,24 +2822,24 @@ class _BankAccountSheetState extends State<_BankAccountSheet> {
           children: [
             AppTextField(
               controller: _nameController,
-              label: 'Bank Account Name',
+              label: context.t('ui.financial_dashboard.bank_account_name'),
             ),
             const SizedBox(height: 12),
             AppTextField(
               controller: _numberController,
-              label: 'Account Number',
+              label: context.t('ui.financial_dashboard.account_number'),
             ),
             const SizedBox(height: 12),
             AppTextField(
               controller: _branchController,
-              label: 'Branch Details',
+              label: context.t('ui.financial_dashboard.branch_details'),
             ),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: _submit,
-                child: const Text('Save Bank'),
+                child: Text(context.t('ui.financial_dashboard.save_bank')),
               ),
             ),
           ],
@@ -2714,11 +2891,11 @@ class _LedgerSheetState extends State<_LedgerSheet> {
           children: [
             AppTextField(
               controller: _nameController,
-              label: 'Ledger Name',
+              label: context.t('ui.financial_dashboard.ledger_name'),
             ),
             const SizedBox(height: 12),
             AppDropdownField<String>(
-              labelText: 'Ledger Group',
+              labelText: context.t('ui.financial_dashboard.ledger_group'),
               initialValue: _selectedGroup,
               items: financeLedgerGroups
                   .map(
@@ -2738,7 +2915,7 @@ class _LedgerSheetState extends State<_LedgerSheet> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _submit,
-                child: const Text('Save Ledger'),
+                child: Text(context.t('ui.financial_dashboard.save_ledger')),
               ),
             ),
           ],
@@ -2802,7 +2979,7 @@ class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
               controller: _queryController,
               onChanged: (_) => _loadMembers(reset: true),
               decoration: InputDecoration(
-                hintText: 'Search members',
+                hintText: context.t('ui.financial_dashboard.search_members'),
                 prefixIcon: const Icon(Icons.search_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -2984,9 +3161,11 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                         label: _selectedType == ChurchTransactionType.expense
                             ? 'Party Name *'
                             : 'Party Name',
-                        hintText: 'Member or vendor name',
+                        hintText: context
+                            .t('ui.financial_dashboard.member_or_vendor_name'),
                         suffixIcon: IconButton(
-                          tooltip: 'Select member',
+                          tooltip:
+                              context.t('ui.financial_dashboard.select_member'),
                           onPressed: () async {
                             final name = await widget.onPickPartyName(context);
                             if (name == null || name.trim().isEmpty) return;
@@ -2999,7 +3178,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                         validator: (value) {
                           if (_selectedType == ChurchTransactionType.expense &&
                               (value == null || value.trim().isEmpty)) {
-                            return 'Party name is required';
+                            return context.t('finance.party_name_required');
                           }
                           return null;
                         },
@@ -3008,7 +3187,8 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: AppDropdownField<ChurchTransactionStatus>(
-                        labelText: 'Status',
+                        labelText:
+                            context.t('ui.financial_dashboard.status_bae7'),
                         initialValue: _selectedStatus,
                         items: ChurchTransactionStatus.values
                             .map(
@@ -3038,7 +3218,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                   children: [
                     Expanded(
                       child: AppDropdownField<FinanceLedger>(
-                        labelText: 'Ledger',
+                        labelText: context.t('ui.financial_dashboard.ledger'),
                         initialValue: _selectedLedger,
                         items: _ledgerOptions
                             .map(
@@ -3057,7 +3237,8 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: AppDropdownField<String>(
-                        labelText: 'Payment Method',
+                        labelText:
+                            context.t('ui.financial_dashboard.payment_method'),
                         initialValue: _selectedPaymentMethod,
                         items: _paymentMethods(widget.setup)
                             .map(
@@ -3081,7 +3262,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                     Expanded(
                       child: AppTextField(
                         controller: _amountController,
-                        label: 'Amount',
+                        label: context.t('ui.financial_dashboard.amount_43dc'),
                         hintText: '0.00',
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
@@ -3093,7 +3274,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                                 value ?? '',
                               ) ==
                               null) {
-                            return 'Enter a valid amount';
+                            return context.t('finance.amount_invalid');
                           }
                           return null;
                         },
@@ -3102,7 +3283,7 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: AppTextField(
-                        label: 'Date',
+                        label: context.t('ui.financial_dashboard.date_eb9a'),
                         controller: _dateController,
                         readOnly: true,
                         onTap: _pickDate,
@@ -3114,14 +3295,15 @@ class _TransactionFormSheetState extends State<_TransactionFormSheet> {
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _referenceController,
-                  label: 'Reference',
-                  hintText: 'Receipt / bank reference / cheque no.',
+                  label: context.t('ui.financial_dashboard.reference_db1c'),
+                  hintText: context.t(
+                      'ui.financial_dashboard.receipt_bank_reference_cheque_no'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _descriptionController,
-                  label: 'Notes',
-                  hintText: 'Optional notes',
+                  label: context.t('ui.financial_dashboard.notes'),
+                  hintText: context.t('ui.financial_dashboard.optional_notes'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 18),
@@ -3260,16 +3442,16 @@ String _slug(String value) {
   return normalized;
 }
 
-String _sortLabel(TransactionSortOption value) {
+String _sortTextKey(TransactionSortOption value) {
   switch (value) {
     case TransactionSortOption.newestFirst:
-      return 'Newest first';
+      return 'common.sort_newest_first';
     case TransactionSortOption.oldestFirst:
-      return 'Oldest first';
+      return 'common.sort_oldest_first';
     case TransactionSortOption.amountHighToLow:
-      return 'Amount high to low';
+      return 'finance.sort_amount_high_low';
     case TransactionSortOption.amountLowToHigh:
-      return 'Amount low to high';
+      return 'finance.sort_amount_low_high';
   }
 }
 
@@ -3312,7 +3494,7 @@ String _normalizePaymentMethod(String value, FinanceSetup setup) {
   final options = _paymentMethods(setup);
   final normalized = value.trim();
   if (options.contains(normalized)) return normalized;
-  return 'Cash';
+  return defaultFinanceLedgers.firstWhere((ledger) => ledger.id == 'cash').name;
 }
 
 String _bankAccountIdForPayment(String paymentMethod, FinanceSetup setup) {

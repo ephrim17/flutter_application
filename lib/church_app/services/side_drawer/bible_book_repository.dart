@@ -69,14 +69,27 @@ class BibleRepository {
   }) async {
     final data = await loadBook(book);
 
-    final chapters = data['chapters'] as List<dynamic>;
+    final chapters = data['chapters'];
+    if (chapters is! List || chapter < 1 || chapter > chapters.length) {
+      throw FormatException('Invalid Bible chapter: $book $chapter');
+    }
     final chapterData = chapters[chapter - 1];
-    final verses = chapterData['verses'] as List<dynamic>;
+    if (chapterData is! Map) {
+      throw FormatException('Invalid Bible chapter data: $book $chapter');
+    }
+    final verses = chapterData['verses'];
+    if (verses is! List || verse < 1 || verse > verses.length) {
+      throw FormatException('Invalid Bible verse: $book $chapter:$verse');
+    }
     final verseData = verses[verse - 1];
+    if (verseData is! Map || verseData['text'] is! Map) {
+      throw FormatException('Invalid Bible verse data: $book $chapter:$verse');
+    }
+    final text = verseData['text'] as Map;
 
     return {
-      'tamil': verseData['text']['tamil'],
-      'english': verseData['text']['english'],
+      'tamil': text['tamil']?.toString() ?? '',
+      'english': text['english']?.toString() ?? '',
       'reference': '$book $chapter:$verse',
     };
   }
@@ -85,5 +98,9 @@ class BibleRepository {
 final bibleBooks = catalog.bibleBooks;
 
 Map<String, dynamic> _decodeBookJson(String raw) {
-  return Map<String, dynamic>.from(json.decode(raw) as Map);
+  final decoded = json.decode(raw);
+  if (decoded is! Map) {
+    throw const FormatException('Bible book data must be a JSON object.');
+  }
+  return Map<String, dynamic>.from(decoded);
 }

@@ -37,7 +37,7 @@ class AnnouncementSection implements MasterSection {
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  "${context.t('common.error_prefix', fallback: 'Error')}: $e",
+                  "${context.t('common.error_prefix')}: $e",
                 ),
               ),
               data: (items) => _AnnouncementList(items),
@@ -59,7 +59,7 @@ class _AnnouncementList extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Text(
-          context.t('announcements.none', fallback: 'No announcements'),
+          context.t('announcements.none'),
         ),
       );
     }
@@ -76,10 +76,7 @@ class _AnnouncementList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          text: context.t(
-            'announcements.section_title',
-            fallback: 'Announcements',
-          ),
+          text: context.t('announcements.section_title'),
           padding: 16.0,
         ),
         const SizedBox(height: 10),

@@ -18,10 +18,9 @@ class _DashboardPrayerQuickLook extends StatelessWidget {
       return const Center(child: AppLoadingIndicator());
     }
     if (prayers.isEmpty) {
-      return const _DashboardEmptyState(
-        title: 'No active prayers right now',
-        subtitle:
-            'When requests are submitted, this section will surface them for quick review.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_active_prayers'),
+        subtitle: context.t('dashboard.no_active_prayers_hint'),
       );
     }
 
@@ -41,12 +40,15 @@ class _DashboardPrayerQuickLook extends StatelessWidget {
                       ? Icons.visibility_off_outlined
                       : Icons.favorite_outline_rounded,
                   title: prayer.title.trim().isEmpty
-                      ? 'Prayer Request'
+                      ? context.t('dashboard.prayer_request_fallback')
                       : prayer.title,
                   subtitle: prayer.description.trim().isEmpty
-                      ? 'No description provided.'
+                      ? context.t('dashboard.no_description')
                       : prayer.description,
-                  trailing: 'Until ${_dateLabel(prayer.expiryDate)}',
+                  trailing: context.t(
+                    'dashboard.until_date',
+                    parameters: {'date': _dateLabel(prayer.expiryDate)},
+                  ),
                 ),
               ),
             ),
@@ -93,7 +95,10 @@ class _DashboardPrayerInsightsBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '$totalCount active requests',
+                context.t(
+                  'dashboard.active_requests_count',
+                  parameters: {'count': totalCount},
+                ),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: onSurface,
                   fontWeight: FontWeight.w800,
@@ -111,7 +116,10 @@ class _DashboardPrayerInsightsBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '$anonymousCount anonymous',
+                context.t(
+                  'dashboard.anonymous_count',
+                  parameters: {'count': anonymousCount},
+                ),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: onSurface.withValues(alpha: 0.84),
                   fontWeight: FontWeight.w700,
@@ -140,10 +148,9 @@ class _DashboardAnnouncementQuickLook extends StatelessWidget {
       return const Center(child: AppLoadingIndicator());
     }
     if (announcements.isEmpty) {
-      return const _DashboardEmptyState(
-        title: 'No active announcements',
-        subtitle:
-            'Once live announcements are published, they will appear here.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_active_announcements'),
+        subtitle: context.t('dashboard.no_active_announcements_hint'),
       );
     }
 
@@ -156,10 +163,10 @@ class _DashboardAnnouncementQuickLook extends StatelessWidget {
               child: _DashboardQuickLookTile(
                 icon: Icons.campaign_outlined,
                 title: announcement.title.trim().isEmpty
-                    ? 'Announcement'
+                    ? context.t('dashboard.announcement_fallback')
                     : announcement.title,
                 subtitle: announcement.body.trim().isEmpty
-                    ? 'No announcement body provided.'
+                    ? context.t('dashboard.no_announcement_body')
                     : announcement.body,
                 trailing: '',
               ),
@@ -185,10 +192,9 @@ class _DashboardEventQuickLook extends StatelessWidget {
       return const Center(child: AppLoadingIndicator());
     }
     if (events.isEmpty) {
-      return const _DashboardEmptyState(
-        title: 'No active events',
-        subtitle:
-            'When events are scheduled, they will show up here as a quick pulse.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_active_events'),
+        subtitle: context.t('dashboard.no_active_events_hint'),
       );
     }
 
@@ -200,7 +206,9 @@ class _DashboardEventQuickLook extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 14),
               child: _DashboardQuickLookTile(
                 icon: Icons.event_note_rounded,
-                title: event.title.trim().isEmpty ? 'Event' : event.title,
+                title: event.title.trim().isEmpty
+                    ? context.t('dashboard.event_fallback')
+                    : event.title,
                 subtitle: event.location.trim().isNotEmpty
                     ? '${event.location} • ${event.timing}'
                     : event.timing,

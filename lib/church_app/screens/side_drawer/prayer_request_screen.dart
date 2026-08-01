@@ -29,6 +29,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       await logChurchAnalyticsEvent(
         ref,
         name: 'prayer_screen_opened',
@@ -71,10 +72,7 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t(
-            'prayer.screen_title',
-            fallback: 'Prayer Requests',
-          ),
+          text: context.t('prayer.screen_title'),
         ),
       ),
       body: Column(
@@ -210,26 +208,19 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.delete_outline_rounded),
         title: Text(
-          context.t(
-            'prayer.delete_confirm_title',
-            fallback: 'Delete this prayer request?',
-          ),
+          context.t('prayer.delete_confirm_title'),
         ),
         content: Text(
-          context.t(
-            'prayer.delete_confirm_message',
-            fallback:
-                'This request will be removed for everyone and cannot be restored.',
-          ),
+          context.t('prayer.delete_confirm_message'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(context.t('settings.cancel', fallback: 'Cancel')),
+            child: Text(context.t('settings.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(context.t('common.delete', fallback: 'Delete')),
+            child: Text(context.t('common.delete')),
           ),
         ],
       ),
@@ -280,14 +271,8 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
         SnackBar(
           content: Text(
             isGlobal
-                ? context.t(
-                    'prayer.global_success',
-                    fallback: 'Prayer request is now global',
-                  )
-                : context.t(
-                    'prayer.global_removed',
-                    fallback: 'Prayer request removed from global requests',
-                  ),
+                ? context.t('prayer.global_success')
+                : context.t('prayer.global_removed'),
           ),
         ),
       );
@@ -326,31 +311,25 @@ class _PrayerActions extends StatelessWidget {
         AppPopupMenuAction(
           value: _PrayerAction.edit,
           icon: Icons.edit_outlined,
-          label: context.t('prayer.edit_action', fallback: 'Edit'),
+          label: context.t('prayer.edit_action'),
         ),
       if (canManageGlobal && !prayer.isGlobal)
         AppPopupMenuAction(
           value: _PrayerAction.makeGlobal,
           icon: Icons.public_rounded,
-          label: context.t(
-            'prayer.make_global_action',
-            fallback: 'Make global',
-          ),
+          label: context.t('prayer.make_global_action'),
         ),
       if (canManageGlobal && prayer.isGlobal)
         AppPopupMenuAction(
           value: _PrayerAction.removeGlobal,
           icon: Icons.public_off_outlined,
-          label: context.t(
-            'prayer.remove_global_action',
-            fallback: 'Remove from global',
-          ),
+          label: context.t('prayer.remove_global_action'),
         ),
       if (segment != PrayerSegment.global)
         AppPopupMenuAction(
           value: _PrayerAction.delete,
           icon: Icons.delete_outline_rounded,
-          label: context.t('common.delete', fallback: 'Delete'),
+          label: context.t('common.delete'),
           color: Theme.of(context).colorScheme.error,
         ),
     ];
@@ -458,7 +437,12 @@ Future<void> _showPrayerDetailsSheet(
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Active until ${DateFormat.yMMMd().format(prayer.expiryDate)}',
+                    context.t(
+                      'prayer.active_until',
+                      parameters: {
+                        'date': DateFormat.yMMMd().format(prayer.expiryDate),
+                      },
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -537,21 +521,14 @@ class _PrayerHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.t(
-                          'prayer.community_title',
-                          fallback: 'Pray together',
-                        ),
+                        context.t('prayer.community_title'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        context.t(
-                          'prayer.community_subtitle',
-                          fallback:
-                              'Share a burden and stand in faith with others.',
-                        ),
+                        context.t('prayer.community_subtitle'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colors.onSurfaceVariant,
                           height: 1.35,
@@ -564,10 +541,7 @@ class _PrayerHeader extends StatelessWidget {
                   const SizedBox(width: 8),
                   IconButton.filledTonal(
                     onPressed: onCreate,
-                    tooltip: context.t(
-                      'prayer.new_request',
-                      fallback: 'New request',
-                    ),
+                    tooltip: context.t('prayer.new_request'),
                     icon: const Icon(Icons.add_rounded),
                   ),
                 ],
@@ -757,27 +731,19 @@ class _PrayerRequestCard extends ConsumerWidget {
                               _PrayerBadge(
                                 icon: Icons.public_rounded,
                                 label: prayer.sourceChurchName.trim().isEmpty
-                                    ? context.t(
-                                        'prayer.global_badge',
-                                        fallback: 'Global',
-                                      )
+                                    ? context.t('prayer.global_badge')
                                     : prayer.sourceChurchName,
                               ),
                             if (prayer.isAnonymous)
                               _PrayerBadge(
                                 icon: Icons.visibility_off_outlined,
-                                label: context.t(
-                                  'prayer.anonymous_badge',
-                                  fallback: 'Anonymous',
-                                ),
+                                label: context.t('prayer.anonymous_badge'),
                               ),
                             if (prayer.visibleToChurchMembers)
                               _PrayerBadge(
                                 icon: Icons.people_alt_outlined,
-                                label: context.t(
-                                  'prayer.visible_to_church_badge',
-                                  fallback: 'Visible to church',
-                                ),
+                                label:
+                                    context.t('prayer.visible_to_church_badge'),
                               ),
                           ],
                         ),
@@ -823,28 +789,19 @@ class _PrayerRequestCard extends ConsumerWidget {
                             .watch(churchUserNameProvider(prayer.userId))
                             .when(
                               loading: () => Text(
-                                context.t(
-                                  'prayer.by_loading',
-                                  fallback: 'Loading...',
-                                ),
+                                context.t('prayer.by_loading'),
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelMedium,
                               ),
                               error: (_, __) => Text(
-                                context.t(
-                                  'prayer.by_unknown',
-                                  fallback: 'Unknown',
-                                ),
+                                context.t('prayer.by_unknown'),
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelMedium,
                               ),
                               data: (name) => Text(
                                 name?.trim().isNotEmpty == true
                                     ? name!
-                                    : context.t(
-                                        'prayer.by_unknown',
-                                        fallback: 'Unknown',
-                                      ),
+                                    : context.t('prayer.by_unknown'),
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -862,14 +819,8 @@ class _PrayerRequestCard extends ConsumerWidget {
                     const SizedBox(width: 5),
                     Text(
                       daysLeft == 0
-                          ? context.t(
-                              'prayer.ends_today',
-                              fallback: 'Ends today',
-                            )
-                          : '$daysLeft ${context.t(
-                              'prayer.days_left',
-                              fallback: 'days left',
-                            )}',
+                          ? context.t('prayer.ends_today')
+                          : '$daysLeft ${context.t('prayer.days_left')}',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: colors.primary,
                         fontWeight: FontWeight.w700,
@@ -994,7 +945,7 @@ class _PrayerEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              context.t('prayer.none', fallback: 'No prayer requests yet'),
+              context.t('prayer.none'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
@@ -1003,16 +954,8 @@ class _PrayerEmptyState extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               segment == PrayerSegment.global
-                  ? context.t(
-                      'prayer.global_empty_hint',
-                      fallback:
-                          'Global requests shared by churches will appear here.',
-                    )
-                  : context.t(
-                      'prayer.empty_hint',
-                      fallback:
-                          'When a need is shared, your community can stand with you.',
-                    ),
+                  ? context.t('prayer.global_empty_hint')
+                  : context.t('prayer.empty_hint'),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1025,7 +968,7 @@ class _PrayerEmptyState extends StatelessWidget {
                 onPressed: onCreate,
                 icon: const Icon(Icons.add_rounded),
                 label: Text(
-                  context.t('prayer.new_request', fallback: 'New request'),
+                  context.t('prayer.new_request'),
                 ),
               ),
             ],
@@ -1059,10 +1002,7 @@ class _PrayerErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              context.t(
-                'prayer.load_error',
-                fallback: 'Could not load prayer requests',
-              ),
+              context.t('prayer.load_error'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
@@ -1073,7 +1013,7 @@ class _PrayerErrorView extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
               label: Text(
-                context.t('feed.retry', fallback: 'Retry'),
+                context.t('feed.retry'),
               ),
             ),
           ],
@@ -1091,18 +1031,9 @@ IconData _scopeIcon(PrayerSegment segment) => switch (segment) {
 
 String _scopeChipLabel(BuildContext context, PrayerSegment segment) =>
     switch (segment) {
-      PrayerSegment.my => context.t(
-          'prayer.my_requests_tab',
-          fallback: 'My Requests',
-        ),
-      PrayerSegment.all => context.t(
-          'prayer.all_requests_tab',
-          fallback: 'All Requests',
-        ),
-      PrayerSegment.global => context.t(
-          'prayer.global_requests_tab',
-          fallback: 'Global',
-        ),
+      PrayerSegment.my => context.t('prayer.my_requests_tab'),
+      PrayerSegment.all => context.t('prayer.all_requests_tab'),
+      PrayerSegment.global => context.t('prayer.global_requests_tab'),
     };
 
 enum PrayerSegment {
@@ -1186,24 +1117,15 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                     children: [
                       Text(
                         widget.existing == null
-                            ? context.t(
-                                'prayer.create_title',
-                                fallback: 'Share a prayer request',
-                              )
-                            : context.t(
-                                'prayer.edit_title',
-                                fallback: 'Edit prayer request',
-                              ),
+                            ? context.t('prayer.create_title')
+                            : context.t('prayer.edit_title'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        context.t(
-                          'prayer.form_hint',
-                          fallback: 'Your church community is here for you.',
-                        ),
+                        context.t('prayer.form_hint'),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -1245,10 +1167,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          context.t(
-                            'prayer.healing_verse_title',
-                            fallback: 'A healing promise',
-                          ),
+                          context.t('prayer.healing_verse_title'),
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: primaryColor,
                             fontWeight: FontWeight.w800,
@@ -1256,11 +1175,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          context.t(
-                            'prayer.healing_verse',
-                            fallback:
-                                '"Heal me, Lord, and I will be healed; save me and I will be saved, for you are the one I praise."',
-                          ),
+                          context.t('prayer.healing_verse'),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             height: 1.35,
                             fontWeight: FontWeight.w600,
@@ -1268,10 +1183,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          context.t(
-                            'prayer.healing_verse_reference',
-                            fallback: 'Jeremiah 17:14',
-                          ),
+                          context.t('prayer.healing_verse_reference'),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: primaryColor,
                             fontWeight: FontWeight.w700,
@@ -1287,11 +1199,10 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
             AppTextField(
               controller: _titleCtrl,
               decoration: InputDecoration(
-                labelText: context.t('prayer.title_label', fallback: 'Title'),
+                labelText: context.t('prayer.title_label'),
               ),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? context.t('prayer.title_required',
-                      fallback: 'Title required')
+                  ? context.t('prayer.title_required')
                   : null,
             ),
             const SizedBox(height: 16),
@@ -1299,17 +1210,11 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
               controller: _descCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: context.t(
-                  'prayer.description_label',
-                  fallback: 'Description',
-                ),
+                labelText: context.t('prayer.description_label'),
                 alignLabelWithHint: true,
               ),
               validator: (value) => value == null || value.trim().isEmpty
-                  ? context.t(
-                      'prayer.description_required',
-                      fallback: 'Description required',
-                    )
+                  ? context.t('prayer.description_required')
                   : null,
             ),
             const SizedBox(height: 16),
@@ -1324,17 +1229,11 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                 ),
                 secondary: const Icon(Icons.visibility_off_outlined),
                 title: Text(
-                  context.t(
-                    'prayer.submit_anonymous',
-                    fallback: 'Submit anonymously',
-                  ),
+                  context.t('prayer.submit_anonymous'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
-                  context.t(
-                    'prayer.anonymous_hint',
-                    fallback: 'Your name will not be shown with this request.',
-                  ),
+                  context.t('prayer.anonymous_hint'),
                 ),
                 value: _isAnonymous,
                 onChanged: (v) {
@@ -1354,18 +1253,11 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                 ),
                 secondary: const Icon(Icons.people_alt_outlined),
                 title: Text(
-                  context.t(
-                    'prayer.visible_to_church_title',
-                    fallback: 'Visible to church members',
-                  ),
+                  context.t('prayer.visible_to_church_title'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
-                  context.t(
-                    'prayer.visible_to_church_hint',
-                    fallback:
-                        'Show this request in “Pray for others” on the For You tab.',
-                  ),
+                  context.t('prayer.visible_to_church_hint'),
                 ),
                 value: _visibleToChurchMembers,
                 onChanged: (value) {
@@ -1392,10 +1284,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                 ),
                 leading: const Icon(Icons.event_outlined),
                 title: Text(
-                  context.t(
-                    'prayer.expiry_date_title',
-                    fallback: 'Keep request active until',
-                  ),
+                  context.t('prayer.expiry_date_title'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Column(
@@ -1403,19 +1292,13 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                   children: [
                     Text(
                       _expiryDate == null
-                          ? context.t(
-                              'prayer.select_expiry_date',
-                              fallback: 'Choose a date within 30 days',
-                            )
+                          ? context.t('prayer.select_expiry_date')
                           : DateFormat.yMMMMd().format(_expiryDate!),
                     ),
                     if (_showExpiryError) ...[
                       const SizedBox(height: 5),
                       Text(
-                        context.t(
-                          'prayer.select_expiry_required',
-                          fallback: 'Please select expiry date',
-                        ),
+                        context.t('prayer.select_expiry_required'),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.error,
                           fontWeight: FontWeight.w700,
@@ -1456,14 +1339,8 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
                     : const Icon(Icons.favorite_rounded),
                 label: Text(
                   widget.existing == null
-                      ? context.t(
-                          'prayer.submit_action',
-                          fallback: 'Share request',
-                        )
-                      : context.t(
-                          'prayer.update_action',
-                          fallback: 'Save changes',
-                        ),
+                      ? context.t('prayer.submit_action')
+                      : context.t('prayer.update_action'),
                 ),
               ),
             ),
@@ -1531,10 +1408,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'prayer.saved_success',
-              fallback: 'Prayer request saved successfully',
-            ),
+            context.t('prayer.saved_success'),
           ),
         ),
       );
@@ -1544,10 +1418,7 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
         SnackBar(
           content: Text(
             e.toString().replaceFirst('Exception: ', '').trim().isEmpty
-                ? context.t(
-                    'common.unknown_error',
-                    fallback: 'An unknown error occurred.',
-                  )
+                ? context.t('common.unknown_error')
                 : e.toString().replaceFirst('Exception: ', ''),
           ),
         ),

@@ -37,8 +37,7 @@ class EventsSection implements MasterSection {
                     ),
                 error: (e, _) => Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text(
-                          "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+                      child: Text("${context.t('common.error_prefix')}: $e"),
                     ),
                 data: (items) => EventsList(items));
           },
@@ -64,7 +63,7 @@ class EventsList extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.all(16),
         child: Text(
-          context.t('events.none', fallback: 'No Events'),
+          context.t('events.none'),
         ),
       );
     }
@@ -81,7 +80,7 @@ class EventsList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          text: context.t('events.section_title', fallback: 'Events'),
+          text: context.t('events.section_title'),
           padding: 16.0,
         ),
         const SizedBox(height: 10),

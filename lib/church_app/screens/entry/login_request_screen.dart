@@ -296,7 +296,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
   String _formatMemberSince(DateTime? date) {
     if (date == null) {
-      return context.t('common.not_provided', fallback: 'Not provided');
+      return context.t('common.not_provided');
     }
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
@@ -363,95 +363,60 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           final name = _nameController.text.trim();
           final contact = _phoneController.text.trim();
           if (name.isEmpty) {
-            return context.t(
-              'members.member_name_required',
-              fallback: 'Please enter the member name',
-            );
+            return context.t('members.member_name_required');
           }
           if (name.length < 3) {
-            return context.t(
-              'auth.name_min_length',
-              fallback: 'Name must be at least 3 characters',
-            );
+            return context.t('auth.name_min_length');
           }
           if (!InputValidators.isValidIndianPhone(contact)) {
-            return context.t(
-              'auth.phone_invalid',
-              fallback: 'Enter a valid 10-digit phone number',
-            );
+            return context.t('auth.phone_invalid');
           }
           if (_addressController.text.trim().isEmpty) {
-            return context.t(
-              'members.member_address_required',
-              fallback: 'Please enter the member address',
-            );
+            return context.t('members.member_address_required');
           }
           return null;
         case 1:
           if (_maritalStatus == 'married' && _weddingDay == null) {
-            return context.t(
-              'members.member_wedding_day_required',
-              fallback: 'Please select the wedding day',
-            );
+            return context.t('members.member_wedding_day_required');
           }
           if (_gender.isEmpty) {
-            return context.t(
-              'members.member_gender_required',
-              fallback: 'Please select the member gender',
-            );
+            return context.t('members.member_gender_required');
           }
           if (_dob == null) {
-            return context.t(
-              'members.member_dob_required',
-              fallback: 'Please select the member date of birth',
-            );
+            return context.t('members.member_dob_required');
           }
           if (_useExistingFamilyId &&
               (_selectedExistingFamilyId == null ||
                   _selectedExistingFamilyId!.trim().isEmpty)) {
-            return 'Please select an existing family ID';
+            return context.t('members.existing_family_required');
           }
           if (_category == 'family' &&
               !_useExistingFamilyId &&
               _familyNameController.text.trim().isEmpty) {
-            return 'Please enter a family name';
+            return context.t('members.family_name_required');
           }
           return null;
         case 2:
           if (_solemnizedBaptism && _baptismDate == null) {
-            return context.t(
-              'members.baptism_date_required',
-              fallback: 'Please select the baptism date',
-            );
+            return context.t('members.baptism_date_required');
           }
           if (_solemnizedBaptism &&
               _baptismChurchNameController.text.trim().isEmpty) {
-            return context.t(
-              'members.baptism_church_name_required',
-              fallback: 'Please enter the baptism church name',
-            );
+            return context.t('members.baptism_church_name_required');
           }
           if (_solemnizedBaptism &&
               _baptismPastorNameController.text.trim().isEmpty) {
-            return context.t(
-              'members.baptism_pastor_name_required',
-              fallback: 'Please enter the baptism pastor name',
-            );
+            return context.t('members.baptism_pastor_name_required');
           }
           if (_maritalStatus == 'married' &&
               _marriageSolemnizationChurchType.isEmpty) {
-            return context.t(
-              'members.marriage_solemnization_required',
-              fallback: 'Please choose the marriage solemnization church',
-            );
+            return context.t('members.marriage_solemnization_required');
           }
           if (_maritalStatus == 'married' &&
               _marriageSolemnizationChurchType == 'other_church' &&
               _marriageOtherChurchNameController.text.trim().isEmpty) {
-            return context.t(
-              'members.marriage_solemnization_other_church_required',
-              fallback: 'Please enter the other church name',
-            );
+            return context
+                .t('members.marriage_solemnization_other_church_required');
           }
           return null;
         default:
@@ -464,50 +429,28 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         final name = _nameController.text.trim();
         final phone = _phoneController.text.trim();
         if (name.isEmpty) {
-          return context.t('auth.name_required',
-              fallback: 'Please enter your name');
+          return context.t('auth.name_required');
         }
         if (name.length < 3) {
-          return context.t(
-            'auth.name_min_length',
-            fallback: 'Name must be at least 3 characters',
-          );
+          return context.t('auth.name_min_length');
         }
         if (!InputValidators.isValidIndianPhone(phone)) {
-          return context.t(
-            'auth.phone_invalid',
-            fallback: 'Enter a valid 10-digit phone number',
-          );
+          return context.t('auth.phone_invalid');
         }
         if (_gender.isEmpty) {
-          return context.t(
-            'auth.gender_required',
-            fallback: 'Please select your gender',
-          );
+          return context.t('auth.gender_required');
         }
         if (_dob == null) {
-          return context.t(
-            'auth.dob_required',
-            fallback: 'Please select your date of birth',
-          );
+          return context.t('auth.dob_required');
         }
         if (_addressController.text.trim().isEmpty) {
-          return context.t(
-            'auth.address_required',
-            fallback: 'Please enter your address',
-          );
+          return context.t('auth.address_required');
         }
         if (_maritalStatus.isEmpty) {
-          return context.t(
-            'members.marital_status_required',
-            fallback: 'Please select your marital status',
-          );
+          return context.t('members.marital_status_required');
         }
         if (_maritalStatus == 'married' && _weddingDay == null) {
-          return context.t(
-            'members.wedding_day_required',
-            fallback: 'Please select your wedding day',
-          );
+          return context.t('members.wedding_day_required');
         }
         return null;
       default:
@@ -548,10 +491,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'members.account_required_before_request',
-              fallback: 'Create your account first before requesting access.',
-            ),
+            context.t('members.account_required_before_request'),
           ),
         ),
       );
@@ -563,10 +503,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'auth.family_id_required',
-              fallback: 'Please select or create a family ID',
-            ),
+            context.t('auth.family_id_required'),
           ),
         ),
       );
@@ -583,8 +520,13 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
     var authToken = '';
     if (enableNotifications == true) {
       final notificationService = FcmNotificationService();
-      notificationService.requestNotificationsPermission();
-      authToken = await notificationService.getFirebaseMessagingToken();
+      final permissionGranted =
+          await notificationService.requestNotificationsPermission();
+      if (!context.mounted) return;
+      if (permissionGranted) {
+        authToken = await notificationService.getFirebaseMessagingToken() ?? '';
+        if (!context.mounted) return;
+      }
     }
 
     ref.read(requestAccessLoadingProvider.notifier).state = true;
@@ -638,10 +580,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.t(
-                'members.member_updated_success',
-                fallback: 'Member updated successfully.',
-              ),
+              context.t('members.member_updated_success'),
             ),
           ),
         );
@@ -794,10 +733,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.t(
-                'members.member_created_success',
-                fallback: 'Member created successfully.',
-              ),
+              context.t('members.member_created_success'),
             ),
           ),
         );
@@ -898,12 +834,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       appBar: AppBar(
         title: AppBarTitle(
           text: _isEditMode
-              ? context.t('members.edit_member', fallback: 'Edit Member')
+              ? context.t('members.edit_member')
               : widget.adminCreateMode
-                  ? context.t('members.create_member',
-                      fallback: 'Create Member')
-                  : context.t('auth.request_access',
-                      fallback: 'Request Access'),
+                  ? context.t('members.create_member')
+                  : context.t('auth.request_access'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -929,15 +863,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.basic_details_title',
-                                  fallback: 'Basic Details',
-                                ),
-                                subtitle: context.t(
-                                  'members.basic_details_subtitle',
-                                  fallback:
-                                      'Capture the member information in one place.',
-                                ),
+                                title: context.t('members.basic_details_title'),
+                                subtitle:
+                                    context.t('members.basic_details_subtitle'),
                                 child: Column(
                                   children: [
                                     if (_isEditMode) ...[
@@ -974,9 +902,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                 children: [
                                                   Text(
                                                     context.t(
-                                                      'members.member_since_label',
-                                                      fallback: 'Member Since',
-                                                    ),
+                                                        'members.member_since_label'),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .labelLarge
@@ -1011,10 +937,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.name_label',
-                                          fallback: 'Name',
-                                        ),
+                                        labelText:
+                                            context.t('members.name_label'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1023,20 +947,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       child: InputDecorator(
                                         decoration: appTextFieldDecoration(
                                           context,
-                                          labelText: context.t(
-                                            'auth.dob_label',
-                                            fallback: 'Date of Birth',
-                                          ),
+                                          labelText:
+                                              context.t('auth.dob_label'),
                                           suffixIcon:
                                               const Icon(Icons.calendar_today),
                                         ),
                                         child: Text(
                                           _dob == null
-                                              ? context.t(
-                                                  'auth.dob_select',
-                                                  fallback:
-                                                      'Select date of birth',
-                                                )
+                                              ? context.t('auth.dob_select')
                                               : '${_dob!.day.toString().padLeft(2, '0')}/'
                                                   '${_dob!.month.toString().padLeft(2, '0')}/'
                                                   '${_dob!.year}',
@@ -1047,45 +965,30 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     InputDecorator(
                                       decoration: appTextFieldDecoration(
                                         context,
-                                        labelText: context.t(
-                                          'auth.age_label',
-                                          fallback: 'Age',
-                                        ),
+                                        labelText: context.t('auth.age_label'),
                                       ),
                                       child: Text(
                                         _calculatedAge()?.toString() ??
-                                            context.t(
-                                              'auth.age_hint',
-                                              fallback:
-                                                  'Select DOB to calculate age',
-                                            ),
+                                            context.t('auth.age_hint'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     AppDropdownField<String>(
                                       initialValue:
                                           _gender.isEmpty ? null : _gender,
-                                      labelText: context.t(
-                                        'members.gender_label',
-                                        fallback: 'Gender',
-                                      ),
+                                      labelText:
+                                          context.t('members.gender_label'),
                                       items: [
                                         DropdownMenuItem(
                                           value: 'male',
                                           child: Text(
-                                            context.t(
-                                              'common.male',
-                                              fallback: 'Male',
-                                            ),
+                                            context.t('common.male'),
                                           ),
                                         ),
                                         DropdownMenuItem(
                                           value: 'female',
                                           child: Text(
-                                            context.t(
-                                              'common.female',
-                                              fallback: 'Female',
-                                            ),
+                                            context.t('common.female'),
                                           ),
                                         ),
                                       ],
@@ -1101,10 +1004,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.contact_label',
-                                          fallback: 'Contact',
-                                        ),
+                                        labelText:
+                                            context.t('members.contact_label'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1113,10 +1014,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.address_label',
-                                          fallback: 'Address',
-                                        ),
+                                        labelText:
+                                            context.t('members.address_label'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1124,27 +1023,19 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       initialValue: _maritalStatus.isEmpty
                                           ? null
                                           : _maritalStatus,
-                                      labelText: context.t(
-                                        'members.marital_status_label',
-                                        fallback: 'Marital Status',
-                                      ),
+                                      labelText: context
+                                          .t('members.marital_status_label'),
                                       items: [
                                         DropdownMenuItem(
                                           value: 'individual',
                                           child: Text(
-                                            context.t(
-                                              'common.individual',
-                                              fallback: 'Individual',
-                                            ),
+                                            context.t('common.individual'),
                                           ),
                                         ),
                                         DropdownMenuItem(
                                           value: 'married',
                                           child: Text(
-                                            context.t(
-                                              'common.married',
-                                              fallback: 'Married',
-                                            ),
+                                            context.t('common.married'),
                                           ),
                                         ),
                                       ],
@@ -1169,10 +1060,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         child: InputDecorator(
                                           decoration: appTextFieldDecoration(
                                             context,
-                                            labelText: context.t(
-                                              'members.wedding_day_label',
-                                              fallback: 'Wedding Day',
-                                            ),
+                                            labelText: context
+                                                .t('members.wedding_day_label'),
                                             suffixIcon: const Icon(
                                               Icons.calendar_today,
                                             ),
@@ -1180,10 +1069,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           child: Text(
                                             _weddingDay == null
                                                 ? context.t(
-                                                    'members.wedding_day_hint',
-                                                    fallback:
-                                                        'Select wedding day',
-                                                  )
+                                                    'members.wedding_day_hint')
                                                 : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.month.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.year}',
@@ -1226,10 +1112,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                   ),
                                                   title: Text(
                                                     context.t(
-                                                      'auth.family_existing_toggle',
-                                                      fallback:
-                                                          'Use existing family ID',
-                                                    ),
+                                                        'auth.family_existing_toggle'),
                                                   ),
                                                   value: _useExistingFamilyId,
                                                   onChanged: (value) {
@@ -1251,9 +1134,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                   initialValue:
                                                       selectedFamilyValue,
                                                   labelText: context.t(
-                                                    'members.family_id_label',
-                                                    fallback: 'Family ID',
-                                                  ),
+                                                      'members.family_id_label'),
                                                   items: familyIds
                                                       .map(
                                                         (familyId) =>
@@ -1280,14 +1161,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                       _familyNameController,
                                                   decoration: InputDecoration(
                                                     labelText: context.t(
-                                                      'members.family_name_label',
-                                                      fallback: 'Family Name',
-                                                    ),
+                                                        'members.family_name_label'),
                                                     helperText: context.t(
-                                                      'auth.family_name_helper',
-                                                      fallback:
-                                                          'Used to generate a family ID',
-                                                    ),
+                                                        'auth.family_name_helper'),
                                                   ),
                                                 ),
                                               if (_category == 'individual' &&
@@ -1333,15 +1209,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.extended_information_title',
-                                  fallback: 'Extended Information',
-                                ),
-                                subtitle: context.t(
-                                  'members.extended_information_subtitle',
-                                  fallback:
-                                      'Capture financial, educational and gifting details.',
-                                ),
+                                title: context
+                                    .t('members.extended_information_title'),
+                                subtitle: context
+                                    .t('members.extended_information_subtitle'),
                                 child: Column(
                                   children: [
                                     Container(
@@ -1374,10 +1245,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           Expanded(
                                             child: Text(
                                               context.t(
-                                                'members.extended_information_note',
-                                                fallback:
-                                                    'Use this section for details that help the church understand care needs, education, and gifting better.',
-                                              ),
+                                                  'members.extended_information_note'),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyMedium
@@ -1431,10 +1299,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         context.t(
-                                          'members.financial_support_required',
-                                          fallback:
-                                              'Financial Support Required',
-                                        ),
+                                            'members.financial_support_required'),
                                       ),
                                       value: _financialSupportRequired,
                                       onChanged: (value) {
@@ -1449,9 +1314,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           _educationalQualificationController,
                                       decoration: InputDecoration(
                                         labelText: context.t(
-                                          'members.educational_qualification',
-                                          fallback: 'Educational Qualification',
-                                        ),
+                                            'members.educational_qualification'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1460,15 +1323,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       minLines: 2,
                                       maxLines: 4,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'members.talents_and_gifts',
-                                          fallback: 'Talents & Gifts',
-                                        ),
+                                        labelText: context
+                                            .t('members.talents_and_gifts'),
                                         helperText: context.t(
-                                          'members.talents_and_gifts_helper',
-                                          fallback:
-                                              'Add comma-separated talents or gifts',
-                                        ),
+                                            'members.talents_and_gifts_helper'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1478,14 +1336,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       maxLines: 4,
                                       decoration: InputDecoration(
                                         labelText: context.t(
-                                          'members.additional_notes_label',
-                                          fallback: 'Additional Notes',
-                                        ),
+                                            'members.additional_notes_label'),
                                         helperText: context.t(
-                                          'members.additional_notes_helper',
-                                          fallback:
-                                              'Optional short notes about this member for church reference.',
-                                        ),
+                                            'members.additional_notes_helper'),
                                       ),
                                     ),
                                   ],
@@ -1499,15 +1352,10 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.church_records_title',
-                                  fallback: 'Church Records',
-                                ),
-                                subtitle: context.t(
-                                  'members.church_records_subtitle',
-                                  fallback:
-                                      'Capture baptism, marriage solemnization, and membership records for this member.',
-                                ),
+                                title:
+                                    context.t('members.church_records_title'),
+                                subtitle: context
+                                    .t('members.church_records_subtitle'),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1515,26 +1363,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       initialValue:
                                           _solemnizedBaptism ? 'yes' : 'no',
                                       labelText: context.t(
-                                        'members.solemnized_baptism_label',
-                                        fallback: 'Solemnized Baptism',
-                                      ),
+                                          'members.solemnized_baptism_label'),
                                       items: [
                                         DropdownMenuItem(
                                           value: 'yes',
                                           child: Text(
-                                            context.t(
-                                              'common.yes',
-                                              fallback: 'Yes',
-                                            ),
+                                            context.t('common.yes'),
                                           ),
                                         ),
                                         DropdownMenuItem(
                                           value: 'no',
                                           child: Text(
-                                            context.t(
-                                              'common.no',
-                                              fallback: 'No',
-                                            ),
+                                            context.t('common.no'),
                                           ),
                                         ),
                                       ],
@@ -1560,19 +1400,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         child: InputDecorator(
                                           decoration: InputDecoration(
                                             labelText: context.t(
-                                              'members.baptism_date_label',
-                                              fallback: 'Baptism Date',
-                                            ),
+                                                'members.baptism_date_label'),
                                             suffixIcon: const Icon(
                                                 Icons.calendar_today),
                                           ),
                                           child: Text(
                                             _formatDate(_baptismDate).isEmpty
                                                 ? context.t(
-                                                    'members.baptism_date_hint',
-                                                    fallback:
-                                                        'Select baptism date',
-                                                  )
+                                                    'members.baptism_date_hint')
                                                 : _formatDate(_baptismDate),
                                           ),
                                         ),
@@ -1584,14 +1419,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         textInputAction: TextInputAction.next,
                                         decoration: InputDecoration(
                                           labelText: context.t(
-                                            'members.baptism_certificate_number_label',
-                                            fallback:
-                                                'Baptism Certificate Number',
-                                          ),
+                                              'members.baptism_certificate_number_label'),
                                           helperText: context.t(
-                                            'members.baptism_certificate_number_helper',
-                                            fallback: 'Optional',
-                                          ),
+                                              'members.baptism_certificate_number_helper'),
                                         ),
                                       ),
                                       const SizedBox(height: 16),
@@ -1601,9 +1431,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         textInputAction: TextInputAction.next,
                                         decoration: InputDecoration(
                                           labelText: context.t(
-                                            'members.baptism_church_name_label',
-                                            fallback: 'Church Name',
-                                          ),
+                                              'members.baptism_church_name_label'),
                                         ),
                                       ),
                                       const SizedBox(height: 16),
@@ -1612,9 +1440,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                             _baptismPastorNameController,
                                         decoration: InputDecoration(
                                           labelText: context.t(
-                                            'members.baptism_pastor_name_label',
-                                            fallback: 'Pastor Name',
-                                          ),
+                                              'members.baptism_pastor_name_label'),
                                         ),
                                       ),
                                     ],
@@ -1622,9 +1448,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       const SizedBox(height: 24),
                                       Text(
                                         context.t(
-                                          'members.marriage_solemnization_title',
-                                          fallback: 'Marriage Solemnization',
-                                        ),
+                                            'members.marriage_solemnization_title'),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -1640,27 +1464,20 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                 ? null
                                                 : _marriageSolemnizationChurchType,
                                         labelText: context.t(
-                                          'members.marriage_solemnization_church_label',
-                                          fallback: 'Select Church',
-                                        ),
+                                            'members.marriage_solemnization_church_label'),
                                         items: [
                                           DropdownMenuItem(
                                             value: 'current_church',
                                             child: Text(
                                               context.t(
-                                                'members.current_church_option',
-                                                fallback: 'Current Church',
-                                              ),
+                                                  'members.current_church_option'),
                                             ),
                                           ),
                                           DropdownMenuItem(
                                             value: 'other_church',
                                             child: Text(
                                               context.t(
-                                                'members.other_church_option',
-                                                fallback:
-                                                    'Type Other Church Name',
-                                              ),
+                                                  'members.other_church_option'),
                                             ),
                                           ),
                                         ],
@@ -1709,9 +1526,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                               _marriageOtherChurchNameController,
                                           decoration: InputDecoration(
                                             labelText: context.t(
-                                              'members.other_church_name_label',
-                                              fallback: 'Other Church Name',
-                                            ),
+                                                'members.other_church_name_label'),
                                           ),
                                         ),
                                       ],
@@ -1719,9 +1534,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     const SizedBox(height: 24),
                                     Text(
                                       context.t(
-                                        'members.membership_section_title',
-                                        fallback: 'Membership Section',
-                                      ),
+                                          'members.membership_section_title'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium
@@ -1736,25 +1549,27 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                               ? null
                                               : _membershipCurrentStatus,
                                       labelText: context.t(
-                                        'members.membership_current_status_label',
-                                        fallback: 'Membership Current Status',
-                                      ),
-                                      items: const [
+                                          'members.membership_current_status_label'),
+                                      items: [
                                         DropdownMenuItem(
                                           value: 'active',
-                                          child: Text('Active'),
+                                          child: Text(context
+                                              .t('ui.login_request.active')),
                                         ),
                                         DropdownMenuItem(
                                           value: 'transfered',
-                                          child: Text('Transfered'),
+                                          child: Text(context.t(
+                                              'ui.login_request.transfered')),
                                         ),
                                         DropdownMenuItem(
                                           value: 'quit_the_church',
-                                          child: Text('Quit the church'),
+                                          child: Text(context.t(
+                                              'ui.login_request.quit_the_church')),
                                         ),
                                         DropdownMenuItem(
                                           value: 'not_known',
-                                          child: Text('Not Known'),
+                                          child: Text(context
+                                              .t('ui.login_request.not_known')),
                                         ),
                                       ],
                                       onChanged: (value) {
@@ -1771,14 +1586,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       maxLines: 4,
                                       decoration: InputDecoration(
                                         labelText: context.t(
-                                          'members.membership_notes_label',
-                                          fallback: 'Additional Note',
-                                        ),
+                                            'members.membership_notes_label'),
                                         helperText: context.t(
-                                          'members.membership_notes_helper',
-                                          fallback:
-                                              'Optional church membership note for reference.',
-                                        ),
+                                            'members.membership_notes_helper'),
                                       ),
                                     ),
                                   ],
@@ -1792,15 +1602,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.church_groups_title',
-                                  fallback: 'Church Groups',
-                                ),
-                                subtitle: context.t(
-                                  'members.church_groups_subtitle',
-                                  fallback:
-                                      'Select the ministries and teams this member belongs to.',
-                                ),
+                                title: context.t('members.church_groups_title'),
+                                subtitle:
+                                    context.t('members.church_groups_subtitle'),
                                 child: Column(
                                   children: [
                                     ...churchGroupDefinitions.map(
@@ -1835,30 +1639,18 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.basic_details_title',
-                                  fallback: 'Basic Details',
-                                ),
+                                title: context.t('members.basic_details_title'),
                                 subtitle: context.t(
-                                  'members.request_basic_details_subtitle',
-                                  fallback:
-                                      'Capture your basic details before submitting your request.',
-                                ),
+                                    'members.request_basic_details_subtitle'),
                                 child: Column(
                                   children: [
                                     AppTextField(
                                       controller: _nameController,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'auth.name_label',
-                                          fallback: 'Your Name',
-                                        ),
-                                        helperText: context.t(
-                                          'auth.name_helper',
-                                          fallback:
-                                              'Name should have only characters, not numbers',
-                                        ),
+                                        labelText: context.t('auth.name_label'),
+                                        helperText:
+                                            context.t('auth.name_helper'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1867,20 +1659,14 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       child: InputDecorator(
                                         decoration: appTextFieldDecoration(
                                           context,
-                                          labelText: context.t(
-                                            'auth.dob_label',
-                                            fallback: 'Date of Birth',
-                                          ),
+                                          labelText:
+                                              context.t('auth.dob_label'),
                                           suffixIcon:
                                               const Icon(Icons.calendar_today),
                                         ),
                                         child: Text(
                                           _dob == null
-                                              ? context.t(
-                                                  'auth.dob_hint',
-                                                  fallback:
-                                                      'Select your date of birth',
-                                                )
+                                              ? context.t('auth.dob_hint')
                                               : '${_dob!.day.toString().padLeft(2, '0')}/'
                                                   '${_dob!.month.toString().padLeft(2, '0')}/'
                                                   '${_dob!.year}',
@@ -1891,45 +1677,29 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                     InputDecorator(
                                       decoration: appTextFieldDecoration(
                                         context,
-                                        labelText: context.t(
-                                          'auth.age_label',
-                                          fallback: 'Age',
-                                        ),
+                                        labelText: context.t('auth.age_label'),
                                       ),
                                       child: Text(
                                         _calculatedAge()?.toString() ??
-                                            context.t(
-                                              'auth.age_hint',
-                                              fallback:
-                                                  'Select DOB to calculate age',
-                                            ),
+                                            context.t('auth.age_hint'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     AppDropdownField<String>(
                                       initialValue:
                                           _gender.isEmpty ? null : _gender,
-                                      labelText: context.t(
-                                        'auth.gender_label',
-                                        fallback: 'Gender',
-                                      ),
+                                      labelText: context.t('auth.gender_label'),
                                       items: [
                                         DropdownMenuItem(
                                           value: 'male',
                                           child: Text(
-                                            context.t(
-                                              'common.male',
-                                              fallback: 'Male',
-                                            ),
+                                            context.t('common.male'),
                                           ),
                                         ),
                                         DropdownMenuItem(
                                           value: 'female',
                                           child: Text(
-                                            context.t(
-                                              'common.female',
-                                              fallback: 'Female',
-                                            ),
+                                            context.t('common.female'),
                                           ),
                                         ),
                                       ],
@@ -1945,8 +1715,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
                                       decoration: InputDecoration(
-                                        labelText: context.t('auth.phone_label',
-                                            fallback: 'Contact'),
+                                        labelText:
+                                            context.t('auth.phone_label'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1955,10 +1725,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       keyboardType: TextInputType.streetAddress,
                                       maxLines: 3,
                                       decoration: InputDecoration(
-                                        labelText: context.t(
-                                          'auth.address_label',
-                                          fallback: 'Address',
-                                        ),
+                                        labelText:
+                                            context.t('auth.address_label'),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1966,27 +1734,19 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                       initialValue: _maritalStatus.isEmpty
                                           ? null
                                           : _maritalStatus,
-                                      labelText: context.t(
-                                        'members.marital_status_label',
-                                        fallback: 'Marital Status',
-                                      ),
+                                      labelText: context
+                                          .t('members.marital_status_label'),
                                       items: [
                                         DropdownMenuItem(
                                           value: 'individual',
                                           child: Text(
-                                            context.t(
-                                              'common.individual',
-                                              fallback: 'Individual',
-                                            ),
+                                            context.t('common.individual'),
                                           ),
                                         ),
                                         DropdownMenuItem(
                                           value: 'married',
                                           child: Text(
-                                            context.t(
-                                              'common.married',
-                                              fallback: 'Married',
-                                            ),
+                                            context.t('common.married'),
                                           ),
                                         ),
                                       ],
@@ -2011,10 +1771,8 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                         child: InputDecorator(
                                           decoration: appTextFieldDecoration(
                                             context,
-                                            labelText: context.t(
-                                              'members.wedding_day_label',
-                                              fallback: 'Wedding Day',
-                                            ),
+                                            labelText: context
+                                                .t('members.wedding_day_label'),
                                             suffixIcon: const Icon(
                                               Icons.calendar_today,
                                             ),
@@ -2022,10 +1780,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                           child: Text(
                                             _weddingDay == null
                                                 ? context.t(
-                                                    'members.wedding_day_hint',
-                                                    fallback:
-                                                        'Select wedding day',
-                                                  )
+                                                    'members.wedding_day_hint')
                                                 : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.month.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.year}',
@@ -2044,43 +1799,24 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                               stepCount: _stepCount,
                               progress: progress,
                               child: _StepShell(
-                                title: context.t(
-                                  'members.review_title',
-                                  fallback: 'Review',
-                                ),
-                                subtitle: context.t(
-                                  'members.review_subtitle',
-                                  fallback:
-                                      'Check the details before submitting your request.',
-                                ),
+                                title: context.t('members.review_title'),
+                                subtitle: context.t('members.review_subtitle'),
                                 child: _ReviewCard(
                                   rows: [
                                     _ReviewRow(
-                                      context.t(
-                                        'members.name_label',
-                                        fallback: 'Name',
-                                      ),
+                                      context.t('members.name_label'),
                                       _nameController.text.trim(),
                                     ),
                                     _ReviewRow(
-                                      context.t(
-                                        'members.contact_label',
-                                        fallback: 'Contact',
-                                      ),
+                                      context.t('members.contact_label'),
                                       _phoneController.text.trim(),
                                     ),
                                     _ReviewRow(
-                                      context.t(
-                                        'members.gender_label',
-                                        fallback: 'Gender',
-                                      ),
+                                      context.t('members.gender_label'),
                                       _gender,
                                     ),
                                     _ReviewRow(
-                                      context.t(
-                                        'members.date_of_birth_label',
-                                        fallback: 'Date of Birth',
-                                      ),
+                                      context.t('members.date_of_birth_label'),
                                       _dob == null
                                           ? ''
                                           : '${_dob!.day.toString().padLeft(2, '0')}/'
@@ -2088,18 +1824,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                               '${_dob!.year}',
                                     ),
                                     _ReviewRow(
-                                      context.t(
-                                        'members.marital_status_label',
-                                        fallback: 'Marital Status',
-                                      ),
+                                      context.t('members.marital_status_label'),
                                       _maritalStatus,
                                     ),
                                     if (_maritalStatus == 'married')
                                       _ReviewRow(
-                                        context.t(
-                                          'members.wedding_day_label',
-                                          fallback: 'Wedding Day',
-                                        ),
+                                        context.t('members.wedding_day_label'),
                                         _weddingDay == null
                                             ? ''
                                             : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
@@ -2107,10 +1837,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                 '${_weddingDay!.year}',
                                       ),
                                     _ReviewRow(
-                                      context.t(
-                                        'members.address_label',
-                                        fallback: 'Address',
-                                      ),
+                                      context.t('members.address_label'),
                                       _addressController.text.trim(),
                                     ),
                                   ],
@@ -2126,7 +1853,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                     if (_stepIndex > 0)
                       Expanded(
                         child: SolidButton(
-                          label: context.t('common.back', fallback: 'Back'),
+                          label: context.t('common.back'),
                           onPressed: isLoading
                               ? null
                               : () => _goToStep(_stepIndex - 1),
@@ -2137,9 +1864,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                       child: SolidButton(
                         label: _stepIndex == _stepCount - 1
                             ? _isEditMode
-                                ? context.t('common.save', fallback: 'Save')
-                                : context.t('common.submit', fallback: 'Submit')
-                            : context.t('onboarding.next', fallback: 'Next'),
+                                ? context.t('common.save')
+                                : context.t('common.submit')
+                            : context.t('onboarding.next'),
                         isLoading: isLoading,
                         onPressed: isLoading
                             ? null
@@ -2192,7 +1919,7 @@ class _FlowHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${context.t('common.step', fallback: 'Step')} ${stepIndex + 1} ${context.t('common.of', fallback: 'of')} $stepCount',
+            '${context.t('common.step')} ${stepIndex + 1} ${context.t('common.of')} $stepCount',
           ),
           const SizedBox(height: 12),
           ClipRRect(

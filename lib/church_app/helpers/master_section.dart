@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 /// A reusable section that can render itself into the home scroll.

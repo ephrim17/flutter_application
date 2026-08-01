@@ -15,11 +15,11 @@ class BibleVerse {
 
   factory BibleVerse.fromJson(Map<String, dynamic> json) {
     return BibleVerse(
-      id: json['id'] as int,
-      theme: json['theme'] as String,
-      reference: json['reference'] as String,
-      english: json['english'] as String,
-      tamil: json['tamil'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      theme: json['theme']?.toString().trim() ?? '',
+      reference: json['reference']?.toString().trim() ?? '',
+      english: json['english']?.toString() ?? '',
+      tamil: json['tamil']?.toString() ?? '',
     );
   }
 }

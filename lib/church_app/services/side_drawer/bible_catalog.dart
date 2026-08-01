@@ -1,5 +1,6 @@
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 
 final bibleBooks = [
   BibleBook(key: 'Genesis', name: 'ஆதியாகமம்'),
@@ -76,10 +77,10 @@ final bibleBookFileNames =
 final fallbackBibleVersions = [
   BibleVersion(
     id: 'english_tamil',
-    title: 'English & Tamil Bible',
-    subtitle: 'KJV English with Tamil parallel text',
+    title: defaultChurchTextContents['bible.english_tamil_title']!,
+    subtitle: defaultChurchTextContents['bible.english_tamil_subtitle']!,
     languageLabel: 'EN + TA',
-    description: 'Downloads all 66 book files for offline reading.',
+    description: defaultChurchTextContents['bible.english_tamil_description']!,
     bookFileNames: bibleBookFileNames,
     storagePath: 'bible/english_tamil',
     contentVersion: 1,

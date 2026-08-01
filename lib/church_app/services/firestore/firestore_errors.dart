@@ -1,43 +1,44 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 
 String mapFirebaseAuthError(Object e) {
   if (e is FirebaseAuthException) {
     switch (e.code) {
       case 'invalid-email':
-        return 'Please enter a valid email address.';
+        return defaultChurchTextContents['auth.invalid_email']!;
       case 'user-not-found':
-        return 'No account found with this email.';
+        return defaultChurchTextContents['auth.user_not_found']!;
       case 'wrong-password':
-        return 'Incorrect password. Please try again.';
+        return defaultChurchTextContents['auth.wrong_password']!;
       case 'invalid-credential':
       case 'invalid-login-credentials':
-        return 'Incorrect email or password. Please try again.';
+        return defaultChurchTextContents['auth.invalid_credentials']!;
       case 'requires-recent-login':
-        return 'Please sign in again and retry deleting your account.';
+        return defaultChurchTextContents['auth.recent_login_required']!;
       case 'no-current-user':
-        return 'No signed in user found.';
+        return defaultChurchTextContents['auth.no_signed_in_user']!;
       case 'missing-email':
-        return 'Unable to verify this account email.';
+        return defaultChurchTextContents['auth.email_verification_failed']!;
       case 'user-disabled':
-        return 'This account has been disabled. Please contact support.';
+        return defaultChurchTextContents['auth.user_disabled']!;
       case 'email-already-in-use':
-        return 'This email is already registered.';
+        return defaultChurchTextContents['auth.email_in_use']!;
       case 'weak-password':
-        return 'Password should be at least 6 characters.';
+        return defaultChurchTextContents['auth.weak_password']!;
       case 'expired-action-code':
-        return 'This reset link has expired. Please request a new one.';
+        return defaultChurchTextContents['auth.expired_action_code']!;
       case 'invalid-action-code':
-        return 'This reset link is invalid or already used.';
+        return defaultChurchTextContents['auth.invalid_action_code']!;
       case 'network-request-failed':
-        return 'Network error. Please check your internet connection.';
+        return defaultChurchTextContents['auth.network_error']!;
       case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
+        return defaultChurchTextContents['auth.too_many_requests']!;
       case 'operation-not-allowed':
-        return 'This sign-in method is currently disabled.';
+        return defaultChurchTextContents['auth.operation_not_allowed']!;
       default:
-        return 'Something went wrong. Please try again.';
+        return defaultChurchTextContents['auth.generic_error']!;
     }
   }
 
-  return 'Unexpected error occurred. Please try again.';
+  return defaultChurchTextContents['auth.unexpected_error']!;
 }

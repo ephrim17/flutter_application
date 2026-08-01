@@ -60,10 +60,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'auth.password_reset_success',
-              fallback: 'Password updated. You can sign in now.',
-            ),
+            context.t('auth.password_reset_success'),
           ),
         ),
       );
@@ -83,28 +80,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String? _validatePassword(String? value) {
     final password = value ?? '';
     if (password.isEmpty) {
-      return context.t(
-        'auth.password_required',
-        fallback: 'Please enter a password',
-      );
+      return context.t('auth.password_required');
     }
     if (password.length < 8) {
-      return context.t(
-        'auth.password_min_length',
-        fallback: 'Password must be at least 8 characters',
-      );
+      return context.t('auth.password_min_length');
     }
     if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return context.t(
-        'auth.password_uppercase_required',
-        fallback: 'Include at least one uppercase letter',
-      );
+      return context.t('auth.password_uppercase_required');
     }
     if (!RegExp(r'\d').hasMatch(password)) {
-      return context.t(
-        'auth.password_number_required',
-        fallback: 'Include at least one number',
-      );
+      return context.t('auth.password_number_required');
     }
     return null;
   }
@@ -112,16 +97,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String? _validateConfirmPassword(String? value) {
     final confirmPassword = value ?? '';
     if (confirmPassword.isEmpty) {
-      return context.t(
-        'auth.confirm_password_required',
-        fallback: 'Please confirm your password',
-      );
+      return context.t('auth.confirm_password_required');
     }
     if (confirmPassword != _passwordController.text) {
-      return context.t(
-        'auth.passwords_mismatch',
-        fallback: 'Passwords do not match',
-      );
+      return context.t('auth.passwords_mismatch');
     }
     return null;
   }
@@ -133,10 +112,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t(
-            'auth.reset_password_title',
-            fallback: 'Reset Password',
-          ),
+          text: context.t('auth.reset_password_title'),
         ),
       ),
       body: FutureBuilder<String>(
@@ -149,15 +125,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           if (snapshot.hasError || widget.oobCode.trim().isEmpty) {
             return _ResetPasswordMessage(
               icon: Icons.link_off_rounded,
-              title: context.t(
-                'auth.reset_link_invalid_title',
-                fallback: 'Reset link expired',
-              ),
-              message: context.t(
-                'auth.reset_link_invalid_message',
-                fallback:
-                    'Please request a new password reset link and try again.',
-              ),
+              title: context.t('auth.reset_link_invalid_title'),
+              message: context.t('auth.reset_link_invalid_message'),
             );
           }
 
@@ -184,10 +153,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          context.t(
-                            'auth.choose_new_password',
-                            fallback: 'Choose a new password',
-                          ),
+                          context.t('auth.choose_new_password'),
                           textAlign: TextAlign.center,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w900,
@@ -210,14 +176,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           controller: _passwordController,
                           obscureText: !_passwordVisible,
                           decoration: InputDecoration(
-                            labelText: context.t(
-                              'auth.password_label',
-                              fallback: 'Password',
-                            ),
-                            helperText: context.t(
-                              'auth.password_helper',
-                              fallback: 'Min 8 chars, 1 uppercase, 1 number',
-                            ),
+                            labelText: context.t('auth.password_label'),
+                            helperText: context.t('auth.password_helper'),
                             suffixIcon: IconButton(
                               onPressed: () => setState(
                                 () => _passwordVisible = !_passwordVisible,
@@ -236,10 +196,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           controller: _confirmPasswordController,
                           obscureText: !_confirmPasswordVisible,
                           decoration: InputDecoration(
-                            labelText: context.t(
-                              'auth.confirm_password_label',
-                              fallback: 'Confirm Password',
-                            ),
+                            labelText: context.t('auth.confirm_password_label'),
                             suffixIcon: IconButton(
                               onPressed: () => setState(
                                 () => _confirmPasswordVisible =
@@ -256,10 +213,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         const SizedBox(height: 24),
                         SolidButton(
-                          label: context.t(
-                            'auth.update_password',
-                            fallback: 'Update Password',
-                          ),
+                          label: context.t('auth.update_password'),
                           isLoading: _isSaving,
                           onPressed: _savePassword,
                         ),

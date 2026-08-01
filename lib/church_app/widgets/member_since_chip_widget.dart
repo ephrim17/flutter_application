@@ -14,7 +14,7 @@ class MemberSinceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final value = date == null
-        ? context.t('common.not_provided', fallback: 'Not provided')
+        ? context.t('common.not_provided')
         : DateFormat('dd MMM yyyy').format(date!);
 
     return Container(
@@ -37,7 +37,7 @@ class MemberSinceChip extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              '${context.t('members.member_since_label', fallback: 'Member Since')}: $value',
+              '${context.t('members.member_since_label')}: $value',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w800,

@@ -28,4 +28,44 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('shared modal stays above the software keyboard', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showAppModalBottomSheet<void>(
+                context: context,
+                builder: (_) => const ColoredBox(
+                  key: ValueKey<String>('keyboard-safe-content'),
+                  color: Colors.white,
+                ),
+              ),
+              child: const Text('Open keyboard modal'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open keyboard modal'));
+    await tester.pumpAndSettle();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+
+    final contentBottom = tester
+        .getBottomRight(find.byKey(
+          const ValueKey<String>('keyboard-safe-content'),
+        ))
+        .dy;
+    expect(contentBottom, lessThanOrEqualTo(500));
+    expect(tester.takeException(), isNull);
+  });
 }

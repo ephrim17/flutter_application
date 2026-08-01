@@ -39,17 +39,15 @@ class ArticleSection implements MasterSection {
           children: [
             const SizedBox(height: 10),
             SectionHeader(
-              text: context.t(
-                'for_you.article.section_title',
-                fallback: 'Article Notes',
-              ),
+              text: context.t('for_you.article.section_title'),
               padding: 16.0,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: CardLinkButtonWidget(
-                title: 'Browse Article notes and open the full message.',
-                buttonText: 'View Articles',
+                title: context.t(
+                    'ui.article_section.browse_article_notes_and_open_the_full_message'),
+                buttonText: context.t('articles.view_articles'),
                 iconStyle: Icon(
                   Icons.menu_book_rounded,
                   color: Theme.of(context).colorScheme.primary,
@@ -87,7 +85,7 @@ class ArticleSectionWidget extends ConsumerWidget {
         child: Center(child: AppLoadingIndicator(size: 72)),
       ),
       error: (e, _) => Text(
-        '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+        '${context.t('common.error_prefix')}: $e',
       ),
       data: (articles) {
         return ListView.builder(
@@ -111,10 +109,7 @@ class ArticleListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t(
-            'for_you.article.section_title',
-            fallback: 'Sermon Notes',
-          ),
+          text: context.t('for_you.article.section_title'),
         ),
       ),
       body: const SingleChildScrollView(

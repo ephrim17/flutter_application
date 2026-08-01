@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
+import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/firebase_options.dart';
 import 'package:http/http.dart' as http;
@@ -55,7 +56,7 @@ class AuthRepository {
       if (createdUser == null) {
         throw FirebaseAuthException(
           code: 'user-creation-failed',
-          message: 'Unable to create the member account.',
+          message: defaultChurchTextContents['auth.member_creation_failed'],
         );
       }
 
@@ -134,7 +135,7 @@ class AuthRepository {
 
     throw FirebaseAuthException(
       code: 'reset-email-failed',
-      message: 'Unable to send the reset email right now.',
+      message: defaultChurchTextContents['auth.reset_email_failed'],
     );
   }
 
@@ -146,7 +147,7 @@ class AuthRepository {
     if (user == null) {
       throw FirebaseAuthException(
         code: 'no-current-user',
-        message: 'No signed in user found.',
+        message: defaultChurchTextContents['auth.no_signed_in_user'],
       );
     }
 
@@ -154,7 +155,7 @@ class AuthRepository {
     if (email == null || email.isEmpty) {
       throw FirebaseAuthException(
         code: 'missing-email',
-        message: 'Unable to verify this account email.',
+        message: defaultChurchTextContents['auth.email_verification_failed'],
       );
     }
 
@@ -239,7 +240,7 @@ class AuthRepository {
         !createChurchMemberWithoutAuth) {
       throw FirebaseAuthException(
         code: 'no-current-user',
-        message: 'No signed in user found.',
+        message: defaultChurchTextContents['auth.no_signed_in_user'],
       );
     }
 

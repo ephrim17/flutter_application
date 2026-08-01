@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 
 class ReadingProgressBar extends StatelessWidget {
   final int current;
@@ -14,8 +15,7 @@ class ReadingProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        total == 0 ? 0.0 : (current / total).clamp(0.0, 1.0);
+    final progress = total == 0 ? 0.0 : (current / total).clamp(0.0, 1.0);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -23,7 +23,10 @@ class ReadingProgressBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "$current / $total Days Completed",
+            context.t(
+              'reading_plan.days_completed',
+              parameters: {'current': '$current', 'total': '$total'},
+            ),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -36,13 +39,17 @@ class ReadingProgressBar extends StatelessWidget {
               value: progress,
               minHeight: 10,
               backgroundColor: Colors.grey.shade300,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(progressColor),
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            "${(progress * 100).toStringAsFixed(0)}% Completed",
+            context.t(
+              'reading_plan.percent_completed',
+              parameters: {
+                'percent': (progress * 100).toStringAsFixed(0),
+              },
+            ),
             style: TextStyle(
               color: Colors.grey.shade600,
             ),

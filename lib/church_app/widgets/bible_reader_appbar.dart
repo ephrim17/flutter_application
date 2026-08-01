@@ -22,10 +22,10 @@ class BibleReaderAppBar extends ConsumerWidget implements PreferredSizeWidget {
       title: title,
       actions: [
         AppPopupMenu<BibleFontSize>(
-          tooltip: context.t('common.font_size', fallback: 'Font size'),
+          tooltip: context.t('common.font_size'),
           minWidth: 190,
-          trigger: const Text(
-            'aA',
+          trigger: Text(
+            context.t('ui.bible_reader_appbar.aa'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -36,19 +36,19 @@ class BibleReaderAppBar extends ConsumerWidget implements PreferredSizeWidget {
           },
           actions: [
             AppPopupMenuAction(
-              label: context.t('common.small', fallback: 'Small'),
+              label: context.t('common.small'),
               value: BibleFontSize.small,
               icon: Icons.text_decrease_rounded,
               selected: fontSize == BibleFontSize.small,
             ),
             AppPopupMenuAction(
-              label: context.t('common.medium', fallback: 'Medium'),
+              label: context.t('common.medium'),
               value: BibleFontSize.medium,
               icon: Icons.text_fields_rounded,
               selected: fontSize == BibleFontSize.medium,
             ),
             AppPopupMenuAction(
-              label: context.t('common.large', fallback: 'Large'),
+              label: context.t('common.large'),
               value: BibleFontSize.large,
               icon: Icons.text_increase_rounded,
               selected: fontSize == BibleFontSize.large,

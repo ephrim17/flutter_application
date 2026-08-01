@@ -58,6 +58,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
 
     try {
       await repository.updateDailyStreak(uid: user.uid);
+      if (!mounted) return;
       ref.invalidate(appUserProvider);
       ref.invalidate(getCurrentUserProvider);
     } catch (_) {
@@ -76,7 +77,9 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final user = await ref.read(getCurrentUserProvider.future);
+      if (!mounted) return;
       if (user != null) {
         await _syncDailyStreakIfNeeded(user);
       }
@@ -183,10 +186,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
           body: Builder(
             builder: (context) => Center(
               child: Text(
-                context.t(
-                  'app.bootstrap_failed',
-                  fallback: 'Bootstrap Launch failed',
-                ),
+                context.t('app.bootstrap_failed'),
               ),
             ),
           ),

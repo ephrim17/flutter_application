@@ -33,16 +33,17 @@ Future<bool?> showNotificationPermissionSheet(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const Text(
-              'Stay Updated 🔔',
+            Text(
+              context.t('ui.notification_reprompt.stay_updated'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Enable notifications to receive updates about approvals and church announcements.',
+            Text(
+              context.t(
+                  'ui.notification_reprompt.enable_notifications_to_receive_updates_about_approvals'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -54,10 +55,7 @@ Future<bool?> showNotificationPermissionSheet(
                       Navigator.pop(context, false);
                     },
                     child: Text(
-                      context.t(
-                        'notifications.not_now',
-                        fallback: 'Not now',
-                      ),
+                      context.t('notifications.not_now'),
                     ),
                   ),
                 ),
@@ -68,10 +66,7 @@ Future<bool?> showNotificationPermissionSheet(
                       Navigator.pop(context, true);
                     },
                     child: Text(
-                      context.t(
-                        'notifications.enable',
-                        fallback: 'Enable',
-                      ),
+                      context.t('notifications.enable'),
                     ),
                   ),
                 ),

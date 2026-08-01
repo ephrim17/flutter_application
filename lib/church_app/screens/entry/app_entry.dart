@@ -79,6 +79,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   Future<void> _checkOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     final completed = prefs.getBool('onboarding_completed') ?? false;
+    if (!mounted) return;
     setState(() {
       _showOnboarding = !completed;
     });
@@ -181,11 +182,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     if (appConfig?.superAdminDisabled == true) {
       _syncPreflowTheme(true);
       return AdminModeScreen(
-        messageOverride: ref.t(
-          'super_admin.disabled_message',
-          fallback:
-              'Your church is disabled temporarily. Please contact super admin.',
-        ),
+        messageOverride: ref.t('super_admin.disabled_message'),
       );
     }
     if (appConfig?.adminMode.enabled == true && !isChurchAdmin) {

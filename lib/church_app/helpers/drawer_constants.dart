@@ -5,7 +5,6 @@ import 'package:flutter_application/church_app/screens/side_drawer/bible_library
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/financial_dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/members_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/prayer_request_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
@@ -15,7 +14,7 @@ enum DrawerMenuItem {
   //events,
   studio,
   equipment,
-  financialDashboard,
+  // Financial dashboard is intentionally hidden until it is fine-tuned.
   churchGroups,
   prayerRequest,
   members,
@@ -26,30 +25,28 @@ enum DrawerMenuItem {
 }
 
 extension DrawerMenuItemX on DrawerMenuItem {
-  String get label {
+  String get labelKey {
     switch (this) {
       // case DrawerMenuItem.events:
       //   return 'Events';
       case DrawerMenuItem.studio:
-        return 'Studio';
+        return 'drawer.studio';
       case DrawerMenuItem.equipment:
-        return 'Equipment';
-      case DrawerMenuItem.financialDashboard:
-        return 'Financial Dashboard';
+        return 'drawer.equipment';
       case DrawerMenuItem.churchGroups:
-        return 'Church Groups';
+        return 'drawer.church_groups';
       case DrawerMenuItem.prayerRequest:
-        return 'Prayer Request';
+        return 'drawer.prayer_request';
       case DrawerMenuItem.about:
-        return 'About';
+        return 'drawer.about';
       case DrawerMenuItem.settings:
-        return 'Settings';
+        return 'drawer.settings';
       case DrawerMenuItem.favorites:
-        return 'Favorites';
+        return 'drawer.favorites';
       case DrawerMenuItem.members:
-        return 'Members';
+        return 'drawer.members';
       case DrawerMenuItem.holyBible:
-        return 'Holy Bible';
+        return 'drawer.holy_bible';
     }
   }
 
@@ -61,8 +58,6 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return Icons.design_services_outlined;
       case DrawerMenuItem.equipment:
         return Icons.inventory_2_outlined;
-      case DrawerMenuItem.financialDashboard:
-        return Icons.account_balance_wallet_outlined;
       case DrawerMenuItem.churchGroups:
         return Icons.groups_2_outlined;
       case DrawerMenuItem.prayerRequest:
@@ -88,8 +83,6 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return const StudioScreen();
       case DrawerMenuItem.equipment:
         return const EquipmentScreen();
-      case DrawerMenuItem.financialDashboard:
-        return const FinancialDashboardScreen();
       case DrawerMenuItem.churchGroups:
         return const ChurchGroupsScreen();
       case DrawerMenuItem.prayerRequest:
@@ -112,8 +105,6 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.studio:
       case DrawerMenuItem.equipment:
         return true;
-      case DrawerMenuItem.financialDashboard:
-        return false;
       case DrawerMenuItem.churchGroups:
         return false;
       case DrawerMenuItem.prayerRequest:
@@ -132,8 +123,6 @@ extension DrawerMenuItemX on DrawerMenuItem {
         return config.studioEnabled;
       case DrawerMenuItem.equipment:
         return config.equipmentEnabled;
-      case DrawerMenuItem.financialDashboard:
-        return config.financialDashboardEnabled;
       case DrawerMenuItem.members:
         return config.membersEnabled;
       case DrawerMenuItem.churchGroups:

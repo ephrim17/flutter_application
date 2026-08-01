@@ -20,7 +20,7 @@ class EventsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('events.title', fallback: 'Events'),
+          text: context.t('events.title'),
         ),
       ),
       body: Column(
@@ -30,8 +30,7 @@ class EventsScreen extends ConsumerWidget {
             child: asyncEvents.when(
               loading: () => const Center(child: AppLoadingIndicator()),
               error: (e, _) => Center(
-                child: Text(
-                    "${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+                child: Text("${context.t('common.error_prefix')}: $e"),
               ),
               data: (items) => EventsFullList(items),
             ),
@@ -52,7 +51,7 @@ class EventsFullList extends StatelessWidget {
     if (items.isEmpty) {
       return Center(
         child: Text(
-          context.t('events.none', fallback: 'No Events'),
+          context.t('events.none'),
         ),
       );
     }

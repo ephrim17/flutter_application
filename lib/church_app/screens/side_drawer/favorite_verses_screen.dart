@@ -9,7 +9,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FavoritesScreen extends ConsumerWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,20 +18,19 @@ class FavoritesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(
-          text: context.t('favorites.title', fallback: 'Favorites'),
+          text: context.t('favorites.title'),
         ),
       ),
       body: favoritesAsync.when(
         loading: () => const Center(child: AppLoadingIndicator()),
         error: (error, stack) => Center(
-          child: Text(
-              "${context.t('common.error_prefix', fallback: 'Error')}: $error"),
+          child: Text("${context.t('common.error_prefix')}: $error"),
         ),
         data: (verses) {
           if (verses.isEmpty) {
             return Center(
               child: Text(
-                context.t('favorites.none', fallback: 'No Favorites yet'),
+                context.t('favorites.none'),
                 style: TextStyle(fontSize: 16),
               ),
             );
@@ -56,19 +55,16 @@ class FavoritesScreen extends ConsumerWidget {
                   ),
                 ),
                 onDismissed: (_) async {
-                  await ref
-                      .read(favoritesProvider.notifier)
-                      .removeHighlight(verse);
+                  final notifier = ref.read(favoritesProvider.notifier);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final removedMessage = context.t('favorites.removed');
+                  await notifier.removeHighlight(verse);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!messenger.mounted) return;
+                  messenger.showSnackBar(
                     SnackBar(
-                      content: Text(
-                        context.t(
-                          'favorites.removed',
-                          fallback: 'Removed from favorites',
-                        ),
-                      ),
-                      duration: Duration(seconds: 2),
+                      content: Text(removedMessage),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
@@ -148,8 +144,7 @@ void showLanguageShareOptions(
             ListTile(
               //leading: const Icon(Icons.language),
               title: Text(
-                context.t('favorites.share_english',
-                    fallback: 'Share in English'),
+                context.t('favorites.share_english'),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -163,7 +158,7 @@ void showLanguageShareOptions(
             ListTile(
               //leading: const Icon(Icons.translate),
               title: Text(
-                context.t('favorites.share_tamil', fallback: 'Share in Tamil'),
+                context.t('favorites.share_tamil'),
               ),
               onTap: () {
                 _shareVerse(

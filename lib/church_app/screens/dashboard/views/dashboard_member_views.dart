@@ -3,9 +3,11 @@ part of 'package:flutter_application/church_app/screens/dashboard/dashboard_scre
 class _DashboardMemberInsightsSection extends ConsumerWidget {
   const _DashboardMemberInsightsSection({
     required this.state,
+    required this.members,
   });
 
   final DashboardViewState state;
+  final List<AppUser> members;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +26,7 @@ class _DashboardMemberInsightsSection extends ConsumerWidget {
           children: DashboardMemberChartMode.values
               .map(
                 (mode) => _DashboardModeChip(
-                  label: mode.label,
+                  label: context.t(mode.labelKey),
                   selected: state.selectedChartMode == mode,
                   onTap: () => ref
                       .read(dashboardViewModelProvider.notifier)
@@ -51,7 +53,7 @@ class _DashboardMemberInsightsSection extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  state.selectedChartMode.description,
+                  context.t(state.selectedChartMode.descriptionKey),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: onSurface.withValues(alpha: 0.76),
                         height: 1.35,
@@ -66,9 +68,26 @@ class _DashboardMemberInsightsSection extends ConsumerWidget {
                       group: group,
                       total: total,
                       selected: index == safeIndex,
-                      onTap: () => ref
-                          .read(dashboardViewModelProvider.notifier)
-                          .selectChartSegment(index),
+                      showsNavigation: state.selectedChartMode ==
+                          DashboardMemberChartMode.gender,
+                      onTap: () {
+                        ref
+                            .read(dashboardViewModelProvider.notifier)
+                            .selectChartSegment(index);
+                        if (state.selectedChartMode !=
+                            DashboardMemberChartMode.gender) {
+                          return;
+                        }
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => DashboardGenderMembersScreen(
+                              gender: group.label,
+                              color: group.color,
+                              members: members,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   );
                 }),
@@ -95,25 +114,26 @@ class _DashboardMemberInsightsSection extends ConsumerWidget {
             );
           },
         ),
-        const SizedBox(height: 18),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: selectedGroup == null
-              ? const _DashboardEmptyState(
-                  title: 'No member insights yet',
-                  subtitle:
-                      'As member profiles are completed, interactive insights will show up here.',
-                )
-              : _DashboardSelectedGroupDetails(
-                  key: ValueKey(
-                    '${state.selectedChartMode.name}-${selectedGroup.label}',
+        if (state.selectedChartMode != DashboardMemberChartMode.gender) ...[
+          const SizedBox(height: 18),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: selectedGroup == null
+                ? _DashboardEmptyState(
+                    title: context.t('dashboard.no_member_insights'),
+                    subtitle: context.t('dashboard.no_member_insights_hint'),
+                  )
+                : _DashboardSelectedGroupDetails(
+                    key: ValueKey(
+                      '${state.selectedChartMode.name}-${selectedGroup.label}',
+                    ),
+                    mode: state.selectedChartMode,
+                    group: selectedGroup,
+                    total: total,
+                    summary: state.memberMetrics,
                   ),
-                  mode: state.selectedChartMode,
-                  group: selectedGroup,
-                  total: total,
-                  summary: state.memberMetrics,
-                ),
-        ),
+          ),
+        ],
       ],
     );
   }
@@ -182,9 +202,9 @@ class _DashboardDonutChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     if (groups.isEmpty || total == 0) {
-      return const _DashboardEmptyState(
-        title: 'No chart data available',
-        subtitle: 'Member profile data is needed before this chart can render.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_chart_data'),
+        subtitle: context.t('dashboard.no_chart_data_hint'),
       );
     }
 
@@ -237,7 +257,7 @@ class _DashboardDonutChart extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Members',
+                context.t('dashboard.members'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: onSurface.withValues(alpha: 0.72),
                     ),
@@ -256,12 +276,14 @@ class _DashboardLegendTile extends StatelessWidget {
     required this.total,
     required this.selected,
     required this.onTap,
+    this.showsNavigation = false,
   });
 
   final DashboardMemberGroup group;
   final int total;
   final bool selected;
   final VoidCallback onTap;
+  final bool showsNavigation;
 
   @override
   Widget build(BuildContext context) {
@@ -317,6 +339,14 @@ class _DashboardLegendTile extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
             ),
+            if (showsNavigation) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: onSurface.withValues(alpha: 0.62),
+              ),
+            ],
           ],
         ),
       ),
@@ -413,24 +443,29 @@ class _DashboardSelectedGroupDetailsState
           ),
           const SizedBox(height: 8),
           Text(
-            '${widget.group.count} members in this ${widget.mode.label.toLowerCase()} segment',
+            context.t(
+              'dashboard.segment_member_count',
+              parameters: {
+                'count': widget.group.count,
+                'view': context.t(widget.mode.labelKey).toLowerCase(),
+              },
+            ),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: onSurface.withValues(alpha: 0.76),
                 ),
           ),
           const SizedBox(height: 14),
           if (widget.group.count == 0)
-            const _DashboardEmptyState(
-              title: 'No matching members',
-              subtitle:
-                  'Once profiles are updated, matching members will appear here.',
+            _DashboardEmptyState(
+              title: context.t('dashboard.no_matching_members'),
+              subtitle: context.t('dashboard.no_matching_members_hint'),
             )
           else if (showFamilyDrilldown)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Families',
+                  context.t('dashboard.families'),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: onSurface,
                         fontWeight: FontWeight.w900,
@@ -442,7 +477,10 @@ class _DashboardSelectedGroupDetailsState
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _DashboardStatRow(
                       label: family.label,
-                      value: '${family.count} members',
+                      value: context.t(
+                        'dashboard.family_member_count',
+                        parameters: {'count': family.count},
+                      ),
                       selected: family.id == _selectedFamilyId,
                       onTap: () {
                         setState(() {
@@ -456,9 +494,13 @@ class _DashboardSelectedGroupDetailsState
                 if (families.length > topFamilies.length) ...[
                   const SizedBox(height: 2),
                   _DashboardStatRow(
-                    label:
-                        '+ ${families.length - topFamilies.length} more families',
-                    value: 'View all',
+                    label: context.t(
+                      'dashboard.more_families',
+                      parameters: {
+                        'count': families.length - topFamilies.length,
+                      },
+                    ),
+                    value: context.t('dashboard.view_all'),
                     onTap: () async {
                       final selected = await _showFamilyDirectorySheet(
                         context,
@@ -474,7 +516,10 @@ class _DashboardSelectedGroupDetailsState
                 if (selectedFamily != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Members in ${selectedFamily.label}',
+                    context.t(
+                      'dashboard.members_in_family',
+                      parameters: {'family': selectedFamily.label},
+                    ),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: onSurface,
                           fontWeight: FontWeight.w900,
@@ -493,17 +538,17 @@ class _DashboardSelectedGroupDetailsState
                             child: AppLoadingIndicator(size: 72),
                           ),
                         ),
-                        error: (_, __) => const _DashboardEmptyState(
-                          title: 'Unable to load family members',
+                        error: (_, __) => _DashboardEmptyState(
+                          title: context.t('dashboard.family_load_failed'),
                           subtitle:
-                              'Try refreshing the dashboard to load this family again.',
+                              context.t('dashboard.family_load_failed_hint'),
                         ),
                         data: (familyMembers) {
                           if (familyMembers.isEmpty) {
-                            return const _DashboardEmptyState(
-                              title: 'No family members found',
+                            return _DashboardEmptyState(
+                              title: context.t('dashboard.no_family_members'),
                               subtitle:
-                                  'No members are currently linked to this family.',
+                                  context.t('dashboard.no_family_members_hint'),
                             );
                           }
                           return Column(
@@ -513,10 +558,12 @@ class _DashboardSelectedGroupDetailsState
                                     padding: const EdgeInsets.only(bottom: 10),
                                     child: _DashboardStatRow(
                                       label: member.name.trim().isEmpty
-                                          ? 'Member'
+                                          ? context.t(
+                                              'dashboard.member_fallback',
+                                            )
                                           : member.name,
                                       value: member.maritalStatus.trim().isEmpty
-                                          ? 'Family member'
+                                          ? context.t('common.not_provided')
                                           : formatDashboardCategory(
                                               member.maritalStatus,
                                             ),
@@ -537,10 +584,11 @@ class _DashboardSelectedGroupDetailsState
                   (member) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _DashboardStatRow(
-                      label:
-                          member.name.trim().isEmpty ? 'Member' : member.name,
+                      label: member.name.trim().isEmpty
+                          ? context.t('dashboard.member_fallback')
+                          : member.name,
                       value: member.secondary.trim().isEmpty
-                          ? 'Member'
+                          ? context.t('dashboard.member_fallback')
                           : member.secondary,
                     ),
                   ),
@@ -582,7 +630,7 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'All Families',
+                    context.t('dashboard.all_families'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
@@ -595,18 +643,22 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
                         query = value;
                       });
                     },
-                    decoration: const InputDecoration(
-                      hintText: 'Search families',
-                      prefixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      hintText: context.t('dashboard.search_families'),
+                      prefixIcon: const Icon(Icons.search),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Flexible(
                     child: filteredFamilies.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Text('No families match this search.'),
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                context.t(
+                                  'dashboard.no_family_search_results',
+                                ),
+                              ),
                             ),
                           )
                         : ListView.separated(
@@ -618,7 +670,10 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
                               final family = filteredFamilies[index];
                               return _DashboardStatRow(
                                 label: family.label,
-                                value: '${family.count} members',
+                                value: context.t(
+                                  'dashboard.family_member_count',
+                                  parameters: {'count': family.count},
+                                ),
                                 onTap: () => Navigator.of(context).pop(family),
                               );
                             },

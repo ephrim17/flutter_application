@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 
 class PraiseTheLordCard extends StatefulWidget {
@@ -89,7 +90,7 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Praise \nThe Lord",
+                        context.t('ui.praisethelord_card.praise_the_lord'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 64,
@@ -98,9 +99,7 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                           color: titleColor,
                         ),
                       ),
-
                       const SizedBox(height: 36),
-
                       SizedBox(
                         width: double.infinity,
                         child: RichText(
@@ -111,7 +110,9 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                               color: subtitleColor,
                             ),
                             children: [
-                              const TextSpan(text: "Developed with "),
+                              TextSpan(
+                                text: context.t('about.developed_with'),
+                              ),
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: ScaleTransition(
@@ -123,7 +124,9 @@ class _PraiseTheLordCardState extends State<PraiseTheLordCard>
                                   ),
                                 ),
                               ),
-                              const TextSpan(text: " from Trivandrum, India"),
+                              TextSpan(
+                                text: context.t('about.developer_location'),
+                              ),
                             ],
                           ),
                           softWrap: true,

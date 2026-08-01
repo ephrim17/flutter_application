@@ -15,10 +15,9 @@ class ColorText extends StatelessWidget {
     return Text(
       badgeText,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        fontSize: fontSize,
-        fontWeight: FontWeight.bold,
-        color: Theme.of(context).colorScheme.primary
-      ),
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary),
     );
   }
 }

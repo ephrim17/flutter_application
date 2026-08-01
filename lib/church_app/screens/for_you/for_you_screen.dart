@@ -69,8 +69,7 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
     return sectionConfigsAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (e, _) => Center(
-        child:
-            Text("${context.t('common.error_prefix', fallback: 'Error')}: $e"),
+        child: Text("${context.t('common.error_prefix')}: $e"),
       ),
       data: (configs) {
         WidgetsBinding.instance.addPostFrameCallback(

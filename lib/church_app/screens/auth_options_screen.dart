@@ -59,7 +59,7 @@ class AuthOptionsScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: SolidButton(
-                    label: context.t('auth.login', fallback: 'Login'),
+                    label: context.t('auth.login'),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -78,10 +78,7 @@ class AuthOptionsScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: SolidButton(
-                    label: context.t(
-                      'auth.request_access',
-                      fallback: 'Request Access',
-                    ),
+                    label: context.t('auth.request_access'),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -112,8 +109,7 @@ class AuthOptionsScreen extends StatelessWidget {
                       );
                     },
                     child: Text(
-                      context.t('auth.forgot_password',
-                          fallback: 'Forgot Password ?'),
+                      context.t('auth.forgot_password'),
                     ),
                   ),
                 )

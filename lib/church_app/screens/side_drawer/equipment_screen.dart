@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -13,6 +14,15 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+
+String _equipmentItemCountText(BuildContext context, int count) {
+  return context.t(
+    count == 1
+        ? 'equipment.item_count_singular'
+        : 'equipment.item_count_plural',
+    parameters: {'count': '$count'},
+  );
+}
 
 class EquipmentScreen extends ConsumerStatefulWidget {
   const EquipmentScreen({super.key});
@@ -40,7 +50,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     if (!equipmentState.isAdmin) {
       return Scaffold(
         appBar: AppBar(
-          title: const AppBarTitle(text: 'Equipment'),
+          title: AppBarTitle(text: context.t('equipment.title')),
         ),
         body: Center(
           child: Container(
@@ -48,7 +58,8 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
             padding: const EdgeInsets.all(24),
             decoration: carouselBoxDecoration(context),
             child: Text(
-              'Equipment management is available only for admins.',
+              context.t(
+                  'ui.equipment.equipment_management_is_available_only_for_admins'),
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -59,7 +70,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppBarTitle(text: 'Equipment'),
+        title: AppBarTitle(text: context.t('equipment.title')),
       ),
       body: Stack(
         children: [
@@ -86,14 +97,15 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                     childAspectRatio: 1.5,
                     children: [
                       _EquipmentSummaryCard(
-                        title: 'Total Equipment',
+                        title: context.t('ui.equipment.total_equipment'),
                         value: equipmentState.totalCount.toString(),
                         icon: Icons.inventory_2_outlined,
                         colors: const [Color(0xFF5C9EFF), Color(0xFF4A6BFF)],
                         onTap: () => _showSummaryDetails(
                           context,
-                          title: 'All Equipment',
-                          subtitle: 'Every equipment item currently tracked.',
+                          title: context.t('ui.equipment.all_equipment'),
+                          subtitle: context.t(
+                              'ui.equipment.every_equipment_item_currently_tracked'),
                           entries: equipmentState.items
                               .map(
                                 (item) => _SummaryDetailEntry(
@@ -106,57 +118,73 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                         ),
                       ),
                       _EquipmentSummaryCard(
-                        title: 'Categories',
+                        title: context.t('ui.equipment.categories'),
                         value: '${equipmentState.categoryCount}',
                         icon: Icons.category_outlined,
                         colors: const [Color(0xFF3AC79B), Color(0xFF18A86A)],
                         onTap: () => _showSummaryDetails(
                           context,
-                          title: 'Equipment Categories',
-                          subtitle: 'How your church equipment is grouped.',
+                          title: context.t('ui.equipment.equipment_categories'),
+                          subtitle: context.t(
+                              'ui.equipment.how_your_church_equipment_is_grouped'),
                           entries: equipmentState.categories
                               .where((category) => category != 'All')
                               .map(
                                 (category) => _SummaryDetailEntry(
                                   title: category,
-                                  subtitle:
-                                      '${equipmentState.items.where((item) => item.category == category).length} item${equipmentState.items.where((item) => item.category == category).length == 1 ? '' : 's'}',
+                                  subtitle: _equipmentItemCountText(
+                                    context,
+                                    equipmentState.items
+                                        .where(
+                                          (item) => item.category == category,
+                                        )
+                                        .length,
+                                  ),
                                 ),
                               )
                               .toList(growable: false),
                         ),
                       ),
                       _EquipmentSummaryCard(
-                        title: 'Locations',
+                        title: context.t('ui.equipment.locations'),
                         value: '${equipmentState.locationCount}',
                         icon: Icons.place_outlined,
                         colors: const [Color(0xFF8E7CFF), Color(0xFF6E54F6)],
                         onTap: () => _showSummaryDetails(
                           context,
-                          title: 'Equipment Locations',
-                          subtitle: 'Where each item is currently kept.',
+                          title: context.t('ui.equipment.equipment_locations'),
+                          subtitle: context.t(
+                              'ui.equipment.where_each_item_is_currently_kept'),
                           entries: equipmentState.items
                               .map((item) => item.location)
                               .toSet()
                               .map(
                                 (location) => _SummaryDetailEntry(
                                   title: location,
-                                  subtitle:
-                                      '${equipmentState.items.where((item) => item.location == location).length} item${equipmentState.items.where((item) => item.location == location).length == 1 ? '' : 's'}',
+                                  subtitle: _equipmentItemCountText(
+                                    context,
+                                    equipmentState.items
+                                        .where(
+                                          (item) => item.location == location,
+                                        )
+                                        .length,
+                                  ),
                                 ),
                               )
                               .toList(growable: false),
                         ),
                       ),
                       _EquipmentSummaryCard(
-                        title: 'Recent Additions',
+                        title: context.t('ui.equipment.recent_additions'),
                         value: '${equipmentState.recentCount}',
                         icon: Icons.auto_awesome_outlined,
                         colors: const [Color(0xFFFFA16B), Color(0xFFF47C48)],
                         onTap: () => _showSummaryDetails(
                           context,
-                          title: 'Recent Additions',
-                          subtitle: 'Items added in the last 45 days.',
+                          title:
+                              context.t('ui.equipment.recent_additions_7a89'),
+                          subtitle: context.t(
+                              'ui.equipment.items_added_in_the_last_45_days'),
                           entries: equipmentState.items
                               .where(
                                 (item) =>
@@ -197,7 +225,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Find Equipment',
+                                context.t('ui.equipment.find_equipment'),
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -215,7 +243,13 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  '${equipmentState.activeFilterCount} active',
+                                  context.t(
+                                    'equipment.active_filter_count',
+                                    parameters: {
+                                      'count':
+                                          '${equipmentState.activeFilterCount}',
+                                    },
+                                  ),
                                   style: theme.textTheme.labelLarge?.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w800,
@@ -230,8 +264,8 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                           controller: _searchController,
                           onChanged: equipmentViewModel.setQuery,
                           decoration: InputDecoration(
-                            hintText:
-                                'Search by item name, category, location, or notes...',
+                            hintText: context.t(
+                                'ui.equipment.search_by_item_name_category_location_or_notes'),
                             prefixIcon: Padding(
                               padding:
                                   const EdgeInsets.only(left: 10, right: 6),
@@ -282,7 +316,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                           children: [
                             Expanded(
                               child: AppDropdownField<String>(
-                                labelText: 'Category',
+                                labelText: context.t('ui.equipment.category'),
                                 initialValue: equipmentState.selectedCategory,
                                 items: equipmentState.categories
                                     .map(
@@ -301,7 +335,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: AppDropdownField<String>(
-                                labelText: 'Health',
+                                labelText: context.t('ui.equipment.health'),
                                 initialValue: equipmentState.selectedCondition,
                                 items: equipmentState.conditions
                                     .map(
@@ -324,14 +358,16 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                           children: [
                             Expanded(
                               child: AppDropdownField<EquipmentSortOption>(
-                                labelText: 'Sort by',
+                                labelText: context.t('ui.equipment.sort_by'),
                                 initialValue: equipmentState.sortOption,
                                 items: EquipmentSortOption.values
                                     .map(
                                       (option) =>
                                           DropdownMenuItem<EquipmentSortOption>(
                                         value: option,
-                                        child: Text(_sortOptionLabel(option)),
+                                        child: Text(
+                                          context.t(_sortOptionTextKey(option)),
+                                        ),
                                       ),
                                     )
                                     .toList(growable: false),
@@ -361,14 +397,22 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Equipment List',
+                                context.t('ui.equipment.equipment_list'),
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${equipmentState.visibleItems.length} item${equipmentState.visibleItems.length == 1 ? '' : 's'} showing',
+                                context.t(
+                                  equipmentState.visibleItems.length == 1
+                                      ? 'equipment.item_showing_singular'
+                                      : 'equipment.item_showing_plural',
+                                  parameters: {
+                                    'count':
+                                        '${equipmentState.visibleItems.length}',
+                                  },
+                                ),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurface
                                       .withValues(alpha: 0.68),
@@ -382,7 +426,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                               ? null
                               : () => _showAddEquipmentSheet(context),
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('Add'),
+                          label: Text(context.t('ui.equipment.add')),
                         ),
                       ],
                     ),
@@ -398,11 +442,12 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                   equipmentState.items.isEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                  sliver: const SliverToBoxAdapter(
+                  sliver: SliverToBoxAdapter(
                     child: _EquipmentEmptyState(
                       query: '',
                       category: 'All',
-                      message: 'Unable to load equipment right now.',
+                      message: context
+                          .t('ui.equipment.unable_to_load_equipment_right_now'),
                     ),
                   ),
                 )
@@ -462,7 +507,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'Saving equipment...',
+                            context.t('ui.equipment.saving_equipment'),
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -492,14 +537,22 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save equipment: $error')),
+        SnackBar(
+          content: Text(
+            context.t('equipment.save_failed', parameters: {'error': '$error'}),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     _searchController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${form.name} added to equipment.')),
+      SnackBar(
+        content: Text(
+          context.t('equipment.added', parameters: {'name': form.name}),
+        ),
+      ),
     );
   }
 
@@ -527,28 +580,32 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _EquipmentDetailRow(label: 'Category', value: item.category),
                   _EquipmentDetailRow(
-                    label: 'Condition',
+                      label: context.t('ui.equipment.category'),
+                      value: item.category),
+                  _EquipmentDetailRow(
+                    label: context.t('ui.equipment.condition'),
                     value: item.condition,
                   ),
-                  _EquipmentDetailRow(label: 'Location', value: item.location),
                   _EquipmentDetailRow(
-                    label: 'Purchased',
+                      label: context.t('ui.equipment.location'),
+                      value: item.location),
+                  _EquipmentDetailRow(
+                    label: context.t('ui.equipment.purchased'),
                     value: _equipmentDateLabel(item.purchaseDate),
                   ),
                   _EquipmentDetailRow(
-                    label: 'Amount',
+                    label: context.t('ui.equipment.amount'),
                     value: _amountLabel(item.amount),
                   ),
                   _EquipmentDetailRow(
-                    label: 'Description',
+                    label: context.t('ui.equipment.description'),
                     value: item.description,
                   ),
                   _EquipmentDetailRow(
-                    label: 'Bill',
+                    label: context.t('ui.equipment.bill'),
                     value: item.billFileName.trim().isEmpty
-                        ? 'Not added'
+                        ? context.t('equipment.not_added')
                         : item.billFileName,
                   ),
                   const SizedBox(height: 8),
@@ -559,7 +616,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                           child: FilledButton.tonalIcon(
                             onPressed: () => _showBillPreview(context, item),
                             icon: const Icon(Icons.receipt_long_outlined),
-                            label: const Text('View bill'),
+                            label: Text(context.t('ui.equipment.view_bill')),
                           ),
                         ),
                       if (item.billUrl.trim().isNotEmpty)
@@ -571,7 +628,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                             await _showEditEquipmentSheet(context, item);
                           },
                           icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Edit'),
+                          label: Text(context.t('ui.equipment.edit')),
                         ),
                       ),
                     ],
@@ -585,7 +642,7 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                         await _deleteEquipment(context, item);
                       },
                       icon: const Icon(Icons.delete_outline_rounded),
-                      label: const Text('Delete equipment'),
+                      label: Text(context.t('ui.equipment.delete_equipment')),
                     ),
                   ),
                 ],
@@ -613,13 +670,22 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to update equipment: $error')),
+        SnackBar(
+          content: Text(
+            context
+                .t('equipment.update_failed', parameters: {'error': '$error'}),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${form.name} updated.')),
+      SnackBar(
+        content: Text(
+          context.t('equipment.updated', parameters: {'name': form.name}),
+        ),
+      ),
     );
   }
 
@@ -628,16 +694,19 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete equipment?'),
-        content: Text('This will remove ${item.name} and its stored bill.'),
+        title: Text(context.t('ui.equipment.delete_equipment_2c00')),
+        content: Text(
+          context
+              .t('equipment.delete_message', parameters: {'name': item.name}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.t('ui.equipment.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.t('ui.equipment.delete')),
           ),
         ],
       ),
@@ -649,13 +718,22 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to delete equipment: $error')),
+        SnackBar(
+          content: Text(
+            context
+                .t('equipment.delete_failed', parameters: {'error': '$error'}),
+          ),
+        ),
       );
       return;
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item.name} deleted.')),
+      SnackBar(
+        content: Text(
+          context.t('equipment.deleted', parameters: {'name': item.name}),
+        ),
+      ),
     );
   }
 
@@ -711,7 +789,8 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: carouselBoxDecoration(context),
-                    child: const Text('No details available yet.'),
+                    child: Text(
+                        context.t('ui.equipment.no_details_available_yet')),
                   )
                 else
                   Flexible(
@@ -819,15 +898,15 @@ class _BillPreviewSheet extends StatelessWidget {
                               if (progress == null) return child;
                               return const Center(child: AppLoadingIndicator());
                             },
-                            errorBuilder: (_, __, ___) =>
-                                const _BillPreviewFallback(
-                              message: 'Unable to preview this bill right now.',
+                            errorBuilder: (_, __, ___) => _BillPreviewFallback(
+                              message: context.t(
+                                  'ui.equipment.unable_to_preview_this_bill_right_now'),
                             ),
                           ),
                         )
-                      : const _BillPreviewFallback(
-                          message:
-                              'This bill cannot be previewed here, but you can still share it.',
+                      : _BillPreviewFallback(
+                          message: context.t(
+                              'ui.equipment.this_bill_cannot_be_previewed_here_but_you_can_still'),
                         ),
                 ),
               ),
@@ -840,7 +919,7 @@ class _BillPreviewSheet extends StatelessWidget {
                     subject: billName,
                   ),
                   icon: const Icon(Icons.ios_share_rounded),
-                  label: const Text('Share bill'),
+                  label: Text(context.t('ui.equipment.share_bill')),
                 ),
               ),
             ],
@@ -910,13 +989,13 @@ class _EquipmentHeroCard extends StatelessWidget {
             children: [
               _HeroPill(
                 icon: Icons.inventory_2_outlined,
-                label: 'Equipment Dashboard',
+                label: context.t('ui.equipment.equipment_dashboard'),
                 background: Colors.white.withValues(alpha: 0.14),
                 foreground: onPrimary,
               ),
               _HeroPill(
                 icon: Icons.admin_panel_settings_outlined,
-                label: 'Admin only',
+                label: context.t('ui.equipment.admin_only'),
                 background: Colors.white.withValues(alpha: 0.14),
                 foreground: onPrimary,
               ),
@@ -933,7 +1012,8 @@ class _EquipmentHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Track microphones, screens, instruments, media gear, furniture, and other church assets in one clean place.',
+            context.t(
+                'ui.equipment.track_microphones_screens_instruments_media_gear_furnit'),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: onPrimary.withValues(alpha: 0.88),
               height: 1.35,
@@ -1256,7 +1336,7 @@ class _EquipmentEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No equipment found',
+            context.t('ui.equipment.no_equipment_found'),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -1394,17 +1474,17 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               const SizedBox(height: 18),
               AppTextField(
                 controller: _nameController,
-                label: 'Equipment name',
+                label: context.t('ui.equipment.equipment_name'),
                 validator: (value) {
                   if ((value ?? '').trim().isEmpty) {
-                    return 'Enter the equipment name';
+                    return context.t('equipment.name_required');
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 14),
               AppDropdownField<String>(
-                labelText: 'Category',
+                labelText: context.t('ui.equipment.category'),
                 initialValue: _category,
                 items: _equipmentCategories
                     .map(
@@ -1423,7 +1503,7 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               ),
               const SizedBox(height: 14),
               AppDropdownField<String>(
-                labelText: 'Condition',
+                labelText: context.t('ui.equipment.condition'),
                 initialValue: _condition,
                 items: _equipmentConditions
                     .map(
@@ -1443,10 +1523,10 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               const SizedBox(height: 14),
               AppTextField(
                 controller: _locationController,
-                label: 'Location',
+                label: context.t('ui.equipment.location_d219'),
                 validator: (value) {
                   if ((value ?? '').trim().isEmpty) {
-                    return 'Enter the location';
+                    return context.t('equipment.location_required');
                   }
                   return null;
                 },
@@ -1454,7 +1534,7 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               const SizedBox(height: 14),
               AppTextField(
                 controller: _dateController,
-                label: 'Purchase date',
+                label: context.t('ui.equipment.purchase_date'),
                 readOnly: true,
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
                 onTap: _pickDate,
@@ -1462,7 +1542,7 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               const SizedBox(height: 14),
               AppTextField(
                 controller: _amountController,
-                label: 'Amount',
+                label: context.t('ui.equipment.amount_43dc'),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -1471,10 +1551,10 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
                 ],
                 validator: (value) {
                   if ((value ?? '').trim().isEmpty) {
-                    return 'Enter the amount';
+                    return context.t('equipment.amount_required');
                   }
                   if (InputValidators.parsePositiveAmount(value!) == null) {
-                    return 'Enter a valid amount';
+                    return context.t('equipment.amount_invalid');
                   }
                   return null;
                 },
@@ -1482,7 +1562,7 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
               const SizedBox(height: 14),
               AppTextField(
                 controller: _descriptionController,
-                label: 'Description',
+                label: context.t('ui.equipment.description_55f8'),
                 maxLines: 4,
                 minLines: 4,
               ),
@@ -1495,20 +1575,30 @@ class _AddEquipmentSheetState extends State<_AddEquipmentSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bill',
+                      context.t('ui.equipment.bill'),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                     ),
                     const SizedBox(height: 10),
                     if (_billImage != null)
-                      Text('Selected: ${_billImage!.name}')
+                      Text(
+                        context.t(
+                          'equipment.selected_bill',
+                          parameters: {'name': _billImage!.name},
+                        ),
+                      )
                     else if ((existingItem?.billFileName ?? '')
                         .trim()
                         .isNotEmpty)
-                      Text('Current: ${existingItem!.billFileName}')
+                      Text(
+                        context.t(
+                          'equipment.current_bill',
+                          parameters: {'name': existingItem!.billFileName},
+                        ),
+                      )
                     else
-                      const Text('No bill added yet.'),
+                      Text(context.t('ui.equipment.no_bill_added_yet')),
                     const SizedBox(height: 12),
                     FilledButton.tonalIcon(
                       onPressed: _pickBill,
@@ -1670,16 +1760,16 @@ bool _isImageBill(String fileName, String billUrl) {
       source.contains('.gif');
 }
 
-String _sortOptionLabel(EquipmentSortOption option) {
+String _sortOptionTextKey(EquipmentSortOption option) {
   switch (option) {
     case EquipmentSortOption.newestFirst:
-      return 'Newest first';
+      return 'common.sort_newest_first';
     case EquipmentSortOption.oldestFirst:
-      return 'Oldest first';
+      return 'common.sort_oldest_first';
     case EquipmentSortOption.nameAscending:
-      return 'Name A-Z';
+      return 'common.sort_name_ascending';
     case EquipmentSortOption.categoryAscending:
-      return 'Category';
+      return 'common.category';
   }
 }
 

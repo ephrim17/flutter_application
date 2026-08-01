@@ -47,7 +47,7 @@ class _DashboardHeroSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Admin Dashboard',
+                      context.t('dashboard.admin_title'),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: onPrimary.withValues(alpha: 0.96),
                         fontWeight: FontWeight.w800,
@@ -56,29 +56,13 @@ class _DashboardHeroSection extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Text(
-                  isLoading ? 'Refreshing...' : 'Live church snapshot',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: onPrimary.withValues(alpha: 0.96),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 18),
           Text(
-            churchTitle.trim().isEmpty ? 'Church' : churchTitle,
+            churchTitle.trim().isEmpty
+                ? context.t('dashboard.church_fallback')
+                : churchTitle,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: onPrimary,
               fontWeight: FontWeight.w900,
@@ -87,7 +71,7 @@ class _DashboardHeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'A fast pulse on members, prayers, leaders, and the activity shaping church life this week.',
+            context.t('dashboard.hero_subtitle'),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: secondaryText,
               height: 1.35,
@@ -100,19 +84,31 @@ class _DashboardHeroSection extends StatelessWidget {
             children: [
               _DashboardHeroChip(
                 icon: Icons.groups_2_outlined,
-                label: '${metrics.approvedMembers} approved',
+                label: context.t(
+                  'dashboard.approved_count',
+                  parameters: {'count': metrics.approvedMembers},
+                ),
               ),
               _DashboardHeroChip(
                 icon: Icons.favorite_border_rounded,
-                label: '${metrics.prayerCount} active prayers',
+                label: context.t(
+                  'dashboard.active_prayers_count',
+                  parameters: {'count': metrics.prayerCount},
+                ),
               ),
               _DashboardHeroChip(
                 icon: Icons.campaign_outlined,
-                label: '${metrics.announcementCount} announcements',
+                label: context.t(
+                  'dashboard.announcements_count',
+                  parameters: {'count': metrics.announcementCount},
+                ),
               ),
               _DashboardHeroChip(
                 icon: Icons.event_available_outlined,
-                label: '${metrics.eventCount} events',
+                label: context.t(
+                  'dashboard.events_count',
+                  parameters: {'count': metrics.eventCount},
+                ),
               ),
             ],
           ),
@@ -218,10 +214,9 @@ class _DashboardSpecialDaysSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (birthdays.isEmpty && anniversaries.isEmpty) {
-      return const _DashboardEmptyState(
-        title: 'No special days today',
-        subtitle:
-            'Today’s member birthdays and wedding anniversaries will appear here.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_special_days'),
+        subtitle: context.t('dashboard.no_special_days_hint'),
       );
     }
 
@@ -230,27 +225,30 @@ class _DashboardSpecialDaysSection extends StatelessWidget {
       children: [
         if (birthdays.isNotEmpty) ...[
           _DashboardSpecialDayHeading(
-            title: 'Birthdays',
+            title: context.t('dashboard.birthdays'),
             count: birthdays.length,
           ),
           for (final member in birthdays)
             _DashboardSpecialDayTile(
               member: member,
               type: SpecialPostType.birthday,
-              subtitle: _birthdayDashboardLabel(member.dob),
+              subtitle: _birthdayDashboardLabel(context, member.dob),
             ),
         ],
         if (anniversaries.isNotEmpty) ...[
           if (birthdays.isNotEmpty) const SizedBox(height: 8),
           _DashboardSpecialDayHeading(
-            title: 'Wedding Anniversaries',
+            title: context.t('dashboard.wedding_anniversaries'),
             count: anniversaries.length,
           ),
           for (final member in anniversaries)
             _DashboardSpecialDayTile(
               member: member,
               type: SpecialPostType.anniversary,
-              subtitle: _anniversaryDashboardLabel(member.weddingDay),
+              subtitle: _anniversaryDashboardLabel(
+                context,
+                member.weddingDay,
+              ),
             ),
         ],
       ],
@@ -333,12 +331,15 @@ class _DashboardSpecialDayTile extends StatelessWidget {
   }
 }
 
-String _birthdayDashboardLabel(DateTime? dob) {
+String _birthdayDashboardLabel(BuildContext context, DateTime? dob) {
   final age = _dashboardBirthdayAge(dob);
   if (age == null) {
-    return 'Birthday today';
+    return context.t('dashboard.birthday_today');
   }
-  return 'Turning $age today';
+  return context.t(
+    'dashboard.turning_age_today',
+    parameters: {'age': age},
+  );
 }
 
 int? _dashboardBirthdayAge(DateTime? dob) {
@@ -347,10 +348,21 @@ int? _dashboardBirthdayAge(DateTime? dob) {
   return now.year - dob.year;
 }
 
-String _anniversaryDashboardLabel(DateTime? weddingDay) {
+String _anniversaryDashboardLabel(
+  BuildContext context,
+  DateTime? weddingDay,
+) {
   final years = _dashboardBirthdayAge(weddingDay);
-  if (years == null) return 'Wedding anniversary today';
-  return 'Celebrating $years ${years == 1 ? 'year' : 'years'} today';
+  if (years == null) return context.t('dashboard.anniversary_today');
+  return context.t(
+    'dashboard.anniversary_years_today',
+    parameters: {
+      'years': years,
+      'unit': context.t(
+        years == 1 ? 'dashboard.year_singular' : 'dashboard.year_plural',
+      ),
+    },
+  );
 }
 
 class _DashboardMemberJoinHistory extends StatelessWidget {
@@ -363,35 +375,36 @@ class _DashboardMemberJoinHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (summary.memberCount == 0 || summary.firstRecordedAt == null) {
-      return const _DashboardEmptyState(
-        title: 'No membership history yet',
-        subtitle:
-            'Once member records include join dates, growth insights will appear here.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_membership_history'),
+        subtitle: context.t('dashboard.no_membership_history_hint'),
       );
     }
 
     return Column(
       children: [
         _DashboardSignalTile(
-          title: 'Records began',
+          title: context.t('dashboard.records_began'),
           value: _dateLabelVerbose(summary.firstRecordedAt!),
           tone: _SignalTone.healthy,
-          caption:
-              '${summary.memberCount} members have been recorded since this date.',
+          caption: context.t(
+            'dashboard.members_recorded_since',
+            parameters: {'count': summary.memberCount},
+          ),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _DashboardMiniMetricTile(
-                label: 'Last 30 days',
+                label: context.t('dashboard.last_30_days'),
                 value: summary.recentJoinCount30d.toString(),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _DashboardMiniMetricTile(
-                label: 'Last 90 days',
+                label: context.t('dashboard.last_90_days'),
                 value: summary.recentJoinCount90d.toString(),
               ),
             ),
@@ -399,8 +412,11 @@ class _DashboardMemberJoinHistory extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _DashboardStatRow(
-          label: 'Joined this year',
-          value: '${summary.joinedThisYear} members',
+          label: context.t('dashboard.joined_this_year'),
+          value: context.t(
+            'dashboard.members_count',
+            parameters: {'count': summary.joinedThisYear},
+          ),
         ),
       ],
     );
@@ -418,40 +434,17 @@ class _DashboardRecentChangesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final latestMembers = recentMembers.take(3).toList(growable: false);
-
     return Column(
       children: [
         _DashboardSignalTile(
-          title: 'Recent joins this week',
+          title: context.t('dashboard.recent_joins_week'),
           value: recentJoinCount.toString(),
           tone:
               recentJoinCount == 0 ? _SignalTone.warning : _SignalTone.healthy,
           caption: recentJoinCount == 0
-              ? 'No newly added members in the last 7 days.'
-              : 'Fresh movement is happening in the church directory.',
+              ? context.t('dashboard.no_recent_joins')
+              : context.t('dashboard.recent_joins_active'),
         ),
-        if (latestMembers.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          ...List.generate(latestMembers.length, (index) {
-            final member = latestMembers[index];
-            return Padding(
-              padding: EdgeInsets.only(
-                  bottom: index == latestMembers.length - 1 ? 0 : 12),
-              child: _DashboardStatRow(
-                label:
-                    'Member ${index + 1}: ${member.name.trim().isEmpty ? 'Member' : member.name}',
-                value: member.approved ? 'Approved' : 'Pending',
-              ),
-            );
-          }),
-        ] else ...[
-          const SizedBox(height: 12),
-          const _DashboardStatRow(
-            label: 'Recent members',
-            value: 'No change',
-          ),
-        ],
       ],
     );
   }
@@ -469,31 +462,31 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
     return Column(
       children: [
         _DashboardSignalTile(
-          title: 'Pending approvals',
+          title: context.t('dashboard.pending_approvals'),
           value: state.memberMetrics.pendingApprovals.toString(),
           tone: state.memberMetrics.pendingApprovals == 0
               ? _SignalTone.healthy
               : _SignalTone.attention,
           caption: state.memberMetrics.pendingApprovals == 0
-              ? 'No one is waiting for review.'
-              : 'Members are waiting for an admin decision.',
+              ? context.t('dashboard.no_pending_approvals')
+              : context.t('dashboard.pending_approvals_hint'),
         ),
         const SizedBox(height: 12),
         _DashboardSignalTile(
-          title: 'Prayers expiring this week',
+          title: context.t('dashboard.prayers_expiring_week'),
           value: state.expiringPrayers.length.toString(),
           tone: state.expiringPrayers.isEmpty
               ? _SignalTone.healthy
               : _SignalTone.attention,
           caption: state.expiringPrayers.isEmpty
-              ? 'Nothing urgent is about to expire.'
-              : 'Prayer follow-up may be needed soon.',
+              ? context.t('dashboard.no_expiring_prayers')
+              : context.t('dashboard.expiring_prayers_hint'),
         ),
         const SizedBox(height: 18),
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'What Changed Recently',
+            context.t('dashboard.changed_recently'),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -519,48 +512,70 @@ class _DashboardMemberStreakPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (summary.memberCount == 0) {
-      return const _DashboardEmptyState(
-        title: 'No streak data yet',
-        subtitle:
-            'As members begin using the app, daily streak insights will show here.',
+      return _DashboardEmptyState(
+        title: context.t('dashboard.no_streak_data'),
+        subtitle: context.t('dashboard.no_streak_data_hint'),
       );
     }
 
     return Column(
       children: [
         _DashboardSignalTile(
-          title: 'Members on a streak',
+          title: context.t('dashboard.members_on_streak'),
           value: '${summary.activeStreakMembersCount}',
           tone: summary.activeStreakMembersCount == 0
               ? _SignalTone.warning
               : _SignalTone.healthy,
           caption: summary.activeStreakMembersCount == 0
-              ? 'No member has started a daily streak yet.'
-              : '${summary.activeStreakRate}% of members currently have an active streak.',
+              ? context.t('dashboard.no_active_streak')
+              : context.t(
+                  'dashboard.active_streak_rate',
+                  parameters: {'rate': summary.activeStreakRate},
+                ),
         ),
         const SizedBox(height: 12),
         _DashboardSignalTile(
-          title: 'Strong consistency',
+          title: context.t('dashboard.strong_consistency'),
           value: '${summary.membersWith7PlusCount}',
           tone: summary.membersWith7PlusCount == 0
               ? _SignalTone.warning
               : _SignalTone.healthy,
           caption: summary.membersWith7PlusCount == 0
-              ? 'No member has crossed a 7-day streak yet.'
-              : '${summary.membersWith7PlusCount} member${summary.membersWith7PlusCount == 1 ? '' : 's'} have built a 7+ day rhythm.',
+              ? context.t('dashboard.no_strong_streak')
+              : context.t(
+                  'dashboard.strong_streak_count',
+                  parameters: {
+                    'count': summary.membersWith7PlusCount,
+                    'memberLabel': context.t(
+                      summary.membersWith7PlusCount == 1
+                          ? 'dashboard.member_singular'
+                          : 'dashboard.member_plural',
+                    ),
+                  },
+                ),
         ),
         const SizedBox(height: 12),
         _DashboardSignalTile(
-          title: 'Current streak leader',
+          title: context.t('dashboard.current_streak_leader'),
           value: summary.topStreakMember == null
-              ? 'No streak yet'
-              : '${summary.topStreakValue} days',
+              ? context.t('dashboard.no_streak_yet')
+              : context.t(
+                  'dashboard.streak_days',
+                  parameters: {'count': summary.topStreakValue},
+                ),
           tone: summary.topStreakMember == null
               ? _SignalTone.warning
               : _SignalTone.attention,
           caption: summary.topStreakMember == null
-              ? 'Once a member starts a streak, the top streak will show here.'
-              : '${summary.topStreakMember!.name.trim().isEmpty ? 'A member' : summary.topStreakMember!.name} is leading the church right now.',
+              ? context.t('dashboard.no_streak_leader_hint')
+              : context.t(
+                  'dashboard.streak_leader_hint',
+                  parameters: {
+                    'name': summary.topStreakMember!.name.trim().isEmpty
+                        ? context.t('dashboard.member_fallback')
+                        : summary.topStreakMember!.name,
+                  },
+                ),
         ),
       ],
     );
@@ -784,37 +799,9 @@ class _DashboardEmptyState extends StatelessWidget {
 }
 
 String _dateLabel(DateTime value) {
-  final month = switch (value.month) {
-    1 => 'Jan',
-    2 => 'Feb',
-    3 => 'Mar',
-    4 => 'Apr',
-    5 => 'May',
-    6 => 'Jun',
-    7 => 'Jul',
-    8 => 'Aug',
-    9 => 'Sep',
-    10 => 'Oct',
-    11 => 'Nov',
-    _ => 'Dec',
-  };
-  return '$month ${value.day}';
+  return DateFormat.MMMd().format(value);
 }
 
 String _dateLabelVerbose(DateTime value) {
-  final month = switch (value.month) {
-    1 => 'Jan',
-    2 => 'Feb',
-    3 => 'Mar',
-    4 => 'Apr',
-    5 => 'May',
-    6 => 'Jun',
-    7 => 'Jul',
-    8 => 'Aug',
-    9 => 'Sep',
-    10 => 'Oct',
-    11 => 'Nov',
-    _ => 'Dec',
-  };
-  return '${value.day} $month ${value.year}';
+  return DateFormat.yMMMd().format(value);
 }

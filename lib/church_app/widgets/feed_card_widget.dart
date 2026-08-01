@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
@@ -24,7 +26,6 @@ import 'package:flutter_application/church_app/widgets/linkified_text_widget.dar
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class FeedCard extends ConsumerWidget {
   static final DateFormat _feedDateFormat = DateFormat('MMM d');
@@ -119,17 +120,11 @@ class FeedCard extends ConsumerWidget {
                           ),
                           if (post.isPinned)
                             _PinnedBadge(
-                              label: ref.t(
-                                'feed.pinned_badge',
-                                fallback: 'Pinned',
-                              ),
+                              label: ref.t('feed.pinned_badge'),
                             ),
                           if (!isGlobal && post.isGlobal)
                             _GlobalFeedBadge(
-                              label: ref.t(
-                                'feed.global_badge',
-                                fallback: 'Global post',
-                              ),
+                              label: ref.t('feed.global_badge'),
                             ),
                         ],
                       ),
@@ -165,10 +160,7 @@ class FeedCard extends ConsumerWidget {
                         AppPopupMenuAction(
                           value: _FeedPostAction.edit,
                           icon: Icons.edit_outlined,
-                          label: ref.t(
-                            'feed.edit_post',
-                            fallback: 'Edit post',
-                          ),
+                          label: ref.t('feed.edit_post'),
                         ),
                       if (canPin)
                         AppPopupMenuAction(
@@ -179,41 +171,26 @@ class FeedCard extends ConsumerWidget {
                               ? Icons.push_pin_rounded
                               : Icons.push_pin_outlined,
                           label: post.isPinned
-                              ? ref.t(
-                                  'feed.unpin_post',
-                                  fallback: 'Unpin post',
-                                )
-                              : ref.t(
-                                  'feed.pin_post',
-                                  fallback: 'Pin post',
-                                ),
+                              ? ref.t('feed.unpin_post')
+                              : ref.t('feed.pin_post'),
                         ),
                       if (canManageGlobal && !post.isGlobal)
                         AppPopupMenuAction(
                           value: _FeedPostAction.makeGlobal,
                           icon: Icons.public_rounded,
-                          label: ref.t(
-                            'feed.make_global_action',
-                            fallback: 'Make global',
-                          ),
+                          label: ref.t('feed.make_global_action'),
                         ),
                       if (canManageGlobal && post.isGlobal)
                         AppPopupMenuAction(
                           value: _FeedPostAction.removeGlobal,
                           icon: Icons.public_off_outlined,
-                          label: ref.t(
-                            'feed.remove_global_action',
-                            fallback: 'Remove from global',
-                          ),
+                          label: ref.t('feed.remove_global_action'),
                         ),
                       if (canDelete)
                         AppPopupMenuAction(
                           value: _FeedPostAction.delete,
                           icon: Icons.delete_outline_rounded,
-                          label: ref.t(
-                            'feed.delete_post',
-                            fallback: 'Delete post',
-                          ),
+                          label: ref.t('feed.delete_post'),
                           color: theme.colorScheme.error,
                         ),
                     ],
@@ -267,11 +244,7 @@ class FeedCard extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            ref.t(
-              'feed.edit_window_expired',
-              fallback:
-                  'Posts can only be edited within 30 minutes of publishing.',
-            ),
+            ref.t('feed.edit_window_expired'),
           ),
         ),
       );
@@ -325,9 +298,7 @@ class FeedCard extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          pinned
-              ? ref.t('feed.post_pinned', fallback: 'Post pinned')
-              : ref.t('feed.post_unpinned', fallback: 'Post unpinned'),
+          pinned ? ref.t('feed.post_pinned') : ref.t('feed.post_unpinned'),
         ),
       ),
     );
@@ -403,14 +374,8 @@ class FeedCard extends ConsumerWidget {
         SnackBar(
           content: Text(
             makeGlobal
-                ? ref.t(
-                    'feed.global_success',
-                    fallback: 'Feed post is now global',
-                  )
-                : ref.t(
-                    'feed.global_removed',
-                    fallback: 'Feed post removed from the global feed',
-                  ),
+                ? ref.t('feed.global_success')
+                : ref.t('feed.global_removed'),
           ),
         ),
       );
@@ -432,26 +397,23 @@ class FeedCard extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          ref.t('feed.delete_confirm_title', fallback: 'Delete post?'),
+          ref.t('feed.delete_confirm_title'),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         content: Text(
-          ref.t(
-            'feed.delete_confirm_message',
-            fallback: 'This will permanently delete the post and its image.',
-          ),
+          ref.t('feed.delete_confirm_message'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
-              ref.t('settings.cancel', fallback: 'Cancel'),
+              ref.t('settings.cancel'),
             ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              ref.t('common.delete', fallback: 'Delete'),
+              ref.t('common.delete'),
             ),
           ),
         ],
@@ -484,7 +446,7 @@ class FeedCard extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          ref.t('feed.post_deleted', fallback: 'Post deleted'),
+          ref.t('feed.post_deleted'),
         ),
       ),
     );
@@ -894,7 +856,7 @@ class _YoutubePreviewCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Watch on YouTube',
+                        context.t('ui.feed_card.watch_on_youtube'),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -912,14 +874,13 @@ class _YoutubePreviewCard extends StatelessWidget {
   }
 
   Future<void> _openYoutubeLink(BuildContext context) async {
-    final launched = await launchUrl(
-      preview.url,
-      mode: LaunchMode.externalApplication,
-    );
+    final launched = await launchExternalUri(context, preview.url);
 
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open YouTube link')),
+        SnackBar(
+            content:
+                Text(context.t('ui.feed_card.unable_to_open_youtube_link'))),
       );
     }
   }

@@ -69,7 +69,12 @@ String appTagline = "Connecting Faith and Community";
 
 extension HexColor on String {
   Color toColor() {
-    final hex = replaceFirst('#', '');
-    return Color(int.parse('FF$hex', radix: 16));
+    final normalized = trim().replaceFirst('#', '');
+    final value = normalized.length == 8
+        ? int.tryParse(normalized, radix: 16)
+        : normalized.length == 6
+            ? int.tryParse('FF$normalized', radix: 16)
+            : null;
+    return Color(value ?? 0xFF000000);
   }
 }

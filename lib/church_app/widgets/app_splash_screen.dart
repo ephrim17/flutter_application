@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/app_assets.dart';
 
 class AppSplashScreen extends StatelessWidget {
@@ -11,7 +12,7 @@ class AppSplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Church Tree splash screen',
+      label: context.t('ui.app_splash.church_tree_splash_screen'),
       image: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -137,8 +138,8 @@ class _AppLogoTextState extends State<AppLogoText>
                     stops: const [0, 0.28, 0.5, 0.72, 1],
                   ).createShader(bounds);
                 },
-                child: const Text(
-                  'Church Tree',
+                child: Text(
+                  context.t('ui.app_splash.church_tree'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 34,

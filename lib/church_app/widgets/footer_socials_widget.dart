@@ -28,7 +28,7 @@ class FooterSocialIconsWidget extends ConsumerWidget {
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+              '${context.t('common.error_prefix')}: $e',
             ),
           ),
           data: (social) => _buildSocialIconsRow(social, context),

@@ -1,14 +1,13 @@
 import 'package:flutter_application/church_app/models/side_drawer_models/about_model.dart';
 
 class AboutScreenViewState {
-
   final String title;
   final String tagline;
   final String description;
   final String mission;
   final String community;
   final String values;
-  
+
   const AboutScreenViewState({
     required this.title,
     required this.tagline,

@@ -7,20 +7,18 @@ class SwipeableCardCarousel extends StatefulWidget {
   final double borderRadius;
 
   const SwipeableCardCarousel({
-    Key? key,
+    super.key,
     required this.items,
     this.height = 220,
     this.padding,
     this.borderRadius = 20,
-  }) : super(key: key);
+  });
 
   @override
-  State<SwipeableCardCarousel> createState() =>
-      _SwipeableCardCarouselState();
+  State<SwipeableCardCarousel> createState() => _SwipeableCardCarouselState();
 }
 
-class _SwipeableCardCarouselState
-    extends State<SwipeableCardCarousel> {
+class _SwipeableCardCarouselState extends State<SwipeableCardCarousel> {
   final PageController _controller = PageController();
   int _currentIndex = 0;
 
@@ -49,8 +47,7 @@ class _SwipeableCardCarouselState
                 padding: widget.padding ??
                     const EdgeInsets.symmetric(horizontal: 16),
                 child: ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(widget.borderRadius),
+                  borderRadius: BorderRadius.circular(widget.borderRadius),
                   child: widget.items[index],
                 ),
               );
@@ -67,8 +64,7 @@ class _SwipeableCardCarouselState
             widget.items.length,
             (index) => AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 8,
               width: _currentIndex == index ? 18 : 8,
               decoration: BoxDecoration(

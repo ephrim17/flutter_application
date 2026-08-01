@@ -28,25 +28,30 @@ class BibleVersion {
   final int contentVersion;
 
   factory BibleVersion.fromMap(String id, Map<String, dynamic> data) {
+    final title = data['title']?.toString().trim() ?? '';
+    final bookFileNames = data['bookFileNames'];
     return BibleVersion(
       id: id,
-      title: (data['title'] as String?)?.trim().isNotEmpty == true
-          ? (data['title'] as String).trim()
-          : id,
-      subtitle: (data['subtitle'] as String?) ?? '',
-      languageLabel: (data['languageLabel'] as String?) ?? id.toUpperCase(),
-      description: (data['description'] as String?) ??
-          'Downloads all Bible book files for offline reading.',
-      bookFileNames: (data['bookFileNames'] as List<dynamic>?)
-              ?.whereType<String>()
-              .toList(growable: false) ??
-          const [],
-      assetBasePath: data['assetBasePath'] as String?,
-      downloadBaseUrl: data['downloadBaseUrl'] as String?,
-      storagePath: data['storagePath'] as String?,
-      enabled: data['enabled'] as bool? ?? true,
-      sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 0,
-      contentVersion: (data['contentVersion'] as num?)?.toInt() ?? 1,
+      title: title.isEmpty ? id : title,
+      subtitle: data['subtitle']?.toString().trim() ?? '',
+      languageLabel: data['languageLabel']?.toString().trim().isNotEmpty == true
+          ? data['languageLabel'].toString().trim()
+          : id.toUpperCase(),
+      description: data['description']?.toString().trim().isNotEmpty == true
+          ? data['description'].toString().trim()
+          : 'Downloads all Bible book files for offline reading.',
+      bookFileNames: bookFileNames is Iterable
+          ? bookFileNames
+              .map((item) => item.toString().trim())
+              .where((item) => item.isNotEmpty)
+              .toList(growable: false)
+          : const [],
+      assetBasePath: _optionalString(data['assetBasePath']),
+      downloadBaseUrl: _optionalString(data['downloadBaseUrl']),
+      storagePath: _optionalString(data['storagePath']),
+      enabled: data['enabled'] != false,
+      sortOrder: _int(data['sortOrder']),
+      contentVersion: _int(data['contentVersion'], fallback: 1),
     );
   }
 
@@ -58,4 +63,15 @@ class BibleVersion {
 
   bool get hasAssetSource =>
       assetBasePath != null && assetBasePath!.trim().isNotEmpty;
+}
+
+String? _optionalString(dynamic value) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? null : text;
+}
+
+int _int(dynamic value, {int fallback = 0}) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim()) ?? fallback;
+  return fallback;
 }

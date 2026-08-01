@@ -68,7 +68,8 @@ class AdminModeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'You can log out and check again later.',
+                  context
+                      .t('ui.admin_mode.you_can_log_out_and_check_again_later'),
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
@@ -79,7 +80,7 @@ class AdminModeScreen extends ConsumerWidget {
                   onPressed: () => _handleOkay(context, ref),
                   icon: const Icon(Icons.check_rounded),
                   label: Text(
-                    context.t('admin_mode.okay', fallback: 'Okay'),
+                    context.t('admin_mode.okay'),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,

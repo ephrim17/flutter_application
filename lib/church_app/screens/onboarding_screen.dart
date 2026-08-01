@@ -59,7 +59,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           loading: () => const Center(child: AppLoadingIndicator()),
           error: (e, _) => Center(
             child: Text(
-              "${context.t('common.error_prefix', fallback: 'Error')}: $e",
+              "${context.t('common.error_prefix')}: $e",
             ),
           ),
           data: (pages) {
@@ -112,14 +112,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         const SizedBox(width: 16),
                         _PrimaryActionButton(
                           label: isLast
-                              ? context.t(
-                                  'onboarding.get_started',
-                                  fallback: 'Get Started',
-                                )
-                              : context.t(
-                                  'onboarding.next',
-                                  fallback: 'Next',
-                                ),
+                              ? context.t('onboarding.get_started')
+                              : context.t('onboarding.next'),
                           color: buttonColor,
                           foregroundColor: buttonTextColor,
                           onPressed: () {

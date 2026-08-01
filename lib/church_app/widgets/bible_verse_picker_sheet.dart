@@ -76,6 +76,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   int _verseCount = 1;
   bool _isLoadingStructure = true;
   bool _isSaving = false;
+  bool _structureLoadFailed = false;
 
   @override
   void initState() {
@@ -90,53 +91,57 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   }
 
   Future<void> _loadStructure() async {
-    setState(() {
-      _isLoadingStructure = true;
-    });
-
-    final data = await _bibleRepository.loadBook(_selectedBook.key);
-    final chapters = (data['chapters'] as List<dynamic>? ?? const []).toList();
-    final safeChapterCount = chapters.isEmpty ? 1 : chapters.length;
-    final safeChapter = _selectedChapter.clamp(1, safeChapterCount);
-    final verses =
-        (chapters[safeChapter - 1]['verses'] as List<dynamic>? ?? const [])
-            .toList();
-    final safeVerseCount = verses.isEmpty ? 1 : verses.length;
-    final safeVerse = _selectedVerse.clamp(1, safeVerseCount);
-
     if (!mounted) return;
     setState(() {
-      _chapterCount = safeChapterCount;
-      _verseCount = safeVerseCount;
-      _selectedChapter = safeChapter;
-      _selectedVerse = safeVerse;
-      _isLoadingStructure = false;
+      _isLoadingStructure = true;
+      _structureLoadFailed = false;
     });
+
+    try {
+      final structure = await _readStructure();
+      if (!mounted) return;
+      setState(() {
+        _chapterCount = structure.chapterCount;
+        _verseCount = structure.verseCount;
+        _selectedChapter = structure.chapter;
+        _selectedVerse = structure.verse;
+        _isLoadingStructure = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStructure = false;
+        _structureLoadFailed = true;
+      });
+    }
   }
 
   Future<void> _reloadVerseCount() async {
-    setState(() {
-      _isLoadingStructure = true;
-    });
+    await _loadStructure();
+  }
 
+  Future<_BibleStructure> _readStructure() async {
     final data = await _bibleRepository.loadBook(_selectedBook.key);
-    final chapters = (data['chapters'] as List<dynamic>? ?? const []).toList();
-    final safeChapterCount = chapters.isEmpty ? 1 : chapters.length;
-    final safeChapter = _selectedChapter.clamp(1, safeChapterCount);
-    final verses =
-        (chapters[safeChapter - 1]['verses'] as List<dynamic>? ?? const [])
-            .toList();
-    final safeVerseCount = verses.isEmpty ? 1 : verses.length;
-    final safeVerse = _selectedVerse.clamp(1, safeVerseCount);
-
-    if (!mounted) return;
-    setState(() {
-      _chapterCount = safeChapterCount;
-      _verseCount = safeVerseCount;
-      _selectedChapter = safeChapter;
-      _selectedVerse = safeVerse;
-      _isLoadingStructure = false;
-    });
+    final rawChapters = data['chapters'];
+    if (rawChapters is! List || rawChapters.isEmpty) {
+      throw const FormatException('Bible book has no chapters.');
+    }
+    final chapter = _selectedChapter.clamp(1, rawChapters.length);
+    final chapterData = rawChapters[chapter - 1];
+    if (chapterData is! Map || chapterData['verses'] is! List) {
+      throw const FormatException('Bible chapter has invalid verses.');
+    }
+    final rawVerses = chapterData['verses'] as List;
+    if (rawVerses.isEmpty) {
+      throw const FormatException('Bible chapter has no verses.');
+    }
+    final verse = _selectedVerse.clamp(1, rawVerses.length);
+    return _BibleStructure(
+      chapterCount: rawChapters.length,
+      verseCount: rawVerses.length,
+      chapter: chapter,
+      verse: verse,
+    );
   }
 
   Future<void> _pickBook() async {
@@ -193,7 +198,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
               final chapter = index + 1;
               return ListTile(
                 title: Text(
-                  '${context.t('studio.chapter_prefix', fallback: 'Chapter')} $chapter',
+                  '${context.t('studio.chapter_prefix')} $chapter',
                 ),
                 trailing: chapter == _selectedChapter
                     ? Icon(
@@ -233,7 +238,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
               final verse = index + 1;
               return ListTile(
                 title: Text(
-                  '${context.t('studio.verse_prefix', fallback: 'Verse')} $verse',
+                  '${context.t('studio.verse_prefix')} $verse',
                 ),
                 trailing: verse == _selectedVerse
                     ? Icon(
@@ -274,12 +279,13 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${context.t('studio.edit_item_prefix', fallback: 'Edit')} ${widget.title}',
+                '${context.t('studio.edit_item_prefix')} ${widget.title}',
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a book, chapter, and verse from the Bible list.',
+                context.t(
+                    'ui.bible_verse_picker.choose_a_book_chapter_and_verse_from_the_bible_list'),
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -291,7 +297,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Selected Reference',
+                      context.t('ui.bible_verse_picker.selected_reference'),
                       style: theme.textTheme.labelLarge,
                     ),
                     const SizedBox(height: 8),
@@ -310,28 +316,49 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                 ),
               ),
               const SizedBox(height: 20),
+              if (_structureLoadFailed) ...[
+                Text(
+                  context.t('ui.bible_verse_picker.load_failed'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _loadStructure,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.t('common.retry')),
+                ),
+                const SizedBox(height: 12),
+              ],
               _VersePickerTile(
-                label: context.t('studio.verse_book', fallback: 'Book'),
+                label: context.t('studio.verse_book'),
                 value: _selectedBook.key,
                 subtitle: _selectedBook.name,
                 onTap: _pickBook,
               ),
               const SizedBox(height: 12),
               _VersePickerTile(
-                label: context.t('studio.verse_chapter', fallback: 'Chapter'),
+                label: context.t('studio.verse_chapter'),
                 value: '$_selectedChapter',
                 subtitle: _isLoadingStructure
-                    ? 'Loading chapters...'
-                    : '$_chapterCount chapters available',
+                    ? context.t('ui.bible_verse_picker.loading_chapters')
+                    : context.t(
+                        'ui.bible_verse_picker.chapters_available',
+                        parameters: {'count': _chapterCount},
+                      ),
                 onTap: _pickChapter,
               ),
               const SizedBox(height: 12),
               _VersePickerTile(
-                label: context.t('studio.verse_verse', fallback: 'Verse'),
+                label: context.t('studio.verse_verse'),
                 value: '$_selectedVerse',
                 subtitle: _isLoadingStructure
-                    ? 'Loading verses...'
-                    : '$_verseCount verses available',
+                    ? context.t('ui.bible_verse_picker.loading_verses')
+                    : context.t(
+                        'ui.bible_verse_picker.verses_available',
+                        parameters: {'count': _verseCount},
+                      ),
                 onTap: _pickVerse,
               ),
               const SizedBox(height: 20),
@@ -361,7 +388,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
                           width: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(context.t('common.save', fallback: 'Save')),
+                      : Text(context.t('common.save')),
                 ),
               ),
             ],
@@ -370,6 +397,20 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
       ),
     );
   }
+}
+
+class _BibleStructure {
+  const _BibleStructure({
+    required this.chapterCount,
+    required this.verseCount,
+    required this.chapter,
+    required this.verse,
+  });
+
+  final int chapterCount;
+  final int verseCount;
+  final int chapter;
+  final int verse;
 }
 
 class _VersePickerTile extends StatelessWidget {

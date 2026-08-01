@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 Icon _iconForType(String type) {
   switch (type) {
@@ -63,19 +63,11 @@ Future<void> onContactTap(BuildContext context, ContactItem contact) async {
   final uri = buildContactUri(contact.type, raw);
   if (uri == null) return;
 
-  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!launched && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.t(
-            'common.open_contact_failed',
-            fallback: 'Unable to open contact action',
-          ),
-        ),
-      ),
-    );
-  }
+  await launchExternalUri(
+    context,
+    uri,
+    failureMessage: context.t('common.open_contact_failed'),
+  );
 }
 
 Uri? buildContactUri(String type, String value) {
@@ -118,7 +110,7 @@ class FooterContactsWidget extends ConsumerWidget {
             loading: () => const [AppLoadingIndicator(size: 64)],
             error: (e, _) => [
               Text(
-                '${context.t('common.error_prefix', fallback: 'Error')}: $e',
+                '${context.t('common.error_prefix')}: $e',
               ),
             ],
             data: (contacts) {

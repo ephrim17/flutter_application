@@ -19,7 +19,7 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
     return Scaffold(
       appBar: BibleReaderAppBar(
         title: AppBarTitle(
-          text: context.t('bible_swipe.title', fallback: 'Bible Swipes'),
+          text: context.t('bible_swipe.title'),
         ),
       ),
       body: versesAsync.when(

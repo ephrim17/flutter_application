@@ -85,9 +85,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
     final state = ref.watch(feedPostModalControllerProvider);
     final isEditMode = widget.post != null || widget.edit == true;
     final isCreateMode = widget.post == null;
-    final cardtitle = isEditMode
-        ? ref.t('feed.edit_title', fallback: 'Edit Post')
-        : ref.t('feed.create_title', fallback: 'Create Post');
+    final cardtitle =
+        isEditMode ? ref.t('feed.edit_title') : ref.t('feed.create_title');
 
     return Padding(
       padding: EdgeInsets.only(
@@ -114,7 +113,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             if (mounted) {Navigator.of(context).pop()}
                           },
                       child: ColorText(
-                        badgeText: ref.t('feed.cancel', fallback: 'Cancel'),
+                        badgeText: ref.t('feed.cancel'),
                       ))
                 ],
               ),
@@ -123,7 +122,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  labelText: ref.t('feed.title_label', fallback: 'Title'),
+                  labelText: ref.t('feed.title_label'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -134,8 +133,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                 minLines: 3,
                 maxLines: null, // 👈 This makes it grow infinitely
                 decoration: InputDecoration(
-                  labelText:
-                      ref.t('feed.description_label', fallback: 'Description'),
+                  labelText: ref.t('feed.description_label'),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -150,23 +148,12 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                     });
                   },
                   title: Text(
-                    ref.t(
-                      'feed.global_share_details_title',
-                      fallback: 'Share personal details',
-                    ),
+                    ref.t('feed.global_share_details_title'),
                   ),
                   subtitle: Text(
                     _sharePersonalDetails
-                        ? ref.t(
-                            'feed.global_share_details_enabled',
-                            fallback:
-                                'Name, category, address, DOB, email, and phone will be available from this global post.',
-                          )
-                        : ref.t(
-                            'feed.global_share_details_disabled',
-                            fallback:
-                                'Only name, church, and church pastor will be shown from this global post.',
-                          ),
+                        ? ref.t('feed.global_share_details_enabled')
+                        : ref.t('feed.global_share_details_disabled'),
                   ),
                 ),
               ],
@@ -178,14 +165,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                         icon: const Icon(Icons.photo_library_outlined),
                         label: Text(
                           widget.requireImage
-                              ? ref.t(
-                                  'feed.change_image',
-                                  fallback: 'Change Images',
-                                )
-                              : ref.t(
-                                  'feed.add_image_optional',
-                                  fallback: 'Add Images (Optional)',
-                                ),
+                              ? ref.t('feed.change_image')
+                              : ref.t('feed.add_image_optional'),
                         ),
                       )
                     : null,
@@ -249,10 +230,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  ref.t(
-                                    'feed.validation_all_fields_required',
-                                    fallback: 'All fields are required',
-                                  ),
+                                  ref.t('feed.validation_all_fields_required'),
                                 ),
                               ),
                             );
@@ -263,11 +241,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  ref.t(
-                                    'feed.image_required',
-                                    fallback:
-                                        'An image is required for this post',
-                                  ),
+                                  ref.t('feed.image_required'),
                                 ),
                               ),
                             );
@@ -302,11 +276,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                                 messenger.showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      ref.t(
-                                        'feed.edit_window_expired',
-                                        fallback:
-                                            'Posts can only be edited within 30 minutes of publishing.',
-                                      ),
+                                      ref.t('feed.edit_window_expired'),
                                     ),
                                   ),
                                 );
@@ -341,11 +311,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  ref.t(
-                                    'feed.edit_window_expired',
-                                    fallback:
-                                        'Posts can only be edited within 30 minutes of publishing.',
-                                  ),
+                                  ref.t('feed.edit_window_expired'),
                                 ),
                               ),
                             );
@@ -363,8 +329,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                         )
                       : Text(
                           widget.post == null
-                              ? ref.t('feed.post_action', fallback: 'Post')
-                              : ref.t('feed.update_action', fallback: 'Update'),
+                              ? ref.t('feed.post_action')
+                              : ref.t('feed.update_action'),
                         ),
                 ),
               ),
@@ -375,7 +341,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
                     label: Text(
-                      ref.t('feed.delete_action', fallback: 'Delete Post'),
+                      ref.t('feed.delete_action'),
                       style: const TextStyle(color: Colors.red),
                     ),
                     onPressed: state.isLoading
@@ -387,33 +353,24 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                               context: context,
                               builder: (ctx) => AlertDialog(
                                 title: Text(
-                                  ref.t(
-                                    'feed.delete_confirm_title',
-                                    fallback: 'Delete post?',
-                                  ),
+                                  ref.t('feed.delete_confirm_title'),
                                 ),
                                 content: Text(
-                                  ref.t(
-                                    'feed.delete_confirm_message',
-                                    fallback:
-                                        'This will permanently delete the post and its image.',
-                                  ),
+                                  ref.t('feed.delete_confirm_message'),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(ctx).pop(false),
                                     child: Text(
-                                      ref.t('settings.cancel',
-                                          fallback: 'Cancel'),
+                                      ref.t('settings.cancel'),
                                     ),
                                   ),
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(ctx).pop(true),
                                     child: Text(
-                                      ref.t('feed.delete_action',
-                                          fallback: 'Delete Post'),
+                                      ref.t('feed.delete_action'),
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),

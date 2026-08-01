@@ -79,58 +79,54 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final hasDots = widget.itemCount > 1;
-  const dotsHeight = 18.0; // approx 8 spacing + 10 dot size
+  Widget build(BuildContext context) {
+    final hasDots = widget.itemCount > 1;
+    const dotsHeight = 18.0; // approx 8 spacing + 10 dot size
 
-  final pageHeight =
-      hasDots ? (widget.height! - dotsHeight) : widget.height!;
+    final pageHeight = hasDots ? (widget.height! - dotsHeight) : widget.height!;
 
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        height: pageHeight,
-        child: PageView.builder(
-          controller: _controller,
-          itemCount: widget.itemCount,
-          onPageChanged: (index) {
-            setState(() => _currentIndex = index);
-          },
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: widget.spacing / 2),
-              child: widget.itemBuilder(context, index),
-            );
-          },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: pageHeight,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: widget.itemCount,
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+            },
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: widget.spacing / 2),
+                child: widget.itemBuilder(context, index),
+              );
+            },
+          ),
         ),
-      ),
+        if (hasDots) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.itemCount, (index) {
+              final isActive = index == _currentIndex;
 
-      if (hasDots) ...[
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.itemCount, (index) {
-            final isActive = index == _currentIndex;
-
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isActive ? 10 : 8,
-              height: isActive ? 10 : 8,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Theme.of(context).colorScheme.onSecondaryFixedVariant
-                    : Theme.of(context)
-                        .colorScheme
-                        .secondaryFixedDim,
-                shape: BoxShape.circle,
-              ),
-            );
-          }),
-        ),
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: isActive ? 10 : 8,
+                height: isActive ? 10 : 8,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Theme.of(context).colorScheme.onSecondaryFixedVariant
+                      : Theme.of(context).colorScheme.secondaryFixedDim,
+                  shape: BoxShape.circle,
+                ),
+              );
+            }),
+          ),
+        ],
       ],
-    ],
-  );
-}
+    );
+  }
 }

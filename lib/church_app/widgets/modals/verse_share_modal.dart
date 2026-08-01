@@ -136,11 +136,11 @@ class _VerseShareModalState extends State<VerseShareModal> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: context.t('common.close', fallback: 'Close'),
+          tooltip: context.t('common.close'),
           onPressed: () => Navigator.of(context).maybePop(),
           icon: const Icon(Icons.close_rounded),
         ),
-        title: const Text('Verse Story Editor'),
+        title: Text(context.t('ui.verse_share.verse_story_editor')),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -196,7 +196,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                       ),
                       icon: const Icon(Icons.download_rounded),
                       label: Text(
-                        context.t('common.download', fallback: 'Download'),
+                        context.t('common.download'),
                       ),
                     ),
                   ),
@@ -271,7 +271,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                         },
                         icon:
                             const Icon(Icons.visibility_off_rounded, size: 18),
-                        label: const Text('Hide'),
+                        label: Text(context.t('ui.verse_share.hide')),
                       ),
                     ],
                   ),
@@ -289,22 +289,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     dividerColor: Colors.transparent,
                     tabs: [
                       Tab(
-                        text: context.t(
-                          'verse_share.layout',
-                          fallback: 'Edit',
-                        ),
+                        text: context.t('verse_share.layout'),
                       ),
                       Tab(
-                        text: context.t(
-                          'verse_share.style',
-                          fallback: 'Style',
-                        ),
+                        text: context.t('verse_share.style'),
                       ),
                       Tab(
-                        text: context.t(
-                          'verse_share.footer',
-                          fallback: 'Footer',
-                        ),
+                        text: context.t('verse_share.footer'),
                       ),
                     ],
                   ),
@@ -338,7 +329,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       icon: const Icon(Icons.tune_rounded),
-      label: const Text('Show editor'),
+      label: Text(context.t('ui.verse_share.show_editor')),
     );
   }
 
@@ -458,7 +449,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                       Positioned.fill(
                         child: Container(
                           color: Colors.grey.withValues(alpha: 0.65),
-                          child: const Column(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
@@ -468,7 +459,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                               ),
                               SizedBox(height: 12),
                               Text(
-                                'Tap to select image',
+                                context.t('ui.verse_share.tap_to_select_image'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -539,14 +530,16 @@ class _VerseShareModalState extends State<VerseShareModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionCard(
-            title: context.t('verse_share.layout', fallback: 'Edit'),
-            description: 'Update the verse text and card size.',
+            title: context.t('verse_share.layout'),
+            description:
+                context.t('ui.verse_share.update_the_verse_text_and_card_size'),
             child: Column(
               children: [
                 AppTextField(
                   controller: _verseController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Verse text'),
+                  decoration: InputDecoration(
+                      labelText: context.t('ui.verse_share.verse_text')),
                   onChanged: (_) => setState(() {
                     _highlightRules.clear();
                     _activeHighlightRuleId = null;
@@ -557,7 +550,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   children: [
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Square'),
+                        label: Text(context.t('ui.verse_share.square')),
                         selected: format == ShareFormat.square,
                         onSelected: (_) {
                           setState(() => format = ShareFormat.square);
@@ -567,7 +560,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Story'),
+                        label: Text(context.t('ui.verse_share.story')),
                         selected: format == ShareFormat.story,
                         onSelected: (_) {
                           setState(() => format = ShareFormat.story);
@@ -581,7 +574,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   children: [
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Color'),
+                        label: Text(context.t('ui.verse_share.color')),
                         selected: backgroundType == BackgroundType.color,
                         onSelected: (_) {
                           setState(() => backgroundType = BackgroundType.color);
@@ -591,7 +584,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Image'),
+                        label: Text(context.t('ui.verse_share.image')),
                         selected: backgroundType == BackgroundType.image,
                         onSelected: (_) {
                           setState(() => backgroundType = BackgroundType.image);
@@ -604,7 +597,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 if (backgroundType == BackgroundType.color) ...[
                   const SizedBox(height: 16),
                   _buildColorPaletteSection(
-                    title: 'Background color',
+                    title: context.t('ui.verse_share.background_color'),
                     selectedColor: backgroundColor,
                     colors: backgroundPalette,
                     onSelected: (color) {
@@ -617,10 +610,17 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   FilledButton.icon(
                     onPressed: pickImage,
                     icon: const Icon(Icons.image_rounded),
-                    label: const Text('Choose image'),
+                    label: Text(context.t('ui.verse_share.choose_image')),
                   ),
                   const SizedBox(height: 8),
-                  Text('Blur: ${blurIntensity.toStringAsFixed(0)}'),
+                  Text(
+                    context.t(
+                      'verse_share.blur_value',
+                      parameters: {
+                        'value': blurIntensity.toStringAsFixed(0),
+                      },
+                    ),
+                  ),
                   Slider(
                     value: blurIntensity,
                     min: 0,
@@ -645,9 +645,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionCard(
-            title: 'Base verse style',
-            description:
-                'This applies to the full verse unless a highlighted word overrides it.',
+            title: context.t('ui.verse_share.base_verse_style'),
+            description: context.t(
+                'ui.verse_share.this_applies_to_the_full_verse_unless_a_highlighted_'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -663,23 +663,28 @@ class _VerseShareModalState extends State<VerseShareModal> {
                       fontStyleOption = VerseFontStyleOption.values[index];
                     });
                   },
-                  children: const [
+                  children: [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('Bold'),
+                      child: Text(context.t('ui.verse_share.bold_425d')),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('Normal'),
+                      child: Text(context.t('ui.verse_share.normal_6dd2')),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('Italic'),
+                      child: Text(context.t('ui.verse_share.italic_fe26')),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text('Size: ${fontSize.toStringAsFixed(0)}'),
+                Text(
+                  context.t(
+                    'verse_share.size_value',
+                    parameters: {'value': fontSize.toStringAsFixed(0)},
+                  ),
+                ),
                 Slider(
                   value: fontSize,
                   min: 14,
@@ -688,7 +693,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   onChanged: (value) => setState(() => fontSize = value),
                 ),
                 _buildColorPaletteSection(
-                  title: 'Font color',
+                  title: context.t('ui.verse_share.font_color'),
                   selectedColor: fontColor,
                   colors: fontPalette,
                   onSelected: (color) => setState(() => fontColor = color),
@@ -698,9 +703,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 16),
           _buildSectionCard(
-            title: context.t('verse_share.highlights', fallback: 'Highlights'),
-            description:
-                'Tap words, then style each selected word differently.',
+            title: context.t('verse_share.highlights'),
+            description: context.t(
+                'ui.verse_share.tap_words_then_style_each_selected_word_differently'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -722,20 +727,19 @@ class _VerseShareModalState extends State<VerseShareModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Date: ${_todayDateLabel()}',
+            context.t(
+              'verse_share.date_value',
+              parameters: {'date': _todayDateLabel()},
+            ),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
-            context.t(
-              'verse_share.footer_date_note',
-              fallback: 'The current date is always shown on the card.',
-            ),
+            context.t('verse_share.footer_date_note'),
           ),
           const SizedBox(height: 20),
           _buildColorPaletteSection(
-            title:
-                context.t('verse_share.footer_color', fallback: 'Footer Color'),
+            title: context.t('verse_share.footer_color'),
             selectedColor: footerColor,
             colors: fontPalette,
             onSelected: (color) => setState(() => footerColor = color),
@@ -746,24 +750,14 @@ class _VerseShareModalState extends State<VerseShareModal> {
               controller: _storyCaptionController,
               maxLength: 30,
               decoration: InputDecoration(
-                labelText: context.t(
-                  'verse_share.bottom_left_text_optional',
-                  fallback: 'Bottom-left text (optional)',
-                ),
-                helperText: context.t(
-                  'verse_share.story_footer_helper',
-                  fallback: 'Only shown in story mode',
-                ),
+                labelText: context.t('verse_share.bottom_left_text_optional'),
+                helperText: context.t('verse_share.story_footer_helper'),
               ),
               onChanged: (_) => setState(() {}),
             )
           else
             Text(
-              context.t(
-                'verse_share.story_footer_note',
-                fallback:
-                    'Switch to story mode if you want to add an optional footer note.',
-              ),
+              context.t('verse_share.story_footer_note'),
             ),
         ],
       ),
@@ -1051,7 +1045,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
     final tokens = _highlightableTokens();
     if (tokens.isEmpty) {
       return Text(
-        'Type verse text first, then tap words here to highlight.',
+        context.t(
+            'ui.verse_share.type_verse_text_first_then_tap_words_here_to_highlight'),
         style: Theme.of(context).textTheme.bodyMedium,
       );
     }
@@ -1082,7 +1077,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Tap any word to highlight it',
+                  context.t('ui.verse_share.tap_any_word_to_highlight_it'),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -1092,7 +1087,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Every selected word gets its own style controls below.',
+            context.t(
+                'ui.verse_share.every_selected_word_gets_its_own_style_controls_below'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 14),
@@ -1189,10 +1185,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                context.t(
-                  'verse_share.highlights_empty',
-                  fallback: 'No highlighted words yet.',
-                ),
+                context.t('verse_share.highlights_empty'),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -1213,7 +1206,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           children: [
             Expanded(
               child: Text(
-                'Selected highlights',
+                context.t('ui.verse_share.selected_highlights'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -1227,7 +1220,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 });
               },
               icon: const Icon(Icons.clear_all_rounded, size: 18),
-              label: const Text('Clear'),
+              label: Text(context.t('ui.verse_share.clear')),
             ),
           ],
         ),
@@ -1312,7 +1305,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                tooltip: context.t('common.delete', fallback: 'Delete'),
+                tooltip: context.t('common.delete'),
                 onPressed: () => _removeHighlightRule(rule),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -1320,7 +1313,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 12),
           Text(
-            context.t('verse_share.highlight_weight', fallback: 'Font Style'),
+            context.t('verse_share.highlight_weight'),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
@@ -1339,24 +1332,27 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 ),
               );
             },
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Bold'),
+                child: Text(context.t('ui.verse_share.bold_425d')),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Normal'),
+                child: Text(context.t('ui.verse_share.normal_6dd2')),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Italic'),
+                child: Text(context.t('ui.verse_share.italic_fe26')),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            'Scale: ${rule.sizeScale.toStringAsFixed(2)}x',
+            context.t(
+              'verse_share.scale_value',
+              parameters: {'value': rule.sizeScale.toStringAsFixed(2)},
+            ),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           Slider(
@@ -1373,10 +1369,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
             },
           ),
           _buildColorPaletteSection(
-            title: context.t(
-              'verse_share.highlight_text_color',
-              fallback: 'Text Color',
-            ),
+            title: context.t('verse_share.highlight_text_color'),
             selectedColor: rule.textColor,
             colors: fillPalette.where((color) {
               return color != Colors.transparent;
@@ -1390,10 +1383,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 12),
           _buildColorPaletteSection(
-            title: context.t(
-              'verse_share.highlight_fill_color',
-              fallback: 'Fill Color',
-            ),
+            title: context.t('verse_share.highlight_fill_color'),
             selectedColor: rule.fillColor,
             colors: fillPalette,
             onSelected: (color) {
@@ -1405,10 +1395,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           ),
           const SizedBox(height: 12),
           _buildColorPaletteSection(
-            title: context.t(
-              'verse_share.highlight_border_color',
-              fallback: 'Border Color',
-            ),
+            title: context.t('verse_share.highlight_border_color'),
             selectedColor: rule.borderColor,
             colors: fillPalette,
             onSelected: (color) {
@@ -1585,7 +1572,7 @@ class _VerseShareBranding extends ConsumerWidget {
       data: (config) => config.churchLogo.trim(),
       orElse: () => '',
     );
-    final appTitle = ref.t('church_tab.app_title', fallback: 'Church');
+    final appTitle = ref.t('church_tab.app_title');
 
     if (churchLogo.isNotEmpty) {
       final uri = Uri.tryParse(churchLogo);

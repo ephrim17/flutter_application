@@ -51,17 +51,25 @@ class Announcement {
       };
 
   /// For reading from Firestore
-  static Announcement fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  static Announcement fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
 
     return Announcement(
       id: doc.id,
-      title: (data['title'] ?? '') as String,
-      body: (data['body'] ?? '') as String,
-      isActive: (data['isActive'] ?? true) as bool,
-      expiryAt: (data['expiryAt'] as Timestamp?)?.toDate(),
-      imageUrl: (data['imageUrl'] ?? '') as String,
-      priority: (data['priority'] ?? 0) as int,
+      title: data['title']?.toString().trim() ?? '',
+      body: data['body']?.toString().trim() ?? '',
+      isActive: data['isActive'] != false,
+      expiryAt: _parseDate(data['expiryAt']),
+      imageUrl: data['imageUrl']?.toString().trim() ?? '',
+      priority: (data['priority'] as num?)?.toInt() ?? 0,
     );
   }
+}
+
+DateTime? _parseDate(dynamic value) {
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  return null;
 }

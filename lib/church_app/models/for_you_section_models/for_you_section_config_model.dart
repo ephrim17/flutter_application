@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class ForYouSectionConfigModel {
   const ForYouSectionConfigModel({
     required this.id,
@@ -21,10 +20,8 @@ class ForYouSectionConfigModel {
     );
   }
 
-   Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => {
         'enabled': enabled,
         'order': order,
       };
-
-
 }

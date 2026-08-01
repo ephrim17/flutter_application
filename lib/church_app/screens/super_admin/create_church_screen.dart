@@ -114,26 +114,30 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
 
   bool get _showsAdminInputs => !_isEditMode;
 
-  List<String> get _stepTitles => _isPublicRegistrationMode
-      ? const <String>[
-          'Church Details',
-          'Pastor Details',
-          'Admin Details',
+  List<String> _stepTitles(BuildContext context) => _isPublicRegistrationMode
+      ? <String>[
+          context.t('church_setup.church_details'),
+          context.t('church_setup.pastor_details'),
+          context.t('church_setup.admin_details'),
         ]
-      : const <String>[
-          'Church Details',
-          'Pastor Details',
-          'Admin Details',
-          'Feature Access',
+      : <String>[
+          context.t('church_setup.church_details'),
+          context.t('church_setup.pastor_details'),
+          context.t('church_setup.admin_details'),
+          context.t('church_setup.feature_access'),
         ];
 
-  double get _stepProgress => (_currentStep + 1) / _stepTitles.length;
+  int get _stepCount => _isPublicRegistrationMode ? 3 : 4;
 
-  String get _headerChurchName {
+  double get _stepProgress => (_currentStep + 1) / _stepCount;
+
+  String _headerChurchName(BuildContext context) {
     final typedName = _nameController.text.trim();
     if (typedName.isNotEmpty) return typedName;
-    if (_isEditMode) return 'Edit Church';
-    return _isPublicRegistrationMode ? 'Register Church' : 'Create Church';
+    if (_isEditMode) return context.t('church_setup.edit_church');
+    return _isPublicRegistrationMode
+        ? context.t('church_setup.register_church')
+        : context.t('church_setup.create_church');
   }
 
   String get _headerLogoUrl => _logoImage == null ? _existingLogoUrl : '';
@@ -151,97 +155,54 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     switch (stepIndex) {
       case 0:
         if (name.isEmpty) {
-          return context.t(
-            'super_admin.name_required',
-            fallback: 'Please enter the church name',
-          );
+          return context.t('super_admin.name_required');
         }
         if (churchId.isEmpty) {
-          return context.t(
-            'super_admin.id_required',
-            fallback: 'Please enter the church ID',
-          );
+          return context.t('super_admin.id_required');
         }
         if (!RegExp(r'^[a-z0-9_]+$').hasMatch(churchId)) {
-          return context.t(
-            'super_admin.id_invalid',
-            fallback:
-                'Church ID can contain only lowercase letters, numbers, and underscores',
-          );
+          return context.t('super_admin.id_invalid');
         }
         if (_logoImage == null && _existingLogoUrl.trim().isEmpty) {
-          return context.t(
-            'super_admin.logo_required',
-            fallback: 'Please pick a church logo',
-          );
+          return context.t('super_admin.logo_required');
         }
         if (address.isEmpty) {
-          return context.t(
-            'super_admin.address_required',
-            fallback: 'Please enter the church address',
-          );
+          return context.t('super_admin.address_required');
         }
         if (contact.isEmpty) {
-          return context.t(
-            'super_admin.contact_required',
-            fallback: 'Please enter the church contact',
-          );
+          return context.t('super_admin.contact_required');
         }
         if (email.isEmpty) {
-          return context.t(
-            'super_admin.email_required',
-            fallback: 'Please enter the church email',
-          );
+          return context.t('super_admin.email_required');
         }
         if (!RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,4}$').hasMatch(email)) {
-          return context.t(
-            'auth.email_address_invalid',
-            fallback: 'Please enter a valid email address',
-          );
+          return context.t('auth.email_address_invalid');
         }
         return null;
       case 1:
         if (_pastorPhotoImage == null &&
             _existingPastorPhotoUrl.trim().isEmpty) {
-          return context.t(
-            'super_admin.pastor_photo_required',
-            fallback: 'Please pick a pastor photo',
-          );
+          return context.t('super_admin.pastor_photo_required');
         }
         return null;
       case 2:
         if (_isEditMode) return null;
         if (adminName.isEmpty) {
-          return context.t(
-            'super_admin.admin_name_required',
-            fallback: 'Please enter the admin name',
-          );
+          return context.t('super_admin.admin_name_required');
         }
         if (adminEmail.isEmpty) {
-          return context.t(
-            'super_admin.admin_email_required',
-            fallback: 'Please enter the admin email',
-          );
+          return context.t('super_admin.admin_email_required');
         }
         if (!RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,4}$')
             .hasMatch(adminEmail)) {
-          return context.t(
-            'auth.email_address_invalid',
-            fallback: 'Please enter a valid email address',
-          );
+          return context.t('auth.email_address_invalid');
         }
         if (_isPublicRegistrationMode &&
             adminEmail.toLowerCase() != _authenticatedUserEmail) {
-          return context.t(
-            'church.register_admin_email_mismatch',
-            fallback: 'Admin email must match the account currently signed in.',
-          );
+          return context.t('church.register_admin_email_mismatch');
         }
         if (adminPhone.isEmpty) {
-          return context.t(
-            'super_admin.admin_phone_required',
-            fallback: 'Please enter the admin phone',
-          );
+          return context.t('super_admin.admin_phone_required');
         }
         return null;
       default:
@@ -260,93 +221,50 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     final adminPhone = _adminPhoneController.text.trim();
 
     if (name.isEmpty) {
-      return context.t(
-        'super_admin.name_required',
-        fallback: 'Please enter the church name',
-      );
+      return context.t('super_admin.name_required');
     }
     if (churchId.isEmpty) {
-      return context.t(
-        'super_admin.id_required',
-        fallback: 'Please enter the church ID',
-      );
+      return context.t('super_admin.id_required');
     }
     if (!RegExp(r'^[a-z0-9_]+$').hasMatch(churchId)) {
-      return context.t(
-        'super_admin.id_invalid',
-        fallback:
-            'Church ID can contain only lowercase letters, numbers, and underscores',
-      );
+      return context.t('super_admin.id_invalid');
     }
     if (_logoImage == null && _existingLogoUrl.trim().isEmpty) {
-      return context.t(
-        'super_admin.logo_required',
-        fallback: 'Please pick a church logo',
-      );
+      return context.t('super_admin.logo_required');
     }
     if (_pastorPhotoImage == null && _existingPastorPhotoUrl.trim().isEmpty) {
-      return context.t(
-        'super_admin.pastor_photo_required',
-        fallback: 'Please pick a pastor photo',
-      );
+      return context.t('super_admin.pastor_photo_required');
     }
     if (address.isEmpty) {
-      return context.t(
-        'super_admin.address_required',
-        fallback: 'Please enter the church address',
-      );
+      return context.t('super_admin.address_required');
     }
     if (contact.isEmpty) {
-      return context.t(
-        'super_admin.contact_required',
-        fallback: 'Please enter the church contact',
-      );
+      return context.t('super_admin.contact_required');
     }
     if (email.isEmpty) {
-      return context.t(
-        'super_admin.email_required',
-        fallback: 'Please enter the church email',
-      );
+      return context.t('super_admin.email_required');
     }
     if (!InputValidators.isValidEmail(email)) {
-      return context.t(
-        'auth.email_address_invalid',
-        fallback: 'Please enter a valid email address',
-      );
+      return context.t('auth.email_address_invalid');
     }
     if (_isEditMode) {
       return null;
     }
     if (adminName.isEmpty) {
-      return context.t(
-        'super_admin.admin_name_required',
-        fallback: 'Please enter the admin name',
-      );
+      return context.t('super_admin.admin_name_required');
     }
     if (adminEmail.isEmpty) {
-      return context.t(
-        'super_admin.admin_email_required',
-        fallback: 'Please enter the admin email',
-      );
+      return context.t('super_admin.admin_email_required');
     }
     if (!InputValidators.isValidEmail(adminEmail)) {
-      return context.t(
-        'auth.email_address_invalid',
-        fallback: 'Please enter a valid email address',
-      );
+      return context.t('auth.email_address_invalid');
     }
     if (_isPublicRegistrationMode &&
         adminEmail.toLowerCase() != _authenticatedUserEmail) {
-      return context.t(
-        'church.register_admin_email_mismatch',
-        fallback: 'Admin email must match the account currently signed in.',
-      );
+      return context.t('church.register_admin_email_mismatch');
     }
     if (adminPhone.isEmpty) {
-      return context.t(
-        'super_admin.admin_phone_required',
-        fallback: 'Please enter the admin phone',
-      );
+      return context.t('super_admin.admin_phone_required');
     }
     return null;
   }
@@ -502,23 +420,11 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     } on CreateChurchException catch (error) {
       if (!mounted) return;
       final message = switch (error.code) {
-        'duplicate-email' => context.t(
-            'church.register_duplicate_email',
-            fallback: 'A church with this email already exists.',
-          ),
-        'duplicate-id' => context.t(
-            'super_admin.duplicate_id',
-            fallback: 'A church with this ID already exists',
-          ),
-        'missing-auth-email' => context.t(
-            'church.register_missing_auth_email',
-            fallback:
-                'Your signed-in account does not have an email address. Please sign in again.',
-          ),
-        'invalid-public-admin-email' => context.t(
-            'church.register_admin_email_mismatch',
-            fallback: 'Admin email must match the account currently signed in.',
-          ),
+        'duplicate-email' => context.t('church.register_duplicate_email'),
+        'duplicate-id' => context.t('super_admin.duplicate_id'),
+        'missing-auth-email' => context.t('church.register_missing_auth_email'),
+        'invalid-public-admin-email' =>
+          context.t('church.register_admin_email_mismatch'),
         _ => error.code,
       };
       ScaffoldMessenger.of(context).showSnackBar(
@@ -551,7 +457,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
       return;
     }
 
-    if (_currentStep < _stepTitles.length - 1) {
+    if (_currentStep < _stepCount - 1) {
       setState(() {
         _currentStep += 1;
       });
@@ -569,18 +475,18 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     switch (_currentStep) {
       case 0:
         return _isPublicRegistrationMode
-            ? 'Start with the church identity and contact details people will recognize.'
-            : 'Set the core church identity, contact details, and brand image first.';
+            ? context.t('church_setup.public_church_details_subtitle')
+            : context.t('church_setup.church_details_subtitle');
       case 1:
-        return 'Add the pastor presentation details that will be used across the app.';
+        return context.t('church_setup.pastor_details_subtitle');
       case 2:
         return _isEditMode
-            ? 'Review access and church status settings for this church.'
+            ? context.t('church_setup.edit_admin_details_subtitle')
             : _setupChurchAccount && !_isPublicRegistrationMode
-                ? 'Add the initial admin who will receive account access for this church.'
-                : 'Save the initial admin details even if account setup is being deferred.';
+                ? context.t('church_setup.admin_account_subtitle')
+                : context.t('church_setup.admin_details_subtitle');
       case 3:
-        return 'Choose which modules this church can see and use.';
+        return context.t('church_setup.feature_access_subtitle');
       default:
         return '';
     }
@@ -611,10 +517,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           controller: _nameController,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: context.t(
-              'super_admin.church_name_label',
-              fallback: 'Church Name',
-            ),
+            labelText: context.t('super_admin.church_name_label'),
           ),
         ),
         const SizedBox(height: 14),
@@ -627,12 +530,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           ),
           child: Text(
             generatedChurchId.isEmpty
-                ? context.t(
-                    'super_admin.church_id_auto_hint',
-                    fallback:
-                        'Church ID will be generated automatically from the church name.',
-                  )
-                : '${context.t('super_admin.church_id_preview', fallback: 'Generated Church ID')}: $generatedChurchId',
+                ? context.t('super_admin.church_id_auto_hint')
+                : '${context.t('super_admin.church_id_preview')}: $generatedChurchId',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
@@ -642,10 +541,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           onChanged: (_) => setState(() {}),
           maxLines: 3,
           decoration: InputDecoration(
-            labelText: context.t(
-              'super_admin.address_label',
-              fallback: 'Address',
-            ),
+            labelText: context.t('super_admin.address_label'),
           ),
         ),
         const SizedBox(height: 14),
@@ -654,10 +550,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
-            labelText: context.t(
-              'super_admin.contact_label',
-              fallback: 'Contact',
-            ),
+            labelText: context.t('super_admin.contact_label'),
           ),
         ),
         const SizedBox(height: 14),
@@ -666,26 +559,14 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            labelText: context.t(
-              'super_admin.email_label',
-              fallback: 'Email',
-            ),
+            labelText: context.t('super_admin.email_label'),
           ),
         ),
         const SizedBox(height: 20),
         _LogoPickerCard(
-          label: context.t(
-            'super_admin.logo_label',
-            fallback: 'Church Logo',
-          ),
-          pickText: context.t(
-            'super_admin.logo_pick',
-            fallback: 'Pick Logo',
-          ),
-          replaceText: context.t(
-            'super_admin.logo_replace',
-            fallback: 'Replace Logo',
-          ),
+          label: context.t('super_admin.logo_label'),
+          pickText: context.t('super_admin.logo_pick'),
+          replaceText: context.t('super_admin.logo_replace'),
           imageBytes: _logoImage?.bytes,
           imageUrl: _logoImage == null ? _existingLogoUrl : null,
           onTap: _isSubmitting ? null : _pickLogo,
@@ -702,26 +583,14 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           controller: _pastorController,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: context.t(
-              'super_admin.pastor_name_label',
-              fallback: 'Pastor Name',
-            ),
+            labelText: context.t('super_admin.pastor_name_label'),
           ),
         ),
         const SizedBox(height: 20),
         _LogoPickerCard(
-          label: context.t(
-            'super_admin.pastor_photo_label',
-            fallback: 'Pastor Photo',
-          ),
-          pickText: context.t(
-            'super_admin.pastor_photo_pick',
-            fallback: 'Pick Pastor Photo',
-          ),
-          replaceText: context.t(
-            'super_admin.pastor_photo_replace',
-            fallback: 'Replace Pastor Photo',
-          ),
+          label: context.t('super_admin.pastor_photo_label'),
+          pickText: context.t('super_admin.pastor_photo_pick'),
+          replaceText: context.t('super_admin.pastor_photo_replace'),
           imageBytes: _pastorPhotoImage?.bytes,
           imageUrl: _pastorPhotoImage == null ? _existingPastorPhotoUrl : null,
           onTap: _isSubmitting ? null : _pickPastorPhoto,
@@ -744,10 +613,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             ),
             child: Text(
               context.t(
-                'super_admin.admin_section_hint',
-                fallback: _setupChurchAccount
-                    ? 'This admin will be invited to finish account setup.'
-                    : 'This admin will be saved under the church config, but no Firebase Auth account will be created yet.',
+                _setupChurchAccount
+                    ? 'super_admin.admin_section_setup_hint'
+                    : 'super_admin.admin_section_deferred_hint',
               ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -757,10 +625,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             controller: _adminNameController,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: context.t(
-                'super_admin.admin_name_label',
-                fallback: 'Admin Name',
-              ),
+              labelText: context.t('super_admin.admin_name_label'),
             ),
           ),
           const SizedBox(height: 14),
@@ -771,16 +636,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                 _isPublicRegistrationMode ? null : (_) => setState(() {}),
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              labelText: context.t(
-                'super_admin.admin_email_label',
-                fallback: 'Admin Email',
-              ),
+              labelText: context.t('super_admin.admin_email_label'),
               helperText: _isPublicRegistrationMode
-                  ? context.t(
-                      'church.register_admin_email_locked',
-                      fallback:
-                          'This is the email of your currently signed-in account.',
-                    )
+                  ? context.t('church.register_admin_email_locked')
                   : null,
               helperMaxLines: 3,
               suffixIcon: _isPublicRegistrationMode
@@ -794,10 +652,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             onChanged: (_) => setState(() {}),
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
-              labelText: context.t(
-                'super_admin.admin_phone_label',
-                fallback: 'Admin Phone',
-              ),
+              labelText: context.t('super_admin.admin_phone_label'),
             ),
           ),
           const SizedBox(height: 18),
@@ -810,7 +665,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
               borderRadius: BorderRadius.circular(18),
             ),
             child: Text(
-              'Admin creation is only part of the first-time church setup. You can still update this church and change its availability here.',
+              context.t(
+                  'ui.create_church.admin_creation_is_only_part_of_the_first_time_church_se'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -821,17 +677,13 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             value: _setupChurchAccount,
             contentPadding: EdgeInsets.zero,
             title: Text(
-              context.t(
-                'super_admin.setup_account_label',
-                fallback: 'Set up church account',
-              ),
+              context.t('super_admin.setup_account_label'),
             ),
             subtitle: Text(
               context.t(
-                'super_admin.setup_account_hint',
-                fallback: _setupChurchAccount
-                    ? 'An initial admin account will be created and invited to finish password setup.'
-                    : 'The church will be created without Firebase Auth account setup. You can add access later.',
+                _setupChurchAccount
+                    ? 'super_admin.setup_account_enabled_hint'
+                    : 'super_admin.setup_account_deferred_hint',
               ),
             ),
             onChanged: _isSubmitting
@@ -849,10 +701,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             value: _enabled,
             contentPadding: EdgeInsets.zero,
             title: Text(
-              context.t(
-                'super_admin.enabled_label',
-                fallback: 'Enabled',
-              ),
+              context.t('super_admin.enabled_label'),
             ),
             onChanged: _isSubmitting
                 ? null
@@ -868,53 +717,47 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
   }
 
   Widget _buildFeatureAccessStep(BuildContext context) {
-    final featureItems = const <_FeatureFlagSpec>[
+    final featureItems = <_FeatureFlagSpec>[
       _FeatureFlagSpec(
         key: 'dashboardEnabled',
-        title: 'Admin Dashboard',
-        subtitle: 'Shows the dashboard tab for admins.',
+        title: context.t('super_admin.feature_admin_dashboard'),
+        subtitle: context.t('super_admin.feature_admin_dashboard_description'),
         icon: Icons.dashboard_customize_outlined,
       ),
       _FeatureFlagSpec(
-        key: 'financialDashboardEnabled',
-        title: 'Financial Dashboard',
-        subtitle: 'Shows finance in the sidebar for finance group members.',
-        icon: Icons.account_balance_wallet_outlined,
-      ),
-      _FeatureFlagSpec(
         key: 'equipmentEnabled',
-        title: 'Equipment',
-        subtitle: 'Shows equipment inventory for admins.',
+        title: context.t('super_admin.feature_equipment'),
+        subtitle: context.t('super_admin.feature_equipment_description'),
         icon: Icons.inventory_2_outlined,
       ),
       _FeatureFlagSpec(
         key: 'studioEnabled',
-        title: 'Studio',
-        subtitle: 'Allows admins to manage app content and settings.',
+        title: context.t('super_admin.feature_studio'),
+        subtitle: context.t('super_admin.feature_studio_description'),
         icon: Icons.design_services_outlined,
       ),
       _FeatureFlagSpec(
         key: 'membersEnabled',
-        title: 'Members',
-        subtitle: 'Allows member directory and member flows.',
+        title: context.t('super_admin.feature_members'),
+        subtitle: context.t('super_admin.feature_members_description'),
         icon: Icons.people_outline,
       ),
       _FeatureFlagSpec(
         key: 'eventsEnabled',
-        title: 'Events',
-        subtitle: 'Allows events content and event dashboard sections.',
+        title: context.t('super_admin.feature_events'),
+        subtitle: context.t('super_admin.feature_events_description'),
         icon: Icons.event_outlined,
       ),
       _FeatureFlagSpec(
         key: 'globalFeedEnabled',
-        title: 'Global Feed',
-        subtitle: 'Allows global feed content for this church.',
+        title: context.t('super_admin.feature_global_feed'),
+        subtitle: context.t('super_admin.feature_global_feed_description'),
         icon: Icons.feed_outlined,
       ),
       _FeatureFlagSpec(
         key: 'bibleSwipeFetchEnabled',
-        title: 'Bible Swipe',
-        subtitle: 'Allows swipe verse content fetching.',
+        title: context.t('super_admin.feature_bible_swipe'),
+        subtitle: context.t('super_admin.feature_bible_swipe_description'),
         icon: Icons.menu_book_outlined,
       ),
     ];
@@ -923,14 +766,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Feature flags',
+          context.t('ui.create_church.feature_flags'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Turn modules on only for churches that should use them.',
+          context.t(
+              'ui.create_church.turn_modules_on_only_for_churches_that_should_use_them'),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 14),
@@ -971,7 +815,6 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
               'membersEnabled': config.membersEnabled,
               'eventsEnabled': config.eventsEnabled,
               'dashboardEnabled': config.dashboardEnabled,
-              'financialDashboardEnabled': config.financialDashboardEnabled,
               'equipmentEnabled': config.equipmentEnabled,
               'studioEnabled': config.studioEnabled,
               'globalFeedEnabled': config.globalFeedEnabled,
@@ -1083,9 +926,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                               ),
                             const SizedBox(height: 14),
                             _ChurchFlowHeader(
-                              title: _headerChurchName,
+                              title: _headerChurchName(context),
                               stepIndex: _currentStep,
-                              stepCount: _stepTitles.length,
+                              stepCount: _stepCount,
                               progress: _stepProgress,
                             ),
                             const SizedBox(height: 16),
@@ -1093,7 +936,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                               duration: const Duration(milliseconds: 220),
                               child: _ChurchStepShell(
                                 key: ValueKey<int>(_currentStep),
-                                title: _stepTitles[_currentStep],
+                                title: _stepTitles(context)[_currentStep],
                                 subtitle: _stepSubtitle(context),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1105,7 +948,7 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                         if (_currentStep > 0)
                                           Expanded(
                                             child: SolidButton(
-                                              label: 'Back',
+                                              label: context.t('common.back'),
                                               onPressed: _isSubmitting
                                                   ? null
                                                   : _goToPreviousStep,
@@ -1115,23 +958,23 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                           const SizedBox(width: 12),
                                         Expanded(
                                           child: SolidButton(
-                                            label: _currentStep ==
-                                                    _stepTitles.length - 1
-                                                ? context.t(
-                                                    _isEditMode
-                                                        ? 'super_admin.edit_action'
-                                                        : _isPublicRegistrationMode
-                                                            ? 'church.register_your_church'
-                                                            : 'super_admin.create_action',
-                                                    fallback: _isEditMode
-                                                        ? 'Update Church'
-                                                        : _isPublicRegistrationMode
-                                                            ? 'Register your church'
-                                                            : 'Create Church',
-                                                  )
-                                                : 'Continue',
+                                            label:
+                                                _currentStep == _stepCount - 1
+                                                    ? context.t(
+                                                        _isEditMode
+                                                            ? 'super_admin.edit_action'
+                                                            : _isPublicRegistrationMode
+                                                                ? 'church.register_your_church'
+                                                                : 'super_admin.create_action',
+                                                        fallback: _isEditMode
+                                                            ? 'Update Church'
+                                                            : _isPublicRegistrationMode
+                                                                ? 'Register your church'
+                                                                : 'Create Church',
+                                                      )
+                                                    : 'Continue',
                                             onPressed: _currentStep ==
-                                                    _stepTitles.length - 1
+                                                    _stepCount - 1
                                                 ? (_canSubmit ? _submit : null)
                                                 : (_isSubmitting
                                                     ? null
@@ -1309,7 +1152,13 @@ class _ChurchFlowHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Step ${stepIndex + 1} of $stepCount',
+            context.t(
+              'common.step_progress',
+              parameters: {
+                'current': '${stepIndex + 1}',
+                'total': '$stepCount',
+              },
+            ),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),

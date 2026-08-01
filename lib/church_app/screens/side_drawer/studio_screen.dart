@@ -38,6 +38,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       await logChurchAnalyticsEvent(
         ref,
         name: 'studio_opened',
@@ -52,10 +53,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
+        appBar: AppBar(title: Text(ref.t('studio.title'))),
         body: Center(
-          child: Text(ref.t('studio.admin_only',
-              fallback: 'Studio is available only for admins.')),
+          child: Text(ref.t('studio.admin_only')),
         ),
       );
     }
@@ -65,19 +65,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         body: Center(child: AppLoadingIndicator()),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
-        body: Center(
-            child: Text(
-                '${ref.t('common.error_prefix', fallback: 'Error')}: $error')),
+        appBar: AppBar(title: Text(ref.t('studio.title'))),
+        body: Center(child: Text('${ref.t('common.error_prefix')}: $error')),
       ),
       data: (churchId) {
         if (churchId == null) {
           return Scaffold(
-            appBar:
-                AppBar(title: Text(ref.t('studio.title', fallback: 'Studio'))),
-            body: Center(
-                child: Text(ref.t('studio.no_church_selected',
-                    fallback: 'No church selected.'))),
+            appBar: AppBar(title: Text(ref.t('studio.title'))),
+            body: Center(child: Text(ref.t('studio.no_church_selected'))),
           );
         }
 
@@ -91,15 +86,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
         final categories = <_StudioCategory>[
           _StudioCategory(
-            title: 'Brand & Identity',
-            subtitle: 'Shape the look and core church profile.',
+            title: context.t('ui.studio.brand_identity'),
+            subtitle:
+                context.t('ui.studio.shape_the_look_and_core_church_profile'),
             items: [
               _StudioToolItem(
-                title: ref.t('studio.tab_theme', fallback: 'Theme'),
-                subtitle: 'Update colors and visual branding.',
+                title: ref.t('studio.tab_theme'),
+                subtitle:
+                    context.t('ui.studio.update_colors_and_visual_branding'),
                 icon: Icons.palette_outlined,
-                status: const _StudioToolStatus(
-                  label: 'Theme',
+                status: _StudioToolStatus(
+                  label: context.t('ui.studio.theme'),
                   tone: _StudioStatusTone.neutral,
                 ),
                 builder: (_) => _ThemeEditor(
@@ -115,26 +112,27 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_about', fallback: 'About'),
-                subtitle: 'Edit church name, mission, values, and story.',
+                title: ref.t('studio.tab_about'),
+                subtitle: context
+                    .t('ui.studio.edit_church_name_mission_values_and_story'),
                 icon: Icons.auto_stories_outlined,
-                status: const _StudioToolStatus(
-                  label: 'Profile',
+                status: _StudioToolStatus(
+                  label: context.t('ui.studio.profile'),
                   tone: _StudioStatusTone.neutral,
                 ),
                 builder: (_) => _AboutEditor(repository: repository),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_pastor', fallback: 'Pastor'),
-                subtitle: 'Manage pastor entries and contact details.',
+                title: ref.t('studio.tab_pastor'),
+                subtitle: context
+                    .t('ui.studio.manage_pastor_entries_and_contact_details'),
                 icon: Icons.person_outline_rounded,
                 countStream:
                     repository.watchPastors().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchPastors(),
-                  addLabel: ref.t('studio.add_pastor', fallback: 'Add pastor'),
-                  emptyText:
-                      ref.t('studio.no_pastors', fallback: 'No pastors yet.'),
+                  addLabel: ref.t('studio.add_pastor'),
+                  emptyText: ref.t('studio.no_pastors'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) => (data['contact'] ?? '') as String,
                   onAdd: () => _showPastorEditor(screenContext, repository),
@@ -150,11 +148,12 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_footer', fallback: 'Footer'),
-                subtitle: 'Edit footer contacts and social links.',
+                title: ref.t('studio.tab_footer'),
+                subtitle: context
+                    .t('ui.studio.edit_footer_contacts_and_social_links'),
                 icon: Icons.view_day_outlined,
-                status: const _StudioToolStatus(
-                  label: 'Links',
+                status: _StudioToolStatus(
+                  label: context.t('ui.studio.links'),
                   tone: _StudioStatusTone.neutral,
                 ),
                 builder: (_) => _FooterEditor(repository: repository),
@@ -162,22 +161,21 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             ],
           ),
           _StudioCategory(
-            title: 'Content & Worship',
-            subtitle: 'Manage posts, readings, and devotional content.',
+            title: context.t('ui.studio.content_worship'),
+            subtitle: context
+                .t('ui.studio.manage_posts_readings_and_devotional_content'),
             items: [
               _StudioToolItem(
-                title: ref.t('studio.tab_announcements',
-                    fallback: 'Announcements'),
-                subtitle: 'Publish important updates with optional images.',
+                title: ref.t('studio.tab_announcements'),
+                subtitle: context.t(
+                    'ui.studio.publish_important_updates_with_optional_images'),
                 icon: Icons.campaign_outlined,
                 countStream:
                     repository.watchAnnouncements().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchAnnouncements(),
-                  addLabel: ref.t('studio.add_announcement',
-                      fallback: 'Add announcement'),
-                  emptyText: ref.t('studio.no_announcements',
-                      fallback: 'No announcements yet.'),
+                  addLabel: ref.t('studio.add_announcement'),
+                  emptyText: ref.t('studio.no_announcements'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileStatus: (data) {
                     final expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
@@ -185,13 +183,13 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                       return null;
                     }
 
-                    return const _StudioInlineStatusChip(
-                      label: 'Expired',
+                    return _StudioInlineStatusChip(
+                      label: context.t('ui.studio.expired'),
                       color: Colors.deepOrange,
                     );
                   },
                   tileSubtitle: (data) =>
-                      '${ref.t('studio.announcement_priority_prefix', fallback: 'Priority')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
+                      '${ref.t('studio.announcement_priority_prefix')}: ${data['priority'] ?? 0}\n${data['body'] ?? ''}',
                   onAdd: () =>
                       _showAnnouncementEditor(screenContext, repository),
                   onEdit: (doc) => _showAnnouncementEditor(
@@ -206,16 +204,16 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_events', fallback: 'Events'),
-                subtitle: 'Create and organize church events.',
+                title: ref.t('studio.tab_events'),
+                subtitle:
+                    context.t('ui.studio.create_and_organize_church_events'),
                 icon: Icons.event_outlined,
                 countStream:
                     repository.watchEvents().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchEvents(),
-                  addLabel: ref.t('studio.add_event', fallback: 'Add event'),
-                  emptyText:
-                      ref.t('studio.no_events', fallback: 'No events yet.'),
+                  addLabel: ref.t('studio.add_event'),
+                  emptyText: ref.t('studio.no_events'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileStatus: (data) {
                     final expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
@@ -223,8 +221,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                       return null;
                     }
 
-                    return const _StudioInlineStatusChip(
-                      label: 'Expired',
+                    return _StudioInlineStatusChip(
+                      label: context.t('ui.studio.expired_a689'),
                       color: Colors.deepOrange,
                     );
                   },
@@ -233,11 +231,11 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                       if ((data['timing'] ?? '').toString().isNotEmpty)
                         (data['timing'] ?? '').toString(),
                       if ((data['type'] ?? '').toString().isNotEmpty)
-                        '${ref.t('studio.event_type_prefix', fallback: 'Type')}: ${data['type']}',
+                        '${ref.t('studio.event_type_prefix')}: ${data['type']}',
                       if ((data['contact'] ?? '').toString().isNotEmpty)
-                        '${ref.t('studio.event_contact_prefix', fallback: 'Contact')}: ${data['contact']}',
+                        '${ref.t('studio.event_contact_prefix')}: ${data['contact']}',
                       if ((data['location'] ?? '').toString().isNotEmpty)
-                        '${ref.t('studio.event_location_prefix', fallback: 'Location')}: ${data['location']}',
+                        '${ref.t('studio.event_location_prefix')}: ${data['location']}',
                       if (data['isRecurring'] == true &&
                           (data['recurrenceFrequency'] ?? '').toString() ==
                               'weekly')
@@ -255,17 +253,16 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_articles', fallback: 'Articles'),
-                subtitle: 'Publish long-form inspirational content.',
+                title: ref.t('studio.tab_articles'),
+                subtitle: context
+                    .t('ui.studio.publish_long_form_inspirational_content'),
                 icon: Icons.article_outlined,
                 countStream:
                     repository.watchArticles().map((docs) => docs.length),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchArticles(),
-                  addLabel:
-                      ref.t('studio.add_article', fallback: 'Add article'),
-                  emptyText:
-                      ref.t('studio.no_articles', fallback: 'No articles yet.'),
+                  addLabel: ref.t('studio.add_article'),
+                  emptyText: ref.t('studio.no_articles'),
                   tileTitle: (data) => (data['title'] ?? '') as String,
                   tileSubtitle: (data) => (data['description'] ?? '') as String,
                   onAdd: () => _showArticleEditor(screenContext, repository),
@@ -278,8 +275,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
-                subtitle: 'Set the verse shown to members each day.',
+                title: ref.t('studio.tab_daily_verse'),
+                subtitle: context
+                    .t('ui.studio.set_the_verse_shown_to_members_each_day'),
                 icon: Icons.menu_book_outlined,
                 status: config == null
                     ? null
@@ -292,8 +290,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                             : _StudioStatusTone.good,
                       ),
                 builder: (_) => _ConfigVerseEditor(
-                  title:
-                      ref.t('studio.tab_daily_verse', fallback: 'Daily Verse'),
+                  title: ref.t('studio.tab_daily_verse'),
                   configSelector: (config) => config.dailyVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updateDailyVerse(
@@ -305,8 +302,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_promise', fallback: 'Promise'),
-                subtitle: 'Manage the promise word reference.',
+                title: ref.t('studio.tab_promise'),
+                subtitle:
+                    context.t('ui.studio.manage_the_promise_word_reference'),
                 icon: Icons.wb_sunny_outlined,
                 status: config == null
                     ? null
@@ -319,7 +317,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                             : _StudioStatusTone.good,
                       ),
                 builder: (_) => _ConfigVerseEditor(
-                  title: ref.t('studio.tab_promise', fallback: 'Promise'),
+                  title: ref.t('studio.tab_promise'),
                   configSelector: (config) => config.promiseVerseRef,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updatePromiseWord(
@@ -331,8 +329,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_bible_swipe', fallback: 'Bible Swipe'),
-                subtitle: 'Edit verse swipes used in the For You section.',
+                title: ref.t('studio.tab_bible_swipe'),
+                subtitle: context.t(
+                    'ui.studio.edit_verse_swipes_used_in_the_for_you_section'),
                 icon: Icons.swipe_outlined,
                 countStream: repository
                     .watchBibleSwipeVerses()
@@ -342,16 +341,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             ],
           ),
           _StudioCategory(
-            title: 'Engagement',
-            subtitle: 'Control prompts, notifications, and live sections.',
+            title: context.t('ui.studio.engagement'),
+            subtitle: context
+                .t('ui.studio.control_prompts_notifications_and_live_sections'),
             items: [
               _StudioToolItem(
-                title: ref.t(
-                  'studio.tab_live_church',
-                  fallback: 'Live Church',
-                ),
-                subtitle:
-                    'Connect a YouTube channel for automatic live services.',
+                title: ref.t('studio.tab_live_church'),
+                subtitle: context.t(
+                    'ui.studio.connect_a_youtube_channel_for_automatic_live_service'),
                 icon: Icons.live_tv_outlined,
                 countStream: repository.watchLiveChurchConfig().map(
                       (data) => data?['enabled'] == true ? 1 : 0,
@@ -359,22 +356,23 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 builder: (_) => _LiveChurchEditor(repository: repository),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_sections', fallback: 'Sections'),
-                subtitle: 'Enable, disable, and reorder major app sections.',
+                title: ref.t('studio.tab_sections'),
+                subtitle: context.t(
+                    'ui.studio.enable_disable_and_reorder_major_app_sections'),
                 icon: Icons.dashboard_customize_outlined,
-                status: const _StudioToolStatus(
-                  label: 'Layout',
+                status: _StudioToolStatus(
+                  label: context.t('ui.studio.layout'),
                   tone: _StudioStatusTone.neutral,
                 ),
                 builder: (_) => _SectionsEditor(repository: repository),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_notifications',
-                    fallback: 'Notifications'),
-                subtitle: 'Queue updates to church or topic audiences.',
+                title: ref.t('studio.tab_notifications'),
+                subtitle: context
+                    .t('ui.studio.queue_updates_to_church_or_topic_audiences'),
                 icon: Icons.notifications_active_outlined,
-                status: const _StudioToolStatus(
-                  label: 'Broadcast',
+                status: _StudioToolStatus(
+                  label: context.t('ui.studio.broadcast'),
                   tone: _StudioStatusTone.neutral,
                 ),
                 builder: (_) => _NotificationComposer(
@@ -389,8 +387,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_prompt', fallback: 'Prompt'),
-                subtitle: 'Configure the important prompt shown to users.',
+                title: ref.t('studio.tab_prompt'),
+                subtitle: context.t(
+                    'ui.studio.configure_the_important_prompt_shown_to_users'),
                 icon: Icons.priority_high_rounded,
                 status: config == null
                     ? null
@@ -417,13 +416,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             ],
           ),
           _StudioCategory(
-            title: 'Admin Controls',
-            subtitle: 'Manage access and church-wide editing permissions.',
+            title: context.t('ui.studio.admin_controls'),
+            subtitle: context.t(
+                'ui.studio.manage_access_and_church_wide_editing_permissions'),
             items: [
               _StudioToolItem(
-                title: ref.t('studio.tab_admin_mode', fallback: 'Admin Mode'),
-                subtitle:
-                    'Pause the app for regular users while work is in progress.',
+                title: ref.t('studio.tab_admin_mode'),
+                subtitle: context.t(
+                    'ui.studio.pause_the_app_for_regular_users_while_work_is_in_pro'),
                 icon: Icons.construction_outlined,
                 status: config == null
                     ? null
@@ -444,13 +444,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 ),
               ),
               _StudioToolItem(
-                title: ref.t('studio.tab_admins', fallback: 'Admins'),
-                subtitle: 'Update the list of admin email addresses.',
+                title: ref.t('studio.tab_admins'),
+                subtitle: context
+                    .t('ui.studio.update_the_list_of_admin_email_addresses'),
                 icon: Icons.admin_panel_settings_outlined,
                 status: config == null
                     ? null
                     : _StudioToolStatus(
-                        label: '${config.admins.length} admins',
+                        label: context.t(
+                          'studio.admin_count',
+                          parameters: {'count': '${config.admins.length}'},
+                        ),
                         tone: _StudioStatusTone.neutral,
                       ),
                 builder: (_) => _AdminsEditor(
@@ -463,15 +467,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(ref.t('studio.title', fallback: 'Studio')),
+            title: Text(ref.t('studio.title')),
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               _StudioOverviewCard(
-                title: ref.t('studio.title', fallback: 'Studio'),
-                subtitle:
-                    'Manage branding, content, engagement, and admin controls without hunting through long tabs.',
+                title: ref.t('studio.title'),
+                subtitle: context.t(
+                    'ui.studio.manage_branding_content_engagement_and_admin_control'),
               ),
               const SizedBox(height: 18),
               for (final category in categories) ...[
@@ -868,8 +872,8 @@ class _CollectionEditor extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
-            child: Text(
-                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}'),
+            child:
+                Text('${context.t('common.error_prefix')}: ${snapshot.error}'),
           );
         }
 
@@ -945,22 +949,19 @@ class _CollectionEditor extends StatelessWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: AppBarTitle(
-                              text: context.t('studio.delete_title',
-                                  fallback: 'Delete'),
+                              text: context.t('studio.delete_title'),
                             ),
                             content: Text(
-                              '${context.t('studio.delete_confirm_remove_prefix', fallback: 'Remove')} "${tileTitle(data)}"?',
+                              '${context.t('studio.delete_confirm_remove_prefix')} "${tileTitle(data)}"?',
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: Text(context.t('settings.cancel',
-                                    fallback: 'Cancel')),
+                                child: Text(context.t('settings.cancel')),
                               ),
                               FilledButton(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: Text(context.t('common.delete',
-                                    fallback: 'Delete')),
+                                child: Text(context.t('common.delete')),
                               ),
                             ],
                           ),
@@ -1035,8 +1036,7 @@ class _ConfigVerseEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
-        child: Text(
-            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text('${context.t('common.error_prefix')}: $error'),
       ),
       data: (config) {
         final verseRef = configSelector(config);
@@ -1057,7 +1057,8 @@ class _ConfigVerseEditor extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pick the exact Bible verse users will see. Use the button below to change book, chapter, or verse number.',
+                      context.t(
+                          'ui.studio.pick_the_exact_bible_verse_users_will_see_use_the_butto'),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
@@ -1070,11 +1071,17 @@ class _ConfigVerseEditor extends ConsumerWidget {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         _StudioInlineStatusChip(
-                          label: 'Chapter ${verseRef.chapter}',
+                          label: context.t(
+                            'studio.chapter_value',
+                            parameters: {'chapter': '${verseRef.chapter}'},
+                          ),
                           color: Colors.teal,
                         ),
                         _StudioInlineStatusChip(
-                          label: 'Verse ${verseRef.verse}',
+                          label: context.t(
+                            'studio.verse_value',
+                            parameters: {'verse': '${verseRef.verse}'},
+                          ),
                           color: Colors.orange,
                         ),
                       ],
@@ -1137,7 +1144,8 @@ class _ConfigVerseEditor extends ConsumerWidget {
                           onSave: onSave,
                         ),
                         icon: const Icon(Icons.tune_rounded),
-                        label: const Text('Change book / chapter / verse'),
+                        label: Text(
+                            context.t('ui.studio.change_book_chapter_verse')),
                       ),
                     ),
                   ],
@@ -1169,7 +1177,7 @@ class _ThemeEditor extends ConsumerWidget {
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
-          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+          '${context.t('common.error_prefix')}: $error',
         ),
       ),
       data: (config) => _ThemeEditorForm(
@@ -1270,53 +1278,33 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t(
-                    'studio.theme_hint',
-                    fallback:
-                        'Update the church primary and secondary brand colors using hex values like #1E88E5.',
-                  ),
+                  context.t('studio.theme_hint'),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  context.t(
-                    'studio.theme_palette_hint',
-                    fallback:
-                        'Tap a color from the palette or enter a custom hex value.',
-                  ),
+                  context.t('studio.theme_palette_hint'),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 16),
                 _ThemeColorField(
-                  label: context.t(
-                    'studio.theme_primary_label',
-                    fallback: 'Primary Color',
-                  ),
+                  label: context.t('studio.theme_primary_label'),
                   controller: _primaryController,
                   previewColor: _safeColor(_primaryController.text),
                   onChanged: (_) => setState(() {}),
                   onPickPressed: () => _pickColor(
                     controller: _primaryController,
-                    label: context.t(
-                      'studio.theme_primary_label',
-                      fallback: 'Primary Color',
-                    ),
+                    label: context.t('studio.theme_primary_label'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 _ThemeColorField(
-                  label: context.t(
-                    'studio.theme_secondary_label',
-                    fallback: 'Secondary Color',
-                  ),
+                  label: context.t('studio.theme_secondary_label'),
                   controller: _secondaryController,
                   previewColor: _safeColor(_secondaryController.text),
                   onChanged: (_) => setState(() {}),
                   onPickPressed: () => _pickColor(
                     controller: _secondaryController,
-                    label: context.t(
-                      'studio.theme_secondary_label',
-                      fallback: 'Secondary Color',
-                    ),
+                    label: context.t('studio.theme_secondary_label'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1335,11 +1323,7 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t(
-                                      'studio.theme_invalid_hex',
-                                      fallback:
-                                          'Use valid hex colors like #1E88E5.',
-                                    ),
+                                    context.t('studio.theme_invalid_hex'),
                                   ),
                                 ),
                               );
@@ -1356,10 +1340,7 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t(
-                                      'studio.theme_updated',
-                                      fallback: 'Theme colors updated',
-                                    ),
+                                    context.t('studio.theme_updated'),
                                   ),
                                 ),
                               );
@@ -1375,7 +1356,7 @@ class _ThemeEditorFormState extends State<_ThemeEditorForm> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(context.t('common.save', fallback: 'Save')),
+                        : Text(context.t('common.save')),
                   ),
                 ),
               ],
@@ -1442,10 +1423,7 @@ class _ThemeColorField extends StatelessWidget {
             onPressed: onPickPressed,
             icon: const Icon(Icons.colorize_outlined),
             label: Text(
-              context.t(
-                'studio.theme_pick_color',
-                fallback: 'Pick color',
-              ),
+              context.t('studio.theme_pick_color'),
             ),
           ),
         ),
@@ -1501,7 +1479,7 @@ class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
             ),
             const SizedBox(height: 16),
             _ColorSliderRow(
-              label: 'Hue',
+              label: context.t('ui.studio.hue'),
               value: _selectedColor.hue,
               max: 360,
               activeColor: color,
@@ -1512,7 +1490,7 @@ class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
               },
             ),
             _ColorSliderRow(
-              label: 'Saturation',
+              label: context.t('ui.studio.saturation'),
               value: _selectedColor.saturation,
               max: 1,
               activeColor: color,
@@ -1523,7 +1501,7 @@ class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
               },
             ),
             _ColorSliderRow(
-              label: 'Brightness',
+              label: context.t('ui.studio.brightness'),
               value: _selectedColor.value,
               max: 1,
               activeColor: color,
@@ -1539,11 +1517,11 @@ class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.t('common.cancel', fallback: 'Cancel')),
+          child: Text(context.t('common.cancel')),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(color),
-          child: Text(context.t('common.apply', fallback: 'Apply')),
+          child: Text(context.t('common.apply')),
         ),
       ],
     );
@@ -1635,7 +1613,7 @@ class _AboutEditor extends ConsumerWidget {
         if (initialSnapshot.hasError) {
           return Center(
             child: Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${initialSnapshot.error}',
+              '${context.t('common.error_prefix')}: ${initialSnapshot.error}',
             ),
           );
         }
@@ -1650,7 +1628,7 @@ class _AboutEditor extends ConsumerWidget {
             if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+                  '${context.t('common.error_prefix')}: ${snapshot.error}',
                 ),
               );
             }
@@ -1668,36 +1646,23 @@ class _AboutEditor extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          context.t(
-                            'studio.about_hint',
-                            fallback:
-                                'Update the main about section shown for this church.',
-                          ),
+                          context.t('studio.about_hint'),
                         ),
                         const SizedBox(height: 16),
                         _DetailLine(
-                          label: context.t(
-                            'studio.about_church_name',
-                            fallback: 'Church Name',
-                          ),
+                          label: context.t('studio.about_church_name'),
                           value: churchAppTitle,
                         ),
                         _DetailLine(
-                          label: context.t('common.title', fallback: 'Title'),
+                          label: context.t('common.title'),
                           value: (about['title'] ?? '') as String,
                         ),
                         _DetailLine(
-                          label: context.t(
-                            'studio.about_tagline',
-                            fallback: 'Tagline',
-                          ),
+                          label: context.t('studio.about_tagline'),
                           value: (about['tagline'] ?? '') as String,
                         ),
                         _DetailLine(
-                          label: context.t(
-                            'common.description',
-                            fallback: 'Description',
-                          ),
+                          label: context.t('common.description'),
                           value: (about['description'] ?? '') as String,
                         ),
                         const SizedBox(height: 16),
@@ -1710,10 +1675,7 @@ class _AboutEditor extends ConsumerWidget {
                           ),
                           icon: const Icon(Icons.edit_outlined),
                           label: Text(
-                            context.t(
-                              'studio.about_edit',
-                              fallback: 'Edit About',
-                            ),
+                            context.t('studio.about_edit'),
                           ),
                         ),
                       ],
@@ -1745,7 +1707,7 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
         if (snapshot.hasError) {
           return Center(
             child: Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+              '${context.t('common.error_prefix')}: ${snapshot.error}',
             ),
           );
         }
@@ -1763,20 +1725,13 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      context.t(
-                        'studio.bible_swipe_hint',
-                        fallback:
-                            'Enter one verse reference per line, like John 3:16.',
-                      ),
+                      context.t('studio.bible_swipe_hint'),
                     ),
                     const SizedBox(height: 16),
                     FilledButton.icon(
                       onPressed: () => showBibleVersePickerSheet(
                         context,
-                        title: context.t(
-                          'studio.bible_swipe_add',
-                          fallback: 'Add Swipe Verse',
-                        ),
+                        title: context.t('studio.bible_swipe_add'),
                         initialBook: 'John',
                         initialChapter: 3,
                         initialVerse: 16,
@@ -1791,26 +1746,20 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                       ),
                       icon: const Icon(Icons.add),
                       label: Text(
-                        context.t(
-                          'studio.bible_swipe_add',
-                          fallback: 'Add Swipe Verse',
-                        ),
+                        context.t('studio.bible_swipe_add'),
                       ),
                     ),
                     const SizedBox(height: 16),
                     if (verses.isEmpty)
                       Text(
-                        context.t(
-                          'studio.bible_swipe_empty',
-                          fallback: 'No swipe verses added yet.',
-                        ),
+                        context.t('studio.bible_swipe_empty'),
                       )
                     else
                       ...verses.asMap().entries.map(
                         (entry) {
                           final index = entry.key;
                           final verse = entry.value;
-                          final parsed = BibleSwipeVerseModel.fromString(verse);
+                          final parsed = BibleSwipeVerseModel.tryParse(verse);
                           return Container(
                             decoration: carouselBoxDecoration(context),
                             margin: const EdgeInsets.only(bottom: 12),
@@ -1821,12 +1770,12 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit_outlined),
-                                    onPressed: () => showBibleVersePickerSheet(
+                                    onPressed: parsed == null
+                                        ? null
+                                        : () => showBibleVersePickerSheet(
                                       context,
-                                      title: context.t(
-                                        'studio.bible_swipe_edit_single',
-                                        fallback: 'Edit Swipe Verse',
-                                      ),
+                                      title: context
+                                          .t('studio.bible_swipe_edit_single'),
                                       initialBook: parsed.book,
                                       initialChapter: parsed.chapter,
                                       initialVerse: parsed.verse,
@@ -1857,10 +1806,7 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                                         SnackBar(
                                           content: Text(
                                             context.t(
-                                              'studio.bible_swipe_updated',
-                                              fallback:
-                                                  'Bible swipe verses updated',
-                                            ),
+                                                'studio.bible_swipe_updated'),
                                           ),
                                         ),
                                       );
@@ -1896,29 +1842,20 @@ class _FooterEditor extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _FooterCollectionCard(
-          title: context.t(
-            'studio.footer_contacts_title',
-            fallback: 'Footer Contacts',
-          ),
+          title: context.t('studio.footer_contacts_title'),
           initialFetch: repository.fetchContactItems,
           stream: repository.watchContactItems(),
-          addLabel: context.t(
-            'studio.footer_contacts_add',
-            fallback: 'Add contact item',
-          ),
-          emptyText: context.t(
-            'studio.footer_contacts_empty',
-            fallback: 'No footer contact items yet.',
-          ),
+          addLabel: context.t('studio.footer_contacts_add'),
+          emptyText: context.t('studio.footer_contacts_empty'),
           tileTitle: (data) => (data['label'] ?? '') as String,
           tileSubtitle: (data) {
             final parts = <String>[
               if ((data['type'] ?? '').toString().isNotEmpty)
-                '${context.t('studio.footer_type_prefix', fallback: 'Type')}: ${data['type']}',
+                '${context.t('studio.footer_type_prefix')}: ${data['type']}',
               if ((data['action'] ?? '').toString().isNotEmpty)
-                '${context.t('studio.footer_action_prefix', fallback: 'Action')}: ${data['action']}',
-              '${context.t('studio.footer_order_prefix', fallback: 'Order')}: ${data['order'] ?? 0}',
-              '${context.t('studio.footer_active_prefix', fallback: 'Active')}: ${data['isActive'] == true ? context.t('common.yes', fallback: 'Yes') : context.t('common.no', fallback: 'No')}',
+                '${context.t('studio.footer_action_prefix')}: ${data['action']}',
+              '${context.t('studio.footer_order_prefix')}: ${data['order'] ?? 0}',
+              '${context.t('studio.footer_active_prefix')}: ${data['isActive'] == true ? context.t('common.yes') : context.t('common.no')}',
             ];
             return parts.join('\n');
           },
@@ -1932,29 +1869,20 @@ class _FooterEditor extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _FooterCollectionCard(
-          title: context.t(
-            'studio.footer_social_title',
-            fallback: 'Footer Social',
-          ),
+          title: context.t('studio.footer_social_title'),
           initialFetch: repository.fetchSocialItems,
           stream: repository.watchSocialItems(),
-          addLabel: context.t(
-            'studio.footer_social_add',
-            fallback: 'Add social item',
-          ),
-          emptyText: context.t(
-            'studio.footer_social_empty',
-            fallback: 'No social items yet.',
-          ),
+          addLabel: context.t('studio.footer_social_add'),
+          emptyText: context.t('studio.footer_social_empty'),
           tileTitle: (data) => (data['icon'] ?? '') as String,
           tileSubtitle: (data) {
             final parts = <String>[
               if ((data['platform'] ?? '').toString().isNotEmpty)
-                '${context.t('studio.footer_platform_prefix', fallback: 'Platform')}: ${data['platform']}',
+                '${context.t('studio.footer_platform_prefix')}: ${data['platform']}',
               if ((data['url'] ?? '').toString().isNotEmpty)
-                '${context.t('studio.footer_url_prefix', fallback: 'URL')}: ${data['url']}',
-              '${context.t('studio.footer_order_prefix', fallback: 'Order')}: ${data['order'] ?? 0}',
-              '${context.t('studio.footer_active_prefix', fallback: 'Active')}: ${data['isActive'] == true ? context.t('common.yes', fallback: 'Yes') : context.t('common.no', fallback: 'No')}',
+                '${context.t('studio.footer_url_prefix')}: ${data['url']}',
+              '${context.t('studio.footer_order_prefix')}: ${data['order'] ?? 0}',
+              '${context.t('studio.footer_active_prefix')}: ${data['isActive'] == true ? context.t('common.yes') : context.t('common.no')}',
             ];
             return parts.join('\n');
           },
@@ -2009,7 +1937,7 @@ class _FooterCollectionCard extends StatelessWidget {
         builder: (context, initialSnapshot) {
           if (initialSnapshot.hasError) {
             return Text(
-              '${context.t('common.error_prefix', fallback: 'Error')}: ${initialSnapshot.error}',
+              '${context.t('common.error_prefix')}: ${initialSnapshot.error}',
             );
           }
           if (!initialSnapshot.hasData) {
@@ -2023,7 +1951,7 @@ class _FooterCollectionCard extends StatelessWidget {
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Text(
-                  '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+                  '${context.t('common.error_prefix')}: ${snapshot.error}',
                 );
               }
 
@@ -2155,15 +2083,12 @@ class _NotificationComposerState extends State<_NotificationComposer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    '${context.t('studio.notification_topic_prefix', fallback: 'Topic')}: $topic'),
+                    '${context.t('studio.notification_topic_prefix')}: $topic'),
                 const SizedBox(height: 16),
                 AppTextField(
                   controller: _titleController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.notification_title_label',
-                      fallback: 'Notification title',
-                    ),
+                    labelText: context.t('studio.notification_title_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2171,10 +2096,7 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                   controller: _bodyController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.notification_body_label',
-                      fallback: 'Notification body',
-                    ),
+                    labelText: context.t('studio.notification_body_label'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -2195,10 +2117,7 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t(
-                                      'studio.notification_queued',
-                                      fallback: 'Notification request queued',
-                                    ),
+                                    context.t('studio.notification_queued'),
                                   ),
                                 ),
                               );
@@ -2215,10 +2134,7 @@ class _NotificationComposerState extends State<_NotificationComposer> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            context.t(
-                              'studio.notification_send',
-                              fallback: 'Send Notification',
-                            ),
+                            context.t('studio.notification_send'),
                           ),
                   ),
                 ),
@@ -2244,7 +2160,7 @@ class _SectionsEditor extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _SectionGroupCard<HomeSectionConfigModel>(
-          title: context.t('studio.section_home', fallback: 'Home Sections'),
+          title: context.t('studio.section_home'),
           definitions: _homeSectionDefinitions,
           stream: repository.watchHomeSectionConfigs(),
           itemId: (item) => item.id,
@@ -2260,10 +2176,7 @@ class _SectionsEditor extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionGroupCard<ForYouSectionConfigModel>(
-          title: context.t(
-            'studio.section_for_you',
-            fallback: 'For You Sections',
-          ),
+          title: context.t('studio.section_for_you'),
           definitions: _forYouSectionDefinitions,
           stream: repository.watchForYouSectionConfigs(),
           itemId: (item) => item.id,
@@ -2317,7 +2230,7 @@ class _SectionGroupCard<T> extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Text(
-                '${context.t('common.error_prefix', fallback: 'Error')}: ${snapshot.error}',
+                '${context.t('common.error_prefix')}: ${snapshot.error}',
               );
             }
 
@@ -2373,10 +2286,7 @@ class _SectionGroupCard<T> extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          context.t(
-                            'studio.section_updated',
-                            fallback: 'Section updated',
-                          ),
+                          context.t('studio.section_updated'),
                         ),
                       ),
                     );
@@ -2457,11 +2367,8 @@ class _SectionConfigTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   enabled
-                      ? context.t('studio.section_enabled', fallback: 'Enabled')
-                      : context.t(
-                          'studio.section_disabled',
-                          fallback: 'Disabled',
-                        ),
+                      ? context.t('studio.section_enabled')
+                      : context.t('studio.section_disabled'),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -2478,10 +2385,7 @@ class _SectionConfigTile extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    context.t(
-                      'studio.section_updated',
-                      fallback: 'Section updated',
-                    ),
+                    context.t('studio.section_updated'),
                   ),
                 ),
               );
@@ -2613,30 +2517,33 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                'Automatic YouTube live detection',
+                context.t('ui.studio.automatic_youtube_live_detection'),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Enter the permanent channel ID that starts with UC. '
-                'The backend will publish a player only while that channel is live.',
+              Text(
+                context.t(
+                  'ui.studio.enter_the_permanent_channel_id_that_starts_with_uc',
+                ),
               ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _channelController,
-                decoration: const InputDecoration(
-                  labelText: 'YouTube channel ID',
+                decoration: InputDecoration(
+                  labelText: context.t('ui.studio.youtube_channel_id'),
                   hintText: 'UCxxxxxxxxxxxxxxxxxxxxxx',
-                  prefixIcon: Icon(Icons.video_library_outlined),
+                  prefixIcon: const Icon(Icons.video_library_outlined),
                 ),
                 textInputAction: TextInputAction.done,
                 validator: (value) {
                   final channelId = value?.trim() ?? '';
-                  if (channelId.isEmpty) return 'Enter a YouTube channel ID.';
+                  if (channelId.isEmpty) {
+                    return context.t('studio.youtube_channel_required');
+                  }
                   if (!RegExp(r'^UC[A-Za-z0-9_-]{20,}$').hasMatch(channelId)) {
-                    return 'Use the channel ID, not the channel URL or @handle.';
+                    return context.t('studio.youtube_channel_invalid');
                   }
                   return null;
                 },
@@ -2644,18 +2551,20 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
               const SizedBox(height: 16),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Automatic detection'),
-                subtitle: const Text(
-                  'Allow the backend to show live services for this church.',
+                title: Text(context.t('ui.studio.automatic_detection')),
+                subtitle: Text(
+                  context.t(
+                      'ui.studio.allow_the_backend_to_show_live_services_for_this_church'),
                 ),
                 value: _enabled,
                 onChanged: (value) => setState(() => _enabled = value),
               ),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Notify members when live'),
-                subtitle: const Text(
-                  'Send one push notification when a new service goes live.',
+                title: Text(context.t('ui.studio.notify_members_when_live')),
+                subtitle: Text(
+                  context.t(
+                      'ui.studio.send_one_push_notification_when_a_new_service_goes_live'),
                 ),
                 value: _notifyWhenLive,
                 onChanged: _enabled
@@ -2671,7 +2580,7 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save_outlined),
-                label: const Text('Save Live Church settings'),
+                label: Text(context.t('ui.studio.save_live_church_settings')),
               ),
             ],
           ),
@@ -2691,7 +2600,8 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Live Church settings saved')),
+        SnackBar(
+            content: Text(context.t('ui.studio.live_church_settings_saved'))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -2713,8 +2623,7 @@ class _AdminsEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
-        child: Text(
-            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text('${context.t('common.error_prefix')}: $error'),
       ),
       data: (config) => _AdminsEditorForm(
         initialAdmins: config.admins,
@@ -2765,8 +2674,7 @@ class _PromptSheetEditor extends ConsumerWidget {
     return configAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
-        child: Text(
-            '${context.t('common.error_prefix', fallback: 'Error')}: $error'),
+        child: Text('${context.t('common.error_prefix')}: $error'),
       ),
       data: (config) => _PromptSheetEditorForm(
         promptSheet: config.promptSheet,
@@ -2793,7 +2701,7 @@ class _AdminModeEditor extends ConsumerWidget {
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (error, _) => Center(
         child: Text(
-          '${context.t('common.error_prefix', fallback: 'Error')}: $error',
+          '${context.t('common.error_prefix')}: $error',
         ),
       ),
       data: (config) => _AdminModeEditorForm(
@@ -2842,28 +2750,17 @@ class _AdminModeEditorFormState extends State<_AdminModeEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t(
-                    'studio.admin_mode_description',
-                    fallback:
-                        'Temporarily pause the church app for regular users while updates are in progress.',
-                  ),
+                  context.t('studio.admin_mode_description'),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile.adaptive(
                   value: _enabled,
                   contentPadding: EdgeInsets.zero,
                   title: Text(
-                    context.t(
-                      'studio.admin_mode_toggle',
-                      fallback: 'Turn on admin mode',
-                    ),
+                    context.t('studio.admin_mode_toggle'),
                   ),
                   subtitle: Text(
-                    context.t(
-                      'studio.admin_mode_hint',
-                      fallback:
-                          'When enabled, regular users will see a temporary update screen. Admins can still access the app.',
-                    ),
+                    context.t('studio.admin_mode_hint'),
                   ),
                   onChanged: _isSaving
                       ? null
@@ -2887,10 +2784,7 @@ class _AdminModeEditorFormState extends State<_AdminModeEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t(
-                                      'studio.admin_mode_updated',
-                                      fallback: 'Admin mode updated',
-                                    ),
+                                    context.t('studio.admin_mode_updated'),
                                   ),
                                 ),
                               );
@@ -2907,10 +2801,7 @@ class _AdminModeEditorFormState extends State<_AdminModeEditorForm> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            context.t(
-                              'studio.admin_mode_save',
-                              fallback: 'Save Admin Mode',
-                            ),
+                            context.t('studio.admin_mode_save'),
                           ),
                   ),
                 ),
@@ -2974,18 +2865,14 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t(
-                    'studio.prompt_description',
-                    fallback:
-                        'This controls the important pop-up card shown to members for urgent announcements or special updates.',
-                  ),
+                  context.t('studio.prompt_description'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
                   controller: _titleController,
                   decoration: InputDecoration(
-                    labelText: context.t('common.title', fallback: 'Title'),
+                    labelText: context.t('common.title'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2993,13 +2880,12 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                   controller: _descController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    labelText: context.t('common.description',
-                        fallback: 'Description'),
+                    labelText: context.t('common.description'),
                   ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(context.t('common.enabled', fallback: 'Enabled')),
+                  title: Text(context.t('common.enabled')),
                   value: _enabled,
                   onChanged: (value) => setState(() => _enabled = value),
                 ),
@@ -3020,10 +2906,7 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    context.t(
-                                      'studio.prompt_updated',
-                                      fallback: 'Important updated',
-                                    ),
+                                    context.t('studio.prompt_updated'),
                                   ),
                                 ),
                               );
@@ -3040,10 +2923,7 @@ class _PromptSheetEditorFormState extends State<_PromptSheetEditorForm> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            context.t(
-                              'studio.prompt_save',
-                              fallback: 'Save Important',
-                            ),
+                            context.t('studio.prompt_save'),
                           ),
                   ),
                 ),
@@ -3098,34 +2978,28 @@ Future<void> _showAboutEditor(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    context.t('studio.about_edit', fallback: 'Edit About'),
+                    context.t('studio.about_edit'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   AppTextField(
                     controller: churchAppTitleController,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.about_church_name',
-                        fallback: 'Church Name',
-                      ),
+                      labelText: context.t('studio.about_church_name'),
                     ),
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.title', fallback: 'Title'),
+                      labelText: context.t('common.title'),
                     ),
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
                     controller: taglineController,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.about_tagline',
-                        fallback: 'Tagline',
-                      ),
+                      labelText: context.t('studio.about_tagline'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3133,10 +3007,7 @@ Future<void> _showAboutEditor(
                     controller: descriptionController,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'common.description',
-                        fallback: 'Description',
-                      ),
+                      labelText: context.t('common.description'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3144,10 +3015,7 @@ Future<void> _showAboutEditor(
                     controller: missionController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.about_mission',
-                        fallback: 'Mission',
-                      ),
+                      labelText: context.t('studio.about_mission'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3155,10 +3023,7 @@ Future<void> _showAboutEditor(
                     controller: communityController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.about_community',
-                        fallback: 'Community',
-                      ),
+                      labelText: context.t('studio.about_community'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3166,10 +3031,7 @@ Future<void> _showAboutEditor(
                     controller: valuesController,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.about_values',
-                        fallback: 'Values',
-                      ),
+                      labelText: context.t('studio.about_values'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -3197,10 +3059,7 @@ Future<void> _showAboutEditor(
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      context.t(
-                                        'studio.about_updated',
-                                        fallback: 'About updated',
-                                      ),
+                                      context.t('studio.about_updated'),
                                     ),
                                   ),
                                 );
@@ -3216,7 +3075,7 @@ Future<void> _showAboutEditor(
                               width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(context.t('common.save', fallback: 'Save')),
+                          : Text(context.t('common.save')),
                     ),
                   ),
                 ],
@@ -3273,17 +3132,14 @@ Future<void> _showPastorEditor(
                 AppTextField(
                   controller: titleController,
                   decoration: InputDecoration(
-                    labelText: context.t('common.title', fallback: 'Title'),
+                    labelText: context.t('common.title'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: contactController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.event_contact',
-                      fallback: 'Contact',
-                    ),
+                    labelText: context.t('studio.event_contact'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -3308,18 +3164,9 @@ Future<void> _showPastorEditor(
                   label: Text(
                     selectedImage == null
                         ? (existingImageUrl.isEmpty
-                            ? context.t(
-                                'super_admin.pastor_photo_pick',
-                                fallback: 'Pick Pastor Photo',
-                              )
-                            : context.t(
-                                'super_admin.pastor_photo_replace',
-                                fallback: 'Replace Pastor Photo',
-                              ))
-                        : context.t(
-                            'studio.announcement_change_image',
-                            fallback: 'Change image',
-                          ),
+                            ? context.t('super_admin.pastor_photo_pick')
+                            : context.t('super_admin.pastor_photo_replace'))
+                        : context.t('studio.announcement_change_image'),
                   ),
                 ),
                 if (selectedImage != null) ...[
@@ -3358,10 +3205,11 @@ Future<void> _showPastorEditor(
                   contentPadding: EdgeInsets.zero,
                   value: setAsMain,
                   title: Text(
-                    'Set as Main',
+                    context.t('ui.studio.set_as_main'),
                   ),
                   subtitle: Text(
-                    'Show this pastor as the main pastor in the app.',
+                    context.t(
+                        'ui.studio.show_this_pastor_as_the_main_pastor_in_the_app'),
                   ),
                   onChanged: isSaving
                       ? null
@@ -3384,7 +3232,8 @@ Future<void> _showPastorEditor(
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Please add pastor photo, title, and contact.',
+                                    context.t(
+                                        'ui.studio.please_add_pastor_photo_title_and_contact_b1fe'),
                                   ),
                                 ),
                               );
@@ -3394,9 +3243,10 @@ Future<void> _showPastorEditor(
                                 selectedImage == null &&
                                 existingImageUrl.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                    'Please add pastor photo, title, and contact.',
+                                    context.t(
+                                        'ui.studio.please_add_pastor_photo_title_and_contact_b1fe'),
                                   ),
                                 ),
                               );
@@ -3441,7 +3291,7 @@ Future<void> _showPastorEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(context.t('common.save', fallback: 'Save')),
+                        : Text(context.t('common.save')),
                   ),
                 ),
               ],
@@ -3499,15 +3349,17 @@ Future<void> _showFooterContactEditor(
                 const SizedBox(height: 16),
                 AppDropdownField<String>(
                   initialValue: type,
-                  labelText: context.t(
-                    'studio.footer_type_label',
-                    fallback: 'Type',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'phone', child: Text('phone')),
-                    DropdownMenuItem(value: 'email', child: Text('email')),
+                  labelText: context.t('studio.footer_type_label'),
+                  items: [
                     DropdownMenuItem(
-                        value: 'location', child: Text('location')),
+                        value: 'phone',
+                        child: Text(context.t('ui.studio.phone'))),
+                    DropdownMenuItem(
+                        value: 'email',
+                        child: Text(context.t('ui.studio.email'))),
+                    DropdownMenuItem(
+                        value: 'location',
+                        child: Text(context.t('ui.studio.location'))),
                   ],
                   onChanged: (value) {
                     if (value == null) return;
@@ -3518,20 +3370,14 @@ Future<void> _showFooterContactEditor(
                 AppTextField(
                   controller: labelController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_label_label',
-                      fallback: 'Label',
-                    ),
+                    labelText: context.t('studio.footer_label_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: actionController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_action_label',
-                      fallback: 'Action',
-                    ),
+                    labelText: context.t('studio.footer_action_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -3539,15 +3385,12 @@ Future<void> _showFooterContactEditor(
                   controller: orderController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_order_label',
-                      fallback: 'Order',
-                    ),
+                    labelText: context.t('studio.footer_order_label'),
                   ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(context.t('common.active', fallback: 'Active')),
+                  title: Text(context.t('common.active')),
                   value: isActive,
                   onChanged: (value) => setState(() => isActive = value),
                 ),
@@ -3589,7 +3432,7 @@ Future<void> _showFooterContactEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(context.t('common.save', fallback: 'Save')),
+                        : Text(context.t('common.save')),
                   ),
                 ),
               ],
@@ -3649,30 +3492,21 @@ Future<void> _showFooterSocialEditor(
                 AppTextField(
                   controller: iconController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_icon_label',
-                      fallback: 'Icon Label',
-                    ),
+                    labelText: context.t('studio.footer_icon_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: platformController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_platform_label',
-                      fallback: 'Platform',
-                    ),
+                    labelText: context.t('studio.footer_platform_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: urlController,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_url_label',
-                      fallback: 'URL',
-                    ),
+                    labelText: context.t('studio.footer_url_label'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -3680,15 +3514,12 @@ Future<void> _showFooterSocialEditor(
                   controller: orderController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: context.t(
-                      'studio.footer_order_label',
-                      fallback: 'Order',
-                    ),
+                    labelText: context.t('studio.footer_order_label'),
                   ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(context.t('common.active', fallback: 'Active')),
+                  title: Text(context.t('common.active')),
                   value: isActive,
                   onChanged: (value) => setState(() => isActive = value),
                 ),
@@ -3730,7 +3561,7 @@ Future<void> _showFooterSocialEditor(
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(context.t('common.save', fallback: 'Save')),
+                        : Text(context.t('common.save')),
                   ),
                 ),
               ],
@@ -3798,37 +3629,33 @@ Future<void> _showEventEditor(
                   AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.title', fallback: 'Title'),
+                      labelText: context.t('common.title'),
                     ),
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.description',
-                          fallback: 'Description'),
+                      labelText: context.t('common.description'),
                     ),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 12),
                   AppDropdownField<String>(
                     initialValue: type,
-                    labelText: context.t('studio.event_type', fallback: 'Type'),
+                    labelText: context.t('studio.event_type'),
                     items: [
                       DropdownMenuItem(
                         value: 'family',
-                        child: Text(context.t('studio.event_type_family',
-                            fallback: 'family')),
+                        child: Text(context.t('studio.event_type_family')),
                       ),
                       DropdownMenuItem(
                         value: 'kids',
-                        child: Text(context.t('studio.event_type_kids',
-                            fallback: 'kids')),
+                        child: Text(context.t('studio.event_type_kids')),
                       ),
                       DropdownMenuItem(
                         value: 'youth',
-                        child: Text(context.t('studio.event_type_youth',
-                            fallback: 'youth')),
+                        child: Text(context.t('studio.event_type_youth')),
                       ),
                     ],
                     onChanged: (value) {
@@ -3841,16 +3668,14 @@ Future<void> _showEventEditor(
                   AppTextField(
                     controller: contactController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_contact',
-                          fallback: 'Contact'),
+                      labelText: context.t('studio.event_contact'),
                     ),
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
                     controller: locationController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.event_location',
-                          fallback: 'Location'),
+                      labelText: context.t('studio.event_location'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3858,8 +3683,7 @@ Future<void> _showEventEditor(
                     controller: timingController,
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText:
-                          context.t('studio.event_timing', fallback: 'Timing'),
+                      labelText: context.t('studio.event_timing'),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -3923,7 +3747,7 @@ Future<void> _showEventEditor(
                   const SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(context.t('common.active', fallback: 'Active')),
+                    title: Text(context.t('common.active')),
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
@@ -3931,9 +3755,10 @@ Future<void> _showEventEditor(
                     const SizedBox(height: 8),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Repeat weekly'),
-                      subtitle: const Text(
-                        'Cloud Functions will move this event to the next week automatically.',
+                      title: Text(context.t('ui.studio.repeat_weekly')),
+                      subtitle: Text(
+                        context.t(
+                            'ui.studio.cloud_functions_will_move_this_event_to_the_next_week_a'),
                       ),
                       value: repeatsWeekly,
                       onChanged: (value) {
@@ -3953,10 +3778,7 @@ Future<void> _showEventEditor(
                       controller: expiryController,
                       readOnly: true,
                       decoration: InputDecoration(
-                        labelText: context.t(
-                          'studio.expiry_at_label',
-                          fallback: 'Expiry date & time',
-                        ),
+                        labelText: context.t('studio.expiry_at_label'),
                         suffixIcon: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -4025,9 +3847,10 @@ Future<void> _showEventEditor(
                             try {
                               if (repeatsWeekly && startAt == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      'Choose the first event timing before enabling weekly repeat.',
+                                      context.t(
+                                          'ui.studio.choose_the_first_event_timing_before_enabling_weekly_re'),
                                     ),
                                   ),
                                 );
@@ -4159,8 +3982,7 @@ Future<void> _showAnnouncementEditor(
                       OutlinedButton(
                         onPressed:
                             isSaving ? null : () => Navigator.of(context).pop(),
-                        child: Text(
-                            context.t('settings.cancel', fallback: 'Cancel')),
+                        child: Text(context.t('settings.cancel')),
                       ),
                     ],
                   ),
@@ -4168,14 +3990,13 @@ Future<void> _showAnnouncementEditor(
                   AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.title', fallback: 'Title'),
+                      labelText: context.t('common.title'),
                     ),
                   ),
                   AppTextField(
                     controller: bodyController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.announcement_body',
-                          fallback: 'Body'),
+                      labelText: context.t('studio.announcement_body'),
                     ),
                     maxLines: 4,
                   ),
@@ -4200,18 +4021,9 @@ Future<void> _showAnnouncementEditor(
                     label: Text(
                       selectedImage == null
                           ? (existingImageUrl.isEmpty
-                              ? context.t(
-                                  'studio.announcement_upload_image',
-                                  fallback: 'Upload image',
-                                )
-                              : context.t(
-                                  'studio.announcement_replace_image',
-                                  fallback: 'Replace image',
-                                ))
-                          : context.t(
-                              'studio.announcement_change_image',
-                              fallback: 'Change image',
-                            ),
+                              ? context.t('studio.announcement_upload_image')
+                              : context.t('studio.announcement_replace_image'))
+                          : context.t('studio.announcement_change_image'),
                     ),
                   ),
                   if (selectedImage != null) ...[
@@ -4248,14 +4060,13 @@ Future<void> _showAnnouncementEditor(
                   AppTextField(
                     controller: priorityController,
                     decoration: InputDecoration(
-                      labelText: context.t('studio.priority_label',
-                          fallback: 'Priority'),
+                      labelText: context.t('studio.priority_label'),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(context.t('common.active', fallback: 'Active')),
+                    title: Text(context.t('common.active')),
                     value: isActive,
                     onChanged: (value) => setState(() => isActive = value),
                   ),
@@ -4263,10 +4074,7 @@ Future<void> _showAnnouncementEditor(
                     controller: expiryController,
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText: context.t(
-                        'studio.expiry_at_label',
-                        fallback: 'Expiry date & time',
-                      ),
+                      labelText: context.t('studio.expiry_at_label'),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -4440,15 +4248,14 @@ Future<void> _showArticleEditor(
                   AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.title', fallback: 'Title'),
+                      labelText: context.t('common.title'),
                     ),
                   ),
                   const SizedBox(height: 18),
                   AppTextField(
                     controller: descriptionController,
                     decoration: InputDecoration(
-                      labelText: context.t('common.description',
-                          fallback: 'Description'),
+                      labelText: context.t('common.description'),
                     ),
                     keyboardType: TextInputType.multiline,
                     maxLines: 3,
@@ -4457,8 +4264,7 @@ Future<void> _showArticleEditor(
                   AppTextField(
                     controller: contentController,
                     decoration: InputDecoration(
-                      labelText:
-                          context.t('common.content', fallback: 'Content'),
+                      labelText: context.t('common.content'),
                     ),
                     keyboardType: TextInputType.multiline,
                     maxLines: 8,

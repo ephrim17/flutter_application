@@ -24,10 +24,7 @@ class ReadingPlanSection implements MasterSection {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               SectionHeader(
-                text: context.t(
-                  'for_you.reading_plan.section_title',
-                  fallback: 'Reading Plans',
-                ),
+                text: context.t('for_you.reading_plan.section_title'),
                 padding: 0.0,
               ),
               const SizedBox(height: 8),

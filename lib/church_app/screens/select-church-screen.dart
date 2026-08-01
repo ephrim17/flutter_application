@@ -102,29 +102,22 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(
-              context.t(
-                'auth.user_not_found_title',
-                fallback: 'User not found',
-              ),
+              context.t('auth.user_not_found_title'),
             ),
             content: Text(
-              context.t(
-                'auth.no_account_found_request_access',
-                fallback:
-                    'No account was found for this church. Do you want to request access?',
-              ),
+              context.t('auth.no_account_found_request_access'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
                 child: Text(
-                  context.t('settings.cancel', fallback: 'Cancel'),
+                  context.t('settings.cancel'),
                 ),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: Text(
-                  context.t('auth.request_access', fallback: 'Request Access'),
+                  context.t('auth.request_access'),
                 ),
               ),
             ],
@@ -142,10 +135,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            context.t(
-              'auth.login_subtitle',
-              fallback: 'Sign in with your Church Tree account to continue.',
-            ),
+            context.t('auth.login_subtitle'),
           ),
         ),
       );
@@ -246,10 +236,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         actions: [
           if (isSuperAdmin)
             IconButton(
-              tooltip: context.t(
-                'super_admin.open_dashboard',
-                fallback: 'Open Super Admin',
-              ),
+              tooltip: context.t('super_admin.open_dashboard'),
               onPressed: () async {
                 await ref.read(superAdminEntryModeProvider.notifier).setMode(
                       SuperAdminEntryMode.superAdmin,
@@ -264,7 +251,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
               icon: const Icon(Icons.admin_panel_settings_outlined),
             ),
           IconButton(
-            tooltip: context.t('drawer.logout', fallback: 'Logout'),
+            tooltip: context.t('drawer.logout'),
             onPressed: () => _handleLogout(context),
             icon: const Icon(Icons.logout),
           ),
@@ -319,10 +306,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                           child: Column(
                             children: [
                               Text(
-                                context.t(
-                                  'church.welcome_home',
-                                  fallback: 'Welcome Home',
-                                ),
+                                context.t('church.welcome_home'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -331,11 +315,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                context.t(
-                                  'church.select_subtitle',
-                                  fallback:
-                                      'Select your church to proceed further',
-                                ),
+                                context.t('church.select_subtitle'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -344,11 +324,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                context.t(
-                                  'church.select_helper',
-                                  fallback:
-                                      "We'll help you find a local congregation to stay connected with services, events, and news.",
-                                ),
+                                context.t('church.select_helper'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -389,26 +365,18 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                                       ),
                                       title: Text(
                                         context.t(
-                                          'church.register_received_title',
-                                          fallback: 'Registration received',
-                                        ),
+                                            'church.register_received_title'),
                                       ),
                                       content: Text(
                                         context.t(
-                                          'church.register_success_pending',
-                                          fallback:
-                                              'Welcome emails were sent to the church and admin addresses. Please wait for super admin approval. The welcome email includes the super admin support contact if you need help.',
-                                        ),
+                                            'church.register_success_pending'),
                                       ),
                                       actions: [
                                         FilledButton(
                                           onPressed: () =>
                                               Navigator.of(dialogContext).pop(),
                                           child: Text(
-                                            context.t(
-                                              'common.ok',
-                                              fallback: 'Okay',
-                                            ),
+                                            context.t('common.ok'),
                                           ),
                                         ),
                                       ],
@@ -458,10 +426,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              context.t(
-                'church.directory_title',
-                fallback: 'Churches',
-              ),
+              context.t('church.directory_title'),
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
@@ -469,10 +434,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              context.t(
-                'church.directory_load_error',
-                fallback: 'We could not load the church list right now.',
-              ),
+              context.t('church.directory_load_error'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -492,20 +454,10 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ChurchSectionCard(
-          title: context.t(
-            'church.your_churches_title',
-            fallback: 'Your Churches',
-          ),
+          title: context.t('church.your_churches_title'),
           subtitle: userChurches.isEmpty
-              ? context.t(
-                  'church.your_churches_empty_subtitle',
-                  fallback:
-                      "Churches you follow and you're part of will show here.",
-                )
-              : context.t(
-                  'church.your_churches_subtitle',
-                  fallback: "Churches you follow and you're part of.",
-                ),
+              ? context.t('church.your_churches_empty_subtitle')
+              : context.t('church.your_churches_subtitle'),
           count: userChurches.length,
           isExpanded: _showYourChurches,
           onToggle: () {
@@ -518,16 +470,10 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
               : () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => _ChurchDirectoryScreen(
-                        title: context.t(
-                          'church.your_churches_title',
-                          fallback: 'Your Churches',
-                        ),
+                        title: context.t('church.your_churches_title'),
                         churches: userChurches,
-                        emptyMessage: context.t(
-                          'church.your_churches_empty_state',
-                          fallback:
-                              'You are not part of any church yet. Use the section below to explore other churches.',
-                        ),
+                        emptyMessage:
+                            context.t('church.your_churches_empty_state'),
                         onChurchTap: (directoryContext, church) =>
                             _showChurchDetailsSheet(
                           directoryContext,
@@ -540,25 +486,14 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                   ),
           child: userChurches.isEmpty
               ? _EmptyChurchState(
-                  message: context.t(
-                    'church.your_churches_empty_state',
-                    fallback:
-                        'You are not part of any church yet. Use the section below to explore other churches.',
-                  ),
+                  message: context.t('church.your_churches_empty_state'),
                 )
               : const SizedBox.shrink(),
         ),
         const SizedBox(height: 14),
         _ChurchSectionCard(
-          title: context.t(
-            'church.other_churches_title',
-            fallback: 'Other Churches',
-          ),
-          subtitle: context.t(
-            'church.other_churches_subtitle',
-            fallback:
-                'Explore other churches. Tapping one lets you submit a request form, and once an admin approves it, enrollment will be smoother.',
-          ),
+          title: context.t('church.other_churches_title'),
+          subtitle: context.t('church.other_churches_subtitle'),
           count: otherChurches.length,
           isExpanded: _showOtherChurches,
           onToggle: () {
@@ -571,16 +506,10 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
               : () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => _ChurchDirectoryScreen(
-                        title: context.t(
-                          'church.other_churches_title',
-                          fallback: 'Other Churches',
-                        ),
+                        title: context.t('church.other_churches_title'),
                         churches: otherChurches,
-                        emptyMessage: context.t(
-                          'church.other_churches_empty_state',
-                          fallback:
-                              'You already belong to every available church in the directory.',
-                        ),
+                        emptyMessage:
+                            context.t('church.other_churches_empty_state'),
                         onChurchTap: (directoryContext, church) =>
                             _showChurchDetailsSheet(
                           directoryContext,
@@ -593,11 +522,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                   ),
           child: otherChurches.isEmpty
               ? _EmptyChurchState(
-                  message: context.t(
-                    'church.other_churches_empty_state',
-                    fallback:
-                        'You already belong to every available church in the directory.',
-                  ),
+                  message: context.t('church.other_churches_empty_state'),
                 )
               : const SizedBox.shrink(),
         ),
@@ -668,26 +593,17 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                         children: [
                           _ChurchDetailRow(
                             icon: Icons.person_outline,
-                            label: context.t(
-                              'church.detail_pastor',
-                              fallback: 'Pastor',
-                            ),
+                            label: context.t('church.detail_pastor'),
                             value: _valueOrFallback(church.pastorName),
                           ),
                           _ChurchDetailRow(
                             icon: Icons.email_outlined,
-                            label: context.t(
-                              'church.detail_email',
-                              fallback: 'Email',
-                            ),
+                            label: context.t('church.detail_email'),
                             value: _valueOrFallback(church.email),
                           ),
                           _ChurchDetailRow(
                             icon: Icons.phone_outlined,
-                            label: context.t(
-                              'church.detail_contact',
-                              fallback: 'Contact',
-                            ),
+                            label: context.t('church.detail_contact'),
                             value: _valueOrFallback(church.contact),
                             onActionTap: church.contact.trim().isEmpty
                                 ? null
@@ -696,10 +612,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                           ),
                           _ChurchDetailRow(
                             icon: Icons.location_on_outlined,
-                            label: context.t(
-                              'church.detail_address',
-                              fallback: 'Address',
-                            ),
+                            label: context.t('church.detail_address'),
                             value: _valueOrFallback(church.address),
                           ),
                         ],
@@ -709,14 +622,8 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                   const SizedBox(height: 10),
                   SolidButton(
                     label: isMemberChurch
-                        ? context.t(
-                            'church.select_action',
-                            fallback: 'Select Church',
-                          )
-                        : context.t(
-                            'auth.request_access',
-                            fallback: 'Request Access',
-                          ),
+                        ? context.t('church.select_action')
+                        : context.t('auth.request_access'),
                     onPressed: () {
                       Navigator.of(context).pop();
                       if (!parentContext.mounted) return;
@@ -797,7 +704,12 @@ class _ChurchSectionCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '$count church${count == 1 ? '' : 'es'}',
+                          context.t(
+                            count == 1
+                                ? 'select_church.count_singular'
+                                : 'select_church.count_plural',
+                            parameters: {'count': '$count'},
+                          ),
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
@@ -914,10 +826,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText: context.t(
-                    'common.search',
-                    fallback: 'Search churches, pastors, address...',
-                  ),
+                  hintText: context.t('common.search'),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 10, right: 6),
                     child: Icon(
@@ -1020,10 +929,7 @@ class _RegisterChurchText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColorText(
-      badgeText: context.t(
-        'church.register_your_church',
-        fallback: 'Register your church',
-      ),
+      badgeText: context.t('church.register_your_church'),
       fontSize: 16,
     );
   }

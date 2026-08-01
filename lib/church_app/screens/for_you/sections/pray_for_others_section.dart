@@ -56,19 +56,13 @@ class _PrayForOthersContent extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SectionHeader(
-                text: context.t(
-                  'for_you.pray_for_others.title',
-                  fallback: 'Pray for others',
-                ),
+                text: context.t('for_you.pray_for_others.title'),
                 padding: 16,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 3, 16, 14),
                 child: Text(
-                  context.t(
-                    'for_you.pray_for_others.subtitle',
-                    fallback: 'Stand with someone from your church in prayer.',
-                  ),
+                  context.t('for_you.pray_for_others.subtitle'),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -210,10 +204,7 @@ class _PrayerAuthorLabel extends ConsumerWidget {
         );
     if (prayer.isAnonymous) {
       return Text(
-        context.t(
-          'for_you.pray_for_others.anonymous',
-          fallback: 'Anonymous request',
-        ),
+        context.t('for_you.pray_for_others.anonymous'),
         overflow: TextOverflow.ellipsis,
         style: style,
       );
@@ -221,28 +212,19 @@ class _PrayerAuthorLabel extends ConsumerWidget {
 
     return ref.watch(churchUserNameProvider(prayer.userId)).when(
           loading: () => Text(
-            context.t(
-              'for_you.pray_for_others.member',
-              fallback: 'Church member',
-            ),
+            context.t('for_you.pray_for_others.member'),
             overflow: TextOverflow.ellipsis,
             style: style,
           ),
           error: (_, __) => Text(
-            context.t(
-              'for_you.pray_for_others.member',
-              fallback: 'Church member',
-            ),
+            context.t('for_you.pray_for_others.member'),
             overflow: TextOverflow.ellipsis,
             style: style,
           ),
           data: (name) => Text(
             name?.trim().isNotEmpty == true
                 ? name!
-                : context.t(
-                    'for_you.pray_for_others.member',
-                    fallback: 'Church member',
-                  ),
+                : context.t('for_you.pray_for_others.member'),
             overflow: TextOverflow.ellipsis,
             style: style,
           ),
@@ -259,11 +241,8 @@ class _ExpiryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final text = daysLeft == 0
-        ? context.t(
-            'for_you.pray_for_others.ends_today',
-            fallback: 'Ends today',
-          )
-        : '$daysLeft ${context.t('prayer.days_left', fallback: 'days left')}';
+        ? context.t('for_you.pray_for_others.ends_today')
+        : '$daysLeft ${context.t('prayer.days_left')}';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),

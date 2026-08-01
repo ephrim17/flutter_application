@@ -43,6 +43,34 @@ class AppUser {
     return 0;
   }
 
+  static String _string(dynamic value, {String fallback = ''}) {
+    final result = value?.toString().trim() ?? '';
+    return result.isEmpty ? fallback : result;
+  }
+
+  static bool _bool(dynamic value) => value == true;
+
+  static int _int(dynamic value) {
+    if (value is num) return value.round();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    return 0;
+  }
+
+  static DateTime? _date(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  static List<String> _strings(dynamic value) {
+    if (value is! Iterable) return const [];
+    return value
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
+  }
+
   AppUser({
     required this.uid,
     required this.name,
@@ -93,69 +121,42 @@ class AppUser {
 
     return AppUser(
       uid: uid,
-      name: data['name'] ?? '',
-      profilePhotoUrl: (data['profilePhotoUrl'] ?? '').toString().trim(),
-      email: data['email'] ?? '',
-      phone: data['phone'] ?? '',
-      contact: data['contact'] ?? '',
-      location: data['location'] ?? '',
-      address: data['address'] ?? '',
-      gender: data['gender'] ?? '',
-      category: data['category'] ?? '',
-      familyId: data['familyId'] ?? '',
-      maritalStatus: data['maritalStatus'] ?? '',
-      weddingDay: weddingDayRaw is Timestamp
-          ? weddingDayRaw.toDate()
-          : weddingDayRaw is DateTime
-              ? weddingDayRaw
-              : null,
-      financialStabilityRating:
-          (data['financialStabilityRating'] as num?)?.round() ?? 0,
-      financialSupportRequired: data['financialSupportRequired'] ?? false,
-      educationalQualification: data['educationalQualification'] ?? '',
-      talentsAndGifts: (data['talentsAndGifts'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .where((item) => item.trim().isNotEmpty)
-          .toList(),
-      churchGroupIds: (data['churchGroupIds'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .where((item) => item.trim().isNotEmpty)
-          .toList(),
-      authToken: data['authToken'] ?? '',
-      dob: dobRaw is Timestamp
-          ? dobRaw.toDate()
-          : dobRaw is DateTime
-              ? dobRaw
-              : null,
-      createdAt: createdAtRaw is Timestamp
-          ? createdAtRaw.toDate()
-          : createdAtRaw is DateTime
-              ? createdAtRaw
-              : null,
+      name: _string(data['name']),
+      profilePhotoUrl: _string(data['profilePhotoUrl']),
+      email: _string(data['email']),
+      phone: _string(data['phone']),
+      contact: _string(data['contact']),
+      location: _string(data['location']),
+      address: _string(data['address']),
+      gender: _string(data['gender']),
+      category: _string(data['category']),
+      familyId: _string(data['familyId']),
+      maritalStatus: _string(data['maritalStatus']),
+      weddingDay: _date(weddingDayRaw),
+      financialStabilityRating: _int(data['financialStabilityRating']),
+      financialSupportRequired: _bool(data['financialSupportRequired']),
+      educationalQualification: _string(data['educationalQualification']),
+      talentsAndGifts: _strings(data['talentsAndGifts']),
+      churchGroupIds: _strings(data['churchGroupIds']),
+      authToken: _string(data['authToken']),
+      dob: _date(dobRaw),
+      createdAt: _date(createdAtRaw),
       dayStreak: _parseDayStreak(data['dayStreak']),
-      lastStreakRecordedAt: lastStreakRecordedAtRaw is Timestamp
-          ? lastStreakRecordedAtRaw.toDate()
-          : lastStreakRecordedAtRaw is DateTime
-              ? lastStreakRecordedAtRaw
-              : null,
-      role: data['role'] ?? 'user',
-      approved: data['approved'] ?? false,
-      solemnizedBaptism: data['solemnizedBaptism'] ?? false,
-      baptismDate: baptismDateRaw is Timestamp
-          ? baptismDateRaw.toDate()
-          : baptismDateRaw is DateTime
-              ? baptismDateRaw
-              : null,
-      baptismCertificateNumber: data['baptismCertificateNumber'] ?? '',
-      baptismChurchName: data['baptismChurchName'] ?? '',
-      baptismPastorName: data['baptismPastorName'] ?? '',
+      lastStreakRecordedAt: _date(lastStreakRecordedAtRaw),
+      role: _string(data['role'], fallback: 'user'),
+      approved: _bool(data['approved']),
+      solemnizedBaptism: _bool(data['solemnizedBaptism']),
+      baptismDate: _date(baptismDateRaw),
+      baptismCertificateNumber: _string(data['baptismCertificateNumber']),
+      baptismChurchName: _string(data['baptismChurchName']),
+      baptismPastorName: _string(data['baptismPastorName']),
       marriageSolemnizationChurchType:
-          data['marriageSolemnizationChurchType'] ?? '',
+          _string(data['marriageSolemnizationChurchType']),
       marriageSolemnizationChurchName:
-          data['marriageSolemnizationChurchName'] ?? '',
-      membershipCurrentStatus: data['membershipCurrentStatus'] ?? '',
-      membershipNotes: data['membershipNotes'] ?? '',
-      additionalNotes: data['additionalNotes'] ?? '',
+          _string(data['marriageSolemnizationChurchName']),
+      membershipCurrentStatus: _string(data['membershipCurrentStatus']),
+      membershipNotes: _string(data['membershipNotes']),
+      additionalNotes: _string(data['additionalNotes']),
     );
   }
 
@@ -167,70 +168,43 @@ class AppUser {
     final lastStreakRecordedAtRaw = json['lastStreakRecordedAt'];
 
     return AppUser(
-      uid: json['uid'] ?? '',
-      phone: json['phone'] ?? '',
-      contact: json['contact'] ?? '',
-      name: json['name'] ?? '',
-      profilePhotoUrl: (json['profilePhotoUrl'] ?? '').toString().trim(),
-      email: json['email'] ?? '',
-      location: json['location'] ?? '',
-      address: json['address'] ?? '',
-      gender: json['gender'] ?? '',
-      category: json['category'] ?? '',
-      familyId: json['familyId'] ?? '',
-      maritalStatus: json['maritalStatus'] ?? '',
-      weddingDay: weddingDayRaw is Timestamp
-          ? weddingDayRaw.toDate()
-          : weddingDayRaw is DateTime
-              ? weddingDayRaw
-              : null,
-      financialStabilityRating:
-          (json['financialStabilityRating'] as num?)?.round() ?? 0,
-      financialSupportRequired: json['financialSupportRequired'] ?? false,
-      educationalQualification: json['educationalQualification'] ?? '',
-      talentsAndGifts: (json['talentsAndGifts'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .where((item) => item.trim().isNotEmpty)
-          .toList(),
-      churchGroupIds: (json['churchGroupIds'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .where((item) => item.trim().isNotEmpty)
-          .toList(),
-      authToken: json['authToken'] ?? '',
-      dob: dobRaw is Timestamp
-          ? dobRaw.toDate()
-          : dobRaw is DateTime
-              ? dobRaw
-              : null,
-      createdAt: createdAtRaw is Timestamp
-          ? createdAtRaw.toDate()
-          : createdAtRaw is DateTime
-              ? createdAtRaw
-              : null,
+      uid: _string(json['uid']),
+      phone: _string(json['phone']),
+      contact: _string(json['contact']),
+      name: _string(json['name']),
+      profilePhotoUrl: _string(json['profilePhotoUrl']),
+      email: _string(json['email']),
+      location: _string(json['location']),
+      address: _string(json['address']),
+      gender: _string(json['gender']),
+      category: _string(json['category']),
+      familyId: _string(json['familyId']),
+      maritalStatus: _string(json['maritalStatus']),
+      weddingDay: _date(weddingDayRaw),
+      financialStabilityRating: _int(json['financialStabilityRating']),
+      financialSupportRequired: _bool(json['financialSupportRequired']),
+      educationalQualification: _string(json['educationalQualification']),
+      talentsAndGifts: _strings(json['talentsAndGifts']),
+      churchGroupIds: _strings(json['churchGroupIds']),
+      authToken: _string(json['authToken']),
+      dob: _date(dobRaw),
+      createdAt: _date(createdAtRaw),
       dayStreak: _parseDayStreak(json['dayStreak']),
-      lastStreakRecordedAt: lastStreakRecordedAtRaw is Timestamp
-          ? lastStreakRecordedAtRaw.toDate()
-          : lastStreakRecordedAtRaw is DateTime
-              ? lastStreakRecordedAtRaw
-              : null,
-      role: json['role'] ?? 'user',
-      approved: json['approved'] ?? false,
-      solemnizedBaptism: json['solemnizedBaptism'] ?? false,
-      baptismDate: baptismDateRaw is Timestamp
-          ? baptismDateRaw.toDate()
-          : baptismDateRaw is DateTime
-              ? baptismDateRaw
-              : null,
-      baptismCertificateNumber: json['baptismCertificateNumber'] ?? '',
-      baptismChurchName: json['baptismChurchName'] ?? '',
-      baptismPastorName: json['baptismPastorName'] ?? '',
+      lastStreakRecordedAt: _date(lastStreakRecordedAtRaw),
+      role: _string(json['role'], fallback: 'user'),
+      approved: _bool(json['approved']),
+      solemnizedBaptism: _bool(json['solemnizedBaptism']),
+      baptismDate: _date(baptismDateRaw),
+      baptismCertificateNumber: _string(json['baptismCertificateNumber']),
+      baptismChurchName: _string(json['baptismChurchName']),
+      baptismPastorName: _string(json['baptismPastorName']),
       marriageSolemnizationChurchType:
-          json['marriageSolemnizationChurchType'] ?? '',
+          _string(json['marriageSolemnizationChurchType']),
       marriageSolemnizationChurchName:
-          json['marriageSolemnizationChurchName'] ?? '',
-      membershipCurrentStatus: json['membershipCurrentStatus'] ?? '',
-      membershipNotes: json['membershipNotes'] ?? '',
-      additionalNotes: json['additionalNotes'] ?? '',
+          _string(json['marriageSolemnizationChurchName']),
+      membershipCurrentStatus: _string(json['membershipCurrentStatus']),
+      membershipNotes: _string(json['membershipNotes']),
+      additionalNotes: _string(json['additionalNotes']),
     );
   }
 
