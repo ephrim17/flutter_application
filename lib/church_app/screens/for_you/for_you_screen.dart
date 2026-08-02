@@ -25,7 +25,9 @@ class ForYouScreen extends ConsumerStatefulWidget {
 class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   final _scrollController = ScrollController();
   final _prayForOthersKey = GlobalKey();
-  final _faithEngagementKey = GlobalKey();
+  final _dailyFaithLoopKey = GlobalKey();
+  final _quizChallengeKey = GlobalKey();
+  final _circlesKey = GlobalKey();
 
   @override
   void initState() {
@@ -45,16 +47,22 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   void _handleSectionRequest() {
     final destination = notificationDestinationRequest.value;
     if (destination != NotificationDestination.prayForOthers &&
-        destination != NotificationDestination.faithEngagement) {
+        destination != NotificationDestination.faithEngagement &&
+        destination != NotificationDestination.quizChallenge &&
+        destination != NotificationDestination.circles) {
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final sectionContext =
-          destination == NotificationDestination.faithEngagement
-              ? _faithEngagementKey.currentContext
-              : _prayForOthersKey.currentContext;
+      final sectionContext = switch (destination) {
+        NotificationDestination.faithEngagement =>
+          _dailyFaithLoopKey.currentContext,
+        NotificationDestination.quizChallenge =>
+          _quizChallengeKey.currentContext,
+        NotificationDestination.circles => _circlesKey.currentContext,
+        _ => _prayForOthersKey.currentContext,
+      };
       if (sectionContext == null) return;
 
       notificationDestinationRequest.value = null;
@@ -83,26 +91,28 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
         );
         final registry = ForYouSectionRegistry.all(
           prayForOthersKey: _prayForOthersKey,
-          faithEngagementKey: _faithEngagementKey,
+          dailyFaithLoopKey: _dailyFaithLoopKey,
+          quizChallengeKey: _quizChallengeKey,
+          circlesKey: _circlesKey,
         );
+        final configById = {for (final config in configs) config.id: config};
 
         // 🔹 Enable / disable + order
         final activeSections = registry.where((section) {
-          final config = configs.where((c) => c.id == section.id).firstOrNull;
+          final config = configById[section.id];
           if (section.id == 'liveChurch' &&
               !(liveChurchStatus?.canPlay ?? false)) {
             return false;
           }
+          if (config != null) return config.enabled;
           if (section.id == 'prayForOthers') return true;
           if (section.id == 'faithEngagement') return true;
           return config?.enabled ?? false;
         }).map((section) {
-          final config = configs.where((c) => c.id == section.id).firstOrNull;
+          final config = configById[section.id];
           return OrderedSectionForYou(section, config?.order ?? section.order);
         }).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
-
-        _movePrayForOthersAbovePlans(activeSections);
 
         final slivers = <Widget>[];
 
@@ -132,32 +142,23 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   }
 }
 
-void _movePrayForOthersAbovePlans(
-  List<OrderedSectionForYou> sections,
-) {
-  final prayerIndex =
-      sections.indexWhere((item) => item.section.id == 'prayForOthers');
-  final plansIndex =
-      sections.indexWhere((item) => item.section.id == 'featured');
-  if (prayerIndex < 0 || plansIndex < 0 || prayerIndex < plansIndex) return;
-
-  final prayerSection = sections.removeAt(prayerIndex);
-  final updatedPlansIndex =
-      sections.indexWhere((item) => item.section.id == 'featured');
-  sections.insert(updatedPlansIndex, prayerSection);
-}
-
 class ForYouSectionRegistry {
   static List<MasterSection> all({
     GlobalKey? prayForOthersKey,
-    GlobalKey? faithEngagementKey,
+    GlobalKey? dailyFaithLoopKey,
+    GlobalKey? quizChallengeKey,
+    GlobalKey? circlesKey,
   }) =>
       [
         const LiveChurchSection(),
         DailyVerseSection(),
-        FaithEngagementSection(anchorKey: faithEngagementKey),
-        FeaturedSection(),
+        FaithEngagementSection(
+          dailyFaithLoopKey: dailyFaithLoopKey,
+          quizChallengeKey: quizChallengeKey,
+          circlesKey: circlesKey,
+        ),
         PrayForOthersSection(anchorKey: prayForOthersKey),
+        FeaturedSection(),
         FooterSection(),
         ArticleSection()
       ];

@@ -2204,6 +2204,22 @@ class _SectionsEditor extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: 16),
+        _SectionGroupCard<ForYouSectionConfigModel>(
+          title: context.t('studio.section_faith_engagement_items'),
+          definitions: _faithEngagementItemDefinitions,
+          stream: repository.watchForYouSectionConfigs(),
+          itemId: (item) => item.id,
+          itemEnabled: (item) => item.enabled,
+          itemOrder: (item) => item.order,
+          onSave: ({required id, required enabled, required order}) {
+            return repository.updateForYouSectionConfig(
+              id: id,
+              enabled: enabled,
+              order: order,
+            );
+          },
+        ),
       ],
     );
   }
@@ -2252,14 +2268,16 @@ class _SectionGroupCard<T> extends StatelessWidget {
             final configById = {
               for (final item in items) itemId(item): item,
             };
+
+            int resolvedOrder(_StudioSectionDefinition definition) {
+              final config = configById[definition.id];
+              return config == null
+                  ? definition.defaultOrder
+                  : itemOrder(config);
+            }
+
             final orderedDefinitions = [...definitions]..sort((a, b) {
-                final aConfig = configById[a.id];
-                final bConfig = configById[b.id];
-                final aOrder =
-                    aConfig != null ? itemOrder(aConfig) : a.defaultOrder;
-                final bOrder =
-                    bConfig != null ? itemOrder(bConfig) : b.defaultOrder;
-                return aOrder.compareTo(bOrder);
+                return resolvedOrder(a).compareTo(resolvedOrder(b));
               });
 
             return Column(
@@ -2315,13 +2333,10 @@ class _SectionGroupCard<T> extends StatelessWidget {
                       definition: definition,
                       enabled: enabled,
                       onToggle: (value) {
-                        final existingOrder = config != null
-                            ? itemOrder(config)
-                            : definition.defaultOrder;
                         return onSave(
                           id: definition.id,
                           enabled: value,
-                          order: existingOrder,
+                          order: resolvedOrder(definition),
                         );
                       },
                       dragHandle: ReorderableDragStartListener(
@@ -2372,8 +2387,7 @@ class _SectionConfigTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t(definition.titleKey,
-                      fallback: definition.fallbackTitle),
+                  context.t(definition.titleKey),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -2417,13 +2431,11 @@ class _StudioSectionDefinition {
   const _StudioSectionDefinition({
     required this.id,
     required this.titleKey,
-    required this.fallbackTitle,
     required this.defaultOrder,
   });
 
   final String id;
   final String titleKey;
-  final String fallbackTitle;
   final int defaultOrder;
 }
 
@@ -2431,25 +2443,21 @@ const List<_StudioSectionDefinition> _homeSectionDefinitions = [
   _StudioSectionDefinition(
     id: 'announcements',
     titleKey: 'studio.section_announcements',
-    fallbackTitle: 'Announcements',
     defaultOrder: 10,
   ),
   _StudioSectionDefinition(
     id: 'events',
     titleKey: 'studio.section_events',
-    fallbackTitle: 'Events',
     defaultOrder: 20,
   ),
   _StudioSectionDefinition(
     id: 'promise',
     titleKey: 'studio.section_promise',
-    fallbackTitle: 'Promise',
     defaultOrder: 30,
   ),
   _StudioSectionDefinition(
     id: 'footer',
     titleKey: 'studio.section_footer',
-    fallbackTitle: 'Footer',
     defaultOrder: 100,
   ),
 ];
@@ -2458,32 +2466,55 @@ const List<_StudioSectionDefinition> _forYouSectionDefinitions = [
   _StudioSectionDefinition(
     id: 'liveChurch',
     titleKey: 'studio.section_live_church',
-    fallbackTitle: 'Live Church',
     defaultOrder: 5,
   ),
   _StudioSectionDefinition(
     id: 'dailyVerse',
     titleKey: 'studio.section_daily_verse',
-    fallbackTitle: 'Daily Verse',
     defaultOrder: 10,
+  ),
+  _StudioSectionDefinition(
+    id: 'faithEngagement',
+    titleKey: 'studio.section_faith_engagement',
+    defaultOrder: 12,
+  ),
+  _StudioSectionDefinition(
+    id: 'prayForOthers',
+    titleKey: 'studio.section_pray_for_others',
+    defaultOrder: 15,
   ),
   _StudioSectionDefinition(
     id: 'featured',
     titleKey: 'studio.section_featured',
-    fallbackTitle: 'Featured',
     defaultOrder: 20,
   ),
   _StudioSectionDefinition(
     id: 'article',
     titleKey: 'studio.section_article',
-    fallbackTitle: 'Article',
     defaultOrder: 30,
   ),
   _StudioSectionDefinition(
     id: 'footer',
     titleKey: 'studio.section_footer',
-    fallbackTitle: 'Footer',
     defaultOrder: 100,
+  ),
+];
+
+const List<_StudioSectionDefinition> _faithEngagementItemDefinitions = [
+  _StudioSectionDefinition(
+    id: 'dailyFaithLoop',
+    titleKey: 'studio.section_daily_faith_loop',
+    defaultOrder: 10,
+  ),
+  _StudioSectionDefinition(
+    id: 'quizChallenge',
+    titleKey: 'studio.section_quiz_challenge',
+    defaultOrder: 20,
+  ),
+  _StudioSectionDefinition(
+    id: 'circles',
+    titleKey: 'studio.section_circles',
+    defaultOrder: 30,
   ),
 ];
 

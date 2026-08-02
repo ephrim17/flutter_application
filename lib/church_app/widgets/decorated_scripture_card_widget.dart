@@ -6,16 +6,27 @@ class DecoratedScriptureCard extends StatelessWidget {
     super.key,
     required this.width,
     required this.child,
+    this.plain = false,
   });
 
   final double width;
   final Widget child;
+  final bool plain;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
+
+    if (plain) {
+      return Container(
+        width: width,
+        padding: const EdgeInsets.all(14),
+        decoration: carouselBoxDecoration(context),
+        child: child,
+      );
+    }
 
     return SizedBox(
       width: width,

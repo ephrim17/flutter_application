@@ -227,12 +227,13 @@ class FaithEngagementRepository {
   Future<void> queueFaithNotification({
     required String title,
     required String body,
+    required String kind,
   }) =>
       FirestorePaths.churchNotificationRequests(firestore, churchId).add({
         'title': title.trim(),
         'body': body.trim(),
         'topic': 'church_$churchId',
-        'kind': 'faith_engagement',
+        'kind': kind,
         'status': 'queued',
         'createdAt': FieldValue.serverTimestamp(),
       });

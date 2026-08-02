@@ -659,8 +659,7 @@ const Map<String, String> defaultChurchTextContents = {
   // Section headers
   'for_you.article.section_title': 'Article Notes',
   'for_you.reading_plan.section_title': 'Reading Plans',
-  'for_you.featured.plans_section_title': 'Plans for you ✮',
-  'for_you.featured.section_title': 'Featured for you ✮',
+  'for_you.featured.section_title': 'Featured For you',
   'promise.section_title': 'Promise Word 2026',
 
   // Members
@@ -1280,7 +1279,13 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.section_promise': 'Promise',
   'studio.section_footer': 'Footer',
   'studio.section_daily_verse': 'Daily Verse',
-  'studio.section_featured': 'Featured',
+  'studio.section_daily_faith_loop': '3-minute Faith Loop',
+  'studio.section_faith_engagement': 'Faith Engagement',
+  'studio.section_faith_engagement_items': 'Faith Engagement items',
+  'studio.section_quiz_challenge': 'Quiz Challenge',
+  'studio.section_circles': 'Circles',
+  'studio.section_pray_for_others': 'Pray for others',
+  'studio.section_featured': 'Featured For you',
   'studio.section_article': 'Article',
   'studio.delete_title': 'Delete',
   'studio.delete_confirm_remove_prefix': 'Remove',

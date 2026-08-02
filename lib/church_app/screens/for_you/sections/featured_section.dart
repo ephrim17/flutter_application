@@ -28,7 +28,7 @@ class FeaturedSection implements MasterSection {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               SectionHeader(
-                text: context.t('for_you.featured.plans_section_title'),
+                text: context.t('for_you.featured.section_title'),
                 padding: 0.0,
               ),
               const SizedBox(height: 10),
@@ -46,11 +46,6 @@ class FeaturedSection implements MasterSection {
                     ),
                   );
                 },
-              ),
-              const SizedBox(height: 10),
-              SectionHeader(
-                text: context.t('for_you.featured.section_title'),
-                padding: 0.0,
               ),
               const SizedBox(height: 10),
               CardLinkButtonWidget(

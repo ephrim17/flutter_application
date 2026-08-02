@@ -39,6 +39,8 @@ enum NotificationDestination {
   articles,
   prayForOthers,
   faithEngagement,
+  quizChallenge,
+  circles,
 }
 
 Future<void> initializeNotificationPresentation() async {
@@ -324,8 +326,14 @@ void _handleNotificationKind(String? kind) {
       notificationDestinationRequest.value =
           NotificationDestination.prayForOthers;
     case 'faith_engagement':
-    case 'circle_response_created':
+    case 'faith_daily_loop':
       notificationDestinationRequest.value =
           NotificationDestination.faithEngagement;
+    case 'faith_quiz_challenge':
+      notificationDestinationRequest.value =
+          NotificationDestination.quizChallenge;
+    case 'faith_circles':
+    case 'circle_response_created':
+      notificationDestinationRequest.value = NotificationDestination.circles;
   }
 }

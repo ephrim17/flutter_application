@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/models/faith_engagement_models.da
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/faith_engagement_providers.dart';
+import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
@@ -20,9 +21,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 class FaithEngagementSection implements MasterSection {
-  const FaithEngagementSection({this.anchorKey});
+  const FaithEngagementSection({
+    this.dailyFaithLoopKey,
+    this.quizChallengeKey,
+    this.circlesKey,
+  });
 
-  final GlobalKey? anchorKey;
+  final GlobalKey? dailyFaithLoopKey;
+  final GlobalKey? quizChallengeKey;
+  final GlobalKey? circlesKey;
 
   @override
   String get id => 'faithEngagement';
@@ -33,83 +40,162 @@ class FaithEngagementSection implements MasterSection {
   @override
   List<Widget> buildSlivers(BuildContext context) => [
         SliverToBoxAdapter(
-          child: KeyedSubtree(
-            key: anchorKey,
-            child: const _FaithEngagementContent(),
+          child: _FaithEngagementContent(
+            dailyFaithLoopKey: dailyFaithLoopKey,
+            quizChallengeKey: quizChallengeKey,
+            circlesKey: circlesKey,
           ),
         ),
       ];
 }
 
 class _FaithEngagementContent extends ConsumerWidget {
-  const _FaithEngagementContent();
+  const _FaithEngagementContent({
+    required this.dailyFaithLoopKey,
+    required this.quizChallengeKey,
+    required this.circlesKey,
+  });
+
+  final GlobalKey? dailyFaithLoopKey;
+  final GlobalKey? quizChallengeKey;
+  final GlobalKey? circlesKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configs =
+        ref.watch(forYouSectionConfigsProvider).asData?.value ?? const [];
+    final configById = {for (final config in configs) config.id: config};
+    final items = <({String id, int order, Widget child})>[
+      if (configById['dailyFaithLoop']?.enabled ?? true)
+        (
+          id: 'dailyFaithLoop',
+          order: configById['dailyFaithLoop']?.order ?? 10,
+          child: KeyedSubtree(
+            key: dailyFaithLoopKey,
+            child: const _DailyFaithLoopContent(),
+          ),
+        ),
+      if (configById['quizChallenge']?.enabled ?? true)
+        (
+          id: 'quizChallenge',
+          order: configById['quizChallenge']?.order ?? 20,
+          child: KeyedSubtree(
+            key: quizChallengeKey,
+            child: const _QuizChallengeContent(),
+          ),
+        ),
+      if (configById['circles']?.enabled ?? true)
+        (
+          id: 'circles',
+          order: configById['circles']?.order ?? 30,
+          child: KeyedSubtree(
+            key: circlesKey,
+            child: const _CirclesContent(),
+          ),
+        ),
+    ]..sort((left, right) => left.order.compareTo(right.order));
+
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(children: items.map((item) => item.child).toList());
+  }
+}
+
+class _DailyFaithLoopContent extends ConsumerWidget {
+  const _DailyFaithLoopContent();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reflection = ref.watch(todayReflectionProvider).asData?.value;
-    final circles = ref.watch(youthCirclesProvider).asData?.value ?? const [];
-    final quizzes = ref.watch(quizChallengesProvider).asData?.value ?? const [];
-    final activeQuiz =
-        quizzes.where((item) => item.isActiveAt(DateTime.now())).firstOrNull;
-
-    if (reflection == null && circles.isEmpty && activeQuiz == null) {
-      return const SizedBox.shrink();
-    }
+    if (reflection == null) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (reflection != null) ...[
-            SectionHeader(
-              text: context.t('faith.today_heading'),
-              padding: 16,
+          SectionHeader(
+            text: context.t('faith.today_heading'),
+            padding: 16,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+            child: _TodayFaithCard(reflection: reflection),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuizChallengeContent extends ConsumerWidget {
+  const _QuizChallengeContent();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quizzes = ref.watch(quizChallengesProvider).asData?.value ?? const [];
+    final activeQuiz =
+        quizzes.where((item) => item.isActiveAt(DateTime.now())).firstOrNull;
+    if (activeQuiz == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            text: context.t('faith.quiz_challenge_heading'),
+            padding: 16,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+            child: _QuizChallengeCard(challenge: activeQuiz),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CirclesContent extends ConsumerWidget {
+  const _CirclesContent();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final circles = ref.watch(youthCirclesProvider).asData?.value ?? const [];
+    if (circles.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            text: context.t('faith.circles_heading'),
+            padding: 16,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+            child: Text(
+              context.t('faith.circles_subtitle'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-              child: _TodayFaithCard(reflection: reflection),
-            ),
-          ],
-          if (activeQuiz != null) ...[
-            SectionHeader(
-              text: context.t('faith.quiz_challenge_heading'),
-              padding: 16,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-              child: _QuizChallengeCard(challenge: activeQuiz),
-            ),
-          ],
-          if (circles.isNotEmpty) ...[
-            SectionHeader(
-              text: context.t('faith.circles_heading'),
-              padding: 16,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-              child: Text(
-                context.t('faith.circles_subtitle'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+          ),
+          SizedBox(
+            height: 184,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: circles.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) => SizedBox(
+                width: 184,
+                child: _YouthCircleCard(circle: circles[index]),
               ),
             ),
-            SizedBox(
-              height: 184,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: circles.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 184,
-                  child: _YouthCircleCard(circle: circles[index]),
-                ),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -1051,49 +1137,11 @@ class _LiveItOutStep extends StatelessWidget {
 String _formatCircleResponseTime(BuildContext context, DateTime? value) {
   if (value == null) return context.t('time.just_now');
   final timestamp = value.toLocal();
-  final now = DateTime.now();
-  final difference = now.difference(timestamp);
-  if (difference.isNegative || difference.inMinutes < 1) {
-    return context.t('time.just_now');
-  }
-  if (difference.inMinutes < 60) {
-    final minutes = difference.inMinutes;
-    return context.t(
-      minutes == 1 ? 'time.minute_ago' : 'time.minutes_ago',
-      parameters: {'count': minutes},
-    );
-  }
-  if (difference.inHours < 24) {
-    final hours = difference.inHours;
-    return context.t(
-      hours == 1 ? 'time.hour_ago' : 'time.hours_ago',
-      parameters: {'count': hours},
-    );
-  }
-  final today = DateTime(now.year, now.month, now.day);
-  final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
-  final daysAgo = today.difference(messageDay).inDays;
-  final time = DateFormat.jm().format(timestamp);
-  if (daysAgo == 1) {
-    return context.t(
-      'time.yesterday_at',
-      parameters: {'time': time},
-    );
-  }
-  if (daysAgo < 7) {
-    return context.t(
-      'time.weekday_at',
-      parameters: {
-        'day': DateFormat.EEEE().format(timestamp),
-        'time': time,
-      },
-    );
-  }
   return context.t(
     'time.date_at',
     parameters: {
       'date': DateFormat.yMMMd().format(timestamp),
-      'time': time,
+      'time': DateFormat.jm().format(timestamp),
     },
   );
 }

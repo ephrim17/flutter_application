@@ -58,6 +58,7 @@ class DailyVerseCard extends ConsumerWidget {
           height: forYouPrimaryCardHeight,
           child: DecoratedScriptureCard(
             width: width - 32,
+            plain: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

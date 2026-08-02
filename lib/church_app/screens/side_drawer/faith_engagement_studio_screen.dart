@@ -636,6 +636,11 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
           await widget.repository.queueFaithNotification(
             title: _title.text.trim(),
             body: notificationBody,
+            kind: switch (widget.type) {
+              _FaithContentType.challenge => 'faith_quiz_challenge',
+              _FaithContentType.reflection => 'faith_daily_loop',
+              _FaithContentType.circle => 'faith_circles',
+            },
           );
         } catch (_) {
           notificationFailed = true;
