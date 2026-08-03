@@ -26,7 +26,6 @@ import 'package:intl/intl.dart';
 part 'views/dashboard_overview_views.dart';
 part 'views/dashboard_member_views.dart';
 part 'views/dashboard_quick_look_views.dart';
-part 'views/dashboard_quiz_views.dart';
 part 'views/dashboard_faith_loop_views.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -36,7 +35,6 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardStateAsync = ref.watch(dashboardViewModelProvider);
     final dashboardMembersAsync = ref.watch(dashboardMembersProvider);
-    final quizResultsAsync = ref.watch(dashboardQuizResultsProvider);
     final faithLoopUpdatesAsync = ref.watch(dashboardFaithLoopUpdatesProvider);
     final homeSectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
     final forYouSectionConfigsAsync = ref.watch(forYouSectionConfigsProvider);
@@ -160,15 +158,6 @@ class DashboardScreen extends ConsumerWidget {
             subtitle: context.t('dashboard.insights_subtitle'),
             child: _DashboardHealthSignalsPanel(
               state: dashboardState,
-            ),
-          ),
-          const SizedBox(height: 18),
-          _DashboardSectionCard(
-            title: context.t('dashboard.quiz_results_title'),
-            subtitle: context.t('dashboard.quiz_results_subtitle'),
-            child: _DashboardQuizResultsSection(
-              resultsAsync: quizResultsAsync,
-              members: dashboardMembers,
             ),
           ),
           const SizedBox(height: 18),

@@ -10,6 +10,7 @@ import 'package:flutter_application/church_app/screens/for_you/sections/daily_ve
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/faith_engagement_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/live_church_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/sections/learning_path_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/pray_for_others_section.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -26,7 +27,6 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
   final _scrollController = ScrollController();
   final _prayForOthersKey = GlobalKey();
   final _dailyFaithLoopKey = GlobalKey();
-  final _quizChallengeKey = GlobalKey();
   final _circlesKey = GlobalKey();
 
   @override
@@ -48,7 +48,6 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
     final destination = notificationDestinationRequest.value;
     if (destination != NotificationDestination.prayForOthers &&
         destination != NotificationDestination.faithEngagement &&
-        destination != NotificationDestination.quizChallenge &&
         destination != NotificationDestination.circles) {
       return;
     }
@@ -58,8 +57,6 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
       final sectionContext = switch (destination) {
         NotificationDestination.faithEngagement =>
           _dailyFaithLoopKey.currentContext,
-        NotificationDestination.quizChallenge =>
-          _quizChallengeKey.currentContext,
         NotificationDestination.circles => _circlesKey.currentContext,
         _ => _prayForOthersKey.currentContext,
       };
@@ -92,7 +89,6 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
         final registry = ForYouSectionRegistry.all(
           prayForOthersKey: _prayForOthersKey,
           dailyFaithLoopKey: _dailyFaithLoopKey,
-          quizChallengeKey: _quizChallengeKey,
           circlesKey: _circlesKey,
         );
         final configById = {for (final config in configs) config.id: config};
@@ -107,6 +103,7 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
           if (config != null) return config.enabled;
           if (section.id == 'prayForOthers') return true;
           if (section.id == 'faithEngagement') return true;
+          if (section.id == 'learningPath') return true;
           return config?.enabled ?? false;
         }).map((section) {
           final config = configById[section.id];
@@ -146,7 +143,6 @@ class ForYouSectionRegistry {
   static List<MasterSection> all({
     GlobalKey? prayForOthersKey,
     GlobalKey? dailyFaithLoopKey,
-    GlobalKey? quizChallengeKey,
     GlobalKey? circlesKey,
   }) =>
       [
@@ -154,9 +150,9 @@ class ForYouSectionRegistry {
         DailyVerseSection(),
         FaithEngagementSection(
           dailyFaithLoopKey: dailyFaithLoopKey,
-          quizChallengeKey: quizChallengeKey,
           circlesKey: circlesKey,
         ),
+        const LearningPathSection(),
         PrayForOthersSection(anchorKey: prayForOthersKey),
         FeaturedSection(),
         FooterSection(),

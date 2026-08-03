@@ -11,8 +11,12 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/learning_modules_admin_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/learning_results_admin_screen.dart';
+import 'package:flutter_application/church_app/screens/super_admin/church_learning_setup_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/learning_module_repository.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
@@ -274,6 +278,36 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                               },
                                             ),
                                           ),
+                                          const SizedBox(height: 10),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: OutlinedButton.icon(
+                                              onPressed: () =>
+                                                  Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      const LearningModulesAdminScreen(),
+                                                ),
+                                              ),
+                                              icon: const Icon(
+                                                Icons.school_outlined,
+                                              ),
+                                              label: Text(
+                                                context.t(
+                                                  'learning.super_admin_action',
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            context.t(
+                                              'learning.super_admin_action_hint',
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -496,6 +530,42 @@ class _SuperAdminChurchTile extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ChurchLearningSetupScreen(
+                    church: church,
+                    repository: LearningModuleRepository(
+                      firestore: ref.read(firestoreProvider),
+                    ),
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.school_outlined),
+              label: Text(context.t('learning.setup_action')),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LearningResultsAdminScreen(
+                    church: church,
+                    repository: LearningModuleRepository(
+                      firestore: ref.read(firestoreProvider),
+                    ),
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.insights_outlined),
+              label: Text(context.t('learning.results_action')),
+            ),
+          ),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

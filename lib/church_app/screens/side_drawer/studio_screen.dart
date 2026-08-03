@@ -2507,14 +2507,9 @@ const List<_StudioSectionDefinition> _faithEngagementItemDefinitions = [
     defaultOrder: 10,
   ),
   _StudioSectionDefinition(
-    id: 'quizChallenge',
-    titleKey: 'studio.section_quiz_challenge',
-    defaultOrder: 20,
-  ),
-  _StudioSectionDefinition(
     id: 'circles',
     titleKey: 'studio.section_circles',
-    defaultOrder: 30,
+    defaultOrder: 20,
   ),
 ];
 

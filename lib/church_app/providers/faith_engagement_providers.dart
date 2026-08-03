@@ -24,12 +24,6 @@ final youthCirclesProvider =
   );
 });
 
-final quizChallengesProvider =
-    StreamProvider.autoDispose<List<QuizChallenge>>((ref) {
-  final repository = ref.watch(faithEngagementRepositoryProvider);
-  return repository?.watchChallenges() ?? Stream.value(const []);
-});
-
 final todayReflectionProvider =
     StreamProvider.autoDispose<FaithReflection?>((ref) {
   final repository = ref.watch(faithEngagementRepositoryProvider);
@@ -44,14 +38,6 @@ final dailyFaithProgressProvider =
     return Stream.value(const DailyFaithProgress(completedSteps: {}));
   }
   return repository.watchDailyProgress(uid, DateTime.now());
-});
-
-final quizAttemptProvider =
-    StreamProvider.autoDispose.family<QuizAttempt?, String>((ref, challengeId) {
-  final repository = ref.watch(faithEngagementRepositoryProvider);
-  final uid = ref.watch(firebaseAuthProvider).currentUser?.uid;
-  if (repository == null || uid == null) return Stream.value(null);
-  return repository.watchQuizAttempt(challengeId, uid);
 });
 
 final circleResponsesProvider = StreamProvider.autoDispose

@@ -23,12 +23,10 @@ import 'package:intl/intl.dart';
 class FaithEngagementSection implements MasterSection {
   const FaithEngagementSection({
     this.dailyFaithLoopKey,
-    this.quizChallengeKey,
     this.circlesKey,
   });
 
   final GlobalKey? dailyFaithLoopKey;
-  final GlobalKey? quizChallengeKey;
   final GlobalKey? circlesKey;
 
   @override
@@ -42,7 +40,6 @@ class FaithEngagementSection implements MasterSection {
         SliverToBoxAdapter(
           child: _FaithEngagementContent(
             dailyFaithLoopKey: dailyFaithLoopKey,
-            quizChallengeKey: quizChallengeKey,
             circlesKey: circlesKey,
           ),
         ),
@@ -52,12 +49,10 @@ class FaithEngagementSection implements MasterSection {
 class _FaithEngagementContent extends ConsumerWidget {
   const _FaithEngagementContent({
     required this.dailyFaithLoopKey,
-    required this.quizChallengeKey,
     required this.circlesKey,
   });
 
   final GlobalKey? dailyFaithLoopKey;
-  final GlobalKey? quizChallengeKey;
   final GlobalKey? circlesKey;
 
   @override
@@ -73,15 +68,6 @@ class _FaithEngagementContent extends ConsumerWidget {
           child: KeyedSubtree(
             key: dailyFaithLoopKey,
             child: const _DailyFaithLoopContent(),
-          ),
-        ),
-      if (configById['quizChallenge']?.enabled ?? true)
-        (
-          id: 'quizChallenge',
-          order: configById['quizChallenge']?.order ?? 20,
-          child: KeyedSubtree(
-            key: quizChallengeKey,
-            child: const _QuizChallengeContent(),
           ),
         ),
       if (configById['circles']?.enabled ?? true)
@@ -120,35 +106,6 @@ class _DailyFaithLoopContent extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: _TodayFaithCard(reflection: reflection),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuizChallengeContent extends ConsumerWidget {
-  const _QuizChallengeContent();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final quizzes = ref.watch(quizChallengesProvider).asData?.value ?? const [];
-    final activeQuiz =
-        quizzes.where((item) => item.isActiveAt(DateTime.now())).firstOrNull;
-    if (activeQuiz == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            text: context.t('faith.quiz_challenge_heading'),
-            padding: 16,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-            child: _QuizChallengeCard(challenge: activeQuiz),
           ),
         ],
       ),
@@ -296,293 +253,6 @@ class _TodayFaithCard extends ConsumerWidget {
         ),
       ),
     );
-  }
-}
-
-class _QuizChallengeCard extends ConsumerWidget {
-  const _QuizChallengeCard({required this.challenge});
-  final QuizChallenge challenge;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final attempt = ref.watch(quizAttemptProvider(challenge.id)).asData?.value;
-    return SizedBox(
-      height: forYouPrimaryCardHeight,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: carouselBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.quiz_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    challenge.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ),
-                if (attempt != null)
-                  Chip(
-                    label: Text('${attempt.score}/${attempt.total}'),
-                    avatar: const Icon(Icons.check_circle_rounded, size: 18),
-                  ),
-              ],
-            ),
-            if (challenge.description.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                challenge.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const Spacer(),
-            Text(
-              context.t(
-                'faith.quiz_question_count',
-                parameters: {'count': challenge.questions.length},
-              ),
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: () => showAppModalBottomSheet<void>(
-                  context: context,
-                  heightFactor: 0.92,
-                  builder: (_) => _QuizChallengeSheet(
-                    challenge: challenge,
-                    attempt: attempt,
-                  ),
-                ),
-                icon: Icon(
-                  attempt == null ? Icons.play_arrow_rounded : Icons.insights,
-                ),
-                label: Text(
-                  context.t(
-                    attempt == null ? 'faith.start_quiz' : 'faith.view_result',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuizChallengeSheet extends ConsumerStatefulWidget {
-  const _QuizChallengeSheet({required this.challenge, required this.attempt});
-
-  final QuizChallenge challenge;
-  final QuizAttempt? attempt;
-
-  @override
-  ConsumerState<_QuizChallengeSheet> createState() =>
-      _QuizChallengeSheetState();
-}
-
-class _QuizChallengeSheetState extends ConsumerState<_QuizChallengeSheet> {
-  late final List<int?> _answers;
-  bool _submitting = false;
-
-  bool get _submitted => widget.attempt != null;
-
-  @override
-  void initState() {
-    super.initState();
-    _answers = List<int?>.generate(
-      widget.challenge.questions.length,
-      (index) => index < (widget.attempt?.answers.length ?? 0)
-          ? widget.attempt!.answers[index]
-          : null,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.challenge.title,
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                ),
-                      ),
-                      if (_submitted)
-                        Text(
-                          context.t(
-                            'faith.quiz_score',
-                            parameters: {
-                              'score': widget.attempt!.score,
-                              'total': widget.attempt!.total,
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.quiz_rounded),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-              itemCount: widget.challenge.questions.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (context, questionIndex) {
-                final question = widget.challenge.questions[questionIndex];
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: carouselBoxDecoration(context),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.t(
-                          'faith.quiz_question_number',
-                          parameters: {'number': questionIndex + 1},
-                        ),
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        question.prompt,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                      ),
-                      const SizedBox(height: 10),
-                      RadioGroup<int>(
-                        groupValue: _answers[questionIndex],
-                        onChanged: (value) {
-                          if (_submitted) return;
-                          setState(() => _answers[questionIndex] = value);
-                        },
-                        child: Column(
-                          children: [
-                            for (var optionIndex = 0;
-                                optionIndex < question.options.length;
-                                optionIndex++)
-                              RadioListTile<int>(
-                                contentPadding: EdgeInsets.zero,
-                                value: optionIndex,
-                                enabled: !_submitted,
-                                title: Text(question.options[optionIndex]),
-                                secondary: _submitted
-                                    ? Icon(
-                                        optionIndex ==
-                                                question.correctOptionIndex
-                                            ? Icons.check_circle_rounded
-                                            : _answers[questionIndex] ==
-                                                    optionIndex
-                                                ? Icons.cancel_rounded
-                                                : Icons.circle_outlined,
-                                        color: optionIndex ==
-                                                question.correctOptionIndex
-                                            ? Colors.green
-                                            : _answers[questionIndex] ==
-                                                    optionIndex
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .error
-                                                : null,
-                                      )
-                                    : null,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          if (!_submitted)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.t('faith.submit_quiz')),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _submit() async {
-    if (_answers.any((answer) => answer == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.t('faith.answer_all_questions'))),
-      );
-      return;
-    }
-    final repository = ref.read(faithEngagementRepositoryProvider);
-    final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
-    if (repository == null || uid == null) return;
-    setState(() => _submitting = true);
-    final answers = _answers.cast<int>();
-    final score = List.generate(
-      answers.length,
-      (index) =>
-          answers[index] == widget.challenge.questions[index].correctOptionIndex
-              ? 1
-              : 0,
-    ).fold<int>(0, (sum, item) => sum + item);
-    try {
-      await repository.submitQuizAttempt(
-        challengeId: widget.challenge.id,
-        userId: uid,
-        answers: answers,
-        score: score,
-        total: widget.challenge.questions.length,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.t('faith.quiz_submit_failed'))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
   }
 }
 

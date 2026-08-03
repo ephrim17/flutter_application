@@ -213,6 +213,46 @@ This area includes:
 - reading plans
 - bible swipe verses
 
+### Global learning modules
+
+The Bible Learning path is separate from church Faith Engagement.
+
+- Super Admin authoring UI:
+  `lib/church_app/screens/super_admin/learning_modules_admin_screen.dart`
+- Global definitions: top-level Firestore collection `learning_modules`
+- Per-church controls are managed only by Super Admin from each church card's
+  Learning setup screen. The configuration document is
+  `churches/{churchId}/learning_config/main`; it can disable Bible Learning for
+  that church, disable global inheritance, hide selected global modules, and
+  define a church-specific order.
+- Church-only modules and independent copies of global modules live at
+  `churches/{churchId}/learning_modules/{moduleId}`. A copy records its global
+  source ID and replaces that source only while resolving that church's member
+  catalogue. Reverting the copy returns the church to the current global
+  version without changing any other church.
+- A module has a title, description, order, enabled state, and one or more
+  ordered embedded sections.
+- Every section has a Bible verse range, optional PDF resources, a passing
+  percentage, and an MCQ quiz. Passing a section unlocks the next section;
+  finishing the final section unlocks the next module.
+- PDFs are stored under
+  `learning_modules/{moduleId}/{sectionId}/{generatedFileName}` in Firebase
+  Storage. When a global module is customized, its PDFs are copied to
+  `churches/{churchId}/learning_modules/{moduleId}/{sectionId}/...`; new
+  church-only uploads use the same church-owned prefix. This keeps later global
+  PDF updates or deletion from changing an existing church customization.
+- Member progress stays church- and user-scoped at
+  `churches/{churchId}/users/{uid}/learning_progress/progress`.
+- Every passed or failed submission, including retakes, is stored for Super
+  Admin reporting at `churches/{churchId}/learning_results/{resultId}`. Failed
+  attempts do not unlock progression; each retry increments its attempt number.
+- Faith Engagement now exposes only Circles and Daily Faith. The former
+  church-specific Quiz Challenge has no member, Studio, notification, or
+  dashboard surface.
+- Production Firestore and Storage rules must allow published module reads to
+  authenticated members, restrict module/PDF mutations to enabled Super Admins,
+  and restrict progress writes to the matching authenticated user.
+
 ### Feeds
 
 Main files:

@@ -14,8 +14,6 @@ class FaithEngagementRepository {
 
   CollectionReference<Map<String, dynamic>> get _circles =>
       FirestorePaths.churchYouthCircles(firestore, churchId);
-  CollectionReference<Map<String, dynamic>> get _challenges =>
-      FirestorePaths.churchWeeklyChallenges(firestore, churchId);
   CollectionReference<Map<String, dynamic>> get _reflections =>
       FirestorePaths.churchFaithReflections(firestore, churchId);
   CollectionReference<Map<String, dynamic>> get _engagement =>
@@ -33,21 +31,6 @@ class FaithEngagementRepository {
         return circle.isVisibleTo(groupIds);
       }).toList();
       items.sort((a, b) => a.order.compareTo(b.order));
-      return items;
-    });
-  }
-
-  Stream<List<QuizChallenge>> watchChallenges() {
-    return _challenges.snapshots().map((snapshot) {
-      final items = snapshot.docs
-          .map(QuizChallenge.fromDoc)
-          .where((challenge) => challenge.isConfigured)
-          .toList();
-      items.sort((a, b) {
-        final aDate = a.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = b.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
       return items;
     });
   }
@@ -93,33 +76,6 @@ class FaithEngagementRepository {
   Future<void> deleteResponse(String circleId, String responseId) =>
       _circles.doc(circleId).collection('responses').doc(responseId).delete();
 
-  DocumentReference<Map<String, dynamic>> _challengeCompletion(
-    String challengeId,
-    String userId,
-  ) =>
-      _challenges.doc(challengeId).collection('completions').doc(userId);
-
-  Stream<QuizAttempt?> watchQuizAttempt(String challengeId, String userId) =>
-      _challengeCompletion(challengeId, userId).snapshots().map((snapshot) {
-        if (!snapshot.exists) return null;
-        final attempt = QuizAttempt.fromMap(snapshot.data());
-        return attempt.isValid ? attempt : null;
-      });
-
-  Future<void> submitQuizAttempt({
-    required String challengeId,
-    required String userId,
-    required List<int> answers,
-    required int score,
-    required int total,
-  }) =>
-      _challengeCompletion(challengeId, userId).set({
-        'answers': answers,
-        'score': score,
-        'total': total,
-        'submittedAt': FieldValue.serverTimestamp(),
-      });
-
   String dailyProgressId(String userId, DateTime day) =>
       '${userId}_${day.year}${day.month.toString().padLeft(2, '0')}${day.day.toString().padLeft(2, '0')}';
 
@@ -145,46 +101,8 @@ class FaithEngagementRepository {
       watchAdminCircles() =>
           _circles.snapshots().map((snapshot) => snapshot.docs);
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      watchAdminChallenges() =>
-          _challenges.snapshots().map((snapshot) => snapshot.docs);
-  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       watchAdminReflections() =>
           _reflections.snapshots().map((snapshot) => snapshot.docs);
-
-  Future<List<QuizDashboardResult>> getQuizDashboardResults() async {
-    final quizSnapshot = await _challenges.get();
-    final quizzes = quizSnapshot.docs
-        .map(QuizChallenge.fromDoc)
-        .where((quiz) => quiz.isConfigured)
-        .toList()
-      ..sort((a, b) {
-        final aDate = a.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = b.startAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
-
-    return Future.wait(
-      quizzes.map((quiz) async {
-        final snapshot =
-            await _challenges.doc(quiz.id).collection('completions').get();
-        final participants = snapshot.docs
-            .map(QuizParticipantResult.fromDoc)
-            .where((result) => result.attempt.isValid)
-            .toList()
-          ..sort((a, b) {
-            final aDate =
-                a.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final bDate =
-                b.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return bDate.compareTo(aDate);
-          });
-        return QuizDashboardResult(
-          challenge: quiz,
-          participants: participants,
-        );
-      }),
-    );
-  }
 
   Future<FaithLoopDashboardUpdate> getFaithLoopDashboardUpdate({
     DateTime? now,
@@ -213,15 +131,11 @@ class FaithEngagementRepository {
 
   Future<void> saveCircle(String? id, Map<String, dynamic> data) =>
       _save(_circles, id, data);
-  Future<void> saveChallenge(String? id, Map<String, dynamic> data) =>
-      _save(_challenges, id, data);
   Future<void> saveReflection(String? id, Map<String, dynamic> data) =>
       _save(_reflections, id, data);
 
   Future<void> deleteCircle(String id) =>
       _deleteWithSubcollection(_circles.doc(id), 'responses');
-  Future<void> deleteChallenge(String id) =>
-      _deleteWithSubcollection(_challenges.doc(id), 'completions');
   Future<void> deleteReflection(String id) => _reflections.doc(id).delete();
 
   Future<void> queueFaithNotification({

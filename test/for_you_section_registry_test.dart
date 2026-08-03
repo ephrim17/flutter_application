@@ -10,6 +10,7 @@ void main() {
         ids,
         containsAll(<String>[
           'faithEngagement',
+          'learningPath',
           'prayForOthers',
           'featured',
         ]));

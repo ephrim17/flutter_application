@@ -1,5 +1,44 @@
 part of '../dashboard_screen.dart';
 
+bool _isSameDashboardDay(DateTime first, DateTime second) =>
+    first.year == second.year &&
+    first.month == second.month &&
+    first.day == second.day;
+
+class _DashboardFaithMetric extends StatelessWidget {
+  const _DashboardFaithMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      );
+}
+
 class _DashboardFaithLoopUpdatesSection extends StatelessWidget {
   const _DashboardFaithLoopUpdatesSection({
     required this.updatesAsync,
@@ -47,21 +86,21 @@ class _DashboardFaithLoopUpdatesSection extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _DashboardQuizMetric(
+                    child: _DashboardFaithMetric(
                       label: context.t('dashboard.faith_loop_started'),
                       value: '${today.length}',
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _DashboardQuizMetric(
+                    child: _DashboardFaithMetric(
                       label: context.t('dashboard.faith_loop_completed'),
                       value: '$completed',
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _DashboardQuizMetric(
+                    child: _DashboardFaithMetric(
                       label: context.t('dashboard.faith_loop_rate'),
                       value: '$completionRate%',
                     ),

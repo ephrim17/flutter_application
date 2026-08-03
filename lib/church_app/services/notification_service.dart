@@ -39,7 +39,6 @@ enum NotificationDestination {
   articles,
   prayForOthers,
   faithEngagement,
-  quizChallenge,
   circles,
 }
 
@@ -329,9 +328,6 @@ void _handleNotificationKind(String? kind) {
     case 'faith_daily_loop':
       notificationDestinationRequest.value =
           NotificationDestination.faithEngagement;
-    case 'faith_quiz_challenge':
-      notificationDestinationRequest.value =
-          NotificationDestination.quizChallenge;
     case 'faith_circles':
     case 'circle_response_created':
       notificationDestinationRequest.value = NotificationDestination.circles;

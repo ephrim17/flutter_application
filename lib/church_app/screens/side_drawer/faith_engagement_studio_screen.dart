@@ -11,7 +11,7 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_picker_sheet.dart';
 import 'package:intl/intl.dart';
 
-enum _FaithContentType { circle, challenge, reflection }
+enum _FaithContentType { circle, reflection }
 
 class FaithEngagementStudioScreen extends StatelessWidget {
   const FaithEngagementStudioScreen({
@@ -24,7 +24,7 @@ class FaithEngagementStudioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Column(
         children: [
           Material(
@@ -33,7 +33,6 @@ class FaithEngagementStudioScreen extends StatelessWidget {
               isScrollable: true,
               tabs: [
                 Tab(text: context.t('faith.circles_studio_tab')),
-                Tab(text: context.t('faith.studio_quizzes')),
                 Tab(text: context.t('faith.studio_daily')),
               ],
             ),
@@ -44,11 +43,6 @@ class FaithEngagementStudioScreen extends StatelessWidget {
                 _FaithContentList(
                   type: _FaithContentType.circle,
                   stream: repository.watchAdminCircles(),
-                  repository: repository,
-                ),
-                _FaithContentList(
-                  type: _FaithContentType.challenge,
-                  stream: repository.watchAdminChallenges(),
                   repository: repository,
                 ),
                 _FaithContentList(
@@ -211,8 +205,6 @@ class _FaithContentList extends StatelessWidget {
       switch (type) {
         case _FaithContentType.circle:
           await repository.deleteCircle(id);
-        case _FaithContentType.challenge:
-          await repository.deleteChallenge(id);
         case _FaithContentType.reflection:
           await repository.deleteReflection(id);
       }
@@ -243,14 +235,11 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
   late final TextEditingController _description;
   late final TextEditingController _prayerPoints;
   late final TextEditingController _liveItOut;
-  late final List<_QuizQuestionDraft> _quizQuestions;
   String _scriptureBook = '';
   int _scriptureChapter = 1;
   int _scriptureStartVerse = 1;
   int _scriptureEndVerse = 1;
   String _audienceGroupId = '';
-  late DateTime _startDate;
-  late DateTime _endDate;
   late DateTime _activeDate;
   bool _enabled = true;
   bool _saving = false;
@@ -272,20 +261,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
     _liveItOut = TextEditingController(
       text: (data['liveItOut'] ?? '').toString(),
     );
-    final rawQuestions = data['questions'];
-    _quizQuestions = rawQuestions is Iterable
-        ? rawQuestions
-            .whereType<Map>()
-            .map(
-              (question) => _QuizQuestionDraft.fromMap(
-                Map<String, dynamic>.from(question),
-              ),
-            )
-            .toList()
-        : <_QuizQuestionDraft>[];
-    if (widget.type == _FaithContentType.challenge && _quizQuestions.isEmpty) {
-      _quizQuestions.add(_QuizQuestionDraft.empty());
-    }
     final legacyScripture = _parseScriptureReference(
       (data['scriptureReference'] ?? '').toString(),
     );
@@ -309,8 +284,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
       _audienceGroupId = '';
     }
     final now = DateTime.now();
-    _startDate = _readDate(data['startAt']) ?? now;
-    _endDate = _readDate(data['endAt']) ?? now.add(const Duration(days: 7));
     _activeDate = _readDate(data['activeDate']) ?? now;
     _enabled = data['enabled'] != false;
   }
@@ -323,9 +296,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
     _description.dispose();
     _prayerPoints.dispose();
     _liveItOut.dispose();
-    for (final question in _quizQuestions) {
-      question.dispose();
-    }
     super.dispose();
   }
 
@@ -382,49 +352,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
                 validator: (value) => value == null || value.isEmpty
                     ? context.t('faith.group_required')
                     : null,
-              ),
-            ],
-            if (widget.type == _FaithContentType.challenge) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      context.t('faith.quiz_questions'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _addQuizQuestion,
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(context.t('faith.add_question')),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              for (var index = 0; index < _quizQuestions.length; index++) ...[
-                _QuizQuestionEditor(
-                  key: ObjectKey(_quizQuestions[index]),
-                  index: index,
-                  draft: _quizQuestions[index],
-                  canDelete: _quizQuestions.length > 1,
-                  onDelete: () => _removeQuizQuestion(index),
-                ),
-                const SizedBox(height: 12),
-              ],
-              _DateTile(
-                label: context.t('faith.start_date'),
-                date: _startDate,
-                onTap: () =>
-                    _pickDate(_startDate, (value) => _startDate = value),
-              ),
-              const SizedBox(height: 10),
-              _DateTile(
-                label: context.t('faith.end_date'),
-                date: _endDate,
-                onTap: () => _pickDate(_endDate, (value) => _endDate = value),
               ),
             ],
             if (widget.type == _FaithContentType.reflection) ...[
@@ -504,17 +431,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
   String? _requiredValidator(String? value) =>
       (value ?? '').trim().isEmpty ? context.t('faith.field_required') : null;
 
-  void _addQuizQuestion() {
-    setState(() => _quizQuestions.add(_QuizQuestionDraft.empty()));
-  }
-
-  void _removeQuizQuestion(int index) {
-    if (_quizQuestions.length <= 1) return;
-    final removed = _quizQuestions.removeAt(index);
-    removed.dispose();
-    setState(() {});
-  }
-
   Future<void> _pickDate(
     DateTime initial,
     void Function(DateTime value) assign,
@@ -562,23 +478,9 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (widget.type == _FaithContentType.challenge &&
-        _quizQuestions.any((question) => !question.isValid)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.t('faith.quiz_configuration_invalid'))),
-      );
-      return;
-    }
     if (widget.type == _FaithContentType.reflection && _scriptureBook.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.t('faith.choose_passage_required'))),
-      );
-      return;
-    }
-    if (widget.type == _FaithContentType.challenge &&
-        _endDate.isBefore(_startDate)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.t('faith.invalid_date_range'))),
       );
       return;
     }
@@ -594,15 +496,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
       if (widget.type == _FaithContentType.circle) ...{
         'audienceGroupId': _audienceGroupId,
         'order': 100,
-      },
-      if (widget.type == _FaithContentType.challenge) ...{
-        'questions': _quizQuestions
-            .map((question) => question.toMap())
-            .toList(growable: false),
-        'startAt': Timestamp.fromDate(_startDate),
-        'endAt': Timestamp.fromDate(
-          DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59),
-        ),
       },
       if (widget.type == _FaithContentType.reflection) ...{
         'activeDate': Timestamp.fromDate(_activeDate),
@@ -623,8 +516,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
       switch (widget.type) {
         case _FaithContentType.circle:
           await widget.repository.saveCircle(widget.doc?.id, data);
-        case _FaithContentType.challenge:
-          await widget.repository.saveChallenge(widget.doc?.id, data);
         case _FaithContentType.reflection:
           await widget.repository.saveReflection(widget.doc?.id, data);
       }
@@ -637,7 +528,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
             title: _title.text.trim(),
             body: notificationBody,
             kind: switch (widget.type) {
-              _FaithContentType.challenge => 'faith_quiz_challenge',
               _FaithContentType.reflection => 'faith_daily_loop',
               _FaithContentType.circle => 'faith_circles',
             },
@@ -661,166 +551,6 @@ class _FaithContentEditorState extends State<_FaithContentEditor> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-}
-
-class _QuizQuestionDraft {
-  _QuizQuestionDraft({
-    required String prompt,
-    required List<String> options,
-    required this.correctOptionIndex,
-  })  : prompt = TextEditingController(text: prompt),
-        options = List.generate(
-          4,
-          (index) => TextEditingController(
-            text: index < options.length ? options[index] : '',
-          ),
-        );
-
-  factory _QuizQuestionDraft.empty() => _QuizQuestionDraft(
-        prompt: '',
-        options: const ['', '', '', ''],
-        correctOptionIndex: 0,
-      );
-
-  factory _QuizQuestionDraft.fromMap(Map<String, dynamic> data) {
-    final rawOptions = data['options'];
-    return _QuizQuestionDraft(
-      prompt: (data['prompt'] ?? '').toString(),
-      options: rawOptions is Iterable
-          ? rawOptions.map((option) => option.toString()).take(4).toList()
-          : const [],
-      correctOptionIndex:
-          _positiveIntOrZero(data['correctOptionIndex']).clamp(0, 3),
-    );
-  }
-
-  final TextEditingController prompt;
-  final List<TextEditingController> options;
-  int correctOptionIndex;
-
-  List<String> get normalizedOptions => options
-      .map((controller) => controller.text.trim())
-      .where((option) => option.isNotEmpty)
-      .toList(growable: false);
-
-  bool get isValid =>
-      prompt.text.trim().isNotEmpty &&
-      normalizedOptions.length >= 2 &&
-      options[correctOptionIndex].text.trim().isNotEmpty;
-
-  Map<String, dynamic> toMap() {
-    final selectedAnswer = options[correctOptionIndex].text.trim();
-    final serializedOptions = normalizedOptions;
-    return {
-      'prompt': prompt.text.trim(),
-      'options': serializedOptions,
-      'correctOptionIndex': serializedOptions.indexOf(selectedAnswer),
-    };
-  }
-
-  void dispose() {
-    prompt.dispose();
-    for (final option in options) {
-      option.dispose();
-    }
-  }
-}
-
-class _QuizQuestionEditor extends StatefulWidget {
-  const _QuizQuestionEditor({
-    super.key,
-    required this.index,
-    required this.draft,
-    required this.canDelete,
-    required this.onDelete,
-  });
-
-  final int index;
-  final _QuizQuestionDraft draft;
-  final bool canDelete;
-  final VoidCallback onDelete;
-
-  @override
-  State<_QuizQuestionEditor> createState() => _QuizQuestionEditorState();
-}
-
-class _QuizQuestionEditorState extends State<_QuizQuestionEditor> {
-  @override
-  Widget build(BuildContext context) {
-    final optionLabels = [
-      context.t('faith.option_a'),
-      context.t('faith.option_b'),
-      context.t('faith.option_c'),
-      context.t('faith.option_d'),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: carouselBoxDecoration(context),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.t(
-                    'faith.quiz_question_number',
-                    parameters: {'number': widget.index + 1},
-                  ),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ),
-              if (widget.canDelete)
-                IconButton(
-                  tooltip: context.t('common.delete'),
-                  onPressed: widget.onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                ),
-            ],
-          ),
-          AppTextField(
-            controller: widget.draft.prompt,
-            label: context.t('faith.question_prompt'),
-          ),
-          const SizedBox(height: 10),
-          for (var index = 0; index < widget.draft.options.length; index++) ...[
-            AppTextField(
-              controller: widget.draft.options[index],
-              label: context.t(
-                'faith.answer_option',
-                parameters: {'option': optionLabels[index]},
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          DropdownButtonFormField<int>(
-            initialValue: widget.draft.correctOptionIndex,
-            decoration: appTextFieldDecoration(
-              context,
-              labelText: context.t('faith.correct_answer'),
-            ),
-            items: List.generate(
-              optionLabels.length,
-              (index) => DropdownMenuItem(
-                value: index,
-                child: Text(
-                  context.t(
-                    'faith.option_value',
-                    parameters: {'option': optionLabels[index]},
-                  ),
-                ),
-              ),
-            ),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() => widget.draft.correctOptionIndex = value);
-            },
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -860,13 +590,6 @@ int? _positiveInt(dynamic value) {
   return parsed != null && parsed > 0 ? parsed : null;
 }
 
-int _positiveIntOrZero(dynamic value) {
-  final parsed = value is num
-      ? value.toInt()
-      : int.tryParse(value?.toString().trim() ?? '');
-  return parsed != null && parsed >= 0 ? parsed : 0;
-}
-
 ({String book, int chapter, int startVerse, int endVerse})?
     _parseScriptureReference(String value) {
   final match =
@@ -886,25 +609,21 @@ int _positiveIntOrZero(dynamic value) {
 
 IconData _iconFor(_FaithContentType type) => switch (type) {
       _FaithContentType.circle => Icons.groups_2_outlined,
-      _FaithContentType.challenge => Icons.flag_outlined,
       _FaithContentType.reflection => Icons.bolt_outlined,
     };
 
 String _emptyKeyFor(_FaithContentType type) => switch (type) {
       _FaithContentType.circle => 'faith.circles_empty',
-      _FaithContentType.challenge => 'faith.no_quizzes',
       _FaithContentType.reflection => 'faith.no_reflections',
     };
 
 String _editorTitleKey(_FaithContentType type) => switch (type) {
       _FaithContentType.circle => 'faith.circle_editor_title',
-      _FaithContentType.challenge => 'faith.edit_quiz',
       _FaithContentType.reflection => 'faith.edit_reflection',
     };
 
 String _notificationBodyKey(_FaithContentType type) => switch (type) {
       _FaithContentType.circle => 'faith.circles_notification_body',
-      _FaithContentType.challenge => 'faith.quiz_notification_body',
       _FaithContentType.reflection => 'faith.reflection_notification_body',
     };
 
