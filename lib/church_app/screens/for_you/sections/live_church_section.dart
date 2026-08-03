@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/live_church_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
+import 'package:flutter_application/church_app/widgets/adaptive_youtube_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class LiveChurchSection implements MasterSection {
   const LiveChurchSection();
@@ -53,58 +52,26 @@ class _LiveChurchCard extends StatefulWidget {
 }
 
 class _LiveChurchCardState extends State<_LiveChurchCard> {
-  late YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = _createController(widget.status.videoId);
-  }
-
-  @override
-  void didUpdateWidget(covariant _LiveChurchCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.status.videoId != widget.status.videoId) {
-      _controller.dispose();
-      _controller = _createController(widget.status.videoId);
-    }
-  }
-
-  YoutubePlayerController _createController(String videoId) {
-    return YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
-        enableCaption: true,
-        isLive: true,
-        showLiveFullscreenButton: false,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final _playerController = AdaptiveYoutubePlayerController();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     if (!widget.status.canEmbed) {
       return _buildCard(
         context,
         _YouTubeFallback(videoId: widget.status.videoId),
       );
     }
-
-    final player = YoutubePlayer(
-      controller: _controller,
-      showVideoProgressIndicator: true,
-      progressIndicatorColor: theme.colorScheme.primary,
+    return _buildCard(
+      context,
+      AdaptiveYoutubePlayer(
+        key: ValueKey(widget.status.videoId),
+        videoId: widget.status.videoId,
+        isLive: true,
+        showFullscreenButton: false,
+        controller: _playerController,
+      ),
     );
-    return _buildCard(context, player);
   }
 
   Widget _buildCard(BuildContext context, Widget videoContent) {
@@ -169,85 +136,12 @@ class _LiveChurchCardState extends State<_LiveChurchCard> {
     );
   }
 
-  Future<void> _openFullscreen() {
-    _controller.pause();
-    return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => _LiveChurchFullscreenPage(
-          videoId: widget.status.videoId,
-        ),
-      ),
-    );
-  }
-}
-
-class _LiveChurchFullscreenPage extends StatefulWidget {
-  const _LiveChurchFullscreenPage({required this.videoId});
-
-  final String videoId;
-
-  @override
-  State<_LiveChurchFullscreenPage> createState() =>
-      _LiveChurchFullscreenPageState();
-}
-
-class _LiveChurchFullscreenPageState extends State<_LiveChurchFullscreenPage> {
-  late final YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        enableCaption: true,
-        isLive: true,
-        showLiveFullscreenButton: false,
-      ),
-    );
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Center(
-            child: YoutubePlayer(
-              controller: _controller,
-              aspectRatio: MediaQuery.sizeOf(context).aspectRatio,
-            ),
-          ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: SafeArea(
-              child: IconButton.filledTonal(
-                tooltip: context.t('ui.live_church_section.close_full_screen'),
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _openFullscreen() async {
+    _playerController.pause();
+    await showAdaptiveYoutubeFullscreen(
+      context,
+      videoId: widget.status.videoId,
+      isLive: true,
     );
   }
 }
@@ -280,12 +174,11 @@ class _YouTubeFallback extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () {
-              launchUrl(
-                Uri.parse('https://www.youtube.com/watch?v=$videoId'),
-                mode: LaunchMode.externalApplication,
-              );
-            },
+            onPressed: () => launchExternalUri(
+              context,
+              Uri.parse('https://www.youtube.com/watch?v=$videoId'),
+              failureMessage: context.t('common.open_link_failed'),
+            ),
             icon: const Icon(Icons.open_in_new_rounded),
             label: Text(
               context.t('for_you.live_church.watch_youtube'),

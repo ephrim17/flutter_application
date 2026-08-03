@@ -232,18 +232,22 @@ The Bible Learning path is separate from church Faith Engagement.
   version without changing any other church.
 - A module has a title, description, order, enabled state, and one or more
   ordered embedded sections.
-- Every section has a Bible verse range, optional PDF resources, a passing
-  percentage, and an MCQ quiz. Passing a section unlocks the next section;
-  finishing the final section unlocks the next module.
-- PDFs are stored under
+- Every section has a title, description, multiple ordered Bible passages, and
+  an ordered lesson-resource list. Resources can be images, embedded YouTube
+  videos, external links, or multiple PDFs. Completing a section unlocks the
+  next section.
+- Each module has one final MCQ exam and passing percentage. The exam unlocks
+  only after every section is complete; passing it completes the module and
+  unlocks the next module. Failed exams can be retaken.
+- PDFs and images are stored under
   `learning_modules/{moduleId}/{sectionId}/{generatedFileName}` in Firebase
-  Storage. When a global module is customized, its PDFs are copied to
+  Storage. When a global module is customized, its uploaded files are copied to
   `churches/{churchId}/learning_modules/{moduleId}/{sectionId}/...`; new
   church-only uploads use the same church-owned prefix. This keeps later global
-  PDF updates or deletion from changing an existing church customization.
+  file updates or deletion from changing an existing church customization.
 - Member progress stays church- and user-scoped at
   `churches/{churchId}/users/{uid}/learning_progress/progress`.
-- Every passed or failed submission, including retakes, is stored for Super
+- Every passed or failed final-exam submission, including retakes, is stored for Super
   Admin reporting at `churches/{churchId}/learning_results/{resultId}`. Failed
   attempts do not unlock progression; each retry increments its attempt number.
 - Faith Engagement now exposes only Circles and Daily Faith. The former

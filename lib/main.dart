@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/screens/entry/app_bootstrap.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -20,6 +21,9 @@ import 'package:firebase_core/firebase_core.dart';
 /* church App */
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   await PrayerNotificationService.instance.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeNotificationPresentation();

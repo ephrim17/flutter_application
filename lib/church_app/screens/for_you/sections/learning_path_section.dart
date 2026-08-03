@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
+import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:flutter_application/church_app/models/learning_module_models.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -11,8 +16,11 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/app_image_gallery_viewer.dart';
+import 'package:flutter_application/church_app/widgets/adaptive_youtube_player.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 class LearningPathSection implements MasterSection {
   const LearningPathSection();
@@ -476,6 +484,7 @@ class _LearningModuleScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(learningProgressProvider).asData?.value ??
         const LearningProgress(completedSectionIds: {}, attempts: {});
+    final moduleCompleted = progress.isModuleComplete(module);
     return Scaffold(
       appBar: AppBar(title: Text(module.title)),
       body: ListView(
@@ -493,7 +502,8 @@ class _LearningModuleScreen extends ConsumerWidget {
           for (var index = 0; index < module.sections.length; index++) ...[
             Builder(builder: (context) {
               final section = module.sections[index];
-              final unlocked = index == 0 ||
+              final unlocked = moduleCompleted ||
+                  index == 0 ||
                   progress.isSectionComplete(module.sections[index - 1].id);
               final completed = progress.isSectionComplete(section.id);
               return Container(
@@ -531,6 +541,51 @@ class _LearningModuleScreen extends ConsumerWidget {
             }),
             const SizedBox(height: 12),
           ],
+          Builder(builder: (context) {
+            final allSectionsComplete = module.sections.every(
+              (section) => progress.isSectionComplete(section.id),
+            );
+            final canTakeExam = allSectionsComplete && !moduleCompleted;
+            return Container(
+              decoration: carouselBoxDecoration(context),
+              child: ListTile(
+                enabled: canTakeExam,
+                contentPadding: const EdgeInsets.all(14),
+                leading: CircleAvatar(
+                  child: moduleCompleted
+                      ? const Icon(Icons.workspace_premium_outlined)
+                      : allSectionsComplete
+                          ? const Icon(Icons.quiz_outlined)
+                          : const Icon(Icons.lock_outline_rounded),
+                ),
+                title: Text(
+                  context.t('learning.final_exam'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(
+                  context.t(
+                    moduleCompleted
+                        ? 'learning.final_exam_completed'
+                        : allSectionsComplete
+                            ? 'learning.final_exam_ready'
+                            : 'learning.final_exam_locked',
+                  ),
+                ),
+                trailing: canTakeExam
+                    ? const Icon(Icons.chevron_right_rounded)
+                    : null,
+                onTap: canTakeExam
+                    ? () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _LearningQuizScreen(
+                              module: module,
+                            ),
+                          ),
+                        )
+                    : null,
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -555,18 +610,25 @@ class _LearningSectionScreen extends ConsumerStatefulWidget {
 
 class _LearningSectionScreenState
     extends ConsumerState<_LearningSectionScreen> {
-  late final Future<Map<String, String>> _passage;
+  late final List<LearningPassage> _passages;
+  late final List<Future<Map<String, String>>> _passageText;
+  bool _completing = false;
 
   @override
   void initState() {
     super.initState();
-    final section = widget.section;
-    _passage = BibleRepository().getVerseRange(
-      book: section.scriptureBook,
-      chapter: section.scriptureChapter,
-      startVerse: section.scriptureStartVerse,
-      endVerse: section.scriptureEndVerse,
-    );
+    _passages = [...widget.section.effectivePassages]
+      ..sort((left, right) => left.order.compareTo(right.order));
+    _passageText = _passages
+        .map(
+          (passage) => BibleRepository().getVerseRange(
+            book: passage.book,
+            chapter: passage.chapter,
+            startVerse: passage.startVerse,
+            endVerse: passage.endVerse,
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override
@@ -588,71 +650,42 @@ class _LearningSectionScreenState
             Text(widget.section.description),
           ],
           const SizedBox(height: 20),
-          Container(
-            decoration: carouselBoxDecoration(context),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.section.scriptureReference,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.t('learning.bible_passages'),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
-                    ),
-                    BibleLanguageToggle(provider: dailyVerseLanguageProvider),
-                  ],
                 ),
-                const SizedBox(height: 12),
-                FutureBuilder<Map<String, String>>(
-                  future: _passage,
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData && !snapshot.hasError) {
-                      return const Center(child: AppLoadingIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Text(context.t('faith.passage_load_failed'));
-                    }
-                    final data = snapshot.data!;
-                    final key =
-                        language == BibleLanguage.tamil ? 'tamil' : 'english';
-                    return Text(
-                      data[key] ?? data['english'] ?? '',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            height: 1.5,
-                          ),
-                    );
-                  },
-                ),
-              ],
-            ),
+              ),
+              BibleLanguageToggle(provider: dailyVerseLanguageProvider),
+            ],
           ),
+          const SizedBox(height: 10),
+          for (var index = 0; index < _passages.length; index++) ...[
+            _PassageCard(
+              passage: _passages[index],
+              passageText: _passageText[index],
+              language: language,
+            ),
+            const SizedBox(height: 12),
+          ],
           if (widget.section.resources.isNotEmpty) ...[
             const SizedBox(height: 22),
             Text(
-              context.t('learning.supporting_documents'),
+              context.t('learning.lesson_resources'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 8),
-            for (final resource in widget.section.resources)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.picture_as_pdf_outlined),
-                title: Text(resource.name),
-                trailing: const Icon(Icons.open_in_new_rounded),
-                onTap: () => launchExternalUri(
-                  context,
-                  Uri.parse(resource.downloadUrl),
-                  failureMessage: context.t('common.open_link_failed'),
-                ),
-              ),
+            for (final resource in ([...widget.section.resources]
+              ..sort((left, right) => left.order.compareTo(right.order)))) ...[
+              _LearningResourceView(resource: resource),
+              const SizedBox(height: 12),
+            ],
           ],
         ],
       ),
@@ -662,45 +695,420 @@ class _LearningSectionScreenState
           icon: Icon(
             widget.alreadyComplete
                 ? Icons.check_circle_outline_rounded
-                : Icons.quiz_outlined,
+                : Icons.arrow_forward_rounded,
           ),
           label: Text(
             context.t(
               widget.alreadyComplete
-                  ? 'learning.review_quiz'
-                  : 'learning.start_section_quiz',
+                  ? 'learning.section_completed'
+                  : 'learning.complete_section',
             ),
           ),
-          onPressed: _openQuiz,
+          onPressed: _completing ? null : _completeSection,
         ),
       ),
     );
   }
 
-  Future<void> _openQuiz() async {
-    final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => _LearningQuizScreen(
-          module: widget.module,
-          section: widget.section,
-          reviewOnly: widget.alreadyComplete,
+  Future<void> _completeSection() async {
+    if (widget.alreadyComplete) {
+      Navigator.pop(context);
+      return;
+    }
+    final churchId = ref.read(currentChurchIdProvider).asData?.value;
+    final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (churchId == null || userId == null) return;
+    setState(() => _completing = true);
+    try {
+      await ref.read(learningModuleRepositoryProvider).completeSection(
+            churchId: churchId,
+            userId: userId,
+            sectionId: widget.section.id,
+          );
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _completing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('learning.progress_save_failed'))),
+      );
+    }
+  }
+}
+
+class _PassageCard extends StatelessWidget {
+  const _PassageCard({
+    required this.passage,
+    required this.passageText,
+    required this.language,
+  });
+
+  final LearningPassage passage;
+  final Future<Map<String, String>> passageText;
+  final BibleLanguage language;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: carouselBoxDecoration(context),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              passage.reference,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<Map<String, String>>(
+              future: passageText,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData && !snapshot.hasError) {
+                  return const Center(child: AppLoadingIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Text(context.t('faith.passage_load_failed'));
+                }
+                final key =
+                    language == BibleLanguage.tamil ? 'tamil' : 'english';
+                return Text(
+                  snapshot.data![key] ?? snapshot.data!['english'] ?? '',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        height: 1.5,
+                      ),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+}
+
+class _LearningResourceView extends StatelessWidget {
+  const _LearningResourceView({required this.resource});
+
+  final LearningResource resource;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (resource.type) {
+      case LearningResourceType.image:
+        return _LearningImagePreview(resource: resource);
+      case LearningResourceType.youtube:
+        final uri = Uri.tryParse(resource.downloadUrl);
+        final videoId =
+            uri == null ? null : FeedLinkUtils.extractYoutubeVideoId(uri);
+        if (videoId == null) {
+          return _ResourceLinkTile(
+            resource: resource,
+            icon: Icons.play_circle_outline_rounded,
+          );
+        }
+        return _LazyLearningVideo(
+          videoId: videoId,
+          title: resource.name,
+        );
+      case LearningResourceType.externalLink:
+        return _ResourceLinkTile(
+          resource: resource,
+          icon: Icons.link_rounded,
+        );
+      case LearningResourceType.pdf:
+        return _ResourceLinkTile(
+          resource: resource,
+          icon: Icons.picture_as_pdf_outlined,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => _LearningPdfScreen(resource: resource),
+            ),
+          ),
+        );
+    }
+  }
+}
+
+class _ResourceLinkTile extends StatelessWidget {
+  const _ResourceLinkTile({
+    required this.resource,
+    required this.icon,
+    this.onTap,
+  });
+
+  final LearningResource resource;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: carouselBoxDecoration(context),
+        child: ListTile(
+          leading: Icon(icon),
+          title: Text(resource.name),
+          trailing: const Icon(Icons.open_in_new_rounded),
+          onTap: onTap ??
+              () => launchExternalUri(
+                    context,
+                    Uri.parse(resource.downloadUrl),
+                    failureMessage: context.t('common.open_link_failed'),
+                  ),
+        ),
+      );
+}
+
+class _LearningImagePreview extends StatelessWidget {
+  const _LearningImagePreview({required this.resource});
+
+  final LearningResource resource;
+
+  @override
+  Widget build(BuildContext context) {
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final previewWidth = (MediaQuery.sizeOf(context).width * pixelRatio)
+        .round()
+        .clamp(480, 1600);
+    final heroTag = 'learning-image-${resource.downloadUrl}';
+    return Material(
+      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.circular(cornerRadius),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: InkWell(
+        onTap: () => showAppImageGallery(
+          context,
+          imageUrls: [resource.downloadUrl],
+          title: resource.name,
+          heroTagBuilder: (_, __) => heroTag,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Hero(
+              tag: heroTag,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: CachedNetworkImage(
+                  imageUrl: resource.downloadUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheWidth: previewWidth,
+                  fadeInDuration: const Duration(milliseconds: 180),
+                  placeholder: (_, __) => const Center(
+                    child: AppLoadingIndicator(),
+                  ),
+                  errorWidget: (_, __, ___) => const Center(
+                    child: Icon(Icons.broken_image_outlined, size: 40),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.all(9),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.zoom_out_map_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
-    if (completed == true && mounted) Navigator.pop(context);
   }
+}
+
+class _LazyLearningVideo extends StatefulWidget {
+  const _LazyLearningVideo({required this.videoId, required this.title});
+
+  final String videoId;
+  final String title;
+
+  @override
+  State<_LazyLearningVideo> createState() => _LazyLearningVideoState();
+}
+
+class _LazyLearningVideoState extends State<_LazyLearningVideo>
+    with AutomaticKeepAliveClientMixin {
+  final _playerController = AdaptiveYoutubePlayerController();
+  bool _activated = false;
+
+  @override
+  bool get wantKeepAlive => _activated;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: carouselBoxDecoration(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _activated
+              ? AdaptiveYoutubePlayer(
+                  videoId: widget.videoId,
+                  controller: _playerController,
+                  autoPlay: true,
+                  showFullscreenButton: false,
+                )
+              : AdaptiveYoutubeThumbnail(
+                  videoId: widget.videoId,
+                  onPlay: () {
+                    setState(() => _activated = true);
+                    updateKeepAlive();
+                  },
+                ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: context.t('ui.live_church_section.full_screen'),
+                  onPressed: _openFullscreen,
+                  icon: const Icon(Icons.fullscreen_rounded),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFullscreen() async {
+    _playerController.pause();
+    await showAdaptiveYoutubeFullscreen(
+      context,
+      videoId: widget.videoId,
+    );
+  }
+}
+
+class _LearningPdfScreen extends StatefulWidget {
+  const _LearningPdfScreen({required this.resource});
+
+  final LearningResource resource;
+
+  @override
+  State<_LearningPdfScreen> createState() => _LearningPdfScreenState();
+}
+
+class _LearningPdfScreenState extends State<_LearningPdfScreen> {
+  static const _maximumPdfBytes = 16 * 1024 * 1024;
+  late Future<Uint8List> _pdfBytes = _loadPdf();
+
+  Future<Uint8List> _loadPdf() async {
+    final storage = FirebaseStorage.instance;
+    final reference = widget.resource.storagePath.trim().isNotEmpty
+        ? storage.ref().child(widget.resource.storagePath.trim())
+        : storage.refFromURL(widget.resource.downloadUrl);
+    final bytes = await reference
+        .getData(_maximumPdfBytes)
+        .timeout(const Duration(seconds: 30));
+    if (bytes == null || bytes.isEmpty) {
+      throw StateError('The PDF contained no readable data.');
+    }
+    return bytes;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.resource.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: FutureBuilder<Uint8List>(
+        future: _pdfBytes,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _PdfError(
+              message: context.t('learning.pdf_load_failed'),
+              onRetry: _retry,
+            );
+          }
+          final bytes = snapshot.data;
+          if (bytes == null) {
+            return const Center(child: AppLoadingIndicator());
+          }
+          return PdfViewer.data(
+            bytes,
+            sourceName: widget.resource.storagePath.isNotEmpty
+                ? widget.resource.storagePath
+                : widget.resource.downloadUrl,
+            useProgressiveLoading: false,
+            params: PdfViewerParams(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              margin: 12,
+              maxImageBytesCachedOnMemory: 48 * 1024 * 1024,
+              errorBannerBuilder: (_, __, ___, ____) => _PdfError(
+                message: context.t('learning.pdf_load_failed'),
+                onRetry: _retry,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _retry() => setState(() => _pdfBytes = _loadPdf());
+}
+
+class _PdfError extends StatelessWidget {
+  const _PdfError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.picture_as_pdf_outlined, size: 48),
+              const SizedBox(height: 12),
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(context.t('common.retry')),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _LearningQuizScreen extends ConsumerStatefulWidget {
   const _LearningQuizScreen({
     required this.module,
-    required this.section,
-    required this.reviewOnly,
   });
 
   final LearningModule module;
-  final LearningSection section;
-  final bool reviewOnly;
 
   @override
   ConsumerState<_LearningQuizScreen> createState() =>
@@ -715,7 +1123,8 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
   @override
   void initState() {
     super.initState();
-    _answers = List<int?>.filled(widget.section.questions.length, null);
+    _answers = List<int?>.filled(
+        widget.module.effectiveFinalExamQuestions.length, null);
   }
 
   @override
@@ -723,16 +1132,16 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
     final passed = _score != null &&
         learningQuizPasses(
           score: _score!,
-          total: widget.section.questions.length,
-          passingPercentage: widget.section.passingPercentage,
+          total: widget.module.effectiveFinalExamQuestions.length,
+          passingPercentage: widget.module.passingPercentage,
         );
     return Scaffold(
-      appBar: AppBar(title: Text(context.t('learning.section_quiz'))),
+      appBar: AppBar(title: Text(context.t('learning.final_exam'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
         children: [
           Text(
-            widget.section.title,
+            widget.module.title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
@@ -741,16 +1150,17 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
           Text(
             context.t(
               'learning.pass_requirement',
-              parameters: {'count': widget.section.passingPercentage},
+              parameters: {'count': widget.module.passingPercentage},
             ),
           ),
           const SizedBox(height: 18),
           for (var questionIndex = 0;
-              questionIndex < widget.section.questions.length;
+              questionIndex < widget.module.effectiveFinalExamQuestions.length;
               questionIndex++) ...[
             _LearningQuestionCard(
               number: questionIndex + 1,
-              question: widget.section.questions[questionIndex],
+              question:
+                  widget.module.effectiveFinalExamQuestions[questionIndex],
               selected: _answers[questionIndex],
               revealAnswer: _score != null,
               onChanged: _score != null
@@ -775,7 +1185,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
                   Text(
                     context.t(
                       passed
-                          ? 'learning.quiz_passed'
+                          ? 'learning.final_exam_module_completed'
                           : 'learning.quiz_try_again',
                     ),
                     style: Theme.of(context).textTheme.titleLarge,
@@ -786,7 +1196,8 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
                       'learning.quiz_result',
                       parameters: {
                         'score': _score!,
-                        'total': widget.section.questions.length,
+                        'total':
+                            widget.module.effectiveFinalExamQuestions.length,
                       },
                     ),
                   ),
@@ -834,38 +1245,32 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
       );
       return;
     }
-    final score = Iterable<int>.generate(widget.section.questions.length)
+    final questions = widget.module.effectiveFinalExamQuestions;
+    final score = Iterable<int>.generate(questions.length)
         .where(
-          (index) =>
-              _answers[index] ==
-              widget.section.questions[index].correctOptionIndex,
+          (index) => _answers[index] == questions[index].correctOptionIndex,
         )
         .length;
     final passed = learningQuizPasses(
       score: score,
-      total: widget.section.questions.length,
-      passingPercentage: widget.section.passingPercentage,
+      total: questions.length,
+      passingPercentage: widget.module.passingPercentage,
     );
-    if (widget.reviewOnly) {
-      setState(() => _score = score);
-      return;
-    }
     final churchId = ref.read(currentChurchIdProvider).asData?.value;
     final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
     final appUser = ref.read(appUserProvider).asData?.value;
     if (churchId == null || userId == null) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(learningModuleRepositoryProvider).submitSectionQuiz(
+      await ref.read(learningModuleRepositoryProvider).submitModuleExam(
             churchId: churchId,
             userId: userId,
             moduleId: widget.module.id,
-            sectionId: widget.section.id,
             userName: appUser?.name ?? '',
             userEmail: appUser?.email ?? '',
             answers: _answers.cast<int>(),
             score: score,
-            total: widget.section.questions.length,
+            total: questions.length,
             passed: passed,
           );
       if (!mounted) return;
@@ -883,7 +1288,10 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
   }
 
   void _retry() => setState(() {
-        _answers = List<int?>.filled(widget.section.questions.length, null);
+        _answers = List<int?>.filled(
+          widget.module.effectiveFinalExamQuestions.length,
+          null,
+        );
         _score = null;
       });
 }

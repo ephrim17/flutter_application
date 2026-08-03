@@ -40,14 +40,16 @@ void main() {
     sections: [firstSection, secondSection],
     order: 10,
     enabled: true,
+    finalExamQuestions: [question],
+    passingPercentage: 70,
   );
 
-  test('a configured learning section requires scripture and a quiz', () {
+  test('a configured learning section requires a Bible passage', () {
     expect(firstSection.isConfigured, isTrue);
     expect(firstSection.scriptureReference, 'Genesis 6:9-22');
   });
 
-  test('module completion requires every section to be completed', () {
+  test('module completion requires the final exam to pass', () {
     const partial = LearningProgress(
       completedSectionIds: {'section-1'},
       attempts: {},
@@ -55,13 +57,70 @@ void main() {
     const complete = LearningProgress(
       completedSectionIds: {'section-1', 'section-2'},
       attempts: {},
+      completedModuleIds: {'module-1'},
+    );
+    const lessonsOnly = LearningProgress(
+      completedSectionIds: {'section-1', 'section-2'},
+      attempts: {},
     );
 
     expect(partial.isModuleComplete(module), isFalse);
+    expect(lessonsOnly.isModuleComplete(module), isFalse);
     expect(complete.isModuleComplete(module), isTrue);
   });
 
-  test('a failed section quiz can be retaken without counting as passed', () {
+  test('a section supports multiple ordered passages and typed resources', () {
+    const section = LearningSection(
+      id: 'section-rich',
+      title: 'Creation',
+      description: 'Read and explore.',
+      scriptureBook: 'Genesis',
+      scriptureChapter: 1,
+      scriptureStartVerse: 1,
+      scriptureEndVerse: 5,
+      passages: [
+        LearningPassage(
+          book: 'Genesis',
+          chapter: 1,
+          startVerse: 1,
+          endVerse: 5,
+          order: 10,
+        ),
+        LearningPassage(
+          book: 'John',
+          chapter: 1,
+          startVerse: 1,
+          endVerse: 3,
+          order: 20,
+        ),
+      ],
+      resources: [
+        LearningResource(
+          name: 'Creation overview',
+          downloadUrl: 'https://youtube.com/watch?v=abcdefghijk',
+          storagePath: '',
+          type: LearningResourceType.youtube,
+          order: 10,
+        ),
+        LearningResource(
+          name: 'Study notes',
+          downloadUrl: 'https://example.com/notes.pdf',
+          storagePath: 'learning_modules/module/section/notes.pdf',
+          order: 20,
+        ),
+      ],
+      questions: [],
+      order: 10,
+      passingPercentage: 70,
+    );
+
+    expect(section.effectivePassages, hasLength(2));
+    expect(section.effectivePassages.last.reference, 'John 1:1-3');
+    expect(section.resources.first.type, LearningResourceType.youtube);
+    expect(section.isConfigured, isTrue);
+  });
+
+  test('a failed final exam can be retaken without counting as passed', () {
     expect(
       learningQuizPasses(score: 1, total: 4, passingPercentage: 70),
       isFalse,

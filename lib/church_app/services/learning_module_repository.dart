@@ -24,6 +24,32 @@ class LearningModuleRepository {
 
   String createModuleId() => _modules.doc().id;
 
+  Future<int> nextModuleOrder({String? churchId}) async {
+    final collection = churchId == null
+        ? _modules
+        : FirestorePaths.churchLearningModulesCollection(firestore, churchId);
+    final snapshot =
+        await collection.orderBy('order', descending: true).limit(1).get();
+    if (snapshot.docs.isEmpty) return 10;
+    return _number(snapshot.docs.first.data()['order']) + 10;
+  }
+
+  Future<void> reorderGlobalModules(List<LearningModule> modules) async {
+    await _requireSuperAdmin();
+    final batch = firestore.batch();
+    for (var index = 0; index < modules.length; index++) {
+      batch.set(
+        _modules.doc(modules[index].id),
+        {
+          'order': (index + 1) * 10,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+    await batch.commit();
+  }
+
   Stream<List<LearningModule>> watchPublishedModules() =>
       _modules.orderBy('order').snapshots().map((snapshot) => snapshot.docs
           .map(LearningModule.fromDoc)
@@ -125,6 +151,8 @@ class LearningModuleRepository {
     required int order,
     required bool enabled,
     required List<LearningSection> sections,
+    required List<LearningQuizQuestion> finalExamQuestions,
+    required int passingPercentage,
   }) async {
     await _requireSuperAdmin();
     final reference = _modules.doc(id);
@@ -135,6 +163,9 @@ class LearningModuleRepository {
       'order': order,
       'enabled': enabled,
       'sections': sections.map((section) => section.toMap()).toList(),
+      'finalExamQuestions':
+          finalExamQuestions.map((question) => question.toMap()).toList(),
+      'passingPercentage': passingPercentage,
       'updatedAt': FieldValue.serverTimestamp(),
       if (!existing.exists) 'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -148,6 +179,8 @@ class LearningModuleRepository {
     required int order,
     required bool enabled,
     required List<LearningSection> sections,
+    required List<LearningQuizQuestion> finalExamQuestions,
+    required int passingPercentage,
     String sourceModuleId = '',
   }) async {
     await _requireSuperAdmin();
@@ -163,6 +196,9 @@ class LearningModuleRepository {
       'enabled': enabled,
       'sourceModuleId': sourceModuleId.trim(),
       'sections': sections.map((section) => section.toMap()).toList(),
+      'finalExamQuestions':
+          finalExamQuestions.map((question) => question.toMap()).toList(),
+      'passingPercentage': passingPercentage,
       'updatedAt': FieldValue.serverTimestamp(),
       if (!existing.exists) 'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -182,24 +218,27 @@ class LearningModuleRepository {
     }, SetOptions(merge: true));
   }
 
-  Future<LearningResource> uploadPdf({
+  Future<LearningResource> uploadResource({
     required String moduleId,
     required String sectionId,
     required String fileName,
     required Uint8List bytes,
+    required LearningResourceType type,
+    required String contentType,
+    required int order,
     String? churchId,
   }) async {
     await _requireSuperAdmin();
     final safeName = _safeFileName(fileName);
     final objectName = '${DateTime.now().microsecondsSinceEpoch}_$safeName';
     final path = churchId == null
-        ? 'learning_modules/$moduleId/$sectionId/$objectName'
+        ? 'churches/global/learning_modules/$moduleId/$sectionId/$objectName'
         : 'churches/$churchId/learning_modules/$moduleId/$sectionId/$objectName';
     final reference = storage.ref().child(path);
     await reference.putData(
       bytes,
       SettableMetadata(
-        contentType: 'application/pdf',
+        contentType: contentType,
         customMetadata: {'originalName': fileName.trim()},
       ),
     );
@@ -207,6 +246,8 @@ class LearningModuleRepository {
       name: fileName.trim(),
       downloadUrl: await reference.getDownloadURL(),
       storagePath: path,
+      type: type,
+      order: order,
     );
   }
 
@@ -223,11 +264,16 @@ class LearningModuleRepository {
         .child(resource.storagePath)
         .getData(15 * 1024 * 1024);
     if (bytes == null) throw StateError('Unable to copy learning resource.');
-    return uploadPdf(
+    return uploadResource(
       moduleId: moduleId,
       sectionId: sectionId,
       fileName: resource.name,
       bytes: bytes,
+      type: resource.type,
+      contentType: resource.type == LearningResourceType.image
+          ? _imageContentType(resource.name)
+          : 'application/pdf',
+      order: resource.order,
       churchId: churchId,
     );
   }
@@ -339,6 +385,78 @@ class LearningModuleRepository {
     });
   }
 
+  Future<void> completeSection({
+    required String churchId,
+    required String userId,
+    required String sectionId,
+  }) async {
+    await FirestorePaths.churchUserLearningProgress(
+      firestore,
+      churchId,
+      userId,
+    ).doc('progress').set({
+      'userId': userId,
+      'churchId': churchId,
+      'completedSectionIds': FieldValue.arrayUnion([sectionId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> submitModuleExam({
+    required String churchId,
+    required String userId,
+    required String moduleId,
+    required String userName,
+    required String userEmail,
+    required List<int> answers,
+    required int score,
+    required int total,
+    required bool passed,
+  }) async {
+    final progressReference = FirestorePaths.churchUserLearningProgress(
+      firestore,
+      churchId,
+      userId,
+    ).doc('progress');
+    final resultReference =
+        FirestorePaths.churchLearningResults(firestore, churchId).doc();
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(progressReference);
+      final current = snapshot.data() ?? const <String, dynamic>{};
+      final attemptCounts = current['moduleAttemptCounts'] is Map
+          ? Map<String, dynamic>.from(current['moduleAttemptCounts'] as Map)
+          : <String, dynamic>{};
+      final attemptNumber = _number(attemptCounts[moduleId]) + 1;
+      attemptCounts[moduleId] = attemptNumber;
+      transaction.set(
+        progressReference,
+        {
+          'userId': userId,
+          'churchId': churchId,
+          if (passed) 'completedModuleIds': FieldValue.arrayUnion([moduleId]),
+          'moduleAttemptCounts': attemptCounts,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      transaction.set(resultReference, {
+        'churchId': churchId,
+        'userId': userId,
+        'userName': userName.trim(),
+        'userEmail': userEmail.trim(),
+        'moduleId': moduleId,
+        'sectionId': '',
+        'assessmentType': 'finalExam',
+        'answers': answers,
+        'score': score,
+        'total': total,
+        'passed': passed,
+        'attemptNumber': attemptNumber,
+        'submittedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   Future<void> _requireSuperAdmin() async {
     final email = auth.currentUser?.email?.trim().toLowerCase() ?? '';
     if (email.isEmpty) throw StateError('Super admin authentication required.');
@@ -359,7 +477,15 @@ int _number(Object? value) =>
 
 String _safeFileName(String value) {
   final normalized = value.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-  return normalized.toLowerCase().endsWith('.pdf')
-      ? normalized
-      : '$normalized.pdf';
+  return normalized.isEmpty ? 'resource' : normalized;
+}
+
+String _imageContentType(String fileName) {
+  final extension = fileName.split('.').last.toLowerCase();
+  return switch (extension) {
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'gif' => 'image/gif',
+    _ => 'image/jpeg',
+  };
 }

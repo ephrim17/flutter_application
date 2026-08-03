@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
+import 'package:flutter_application/church_app/widgets/app_image_gallery_viewer.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -660,14 +661,11 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
               itemBuilder: (context, index) {
                 final imageUrl = widget.imageUrls[index];
                 return InkWell(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => _FeedImagePreviewScreen(
-                        imageUrls: widget.imageUrls,
-                        initialIndex: index,
-                      ),
-                      fullscreenDialog: true,
-                    ),
+                  onTap: () => showAppImageGallery(
+                    context,
+                    imageUrls: widget.imageUrls,
+                    initialIndex: index,
+                    heroTagBuilder: (url, _) => 'feed-gallery-$url',
                   ),
                   child: Hero(
                     tag: 'feed-gallery-$imageUrl',
@@ -705,87 +703,6 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
         ),
       ),
     );
-  }
-}
-
-class _FeedImagePreviewScreen extends StatefulWidget {
-  final List<String> imageUrls;
-  final int initialIndex;
-
-  const _FeedImagePreviewScreen({
-    required this.imageUrls,
-    required this.initialIndex,
-  });
-
-  @override
-  State<_FeedImagePreviewScreen> createState() =>
-      _FeedImagePreviewScreenState();
-}
-
-class _FeedImagePreviewScreenState extends State<_FeedImagePreviewScreen> {
-  static const double _minScale = 1.0;
-  static const double _maxScale = 5.0;
-  late final PageController _pageController =
-      PageController(initialPage: widget.initialIndex);
-  late int _page = widget.initialIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          widget.imageUrls.length > 1
-              ? '${_page + 1} of ${widget.imageUrls.length}'
-              : '',
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemCount: widget.imageUrls.length,
-        onPageChanged: (value) => setState(() => _page = value),
-        itemBuilder: (context, index) {
-          final imageUrl = widget.imageUrls[index];
-          return Center(
-            child: Hero(
-              tag: 'feed-gallery-$imageUrl',
-              child: InteractiveViewer(
-                minScale: _minScale,
-                maxScale: _maxScale,
-                panEnabled: true,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  width: MediaQuery.sizeOf(context).width,
-                  loadingBuilder: (context, child, progress) => progress == null
-                      ? child
-                      : const Center(child: CircularProgressIndicator()),
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.broken_image,
-                    color: Colors.white70,
-                    size: 48,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 }
 

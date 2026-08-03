@@ -267,7 +267,10 @@ class _ResultTile extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            section?.title ?? context.t('learning.results_unknown_section'),
+            result.sectionId.isEmpty
+                ? context.t('learning.final_exam')
+                : section?.title ??
+                    context.t('learning.results_unknown_section'),
           ),
           const SizedBox(height: 12),
           Wrap(

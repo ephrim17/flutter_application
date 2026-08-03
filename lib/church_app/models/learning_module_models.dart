@@ -13,28 +13,94 @@ bool learningQuizPasses({
 }) =>
     total > 0 && score / total * 100 >= passingPercentage;
 
+enum LearningResourceType { pdf, image, youtube, externalLink }
+
 class LearningResource {
   const LearningResource({
     required this.name,
     required this.downloadUrl,
     required this.storagePath,
+    this.type = LearningResourceType.pdf,
+    this.order = 100,
   });
 
   final String name;
   final String downloadUrl;
   final String storagePath;
+  final LearningResourceType type;
+  final int order;
+
+  LearningResource withOrder(int value) => LearningResource(
+        name: name,
+        downloadUrl: downloadUrl,
+        storagePath: storagePath,
+        type: type,
+        order: value,
+      );
 
   factory LearningResource.fromMap(Map<String, dynamic> data) =>
       LearningResource(
         name: _learningText(data['name']),
         downloadUrl: _learningText(data['downloadUrl']),
         storagePath: _learningText(data['storagePath']),
+        type: LearningResourceType.values.firstWhere(
+          (type) => type.name == _learningText(data['type']),
+          orElse: () => LearningResourceType.pdf,
+        ),
+        order: _learningInt(data['order'], 100),
       );
 
   Map<String, dynamic> toMap() => {
         'name': name,
         'downloadUrl': downloadUrl,
         'storagePath': storagePath,
+        'type': type.name,
+        'order': order,
+      };
+}
+
+class LearningPassage {
+  const LearningPassage({
+    required this.book,
+    required this.chapter,
+    required this.startVerse,
+    required this.endVerse,
+    this.order = 100,
+  });
+
+  final String book;
+  final int chapter;
+  final int startVerse;
+  final int endVerse;
+  final int order;
+
+  bool get isValid =>
+      book.isNotEmpty &&
+      chapter > 0 &&
+      startVerse > 0 &&
+      endVerse >= startVerse;
+
+  String get reference {
+    if (!isValid) return '';
+    final verses =
+        startVerse == endVerse ? '$startVerse' : '$startVerse-$endVerse';
+    return '$book $chapter:$verses';
+  }
+
+  factory LearningPassage.fromMap(Map<String, dynamic> data) => LearningPassage(
+        book: _learningText(data['book']),
+        chapter: _learningInt(data['chapter']),
+        startVerse: _learningInt(data['startVerse']),
+        endVerse: _learningInt(data['endVerse']),
+        order: _learningInt(data['order'], 100),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'book': book,
+        'chapter': chapter,
+        'startVerse': startVerse,
+        'endVerse': endVerse,
+        'order': order,
       };
 }
 
@@ -88,6 +154,7 @@ class LearningSection {
     required this.questions,
     required this.order,
     required this.passingPercentage,
+    this.passages = const [],
   });
 
   final String id;
@@ -101,6 +168,21 @@ class LearningSection {
   final List<LearningQuizQuestion> questions;
   final int order;
   final int passingPercentage;
+  final List<LearningPassage> passages;
+
+  List<LearningPassage> get effectivePassages {
+    if (passages.isNotEmpty) return passages;
+    if (!hasScripture) return const [];
+    return [
+      LearningPassage(
+        book: scriptureBook,
+        chapter: scriptureChapter,
+        startVerse: scriptureStartVerse,
+        endVerse: scriptureEndVerse,
+        order: 10,
+      ),
+    ];
+  }
 
   bool get hasScripture =>
       scriptureBook.isNotEmpty &&
@@ -119,9 +201,8 @@ class LearningSection {
   bool get isConfigured =>
       id.isNotEmpty &&
       title.isNotEmpty &&
-      hasScripture &&
-      questions.isNotEmpty &&
-      questions.every((question) => question.isValid);
+      effectivePassages.isNotEmpty &&
+      effectivePassages.every((passage) => passage.isValid);
 
   factory LearningSection.fromMap(Map<String, dynamic> data) => LearningSection(
         id: _learningText(data['id']),
@@ -139,6 +220,15 @@ class LearningSection {
                     ))
                 .where((item) =>
                     item.name.isNotEmpty && item.downloadUrl.isNotEmpty)
+                .toList(growable: false)
+            : const [],
+        passages: data['passages'] is Iterable
+            ? (data['passages'] as Iterable)
+                .whereType<Map>()
+                .map((item) => LearningPassage.fromMap(
+                      Map<String, dynamic>.from(item),
+                    ))
+                .where((item) => item.isValid)
                 .toList(growable: false)
             : const [],
         questions: data['questions'] is Iterable
@@ -164,6 +254,7 @@ class LearningSection {
         'scriptureStartVerse': scriptureStartVerse,
         'scriptureEndVerse': scriptureEndVerse,
         'resources': resources.map((item) => item.toMap()).toList(),
+        'passages': effectivePassages.map((item) => item.toMap()).toList(),
         'questions': questions.map((item) => item.toMap()).toList(),
         'order': order,
         'passingPercentage': passingPercentage,
@@ -179,6 +270,8 @@ class LearningModule {
     required this.order,
     required this.enabled,
     this.sourceModuleId = '',
+    this.finalExamQuestions = const [],
+    this.passingPercentage = 70,
   });
 
   final String id;
@@ -188,6 +281,13 @@ class LearningModule {
   final int order;
   final bool enabled;
   final String sourceModuleId;
+  final List<LearningQuizQuestion> finalExamQuestions;
+  final int passingPercentage;
+
+  List<LearningQuizQuestion> get effectiveFinalExamQuestions =>
+      finalExamQuestions.isNotEmpty
+          ? finalExamQuestions
+          : sections.expand((section) => section.questions).toList();
 
   bool get isChurchCustomization => sourceModuleId.isNotEmpty;
 
@@ -195,7 +295,9 @@ class LearningModule {
       title.isNotEmpty &&
       description.isNotEmpty &&
       sections.isNotEmpty &&
-      sections.every((section) => section.isConfigured);
+      sections.every((section) => section.isConfigured) &&
+      effectiveFinalExamQuestions.isNotEmpty &&
+      effectiveFinalExamQuestions.every((question) => question.isValid);
 
   factory LearningModule.fromDoc(
     DocumentSnapshot<Map<String, dynamic>> doc,
@@ -218,6 +320,19 @@ class LearningModule {
       order: _learningInt(data['order'], 100),
       enabled: data['enabled'] != false,
       sourceModuleId: _learningText(data['sourceModuleId']),
+      finalExamQuestions: data['finalExamQuestions'] is Iterable
+          ? (data['finalExamQuestions'] as Iterable)
+              .whereType<Map>()
+              .map((item) => LearningQuizQuestion.fromMap(
+                    Map<String, dynamic>.from(item),
+                  ))
+              .where((item) => item.isValid)
+              .toList(growable: false)
+          : const [],
+      passingPercentage: _learningInt(
+        data['passingPercentage'],
+        sections.isEmpty ? 70 : sections.first.passingPercentage,
+      ).clamp(1, 100),
     );
   }
 }
@@ -358,23 +473,35 @@ class LearningProgress {
   const LearningProgress({
     required this.completedSectionIds,
     required this.attempts,
+    this.completedModuleIds = const {},
   });
 
   final Set<String> completedSectionIds;
   final Map<String, LearningSectionAttempt> attempts;
+  final Set<String> completedModuleIds;
 
   bool isSectionComplete(String sectionId) =>
       completedSectionIds.contains(sectionId);
 
-  bool isModuleComplete(LearningModule module) =>
-      module.sections.isNotEmpty &&
-      module.sections.every((section) => isSectionComplete(section.id));
+  bool isModuleComplete(LearningModule module) {
+    if (module.effectiveFinalExamQuestions.isNotEmpty) {
+      return completedModuleIds.contains(module.id);
+    }
+    return module.sections.isNotEmpty &&
+        module.sections.every((section) => isSectionComplete(section.id));
+  }
 
   factory LearningProgress.fromMap(Map<String, dynamic>? data) {
     final rawAttempts = data?['attempts'];
     return LearningProgress(
       completedSectionIds: data?['completedSectionIds'] is Iterable
           ? (data!['completedSectionIds'] as Iterable)
+              .map(_learningText)
+              .where((id) => id.isNotEmpty)
+              .toSet()
+          : const {},
+      completedModuleIds: data?['completedModuleIds'] is Iterable
+          ? (data!['completedModuleIds'] as Iterable)
               .map(_learningText)
               .where((id) => id.isNotEmpty)
               .toSet()
