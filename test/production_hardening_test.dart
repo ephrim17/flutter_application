@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -55,6 +57,19 @@ void main() {
     expect(
       DrawerMenuItem.values.map((item) => item.labelKey),
       isNot(contains('drawer.financial_dashboard')),
+    );
+  });
+
+  test('password reset flow maps server errors to safe user messages', () {
+    expect(
+      mapFirebaseAuthError(FirebaseAuthException(code: 'invalid-code')),
+      'That verification code is incorrect.',
+    );
+    expect(
+      mapFirebaseAuthError(
+        FirebaseAuthException(code: 'invalid-reset-session'),
+      ),
+      'Your password reset session has expired. Please start again.',
     );
   });
 }

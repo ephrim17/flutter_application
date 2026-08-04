@@ -9,6 +9,13 @@ import {
 import {defineSecret, defineString} from "firebase-functions/params";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import nodemailer from "nodemailer";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  randomInt,
+  timingSafeEqual,
+} from "node:crypto";
 // Financial callable implementations remain in source for the planned future
 // release, but are intentionally not exported or deployed while the feature is
 // dormant in the app.
@@ -31,6 +38,12 @@ const smtpUser = defineSecret("SMTP_USER");
 const smtpPass = defineSecret("SMTP_PASS");
 const passwordResetAppUrl =
   "https://flutterlearning-c9f6c.web.app/reset-password";
+const passwordResetChallengeCollection = "passwordResetChallenges";
+const passwordResetCodeLifetimeMs = 10 * 60 * 1000;
+const passwordResetResendCooldownMs = 60 * 1000;
+const passwordResetRequestWindowMs = 60 * 60 * 1000;
+const passwordResetMaxRequestsPerWindow = 5;
+const passwordResetMaxAttempts = 5;
 
 type MailJobData = {
   kind?: string;
@@ -362,6 +375,287 @@ export const sendPasswordResetSmtpEmail = onRequest(
         error: authError.message ?? String(error),
       });
       res.status(500).json({error: "reset-email-failed"});
+    }
+  },
+);
+
+export const requestPasswordResetCode = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    secrets: [smtpUser, smtpPass],
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({error: "method-not-allowed"});
+      return;
+    }
+
+    const email = normalizeEmail(String(req.body?.email ?? ""));
+    const churchName = readUnknownString(req.body?.churchName) || "Church App";
+    if (email.length === 0 || !email.includes("@")) {
+      res.status(400).json({error: "invalid-email"});
+      return;
+    }
+
+    let user: admin.auth.UserRecord;
+    try {
+      user = await admin.auth().getUserByEmail(email);
+    } catch (error) {
+      const authError = error as {code?: string};
+      if (authError.code === "auth/user-not-found") {
+        res.status(200).json({success: true});
+        return;
+      }
+      logger.error("Unable to look up password reset user.", {
+        error: String(error),
+      });
+      res.status(500).json({error: "reset-code-failed"});
+      return;
+    }
+
+    const now = Date.now();
+    const challengeId = passwordResetChallengeId(email);
+    const challengeRef = admin.firestore()
+      .collection(passwordResetChallengeCollection)
+      .doc(challengeId);
+    const code = randomInt(0, 1000000).toString().padStart(6, "0");
+    const codeHash = passwordResetCodeHash(challengeId, code);
+
+    try {
+      const shouldSend = await admin.firestore().runTransaction(
+        async (transaction) => {
+          const snapshot = await transaction.get(challengeRef);
+          const current = snapshot.data();
+          const lastSentAt = timestampMillis(current?.lastSentAt);
+          const windowStartedAt = timestampMillis(current?.windowStartedAt);
+          const inCurrentWindow =
+            windowStartedAt > 0 && now - windowStartedAt <
+              passwordResetRequestWindowMs;
+          const requestCount = inCurrentWindow ?
+            Number(current?.requestCount ?? 0) : 0;
+          const deliveryStatus = readUnknownString(current?.deliveryStatus);
+
+          if ((deliveryStatus === "active" || deliveryStatus === "pending") &&
+              lastSentAt > 0 &&
+              now - lastSentAt < passwordResetResendCooldownMs) {
+            return false;
+          }
+          if (requestCount >= passwordResetMaxRequestsPerWindow) {
+            return false;
+          }
+
+          transaction.set(challengeRef, {
+            uid: user.uid,
+            codeHash,
+            expiresAt: admin.firestore.Timestamp.fromMillis(
+              now + passwordResetCodeLifetimeMs,
+            ),
+            attemptsRemaining: passwordResetMaxAttempts,
+            requestCount: requestCount + 1,
+            windowStartedAt: admin.firestore.Timestamp.fromMillis(
+              inCurrentWindow ? windowStartedAt : now,
+            ),
+            lastSentAt: admin.firestore.Timestamp.fromMillis(now),
+            deliveryStatus: "pending",
+            resetTokenHash: admin.firestore.FieldValue.delete(),
+            resetTokenExpiresAt: admin.firestore.FieldValue.delete(),
+            consumedAt: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, {merge: true});
+          return true;
+        },
+      );
+
+      if (!shouldSend) {
+        res.status(200).json({success: true});
+        return;
+      }
+
+      const text = [
+        "Hello,",
+        "",
+        `We received a request to reset your password for ${churchName}.`,
+        `Your verification code is: ${code}`,
+        "",
+        "This code expires in 10 minutes.",
+        "If you did not request this, you can safely ignore this email.",
+      ].join("\n");
+      await createTransporter().sendMail({
+        from: emailFrom.value(),
+        to: [email],
+        subject: `Your ${churchName} password reset code`,
+        text,
+        html: textToHtml(text),
+      });
+      await challengeRef.update({
+        deliveryStatus: "active",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      res.status(200).json({success: true});
+    } catch (error) {
+      logger.error("Failed to send password reset code.", {
+        error: String(error),
+      });
+      await challengeRef.update({deliveryStatus: "failed"}).catch(() => null);
+      res.status(500).json({error: "reset-code-failed"});
+    }
+  },
+);
+
+export const verifyPasswordResetCode = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    secrets: [smtpPass],
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({error: "method-not-allowed"});
+      return;
+    }
+
+    const email = normalizeEmail(String(req.body?.email ?? ""));
+    const code = readUnknownString(req.body?.code);
+    if (email.length === 0 || !/^\d{6}$/.test(code)) {
+      res.status(400).json({error: "invalid-code"});
+      return;
+    }
+
+    const now = Date.now();
+    const challengeId = passwordResetChallengeId(email);
+    const challengeRef = admin.firestore()
+      .collection(passwordResetChallengeCollection)
+      .doc(challengeId);
+    const resetToken = randomBytes(32).toString("base64url");
+    try {
+      const verificationResult = await admin.firestore().runTransaction(
+        async (transaction) => {
+        const snapshot = await transaction.get(challengeRef);
+        const data = snapshot.data();
+        if (!snapshot.exists || data?.deliveryStatus !== "active") {
+          return "invalid-code";
+        }
+        if (timestampMillis(data.expiresAt) <= now) {
+          return "expired-code";
+        }
+        const attemptsRemaining = Number(data.attemptsRemaining ?? 0);
+        if (attemptsRemaining <= 0) {
+          return "too-many-attempts";
+        }
+        const expectedHash = readUnknownString(data.codeHash);
+        const submittedHash = passwordResetCodeHash(challengeId, code);
+        if (!secureStringEqual(expectedHash, submittedHash)) {
+          transaction.update(challengeRef, {
+            attemptsRemaining: attemptsRemaining - 1,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return attemptsRemaining - 1 <= 0 ?
+            "too-many-attempts" : "invalid-code";
+        }
+
+        transaction.update(challengeRef, {
+          codeHash: admin.firestore.FieldValue.delete(),
+          resetTokenHash: sha256(resetToken),
+          resetTokenExpiresAt: admin.firestore.Timestamp.fromMillis(
+            now + passwordResetCodeLifetimeMs,
+          ),
+          verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return "verified";
+      });
+      if (verificationResult !== "verified") {
+        res.status(verificationResult === "too-many-attempts" ? 429 : 400)
+          .json({error: verificationResult});
+        return;
+      }
+      res.status(200).json({success: true, resetToken});
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "invalid-code";
+      const allowed = new Set([
+        "invalid-code",
+        "expired-code",
+        "too-many-attempts",
+      ]);
+      res.status(code === "too-many-attempts" ? 429 : 400).json({
+        error: allowed.has(code) ? code : "invalid-code",
+      });
+    }
+  },
+);
+
+export const completePasswordReset = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    secrets: [smtpPass],
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({error: "method-not-allowed"});
+      return;
+    }
+
+    const email = normalizeEmail(String(req.body?.email ?? ""));
+    const resetToken = readUnknownString(req.body?.resetToken);
+    const newPassword = String(req.body?.newPassword ?? "");
+    if (email.length === 0 || resetToken.length < 32) {
+      res.status(400).json({error: "invalid-reset-session"});
+      return;
+    }
+    if (newPassword.length < 8 ||
+        !/[A-Z]/.test(newPassword) ||
+        !/\d/.test(newPassword)) {
+      res.status(400).json({error: "weak-password"});
+      return;
+    }
+
+    const now = Date.now();
+    const challengeRef = admin.firestore()
+      .collection(passwordResetChallengeCollection)
+      .doc(passwordResetChallengeId(email));
+    let uid = "";
+    try {
+      await admin.firestore().runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(challengeRef);
+        const data = snapshot.data();
+        const storedTokenHash = readUnknownString(data?.resetTokenHash);
+        if (!snapshot.exists ||
+            storedTokenHash.length === 0 ||
+            !secureStringEqual(storedTokenHash, sha256(resetToken)) ||
+            timestampMillis(data?.resetTokenExpiresAt) <= now ||
+            data?.consumedAt !== undefined) {
+          throw new Error("invalid-reset-session");
+        }
+        uid = readUnknownString(data?.uid);
+        if (uid.length === 0) throw new Error("invalid-reset-session");
+        transaction.update(challengeRef, {
+          consumedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+
+      await admin.auth().updateUser(uid, {password: newPassword});
+      await admin.auth().revokeRefreshTokens(uid);
+      await challengeRef.delete();
+      res.status(200).json({success: true});
+    } catch (error) {
+      const code = error instanceof Error ?
+        error.message : "password-reset-failed";
+      if (uid.length > 0 && code !== "invalid-reset-session") {
+        await challengeRef.update({
+          consumedAt: admin.firestore.FieldValue.delete(),
+        }).catch(() => null);
+      }
+      logger.error("Failed to complete password reset.", {
+        code,
+        uid: uid || null,
+      });
+      res.status(code === "invalid-reset-session" ? 400 : 500).json({
+        error: code === "invalid-reset-session" ?
+          code : "password-reset-failed",
+      });
     }
   },
 );
@@ -1105,6 +1399,34 @@ function createTransporter() {
       pass: smtpPass.value(),
     },
   });
+}
+
+function passwordResetChallengeId(email: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(normalizeEmail(email))
+    .digest("hex");
+}
+
+function passwordResetCodeHash(challengeId: string, code: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(`${challengeId}:${code}`)
+    .digest("hex");
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function secureStringEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length &&
+    timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function timestampMillis(value: unknown): number {
+  if (value instanceof admin.firestore.Timestamp) return value.toMillis();
+  return 0;
 }
 
 function buildAppPasswordResetLink({

@@ -4,6 +4,8 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/password_reset_code_screen.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
@@ -44,15 +46,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     _emailController.text = widget.initialEmail.trim();
   }
 
-  Future<void> _sendResetEmail() async {
+  Future<void> _sendResetCode() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    setState(() {
-      _isLoading = true;
-    });
+    final authRepository = ref.read(authRepositoryProvider);
+    setState(() => _isLoading = true);
     try {
       final churchId = await ref.read(currentChurchIdProvider.future);
+      if (!mounted) return;
       await FirebaseAnalytics.instance.logEvent(
         name: 'forgot_password_requested',
         parameters: {
@@ -61,30 +63,27 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           'has_church_context': widget.churchName.trim().isNotEmpty.toString(),
         },
       );
-      await ref.read(authRepositoryProvider).sendCustomPasswordResetEmail(
-            email: _emailController.text.trim(),
+      await authRepository.requestPasswordResetCode(
+        email: _emailController.text.trim(),
+        churchName: widget.churchName,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('auth.reset_code_sent'))),
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PasswordResetCodeScreen(
+            email: _emailController.text.trim().toLowerCase(),
             churchName: widget.churchName,
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.t('auth.reset_email_sent'),
-            ),
+            churchLogo: widget.churchLogo,
           ),
-        );
-        Navigator.of(context).pop();
-      }
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceFirst('Exception: ', '').trim().isEmpty
-                  ? context.t('common.unknown_error')
-                  : e.toString().replaceFirst('Exception: ', ''),
-            ),
-          ),
+          SnackBar(content: Text(mapFirebaseAuthError(e))),
         );
       }
     } finally {
@@ -142,9 +141,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 20),
               SolidButton(
-                label: context.t('auth.send_reset_email'),
+                label: context.t('auth.send_reset_code'),
                 isLoading: _isLoading,
-                onPressed: _sendResetEmail,
+                onPressed: _sendResetCode,
               ),
             ],
           ),

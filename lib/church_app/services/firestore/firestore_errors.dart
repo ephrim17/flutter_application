@@ -32,7 +32,18 @@ String mapFirebaseAuthError(Object e) {
       case 'network-request-failed':
         return defaultChurchTextContents['auth.network_error']!;
       case 'too-many-requests':
+      case 'too-many-attempts':
         return defaultChurchTextContents['auth.too_many_requests']!;
+      case 'reset-code-failed':
+        return defaultChurchTextContents['auth.reset_code_failed']!;
+      case 'invalid-code':
+        return defaultChurchTextContents['auth.reset_code_invalid']!;
+      case 'expired-code':
+        return defaultChurchTextContents['auth.reset_code_expired']!;
+      case 'invalid-reset-session':
+        return defaultChurchTextContents['auth.reset_session_invalid']!;
+      case 'password-reset-failed':
+        return defaultChurchTextContents['auth.password_reset_failed']!;
       case 'operation-not-allowed':
         return defaultChurchTextContents['auth.operation_not_allowed']!;
       default:

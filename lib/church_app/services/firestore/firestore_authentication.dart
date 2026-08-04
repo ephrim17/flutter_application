@@ -100,10 +100,83 @@ class AuthRepository {
     required String email,
     String churchName = '',
   }) async {
-    await _sendCustomPasswordEmail(
+    await requestPasswordResetCode(
       email: email,
       churchName: churchName,
-      mode: 'reset',
+    );
+  }
+
+  Future<void> requestPasswordResetCode({
+    required String email,
+    String churchName = '',
+  }) async {
+    await _postPasswordResetFunction(
+      functionName: 'requestPasswordResetCode',
+      body: {
+        'email': email.trim().toLowerCase(),
+        'churchName': churchName.trim(),
+      },
+    );
+  }
+
+  Future<String> verifyPasswordResetCode({
+    required String email,
+    required String code,
+  }) async {
+    final data = await _postPasswordResetFunction(
+      functionName: 'verifyPasswordResetCode',
+      body: {
+        'email': email.trim().toLowerCase(),
+        'code': code.trim(),
+      },
+    );
+    final token = data['resetToken']?.toString().trim() ?? '';
+    if (token.isEmpty) {
+      throw FirebaseAuthException(code: 'invalid-reset-session');
+    }
+    return token;
+  }
+
+  Future<void> completePasswordReset({
+    required String email,
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    await _postPasswordResetFunction(
+      functionName: 'completePasswordReset',
+      body: {
+        'email': email.trim().toLowerCase(),
+        'resetToken': resetToken,
+        'newPassword': newPassword,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> _postPasswordResetFunction({
+    required String functionName,
+    required Map<String, dynamic> body,
+  }) async {
+    final functionUrl = Uri.parse(
+      'https://us-central1-${DefaultFirebaseOptions.currentPlatform.projectId}'
+      '.cloudfunctions.net/$functionName',
+    );
+    final response = await http.post(
+      functionUrl,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    Object? decoded;
+    try {
+      decoded = response.body.trim().isEmpty ? null : jsonDecode(response.body);
+    } on FormatException {
+      decoded = null;
+    }
+    final data = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
+    if (response.statusCode >= 200 && response.statusCode < 300) return data;
+    throw FirebaseAuthException(
+      code: data['error']?.toString() ?? 'password-reset-failed',
     );
   }
 

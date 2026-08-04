@@ -1,29 +1,34 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({
     super.key,
-    required this.oobCode,
+    this.oobCode = '',
+    this.resetToken = '',
     this.email = '',
     this.churchName = '',
   });
 
   final String oobCode;
+  final String resetToken;
   final String email;
   final String churchName;
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -35,8 +40,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _verifiedEmailFuture =
-        FirebaseAuth.instance.verifyPasswordResetCode(widget.oobCode);
+    _verifiedEmailFuture = widget.resetToken.trim().isNotEmpty
+        ? Future.value(widget.email.trim())
+        : FirebaseAuth.instance.verifyPasswordResetCode(widget.oobCode);
   }
 
   @override
@@ -51,10 +57,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await FirebaseAuth.instance.confirmPasswordReset(
-        code: widget.oobCode,
-        newPassword: _passwordController.text,
-      );
+      if (widget.resetToken.trim().isNotEmpty) {
+        final repository = ref.read(authRepositoryProvider);
+        await repository.completePasswordReset(
+          email: widget.email,
+          resetToken: widget.resetToken,
+          newPassword: _passwordController.text,
+        );
+      } else {
+        await FirebaseAuth.instance.confirmPasswordReset(
+          code: widget.oobCode,
+          newPassword: _passwordController.text,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +137,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             return const Center(child: AppLoadingIndicator());
           }
 
-          if (snapshot.hasError || widget.oobCode.trim().isEmpty) {
+          if (snapshot.hasError ||
+              (widget.oobCode.trim().isEmpty &&
+                  widget.resetToken.trim().isEmpty)) {
             return _ResetPasswordMessage(
               icon: Icons.link_off_rounded,
               title: context.t('auth.reset_link_invalid_title'),

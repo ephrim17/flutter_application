@@ -67,6 +67,25 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.email_invalid': 'Please enter a valid email.',
   'auth.send_reset_email': 'Send Reset Email',
   'auth.reset_email_sent': 'Password reset email sent. Check your inbox.',
+  'auth.send_reset_code': 'Send verification code',
+  'auth.reset_code_sent': 'We sent a 6-digit code to your email.',
+  'auth.verify_code_title': 'Verify your email',
+  'auth.verify_code_message':
+      'Enter the 6-digit code sent to {email}. It expires in 10 minutes.',
+  'auth.verification_code': 'Verification code',
+  'auth.code_required': 'Enter the 6-digit code.',
+  'auth.verify_code': 'Verify code',
+  'auth.resend_code': 'Resend code',
+  'auth.resend_code_in': 'Resend code in {seconds}s',
+  'auth.code_resent': 'A new verification code was sent.',
+  'auth.reset_code_failed':
+      'Unable to send the verification code. Please try again.',
+  'auth.reset_code_invalid': 'That verification code is incorrect.',
+  'auth.reset_code_expired': 'That code has expired. Request a new code.',
+  'auth.reset_session_invalid':
+      'Your password reset session has expired. Please start again.',
+  'auth.password_reset_failed':
+      'Unable to update your password. Please try again.',
   'auth.reset_password_title': 'Reset Password',
   'auth.password_reset_success': 'Password updated. You can sign in now.',
   'auth.reset_link_invalid_title': 'Reset link expired',
@@ -1735,6 +1754,14 @@ const Map<String, String> defaultChurchTextContents = {
   'auth.invalid_action_code': 'This reset link is invalid or already used.',
   'auth.network_error': 'Network error. Please check your internet connection.',
   'auth.too_many_requests': 'Too many attempts. Please try again later.',
+  'auth.reset_code_failed':
+      'Unable to send the verification code. Please try again.',
+  'auth.reset_code_invalid': 'That verification code is incorrect.',
+  'auth.reset_code_expired': 'That code has expired. Request a new code.',
+  'auth.reset_session_invalid':
+      'Your password reset session has expired. Please start again.',
+  'auth.password_reset_failed':
+      'Unable to update your password. Please try again.',
   'auth.operation_not_allowed': 'This sign-in method is currently disabled.',
   'auth.generic_error': 'Something went wrong. Please try again.',
   'auth.unexpected_error': 'Unexpected error occurred. Please try again.',
