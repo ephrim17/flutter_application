@@ -2,6 +2,8 @@
 
 Project guide:
 
+- [Product and engineering handbook](./docs/README.md)
+- [Feature testing strategy](./docs/testing/README.md)
 - [APP_GUIDE.md](./APP_GUIDE.md)
 - [Repository implementation rules](./AGENTS.md)
 

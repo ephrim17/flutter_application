@@ -38,6 +38,16 @@ changing the app.
   `firestore.indexes.json`.
 - Tests belong in `test/` and should accompany reusable UI and behavior changes.
 
+## Feature documentation
+
+- Product and engineering documentation lives in `docs/` and is indexed by
+  `docs/README.md`.
+- Every user-facing behaviour change must update the matching file under
+  `docs/features/` and its numbered test flows.
+- Cross-feature test policy and release gates live in `docs/testing/README.md`.
+- Keep documentation aligned with actual role checks, feature flags, Firestore
+  paths, Cloud Functions and dormant-feature status.
+
 ## Implementation invariants
 
 - Preserve church scoping on all reads and writes.
@@ -49,4 +59,3 @@ changing the app.
 - Do not read `ref` after a `ConsumerState` has been deactivated or disposed.
 - Run formatting, focused analysis, the full Flutter test suite, and
   `git diff --check` before declaring work complete.
-

@@ -1,5 +1,10 @@
 # Church Tree App Guide
 
+> For product behaviour, one-document-per-feature specifications, QA flows and
+> release gates, use the [Product and Engineering Handbook](docs/README.md).
+> This file remains the compact repository orientation and durable developer
+> memory.
+
 ## Repository Map and Working Rules
 
 This section is the durable project memory for future implementation sessions.
