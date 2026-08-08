@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
@@ -81,11 +82,18 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await handleNotificationSetup(
-        context: context,
-        container: ProviderScope.containerOf(context, listen: false),
-        promptIfNeeded: true,
-      );
+      ref.read(notificationPromptCompletedProvider.notifier).state = false;
+      try {
+        await handleNotificationSetup(
+          context: context,
+          container: ProviderScope.containerOf(context, listen: false),
+          promptIfNeeded: true,
+        );
+      } finally {
+        if (mounted) {
+          ref.read(notificationPromptCompletedProvider.notifier).state = true;
+        }
+      }
       if (!mounted) return;
       await _logTabOpen(selectedIndex);
     });

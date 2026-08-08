@@ -749,7 +749,6 @@ class _FinancialDashboardScreenState
   void _showTransactionDetails(BuildContext context, ChurchTransaction item) {
     showAppModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => SafeArea(
         child: Padding(

@@ -607,7 +607,6 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
   return showAppModalBottomSheet<DashboardFamilyBucket>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {

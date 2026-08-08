@@ -16,6 +16,8 @@ content-sharing surface.
 - Current-church admins can add/edit their church's social discovery details.
 - External social links use the common confirmation/launcher behaviour.
 - Selecting discovery content never changes active church membership silently.
+- Church quick-look sheets use the shared grab handle without a separate Close
+  button.
 
 ## Technical map
 
@@ -36,4 +38,4 @@ content-sharing surface.
 | GO-06 | Member attempts edit | Edit affordance is absent and backend rejects mutation. |
 | GO-07 | Tap social link | Confirmation appears; cancel stays in app; confirm opens correct app/browser. |
 | GO-08 | Network/empty list | Recoverable localized state; no endless spinner. |
-
+| GO-09 | Open church quick look | One shared small grab handle appears and no redundant Close button is shown. |

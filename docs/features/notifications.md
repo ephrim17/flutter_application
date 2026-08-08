@@ -15,6 +15,8 @@ Cloud Functions.
 - Topic segments are sanitized consistently on client and backend.
 - Token/topic subscriptions are refreshed after permission, token refresh,
   church switch and group membership change.
+- The permission prompt uses the opaque themed modal surface, shared grab
+  handle and compact top spacing so underlying Home content cannot show through.
 
 ## Current notification sources and destinations
 
@@ -55,4 +57,4 @@ Studio also supports a general church-topic notification composer.
 | NOTIFY-10 | Live notification | Sent once per broadcast only when church setting enabled. |
 | NOTIFY-11 | Duplicate queue/event delivery | Idempotency prevents duplicate fan-out. |
 | NOTIFY-12 | Invalid/missing `kind` | App opens safely without wrong navigation. |
-
+| NOTIFY-13 | Open permission prompt over Home | Sheet surface is opaque with one grab handle; Home content does not show through. |

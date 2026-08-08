@@ -27,6 +27,8 @@ older content.
 - Hashtags are normalized, deduplicated and searchable.
 - The screen uses live/optimistic updates so moderation changes appear without
   pull-to-refresh.
+- Create/edit sheets use the shared grab handle as their dismiss affordance and
+  do not repeat it with a Cancel button.
 
 ## Technical map
 
@@ -55,4 +57,4 @@ older content.
 | FEED-11 | Tap author/profile contact | One phone icon appears; confirmation precedes dialer/mail/maps. |
 | FEED-12 | Rapid action/double-tap/offline | No duplicates, stale menu or crash; error can be retried. |
 | FEED-13 | Church switch | No local posts from previous church; global posts remain global. |
-
+| FEED-14 | Open create/edit sheet | One shared small grab handle appears and no redundant Cancel button is shown. |

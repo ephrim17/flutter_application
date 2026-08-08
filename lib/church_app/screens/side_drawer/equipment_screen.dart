@@ -559,7 +559,6 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   void _showEquipmentDetails(BuildContext context, EquipmentItem item) {
     showAppModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => SafeArea(
         child: Padding(
@@ -740,7 +739,6 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   void _showBillPreview(BuildContext context, EquipmentItem item) {
     showAppModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _BillPreviewSheet(item: item),
     );
@@ -754,7 +752,6 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
   }) {
     showAppModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => SafeArea(
         child: Padding(

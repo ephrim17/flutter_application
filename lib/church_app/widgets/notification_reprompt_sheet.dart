@@ -20,13 +20,12 @@ Future<bool?> showNotificationPermissionSheet(
   final sheet = showAppModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent, // for rounded corners
     heightFactor: 0.4,
     builder: (context) {
       return Padding(
         padding: EdgeInsets.fromLTRB(
           20,
-          72,
+          12,
           20,
           20 + MediaQuery.of(context).padding.bottom,
         ),

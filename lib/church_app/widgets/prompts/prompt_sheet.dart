@@ -55,6 +55,29 @@ String promptSessionKey(PromptType type, [PromptSheetModel? promptSheetModel]) {
   }
 }
 
+({PromptType type, PromptSheetModel? model})? nextEligibleHomePrompt({
+  required bool notificationPromptCompleted,
+  required PromptSheetModel? announcement,
+  required bool isBirthday,
+  required Set<String> shownPromptKeys,
+}) {
+  if (!notificationPromptCompleted) return null;
+
+  if (announcement?.enabled ?? false) {
+    final key = promptSessionKey(PromptType.announcement, announcement);
+    if (!shownPromptKeys.contains(key)) {
+      return (type: PromptType.announcement, model: announcement);
+    }
+  }
+
+  if (isBirthday &&
+      !shownPromptKeys.contains(promptSessionKey(PromptType.birthday))) {
+    return (type: PromptType.birthday, model: null);
+  }
+
+  return null;
+}
+
 final isBirthdayProvider = Provider<bool>((ref) {
   final user = ref.watch(getCurrentUserProvider).value;
   final now = ref.watch(todayProvider).value ?? DateTime.now();

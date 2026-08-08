@@ -56,6 +56,8 @@ For every numbered scenario record:
 - Switching churches cannot expose or mutate the previous church's data.
 - Long English and translated text do not overflow at large text scale.
 - Keyboard, safe areas, small screens and rotation policy are respected.
+- Modal sheets show one shared small grab handle and do not duplicate it with a
+  dismiss-only Close or Cancel control.
 - Screen readers receive meaningful labels and controls meet tap-target needs.
 - Dates use the intended timezone and expired content disappears correctly.
 - External launchers ask for confirmation before phone, email or maps.
@@ -107,4 +109,3 @@ flutter build web --release
 - **Major**: important path broken with a workaround, persistent overflow, or
   incorrect business state.
 - **Minor**: cosmetic issue, copy defect or low-impact inconsistency.
-

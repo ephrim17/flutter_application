@@ -377,14 +377,6 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(sheetContext).pop(),
-                    child: Text(context.t('ui.go_further.close_aec0')),
-                  ),
-                ),
               ],
             ),
           ),

@@ -293,7 +293,6 @@ Future<void> _showPrayerForOthersDetails(
   final theme = Theme.of(context);
   return showAppModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
     builder: (_) => SafeArea(
       child: Column(
         children: [

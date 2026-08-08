@@ -4,7 +4,6 @@ import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
-import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
@@ -98,24 +97,15 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
           child: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-              Row(
-                children: [
-                  Text(
-                    cardtitle,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  cardtitle,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Spacer(),
-                  OutlinedButton(
-                      onPressed: () => {
-                            if (mounted) {Navigator.of(context).pop()}
-                          },
-                      child: ColorText(
-                        badgeText: ref.t('feed.cancel'),
-                      ))
-                ],
+                ),
               ),
               const SizedBox(height: 16),
               AppTextField(

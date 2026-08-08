@@ -102,7 +102,6 @@ Future<void> _showBibleVersePickerSheet(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) => _BibleVersePickerSheet(
       title: title,
       initialBook: initialBook,
@@ -229,7 +228,6 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   Future<void> _pickBook() async {
     final pickedBook = await showAppModalBottomSheet<BibleBook>(
       context: context,
-      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: ListView.separated(
@@ -271,7 +269,6 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
 
     final pickedChapter = await showAppModalBottomSheet<int>(
       context: context,
-      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: ListView.builder(
@@ -312,7 +309,6 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
 
     final pickedVerse = await showAppModalBottomSheet<int>(
       context: context,
-      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: ListView.builder(
@@ -353,7 +349,6 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
 
     final pickedVerse = await showAppModalBottomSheet<int>(
       context: context,
-      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: ListView.builder(

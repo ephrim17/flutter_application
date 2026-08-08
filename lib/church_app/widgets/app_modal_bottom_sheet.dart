@@ -14,7 +14,7 @@ Future<T?> showAppModalBottomSheet<T>({
   bool useRootNavigator = false,
   bool isDismissible = true,
   bool enableDrag = true,
-  bool? showDragHandle,
+  bool showDragHandle = true,
   RouteSettings? routeSettings,
   AnimationController? transitionAnimationController,
   Offset? anchorPoint,
@@ -33,21 +33,54 @@ Future<T?> showAppModalBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
-    showDragHandle: showDragHandle,
+    showDragHandle: false,
     routeSettings: routeSettings,
     transitionAnimationController: transitionAnimationController,
     anchorPoint: anchorPoint,
-    useSafeArea: true,
+    useSafeArea: useSafeArea ?? true,
     builder: (context) {
-      final child = builder(context);
+      final mediaQuery = MediaQuery.of(context);
+      final theme = Theme.of(context);
+      final child = MediaQuery(
+        data: mediaQuery.removeViewInsets(removeBottom: true),
+        child: Builder(builder: builder),
+      );
+      final content = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showDragHandle)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Container(
+                key: const ValueKey<String>('app-modal-drag-handle'),
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.bottomSheetTheme.dragHandleColor ??
+                      theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          Flexible(child: child),
+        ],
+      );
+
+      Widget sheet = content;
       if (heightFactor != null) {
-        return FractionallySizedBox(
+        sheet = FractionallySizedBox(
           heightFactor: heightFactor.clamp(0.1, 1.0),
           alignment: Alignment.bottomCenter,
-          child: child,
+          child: content,
         );
       }
-      return child;
+
+      return AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+        child: sheet,
+      );
     },
   );
 }

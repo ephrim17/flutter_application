@@ -540,7 +540,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     showAppModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       heightFactor: 0.65,
       builder: (context) {
         final theme = Theme.of(context);

@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
+import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/home/sections/announcement_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
@@ -24,7 +25,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   ProviderSubscription<PromptSheetModel?>? _announcementListener;
   ProviderSubscription<bool>? _birthdayListener;
-  bool _isPromptOpen = false;
+  ProviderSubscription<bool>? _notificationPromptListener;
+  bool _isDrainingPrompts = false;
+  bool _promptDrainRequested = false;
 
   @override
   void initState() {
@@ -36,10 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isAnnouncementEnabledProvider,
         (previous, next) async {
           if (next?.enabled ?? false) {
-            await _maybeShowPrompt(
-              PromptType.announcement,
-              promptSheetModel: next,
-            );
+            await _drainPrompts();
           }
         },
       );
@@ -48,12 +48,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isBirthdayProvider,
         (previous, next) async {
           if (next == true) {
-            await _maybeShowPrompt(PromptType.birthday);
+            await _drainPrompts();
           }
         },
       );
 
-      await _showInitialPrompts();
+      _notificationPromptListener = ref.listenManual<bool>(
+        notificationPromptCompletedProvider,
+        (previous, next) async {
+          if (next) {
+            await _drainPrompts();
+          }
+        },
+      );
+
+      await _drainPrompts();
     });
   }
 
@@ -61,46 +70,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _announcementListener?.close();
     _birthdayListener?.close();
+    _notificationPromptListener?.close();
     super.dispose();
   }
 
-  Future<void> _showInitialPrompts() async {
-    final announcement = ref.read(isAnnouncementEnabledProvider);
-    if (announcement?.enabled ?? false) {
-      await _maybeShowPrompt(
-        PromptType.announcement,
-        promptSheetModel: announcement,
-      );
-    }
-
+  Future<void> _drainPrompts() async {
     if (!mounted) return;
-    if (ref.read(isBirthdayProvider) == true) {
-      await _maybeShowPrompt(PromptType.birthday);
+    _promptDrainRequested = true;
+    if (_isDrainingPrompts) return;
+
+    _isDrainingPrompts = true;
+    try {
+      while (mounted && _promptDrainRequested) {
+        _promptDrainRequested = false;
+
+        if (!ref.read(notificationPromptCompletedProvider)) return;
+
+        final showedPrompt = await _showNextEligiblePrompt();
+        if (showedPrompt) {
+          _promptDrainRequested = true;
+        }
+      }
+    } finally {
+      _isDrainingPrompts = false;
     }
   }
 
-  Future<void> _maybeShowPrompt(
+  Future<bool> _showNextEligiblePrompt() async {
+    final announcement = ref.read(isAnnouncementEnabledProvider);
+    if (!mounted) return false;
+    final pendingPrompt = nextEligibleHomePrompt(
+      notificationPromptCompleted:
+          ref.read(notificationPromptCompletedProvider),
+      announcement: announcement,
+      isBirthday: ref.read(isBirthdayProvider),
+      shownPromptKeys: ref.read(promptSessionShownProvider),
+    );
+    if (pendingPrompt == null) return false;
+
+    return _maybeShowPrompt(
+      pendingPrompt.type,
+      promptSheetModel: pendingPrompt.model,
+    );
+  }
+
+  Future<bool> _maybeShowPrompt(
     PromptType sheetType, {
     PromptSheetModel? promptSheetModel,
   }) async {
-    if (!mounted || _isPromptOpen) return;
+    if (!mounted) return false;
 
     final key = promptSessionKey(sheetType, promptSheetModel);
     final shownPrompts = ref.read(promptSessionShownProvider);
 
-    if (shownPrompts.contains(key)) return;
+    if (shownPrompts.contains(key)) return false;
 
     ref.read(promptSessionShownProvider.notifier).state = {
       ...shownPrompts,
       key,
     };
-    _isPromptOpen = true;
-
-    try {
-      await showPromptSheet(sheetType, promptSheetModel);
-    } finally {
-      _isPromptOpen = false;
-    }
+    await showPromptSheet(sheetType, promptSheetModel);
+    return true;
   }
 
   Future<dynamic> showPromptSheet(

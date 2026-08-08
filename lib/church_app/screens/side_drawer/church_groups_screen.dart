@@ -139,7 +139,6 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     await showAppModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       builder: (context) {
         return FractionallySizedBox(
           heightFactor: 0.9,
@@ -179,7 +178,6 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
   ) async {
     final shouldRemove = await showAppModalBottomSheet<bool>(
       context: context,
-      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: Wrap(
@@ -236,7 +234,6 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     final selectedGroup = await showAppModalBottomSheet<ChurchGroupDefinition>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       builder: (_) => _GroupPickerSheet(
         groups: groups,
         selectedGroupId: groups[_tabController.index].id,

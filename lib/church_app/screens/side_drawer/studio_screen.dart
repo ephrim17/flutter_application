@@ -3002,7 +3002,6 @@ Future<void> _showAboutEditor(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
@@ -3146,7 +3145,6 @@ Future<void> _showPastorEditor(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
@@ -3361,7 +3359,6 @@ Future<void> _showFooterContactEditor(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
@@ -3503,7 +3500,6 @@ Future<void> _showFooterSocialEditor(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
@@ -4013,13 +4009,6 @@ Future<void> _showAnnouncementEditor(
                           .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    tooltip: context.t('settings.cancel'),
-                    onPressed:
-                        isSaving ? null : () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),

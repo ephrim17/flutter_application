@@ -360,7 +360,6 @@ Future<void> _showPrayerDetailsSheet(
   final sourceName = prayer.sourceChurchName.trim();
   return showAppModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
     builder: (_) => SafeArea(
       child: Column(
         children: [

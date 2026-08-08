@@ -329,25 +329,12 @@ class _BirthdayPostComposerModalState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  context.t(
-                    _textKey('post_title'),
-                    fallback: '$_occasionName Post',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: state.isLoading
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  child: Text(
-                    context.t('birthday.close'),
-                  ),
-                ),
-              ],
+            Text(
+              context.t(
+                _textKey('post_title'),
+                fallback: '$_occasionName Post',
+              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
             AppTextField(

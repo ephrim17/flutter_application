@@ -41,7 +41,8 @@ can manage it.
 
 ## Shared UX rules
 
-- Use common text fields/dropdowns, popup menus and modal container/handle.
+- Use common text fields/dropdowns, popup menus and the shared small modal grab
+  handle without duplicate dismiss-only controls.
 - Forms scroll above keyboard and safe areas; long content cannot overlap.
 - Destructive actions require confirmation.
 - Admin email removal cannot leave the church without a final required admin.
@@ -77,4 +78,3 @@ can manage it.
 | STUDIO-14 | Admin email add/edit/delete/duplicate | CRUD is clear, normalized and prevents duplicate/removing final admin. |
 | STUDIO-15 | Keyboard/small screen/large text | Every editor remains scrollable with visible actions and no overlap. |
 | STUDIO-16 | Offline/double-submit | No duplicate record; draft/error recovery is clear. |
-

@@ -31,8 +31,9 @@ members can browse permitted directory/group views.
 ## User quick card and contact actions
 
 Feed/article/member surfaces use the common user card. It displays one phone
-action only. Phone, email and map actions show a confirmation dialog before
-launching another app.
+action only. Member creation options, member quick look and the common user
+card use the shared modal grab handle without a redundant close action. Phone,
+email and map actions show a confirmation dialog before launching another app.
 
 ## Technical map
 
@@ -60,4 +61,4 @@ launching another app.
 | MEMBER-12 | Delete member | Confirmation appears; only target church record/dependent intended data changes. |
 | MEMBER-13 | Non-admin mutation attempt | UI hides controls and backend rejects direct mutation. |
 | MEMBER-14 | Large directory/pagination/scroll | Smooth list, no clipped cards and no duplicate entries. |
-
+| MEMBER-15 | Open add-member options/member quick look | Sheet shows exactly one shared small grab handle and dismisses without a duplicate Close/Cancel control. |

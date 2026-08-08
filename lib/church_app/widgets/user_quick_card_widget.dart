@@ -27,7 +27,6 @@ Future<void> showUserQuickCardWithChurch(
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) {
       return SafeArea(
         child: Padding(
