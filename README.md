@@ -2,9 +2,9 @@
 
 Project guide:
 
-- [Product and engineering handbook](./docs/README.md)
-- [Feature testing strategy](./docs/testing/README.md)
-- [APP_GUIDE.md](./APP_GUIDE.md)
+- [Product and engineering handbook](./KT%20Files/README.md)
+- [Feature testing strategy](./KT%20Files/testing/README.md)
+- [APP_GUIDE.md](./KT%20Files/APP_GUIDE.md)
 - [Repository implementation rules](./AGENTS.md)
 
 Quick start:
