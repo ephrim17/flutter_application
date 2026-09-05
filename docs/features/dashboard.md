@@ -41,10 +41,9 @@ The financial dashboard is intentionally absent.
 | DASH-02 | Empty/new church | Useful empty metrics; no Content Gaps or finance panel. |
 | DASH-03 | Member create/update/delete | Counts/percentages rebuild and match source members. |
 | DASH-04 | Tap gender bucket | Separate filtered screen shows all correct members and supports search. |
-| DASH-05 | Special days/joins/streaks | Counts match local-date source records. |
+| DASH-05 | Special days/joins/streaks | Counts match local-date source records and singular/plural captions use correct grammar. |
 | DASH-06 | Daily Faith activity | Today and seven-day panels match progress docs. |
 | DASH-07 | Prayer/announcement/event updates | Relevant dashboard summaries update without wrong-church data. |
 | DASH-08 | Learning results | Attempts/pass rates/latest results match stored final exams. |
 | DASH-09 | Disabled content feature | Status panel shows correct disabled state without broken navigation. |
 | DASH-10 | Large data/loading/error | Panels remain smooth, independently recoverable and non-overflowing. |
-

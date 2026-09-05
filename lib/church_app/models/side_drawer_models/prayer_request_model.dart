@@ -1,5 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+int prayerDaysLeft(DateTime expiryDate, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
+  final expiry = DateTime(
+    expiryDate.year,
+    expiryDate.month,
+    expiryDate.day,
+  );
+  return expiry.difference(today).inDays.clamp(0, 999);
+}
+
 class PrayerRequest {
   final String id;
   final String title;

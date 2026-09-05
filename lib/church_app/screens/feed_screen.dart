@@ -113,6 +113,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           length: tabCount,
           child: Scaffold(
             floatingActionButton: FloatingActionButton(
+              tooltip: context.t('feed.create_title'),
               onPressed: () => _openCreatePostModal(
                 context,
                 churchId,

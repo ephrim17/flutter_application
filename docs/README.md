@@ -25,6 +25,8 @@ older flow.
 - [System Architecture](architecture/system-architecture.md)
 - [Testing Strategy and Release Gates](testing/README.md)
 - [Feature Traceability Matrix](testing/feature-traceability.md)
+- [Android Release Readiness — 2026-08-13](testing/android-release-readiness-2026-08-13.md)
+- [Android App Stability — 2026-08-14](testing/android-app-stability-2026-08-14.md)
 - [Repository working rules](../AGENTS.md)
 - [Developer-oriented app guide](../APP_GUIDE.md)
 
@@ -60,4 +62,3 @@ owns evidence and execution records. Product or the designated church operator
 owns acceptance of changed business rules. Security-sensitive flows such as
 authentication, authorization, global promotion, and password reset require a
 negative-permission test before release.
-

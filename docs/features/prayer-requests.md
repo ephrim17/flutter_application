@@ -48,8 +48,7 @@ Others.
 | PRAY-08 | Attempt global action as member | UI omits action and backend rejects direct request. |
 | PRAY-09 | Edit promoted request | Linked global content and anonymity remain synchronized. |
 | PRAY-10 | Delete promoted request | Local and linked global documents disappear. |
-| PRAY-11 | Expiry boundary | Request remains through selected date and disappears afterward. |
+| PRAY-11 | Expiry boundary | Remaining days use calendar dates; the request remains through the selected date and disappears afterward. |
 | PRAY-12 | Long multilingual content/detail modal | Content scrolls; no bottom overflow or duplicate handles. |
 | PRAY-13 | Empty each scope | Common empty container/count/action is correct; no floating duplicate button. |
 | PRAY-14 | Drawer count | Unique local/global linked request is counted once. |
-

@@ -24,6 +24,10 @@ prayer reminders, feedback, local-data clearing and logout.
 - Feedback is written for super-admin review.
 - Clearing local data removes local preferences/cache but not server records.
 - Logout unsubscribes/clears the active session and returns to entry.
+- Shared loading states use a native progress indicator that remains stable on
+  Android and exposes localized loading semantics.
+- Android status and navigation bar icons follow the active surface brightness
+  so system controls remain legible in light and dark themes.
 
 ## Technical map
 
@@ -50,5 +54,6 @@ prayer reminders, feedback, local-data clearing and logout.
 | SETTINGS-06 | Submit feedback | One feedback record appears for super admin; double-submit is prevented. |
 | SETTINGS-07 | Clear local data | Confirmation appears; server profile/content remains intact. |
 | SETTINGS-08 | Logout and sign in again | No previous-church content flashes before re-resolution. |
-| NAV-05 | Large text/small phone | Labels, badges and settings sheets do not overflow. |
-
+| NAV-05 | Large text/small phone | Labels, membership dates, badges and settings sheets render cleanly without stray text or overflow. |
+| NAV-06 | Open screens with initial or paginated loading states | Progress indicator renders without animation/runtime exceptions. |
+| NAV-07 | Open light and dark screens on Android | Status/navigation icons contrast with the app surface. |

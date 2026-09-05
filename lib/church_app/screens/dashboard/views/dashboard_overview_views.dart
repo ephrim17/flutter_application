@@ -543,14 +543,12 @@ class _DashboardMemberStreakPanel extends StatelessWidget {
           caption: summary.membersWith7PlusCount == 0
               ? context.t('dashboard.no_strong_streak')
               : context.t(
-                  'dashboard.strong_streak_count',
+                  summary.membersWith7PlusCount == 1
+                      ? 'dashboard.strong_streak_count_singular'
+                      : 'dashboard.strong_streak_count',
                   parameters: {
                     'count': summary.membersWith7PlusCount,
-                    'memberLabel': context.t(
-                      summary.membersWith7PlusCount == 1
-                          ? 'dashboard.member_singular'
-                          : 'dashboard.member_plural',
-                    ),
+                    'memberLabel': context.t('dashboard.member_plural'),
                   },
                 ),
         ),

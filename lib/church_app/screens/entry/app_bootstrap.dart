@@ -1,6 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_system_ui_overlay.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
@@ -112,6 +113,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
 
     if (!_minimumSplashElapsed) {
       return MaterialApp(
+        builder: buildAppSystemUiOverlay,
         navigatorObservers: [analyticsObserver],
         onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
@@ -139,6 +141,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
 
     return configAsync.when(
       loading: () => MaterialApp(
+        builder: buildAppSystemUiOverlay,
         navigatorObservers: [analyticsObserver],
         onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
@@ -163,6 +166,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         ),
       ),
       error: (_, __) => MaterialApp(
+        builder: buildAppSystemUiOverlay,
         navigatorObservers: [analyticsObserver],
         onGenerateRoute: generateChurchAppRoute,
         themeMode: themeMode,
@@ -212,6 +216,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
             : PreflowColors.accent;
 
         return MaterialApp(
+          builder: buildAppSystemUiOverlay,
           navigatorObservers: [analyticsObserver],
           onGenerateRoute: generateChurchAppRoute,
           themeMode: themeMode,
@@ -286,6 +291,7 @@ ThemeData _buildTheme({
       backgroundColor: bgColor,
       elevation: 0,
       foregroundColor: textColor,
+      systemOverlayStyle: appSystemUiOverlayStyleFor(bgColor),
       titleTextStyle: GoogleFonts.inter(
         color: textColor,
         fontSize: 19,

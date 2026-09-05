@@ -17,6 +17,23 @@ void main() {
     );
   });
 
+  test('member since label uses the clean English default', () {
+    expect(defaultChurchTextContents['members.member_since_label'],
+        'Member Since');
+  });
+
+  test('dashboard streak copy uses singular grammar for one member', () {
+    final content = TextContent.fromMap(null);
+
+    expect(
+      content.get(
+        'dashboard.strong_streak_count_singular',
+        parameters: {'count': 1},
+      ),
+      '1 member has built a 7+ day rhythm.',
+    );
+  });
+
   test('literal translation keys used by the church app have defaults', () {
     final knownKeys = {
       ...preAuthDefaultTextContents.keys,

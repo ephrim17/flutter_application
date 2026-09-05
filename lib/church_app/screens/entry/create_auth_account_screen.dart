@@ -159,7 +159,8 @@ class _CreateAuthAccountScreenState
       return;
     }
 
-    ref.read(logginAccessLoadingProvider.notifier).state = true;
+    final loadingNotifier = ref.read(logginAccessLoadingProvider.notifier);
+    loadingNotifier.state = true;
     try {
       if (widget.adminCreateMode) {
         final temporaryPassword = _generateTemporaryPassword();
@@ -254,12 +255,12 @@ class _CreateAuthAccountScreenState
 
       await ChurchLocalStorage().clearChurch();
       await ChurchLocalStorage().clearSubscribedChurchTopic();
+      if (!mounted) return;
       ref.read(selectedChurchProvider.notifier).state = null;
       ref.invalidate(currentChurchIdProvider);
       ref.invalidate(appUserProvider);
       ref.invalidate(getCurrentUserProvider);
 
-      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AppEntry()),
         (route) => false,
@@ -270,7 +271,7 @@ class _CreateAuthAccountScreenState
         SnackBar(content: Text(mapFirebaseAuthError(error))),
       );
     } finally {
-      ref.read(logginAccessLoadingProvider.notifier).state = false;
+      loadingNotifier.state = false;
     }
   }
 

@@ -507,7 +507,7 @@ const Map<String, String> defaultChurchTextContents = {
   'members.marriage_solemnization_required':
       'Please choose the marriage solemnization church',
   'members.marriage_solemnization_title': 'Marriage Solemnization',
-  'members.member_since_label': 'Member SinceCCC',
+  'members.member_since_label': 'Member Since',
   'members.membership_current_status_label': 'Membership Current Status',
   'members.membership_notes_helper':
       'Optional church membership note for reference.',
@@ -1037,6 +1037,8 @@ const Map<String, String> defaultChurchTextContents = {
   'dashboard.no_strong_streak': 'No member has crossed a 7-day streak yet.',
   'dashboard.strong_streak_count':
       '{count} {memberLabel} have built a 7+ day rhythm.',
+  'dashboard.strong_streak_count_singular':
+      '{count} member has built a 7+ day rhythm.',
   'dashboard.member_singular': 'member',
   'dashboard.member_plural': 'members',
   'dashboard.current_streak_leader': 'Current streak leader',

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_application/church_app/helpers/app_text.dart';
 
 class AppLoadingIndicator extends StatelessWidget {
   const AppLoadingIndicator({
@@ -12,31 +11,23 @@ class AppLoadingIndicator extends StatelessWidget {
   final double size;
   final String? label;
 
-  static const assetPath = 'assets/lottie/app_loader.lottie';
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final labelText = label?.trim();
+    final semanticsLabel = labelText == null || labelText.isEmpty
+        ? context.t('common.loading')
+        : labelText;
 
     return Semantics(
-      label: labelText == null || labelText.isEmpty ? 'Loading' : labelText,
+      label: semanticsLabel,
       liveRegion: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox.square(
             dimension: size,
-            child: kIsWeb
-                ? _FallbackLoader(size: size)
-                : Lottie.asset(
-                    assetPath,
-                    repeat: true,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _FallbackLoader(size: size);
-                    },
-                  ),
+            child: _FallbackLoader(size: size),
           ),
           if (labelText != null && labelText.isNotEmpty) ...[
             const SizedBox(height: 8),

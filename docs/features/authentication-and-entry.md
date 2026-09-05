@@ -67,7 +67,7 @@ continues to use the Firebase action-link email flow.
 | ID | Scenario | Expected result |
 |---|---|---|
 | AUTH-01 | Fresh install | Onboarding appears once; completion persists after relaunch. |
-| AUTH-02 | Valid login for approved member | Correct selected church opens. |
+| AUTH-02 | Valid login for approved member | Correct selected church opens without an unmounted-provider lifecycle error. |
 | AUTH-03 | Wrong password/disabled user | Localized error; no membership data shown. |
 | AUTH-04 | Authenticated user without membership | Church selection opens. |
 | AUTH-05 | Pending membership | Pending screen opens; church content is inaccessible. |
@@ -86,4 +86,3 @@ continues to use the Firebase action-link email flow.
 Security integration tests should call the deployed/emulated endpoints directly
 for invalid method, malformed email/code, expired session, brute-force limit and
 token replay cases.
-

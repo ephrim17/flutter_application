@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class FcmNotificationService {

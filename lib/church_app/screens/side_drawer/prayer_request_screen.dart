@@ -680,8 +680,7 @@ class _PrayerRequestCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final daysLeft =
-        prayer.expiryDate.difference(DateTime.now()).inDays.clamp(0, 999);
+    final daysLeft = prayerDaysLeft(prayer.expiryDate);
 
     return Material(
       color: colors.surfaceContainerLowest,

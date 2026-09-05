@@ -100,14 +100,7 @@ class _PrayerForOthersCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final expiry = DateTime(
-      prayer.expiryDate.year,
-      prayer.expiryDate.month,
-      prayer.expiryDate.day,
-    );
-    final daysLeft = expiry.difference(today).inDays.clamp(0, 999);
+    final daysLeft = prayerDaysLeft(prayer.expiryDate);
 
     return Container(
       decoration: carouselBoxDecoration(context),

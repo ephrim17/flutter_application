@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:flutter_application/church_app/services/firestore/firestore_authentication.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

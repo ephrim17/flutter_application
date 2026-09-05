@@ -41,6 +41,5 @@ removed/replaced with the corresponding record lifecycle.
 | EQUIP-06 | Delete equipment | Confirmation appears; record and owned bill are removed. |
 | EQUIP-07 | Search/filter/sort | Combined controls return correct stable order and clear correctly. |
 | EQUIP-08 | Empty/loading/error | Useful state, no endless spinner and retry works. |
-| EQUIP-09 | Church switch | Inventory and count fully re-scope. |
+| EQUIP-09 | Church switch | Drawer count and dashboard inventory fully re-scope and agree even when the stream loaded before the screen opens. |
 | EQUIP-10 | Long values/small device | Cards, details and editor remain scrollable without overflow. |
-

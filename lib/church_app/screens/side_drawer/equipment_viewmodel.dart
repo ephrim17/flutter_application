@@ -6,6 +6,11 @@ import 'package:flutter_application/church_app/screens/side_drawer/equipment_vie
 import 'package:flutter_application/church_app/services/side_drawer/equipment_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+List<EquipmentItem> equipmentItemsFromSnapshot(
+  AsyncValue<List<EquipmentItem>> snapshot,
+) =>
+    snapshot.asData?.value ?? const <EquipmentItem>[];
+
 final equipmentItemsProvider =
     StreamProvider<List<EquipmentItem>>((ref) async* {
   final churchId = await ref.watch(currentChurchIdProvider.future);
@@ -30,6 +35,9 @@ class EquipmentViewModel extends Notifier<EquipmentViewState> {
     final church = ref.watch(selectedChurchProvider);
     final churchName =
         church?.name.trim().isNotEmpty == true ? church!.name.trim() : 'Church';
+    final initialItems = equipmentItemsFromSnapshot(
+      ref.read(equipmentItemsProvider),
+    );
 
     ref.listen<AsyncValue<List<EquipmentItem>>>(equipmentItemsProvider, (
       _,
@@ -43,7 +51,7 @@ class EquipmentViewModel extends Notifier<EquipmentViewState> {
     return EquipmentViewState.initial(
       isAdmin: isAdmin,
       churchName: churchName,
-      items: const <EquipmentItem>[],
+      items: initialItems,
     );
   }
 

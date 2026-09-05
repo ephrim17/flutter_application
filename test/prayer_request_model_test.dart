@@ -31,4 +31,26 @@ void main() {
       expect(prayer.toMap()['visibleToChurchMembers'], isTrue);
     });
   });
+
+  group('prayer expiry day boundary', () {
+    test('tomorrow remains one day away late in the current day', () {
+      expect(
+        prayerDaysLeft(
+          DateTime(2026, 8, 15),
+          now: DateTime(2026, 8, 14, 23, 59),
+        ),
+        1,
+      );
+    });
+
+    test('selected expiry remains active through that calendar day', () {
+      expect(
+        prayerDaysLeft(
+          DateTime(2026, 8, 15),
+          now: DateTime(2026, 8, 15, 23, 59),
+        ),
+        0,
+      );
+    });
+  });
 }

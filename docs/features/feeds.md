@@ -57,4 +57,4 @@ older content.
 | FEED-11 | Tap author/profile contact | One phone icon appears; confirmation precedes dialer/mail/maps. |
 | FEED-12 | Rapid action/double-tap/offline | No duplicates, stale menu or crash; error can be retried. |
 | FEED-13 | Church switch | No local posts from previous church; global posts remain global. |
-| FEED-14 | Open create/edit sheet | One shared small grab handle appears and no redundant Cancel button is shown. |
+| FEED-14 | Open create/edit sheet | The create control has an accessible label; the sheet has one shared small grab handle and no redundant Cancel button. |
