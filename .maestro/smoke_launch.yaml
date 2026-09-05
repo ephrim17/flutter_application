@@ -1,0 +1,5 @@
+appId: com.example.flutter_application
+---
+- launchApp:
+    clearState: false
+- takeScreenshot: 01_launch

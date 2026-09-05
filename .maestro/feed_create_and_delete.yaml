@@ -1,0 +1,37 @@
+appId: com.example.flutter_application
+---
+# QA-prefixed test post: creates a text-only feed post, then deletes it and
+# confirms removal. No lasting data change.
+#
+# Note: right after the search-filtered list rebuilds, a plain assertVisible
+# on the new post's text can flake (confirmed via screenshots: the pixel
+# output is correct while Maestro's UiAutomator semantics-tree dump
+# occasionally races the rebuild and returns a stale/empty snapshot). Tapping
+# "More" directly is used as the success signal instead, since it only exists
+# on the rendered card.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "Feeds"
+    timeout: 15000
+- tapOn: "Feeds"
+- tapOn: "Create Post"
+- waitForAnimationToEnd
+- tapOn: "Title"
+- inputText: "QA_MAESTRO_test post"
+- tapOn: "Description"
+- inputText: "Automated Maestro test post, safe to delete."
+- hideKeyboard
+- tapOn: "Post"
+- waitForAnimationToEnd
+- tapOn: "Search church posts or #tags"
+- inputText: "QA_MAESTRO"
+- hideKeyboard
+- waitForAnimationToEnd
+- takeScreenshot: feed_qa_post_created
+- tapOn: "More"
+- tapOn: "Delete post"
+- tapOn: "Delete"
+- waitForAnimationToEnd
+- assertNotVisible: "QA_MAESTRO_test post"
+- takeScreenshot: feed_qa_post_deleted

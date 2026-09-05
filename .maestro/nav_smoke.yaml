@@ -1,0 +1,103 @@
+appId: com.example.flutter_application
+---
+# Read-only navigation smoke test: visits every main tab and drawer item and
+# screenshots each. No data is created, edited or deleted.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "Feeds"
+    timeout: 15000
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+- takeScreenshot: nav_home
+
+- tapOn: "For You"
+- waitForAnimationToEnd
+- takeScreenshot: nav_for_you
+
+- tapOn: "Feeds"
+- waitForAnimationToEnd
+- takeScreenshot: nav_feeds
+
+- tapOn: "Go Further"
+- waitForAnimationToEnd
+- takeScreenshot: nav_go_further
+
+- tapOn: "Dashboard"
+- waitForAnimationToEnd
+- takeScreenshot: nav_dashboard
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "About"
+- waitForAnimationToEnd
+- takeScreenshot: nav_about
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Members"
+- waitForAnimationToEnd
+- takeScreenshot: nav_members
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Church Groups"
+- waitForAnimationToEnd
+- takeScreenshot: nav_church_groups
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Favorites"
+- waitForAnimationToEnd
+- takeScreenshot: nav_favorites
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Holy Bible"
+- waitForAnimationToEnd
+- takeScreenshot: nav_holy_bible
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Prayer Request"
+- waitForAnimationToEnd
+- takeScreenshot: nav_prayer_request
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Equipment"
+- waitForAnimationToEnd
+- takeScreenshot: nav_equipment
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Studio"
+- waitForAnimationToEnd
+- takeScreenshot: nav_studio
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- takeScreenshot: nav_settings
+- back
+- waitForAnimationToEnd
