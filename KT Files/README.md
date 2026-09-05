@@ -28,7 +28,7 @@ older flow.
 - [Android Release Readiness — 2026-08-13](testing/android-release-readiness-2026-08-13.md)
 - [Android App Stability — 2026-08-14](testing/android-app-stability-2026-08-14.md)
 - [Repository working rules](../AGENTS.md)
-- [Developer-oriented app guide](../APP_GUIDE.md)
+- [Developer-oriented app guide](./APP_GUIDE.md)
 
 ## Feature catalogue
 

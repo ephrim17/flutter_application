@@ -40,11 +40,11 @@ changing the app.
 
 ## Feature documentation
 
-- Product and engineering documentation lives in `docs/` and is indexed by
-  `docs/README.md`.
+- Product and engineering documentation lives in `KT Files/` and is indexed by
+  `KT Files/README.md`.
 - Every user-facing behaviour change must update the matching file under
-  `docs/features/` and its numbered test flows.
-- Cross-feature test policy and release gates live in `docs/testing/README.md`.
+  `KT Files/features/` and its numbered test flows.
+- Cross-feature test policy and release gates live in `KT Files/testing/README.md`.
 - Keep documentation aligned with actual role checks, feature flags, Firestore
   paths, Cloud Functions and dormant-feature status.
 

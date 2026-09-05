@@ -31,9 +31,13 @@ but not needed for routine changes — see README.md.)
 
 ## Documentation policy
 
+- The product/engineering handbook lives in `KT Files/` (index:
+  `KT Files/README.md`), covering system architecture, all 18 feature areas,
+  and testing/release status.
 - Every user-facing behavior change must update the matching file under
-  `docs/features/` and its numbered test flows, in the same change.
-- Cross-feature test policy and release gates live in `docs/testing/README.md`.
+  `KT Files/features/` and its numbered test flows, in the same change.
+- Cross-feature test policy and release gates live in
+  `KT Files/testing/README.md`.
 
 ## Cloud Functions
 

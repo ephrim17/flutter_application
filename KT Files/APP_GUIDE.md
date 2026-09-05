@@ -1,7 +1,7 @@
 # Church Tree App Guide
 
 > For product behaviour, one-document-per-feature specifications, QA flows and
-> release gates, use the [Product and Engineering Handbook](docs/README.md).
+> release gates, use the [Product and Engineering Handbook](README.md).
 > This file remains the compact repository orientation and durable developer
 > memory.
 
