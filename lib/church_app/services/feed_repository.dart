@@ -204,7 +204,7 @@ class FeedRepository {
         .child('churches/$scope/feeds/$postId/images/$index-$safeName');
   }
 
-  Future<void> createPost({
+  Future<FeedPost> createPost({
     String? churchId,
     required String userId,
     required String userName,
@@ -258,6 +258,7 @@ class FeedRepository {
     });
 
     // 2️⃣ Upload image if exists
+    var uploadedImageUrls = const <String>[];
     if (imageFiles.isNotEmpty) {
       final downloadUrls = <String>[];
       for (var index = 0; index < imageFiles.length; index++) {
@@ -279,6 +280,7 @@ class FeedRepository {
         'imageUrl': downloadUrls.first,
         'imageUrls': downloadUrls,
       });
+      uploadedImageUrls = downloadUrls;
     }
 
     if (!isGlobal && churchId != null && churchId.isNotEmpty) {
@@ -294,6 +296,36 @@ class FeedRepository {
         'createdAt': FieldValue.serverTimestamp(),
       });
     }
+
+    // The write above uses FieldValue.serverTimestamp() for createdAt, which
+    // stays unresolved in a freshly re-queried snapshot until the server
+    // round-trip completes — an immediate re-fetch can miss this document.
+    // Return the created post with a local timestamp so the caller can
+    // insert it optimistically instead of racing that re-fetch.
+    return FeedPost(
+      id: docRef.id,
+      userId: userId,
+      userName: userName,
+      userPhoto: userPhoto,
+      churchId: churchId,
+      churchName: churchName,
+      churchPastorName: churchPastorName,
+      sharePersonalDetails: sharePersonalDetails,
+      userCategory: sharePersonalDetails ? userCategory : null,
+      userAddress: sharePersonalDetails ? userAddress : null,
+      userEmail: sharePersonalDetails ? userEmail : null,
+      userPhone: sharePersonalDetails ? userPhone : null,
+      userDob: sharePersonalDetails ? userDob : null,
+      title: title,
+      description: description,
+      hashtags: extractHashtags('$title\n$description'),
+      isGlobal: isGlobal,
+      imageUrl: uploadedImageUrls.isNotEmpty ? uploadedImageUrls.first : null,
+      imageUrls: uploadedImageUrls,
+      createdAt: DateTime.now(),
+      likeCount: 0,
+      commentCount: 0,
+    );
   }
 
   Future<void> updatePost({

@@ -88,6 +88,15 @@ class FeedPaginationController extends StateNotifier<FeedPaginationState> {
     );
   }
 
+  void insertLocalPost(FeedPost post) {
+    state = state.copyWith(
+      posts: sortFeedPosts([
+        post,
+        ...state.posts.where((existing) => existing.id != post.id),
+      ]),
+    );
+  }
+
   void upsertPromotedPost({
     required FeedPost source,
     required String sourceChurchId,

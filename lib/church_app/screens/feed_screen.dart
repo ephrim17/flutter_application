@@ -419,7 +419,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     );
     if (!context.mounted) return;
 
-    await showAppModalBottomSheet(
+    final createdPost = await showAppModalBottomSheet<FeedPost?>(
       context: context,
       isScrollControlled: true,
       builder: (_) => FractionallySizedBox(
@@ -428,15 +428,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted || createdPost == null) return;
+
+    // Firestore's createdAt is written with FieldValue.serverTimestamp(),
+    // which stays unresolved in an immediate re-query, so a plain refresh()
+    // here can silently miss the post the user just created. Insert it
+    // locally instead; the next natural refresh reconciles with the server
+    // copy.
     if (isGlobal) {
-      await ref.read(globalFeedPaginationControllerProvider.notifier).refresh();
+      ref
+          .read(globalFeedPaginationControllerProvider.notifier)
+          .insertLocalPost(createdPost);
       return;
     }
 
-    await ref
+    ref
         .read(feedPaginationControllerProvider(churchId).notifier)
-        .refresh();
+        .insertLocalPost(createdPost);
   }
 
   Future<void> _refreshFeed(

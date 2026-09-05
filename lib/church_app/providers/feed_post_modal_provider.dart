@@ -25,7 +25,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
 
   FeedController(this._repository, this._ref) : super(const AsyncData(null));
 
-  Future<void> createPost({
+  Future<FeedPost?> createPost({
     required String title,
     required String description,
     List<PickedImageData> imageFiles = const [],
@@ -41,11 +41,12 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
 
     final user = userAsync.value;
 
-    if (user == null) return;
-    if (currentUid == null) return;
+    if (user == null) return null;
+    if (currentUid == null) return null;
 
     state = const AsyncLoading();
 
+    FeedPost? createdPost;
     state = await AsyncValue.guard(() async {
       Church? church;
       if (churchId != null) {
@@ -58,7 +59,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         }
       }
 
-      await _repository.createPost(
+      createdPost = await _repository.createPost(
         churchId: churchId,
         userId: currentUid,
         userName: user.name,
@@ -77,6 +78,7 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         isGlobal: isGlobal,
       );
     });
+    return createdPost;
   }
 
   Future<void> updatePost({

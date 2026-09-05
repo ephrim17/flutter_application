@@ -239,10 +239,11 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                           }
 
                           final navigator = Navigator.of(context);
+                          FeedPost? createdPost;
                           try {
                             if (widget.post == null) {
                               /// CREATE
-                              await ref
+                              createdPost = await ref
                                   .read(
                                       feedPostModalControllerProvider.notifier)
                                   .createPost(
@@ -296,7 +297,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                               );
                             }
 
-                            navigator.pop();
+                            navigator.pop(createdPost);
                           } on FeedEditWindowExpiredException {
                             messenger.showSnackBar(
                               SnackBar(
