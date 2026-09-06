@@ -51,8 +51,6 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
     } catch (e) {
       if (!mounted) return;
 
-      Navigator.of(context).pop();
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

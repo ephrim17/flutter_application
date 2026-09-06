@@ -68,4 +68,39 @@ void main() {
     expect(contentBottom, lessThanOrEqualTo(500));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'dismissing via system back does not throw with a focused field',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showAppModalBottomSheet<void>(
+                context: context,
+                builder: (_) => TextField(
+                  key: const ValueKey<String>('focused-field'),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('focused-field')));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, isTrue);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey<String>('focused-field')), findsNothing);
+  });
 }

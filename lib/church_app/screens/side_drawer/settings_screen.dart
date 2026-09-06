@@ -907,14 +907,10 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       await FirestorePaths.globalFeedbackCollection(firestore).add(feedback);
 
       if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final snackMessage = ref.t('settings.feedback_sent');
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.t('settings.feedback_sent'),
-          ),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(snackMessage)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1397,14 +1393,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       );
 
       if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final message = ref.t('settings.profile_updated');
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.t('settings.profile_updated'),
-          ),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {

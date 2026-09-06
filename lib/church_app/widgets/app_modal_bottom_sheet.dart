@@ -75,11 +75,29 @@ Future<T?> showAppModalBottomSheet<T>({
         );
       }
 
-      return AnimatedPadding(
+      final padded = AnimatedPadding(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
         child: sheet,
+      );
+
+      // Dismissing the sheet via the system back button/gesture while a
+      // descendant TextField still has focus can trigger a
+      // '_dependents.isEmpty' framework assertion: the route's Element tree
+      // starts unmounting before the focused field has a chance to
+      // relinquish its FocusNode. Unfocusing first lets that settle before
+      // the pop proceeds. This only intercepts back-button/gesture pops —
+      // direct Navigator.pop(context, ...) calls (Create/Cancel/Delete
+      // buttons) bypass PopScope entirely and are unaffected.
+      return PopScope<T>(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          FocusManager.instance.primaryFocus?.unfocus();
+          Navigator.of(context).pop(result);
+        },
+        child: padded,
       );
     },
   );

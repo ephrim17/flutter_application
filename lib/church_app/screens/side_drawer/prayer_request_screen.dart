@@ -1387,15 +1387,10 @@ class _AddPrayerModalState extends ConsumerState<AddPrayerModal> {
 
       if (!mounted) return;
 
+      final messenger = ScaffoldMessenger.of(context);
+      final message = context.t('prayer.saved_success');
       Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            context.t('prayer.saved_success'),
-          ),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -3006,7 +3006,9 @@ Future<void> _showAboutEditor(
       TextEditingController(text: (initialData['community'] ?? '') as String);
   final valuesController =
       TextEditingController(text: (initialData['values'] ?? '') as String);
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -3022,7 +3024,9 @@ Future<void> _showAboutEditor(
               MediaQuery.of(context).viewInsets.bottom + 16,
             ),
             child: SingleChildScrollView(
-              child: Column(
+              child: Form(
+                key: formKey,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -3030,11 +3034,22 @@ Future<void> _showAboutEditor(
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
+                  if (saveError != null) ...[
+                    Text(
+                      saveError!,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   AppTextField(
                     controller: churchAppTitleController,
                     decoration: InputDecoration(
                       labelText: context.t('studio.about_church_name'),
                     ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
@@ -3042,6 +3057,9 @@ Future<void> _showAboutEditor(
                     decoration: InputDecoration(
                       labelText: context.t('common.title'),
                     ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
@@ -3089,6 +3107,11 @@ Future<void> _showAboutEditor(
                       onPressed: isSaving
                           ? null
                           : () async {
+                              setState(() => saveError = null);
+                              if (!(formKey.currentState?.validate() ??
+                                  false)) {
+                                return;
+                              }
                               setState(() => isSaving = true);
                               try {
                                 await repository.updateAbout(
@@ -3103,14 +3126,18 @@ Future<void> _showAboutEditor(
                                   values: valuesController.text.trim(),
                                 );
                                 if (!context.mounted) return;
+                                final messenger =
+                                    ScaffoldMessenger.of(context);
+                                final message =
+                                    context.t('studio.about_updated');
                                 Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      context.t('studio.about_updated'),
-                                    ),
-                                  ),
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text(message)),
                                 );
+                              } catch (error) {
+                                if (context.mounted) {
+                                  setState(() => saveError = '$error');
+                                }
                               } finally {
                                 if (context.mounted) {
                                   setState(() => isSaving = false);
@@ -3127,6 +3154,7 @@ Future<void> _showAboutEditor(
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           );
@@ -3149,7 +3177,9 @@ Future<void> _showPastorEditor(
   final existingImageUrl = (data['imageUrl'] ?? '') as String;
   var setAsMain = (data['primary'] ?? false) as bool;
   PickedImageData? selectedImage;
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -3164,7 +3194,9 @@ Future<void> _showPastorEditor(
               16,
               MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            child: Column(
+            child: Form(
+              key: formKey,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3176,11 +3208,21 @@ Future<void> _showPastorEditor(
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
+                if (saveError != null) ...[
+                  Text(
+                    saveError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 AppTextField(
                   controller: titleController,
                   decoration: InputDecoration(
                     labelText: context.t('common.title'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -3188,6 +3230,9 @@ Future<void> _showPastorEditor(
                   decoration: InputDecoration(
                     labelText: context.t('studio.event_contact'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
@@ -3273,30 +3318,20 @@ Future<void> _showPastorEditor(
                     onPressed: isSaving
                         ? null
                         : () async {
-                            final title = titleController.text.trim();
-                            final contact = contactController.text.trim();
-                            if (title.isEmpty || contact.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t(
-                                        'ui.studio.please_add_pastor_photo_title_and_contact_b1fe'),
-                                  ),
-                                ),
-                              );
+                            setState(() => saveError = null);
+                            if (!(formKey.currentState?.validate() ??
+                                false)) {
                               return;
                             }
+                            final title = titleController.text.trim();
+                            final contact = contactController.text.trim();
                             if (doc == null &&
                                 selectedImage == null &&
                                 existingImageUrl.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t(
-                                        'ui.studio.please_add_pastor_photo_title_and_contact_b1fe'),
-                                  ),
-                                ),
-                              );
+                              setState(() {
+                                saveError = context.t(
+                                    'ui.studio.please_add_pastor_photo_title_and_contact_b1fe');
+                              });
                               return;
                             }
                             setState(() => isSaving = true);
@@ -3326,6 +3361,10 @@ Future<void> _showPastorEditor(
                               }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
+                            } catch (error) {
+                              if (context.mounted) {
+                                setState(() => saveError = '$error');
+                              }
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -3342,6 +3381,7 @@ Future<void> _showPastorEditor(
                   ),
                 ),
               ],
+              ),
             ),
           );
         },
@@ -3363,7 +3403,9 @@ Future<void> _showFooterContactEditor(
   final orderController = TextEditingController(text: '${data['order'] ?? 1}');
   var type = (data['type'] ?? 'phone') as String;
   var isActive = (data['isActive'] ?? true) as bool;
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -3378,7 +3420,9 @@ Future<void> _showFooterContactEditor(
               16,
               MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            child: Column(
+            child: Form(
+              key: formKey,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3393,6 +3437,13 @@ Future<void> _showFooterContactEditor(
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
+                if (saveError != null) ...[
+                  Text(
+                    saveError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 AppDropdownField<String>(
                   initialValue: type,
                   labelText: context.t('studio.footer_type_label'),
@@ -3418,6 +3469,9 @@ Future<void> _showFooterContactEditor(
                   decoration: InputDecoration(
                     labelText: context.t('studio.footer_label_label'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -3425,6 +3479,9 @@ Future<void> _showFooterContactEditor(
                   decoration: InputDecoration(
                     labelText: context.t('studio.footer_action_label'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -3446,6 +3503,11 @@ Future<void> _showFooterContactEditor(
                     onPressed: isSaving
                         ? null
                         : () async {
+                            setState(() => saveError = null);
+                            if (!(formKey.currentState?.validate() ??
+                                false)) {
+                              return;
+                            }
                             setState(() => isSaving = true);
                             final payload = {
                               'label': labelController.text.trim(),
@@ -3466,6 +3528,10 @@ Future<void> _showFooterContactEditor(
                               }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
+                            } catch (error) {
+                              if (context.mounted) {
+                                setState(() => saveError = '$error');
+                              }
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -3482,6 +3548,7 @@ Future<void> _showFooterContactEditor(
                   ),
                 ),
               ],
+              ),
             ),
           );
         },
@@ -3504,7 +3571,9 @@ Future<void> _showFooterSocialEditor(
       TextEditingController(text: (data['url'] ?? '') as String);
   final orderController = TextEditingController(text: '${data['order'] ?? 1}');
   var isActive = (data['isActive'] ?? true) as bool;
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -3519,7 +3588,9 @@ Future<void> _showFooterSocialEditor(
               16,
               MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            child: Column(
+            child: Form(
+              key: formKey,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3534,6 +3605,13 @@ Future<void> _showFooterSocialEditor(
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
+                if (saveError != null) ...[
+                  Text(
+                    saveError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 AppTextField(
                   controller: iconController,
                   decoration: InputDecoration(
@@ -3546,6 +3624,9 @@ Future<void> _showFooterSocialEditor(
                   decoration: InputDecoration(
                     labelText: context.t('studio.footer_platform_label'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -3553,6 +3634,9 @@ Future<void> _showFooterSocialEditor(
                   decoration: InputDecoration(
                     labelText: context.t('studio.footer_url_label'),
                   ),
+                  validator: (value) => value?.trim().isEmpty ?? true
+                      ? context.t('faith.field_required')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
@@ -3574,6 +3658,11 @@ Future<void> _showFooterSocialEditor(
                     onPressed: isSaving
                         ? null
                         : () async {
+                            setState(() => saveError = null);
+                            if (!(formKey.currentState?.validate() ??
+                                false)) {
+                              return;
+                            }
                             setState(() => isSaving = true);
                             final payload = {
                               'icon': iconController.text.trim(),
@@ -3594,6 +3683,10 @@ Future<void> _showFooterSocialEditor(
                               }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
+                            } catch (error) {
+                              if (context.mounted) {
+                                setState(() => saveError = '$error');
+                              }
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -3610,6 +3703,7 @@ Future<void> _showFooterSocialEditor(
                   ),
                 ),
               ],
+              ),
             ),
           );
         },
@@ -3643,39 +3737,59 @@ Future<void> _showEventEditor(
   bool repeatsWeekly = data['isRecurring'] == true &&
       (data['recurrenceFrequency'] ?? '') == 'weekly';
   DateTime? expiryAt = (data['expiryAt'] as Timestamp?)?.toDate();
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    heightFactor: 0.94,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
           return Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    context.t(
-                      doc == null ? 'studio.event_create' : 'studio.event_edit',
-                      fallback: doc == null ? 'Create event' : 'Edit event',
-                    ),
-                    style: Theme.of(context).textTheme.titleLarge,
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+            child: Column(
+              children: [
+                Text(
+                  context.t(
+                    doc == null ? 'studio.event_create' : 'studio.event_edit',
+                    fallback: doc == null ? 'Create event' : 'Edit event',
                   ),
-                  const SizedBox(height: 16),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                  if (saveError != null) ...[
+                    Text(
+                      saveError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   AppTextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: context.t('common.title'),
                     ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
@@ -3883,24 +3997,32 @@ Future<void> _showEventEditor(
                         ),
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  FilledButton(
+                      ],
+                    ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
                     onPressed: isSaving
                         ? null
                         : () async {
+                            setState(() => saveError = null);
+                            if (!(formKey.currentState?.validate() ??
+                                false)) {
+                              return;
+                            }
+                            if (repeatsWeekly && startAt == null) {
+                              setState(
+                                () => saveError = context.t(
+                                    'ui.studio.choose_the_first_event_timing_before_enabling_weekly_re'),
+                              );
+                              return;
+                            }
                             setState(() => isSaving = true);
                             try {
-                              if (repeatsWeekly && startAt == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      context.t(
-                                          'ui.studio.choose_the_first_event_timing_before_enabling_weekly_re'),
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
 
                               final recurringExpiryAt =
                                   repeatsWeekly && startAt != null
@@ -3941,6 +4063,10 @@ Future<void> _showEventEditor(
                                 await repository.updateEvent(doc.id, payload);
                               }
                               if (context.mounted) Navigator.pop(context);
+                            } catch (error) {
+                              if (context.mounted) {
+                                setState(() => saveError = '$error');
+                              }
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -3960,8 +4086,8 @@ Future<void> _showEventEditor(
                             ),
                           ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -4306,65 +4432,106 @@ Future<void> _showArticleEditor(
       TextEditingController(text: (data['description'] ?? '') as String);
   final contentController =
       TextEditingController(text: (data['content'] ?? '') as String);
+  final formKey = GlobalKey<FormState>();
   var isSaving = false;
+  String? saveError;
 
   return showAppModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    heightFactor: 0.94,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
           return Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    context.t(
-                      doc == null
-                          ? 'studio.article_create'
-                          : 'studio.article_edit',
-                      fallback: doc == null ? 'Create article' : 'Edit article',
-                    ),
-                    style: Theme.of(context).textTheme.titleLarge,
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+            child: Column(
+              children: [
+                Text(
+                  context.t(
+                    doc == null
+                        ? 'studio.article_create'
+                        : 'studio.article_edit',
+                    fallback: doc == null ? 'Create article' : 'Edit article',
                   ),
-                  const SizedBox(height: 16),
-                  AppTextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.title'),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (saveError != null) ...[
+                            Text(
+                              saveError!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          AppTextField(
+                            controller: titleController,
+                            decoration: InputDecoration(
+                              labelText: context.t('common.title'),
+                            ),
+                            validator: (value) =>
+                                value?.trim().isEmpty ?? true
+                                    ? context.t('faith.field_required')
+                                    : null,
+                          ),
+                          const SizedBox(height: 18),
+                          AppTextField(
+                            controller: descriptionController,
+                            decoration: InputDecoration(
+                              labelText: context.t('common.description'),
+                            ),
+                            keyboardType: TextInputType.multiline,
+                            maxLines: 3,
+                            validator: (value) =>
+                                value?.trim().isEmpty ?? true
+                                    ? context.t('faith.field_required')
+                                    : null,
+                          ),
+                          const SizedBox(height: 18),
+                          AppTextField(
+                            controller: contentController,
+                            decoration: InputDecoration(
+                              labelText: context.t('common.content'),
+                            ),
+                            keyboardType: TextInputType.multiline,
+                            maxLines: 8,
+                            validator: (value) =>
+                                value?.trim().isEmpty ?? true
+                                    ? context.t('faith.field_required')
+                                    : null,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  AppTextField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.description'),
-                    ),
-                    keyboardType: TextInputType.multiline,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 18),
-                  AppTextField(
-                    controller: contentController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.content'),
-                    ),
-                    keyboardType: TextInputType.multiline,
-                    maxLines: 8,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
                     onPressed: isSaving
                         ? null
                         : () async {
+                            setState(() => saveError = null);
+                            if (!(formKey.currentState?.validate() ??
+                                false)) {
+                              return;
+                            }
                             setState(() => isSaving = true);
                             try {
                               final payload = {
@@ -4379,6 +4546,10 @@ Future<void> _showArticleEditor(
                                 await repository.updateArticle(doc.id, payload);
                               }
                               if (context.mounted) Navigator.pop(context);
+                            } catch (error) {
+                              if (context.mounted) {
+                                setState(() => saveError = '$error');
+                              }
                             } finally {
                               if (context.mounted) {
                                 setState(() => isSaving = false);
@@ -4398,8 +4569,8 @@ Future<void> _showArticleEditor(
                             ),
                           ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

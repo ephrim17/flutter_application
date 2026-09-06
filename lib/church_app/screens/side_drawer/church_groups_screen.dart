@@ -149,20 +149,16 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
               onAddMember: (member) async {
                 await _addMemberToGroup(member, group);
                 if (!context.mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                final message = context
+                    .t(
+                      'groups.member_added',
+                      fallback: '{member} added to {group}',
+                    )
+                    .replaceAll('{member}', member.name)
+                    .replaceAll('{group}', group.label);
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      context
-                          .t(
-                            'groups.member_added',
-                            fallback: '{member} added to {group}',
-                          )
-                          .replaceAll('{member}', member.name)
-                          .replaceAll('{group}', group.label),
-                    ),
-                  ),
-                );
+                messenger.showSnackBar(SnackBar(content: Text(message)));
               },
             ),
           ),
