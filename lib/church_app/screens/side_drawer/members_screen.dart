@@ -122,7 +122,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                       height: 54,
                       decoration: BoxDecoration(
                         color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(cornerRadius),
                         border: Border.all(
                           color:
                               theme.colorScheme.primary.withValues(alpha: 0.08),
@@ -168,15 +168,15 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                                   icon: const Icon(Icons.close_rounded),
                                 ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(cornerRadius),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(cornerRadius),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(cornerRadius),
                             borderSide: BorderSide(
                               color: theme.colorScheme.primary
                                   .withValues(alpha: 0.35),

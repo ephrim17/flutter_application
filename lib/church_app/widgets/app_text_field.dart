@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 
 enum AppTextFieldVariant {
   standard,
@@ -38,11 +39,11 @@ InputDecoration appTextFieldDecoration(
       ? theme.colorScheme.onSurface.withAlpha(0x26)
       : const Color(0xFFE0D6FB);
   final primary = theme.colorScheme.primary;
-  const fieldRadius = Radius.circular(28);
+  final fieldRadius = Radius.circular(cornerRadius);
 
   OutlineInputBorder outline(Color color, double width) {
     return OutlineInputBorder(
-      borderRadius: const BorderRadius.all(fieldRadius),
+      borderRadius: BorderRadius.all(fieldRadius),
       borderSide: BorderSide(color: color, width: width),
     );
   }
@@ -217,7 +218,7 @@ class AppTextField extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(cornerRadius),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.primary.withAlpha(10),
@@ -259,7 +260,7 @@ class AppDropdownField<T> extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(cornerRadius),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.primary.withAlpha(10),

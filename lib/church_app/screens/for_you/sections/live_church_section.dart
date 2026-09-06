@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/live_church_model.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
@@ -77,7 +78,8 @@ class _LiveChurchCardState extends State<_LiveChurchCard> {
   Widget _buildCard(BuildContext context, Widget videoContent) {
     final theme = Theme.of(context);
     final title = widget.status.title.trim();
-    return Card(
+    return Container(
+      decoration: carouselBoxDecoration(context),
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: Column(

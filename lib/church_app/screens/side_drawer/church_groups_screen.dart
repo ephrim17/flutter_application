@@ -17,6 +17,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChurchGroupsScreen extends ConsumerStatefulWidget {
@@ -499,7 +500,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
+          AppTextField(
             controller: _searchController,
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
@@ -798,7 +799,7 @@ class _GroupPickerSheetState extends State<_GroupPickerSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
+          AppTextField(
             controller: _searchController,
             onChanged: (value) => setState(() => _query = value.trim()),
             decoration: InputDecoration(

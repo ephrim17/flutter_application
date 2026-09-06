@@ -86,7 +86,7 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
               height: 54,
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(cornerRadius),
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.08),
                 ),
@@ -132,15 +132,15 @@ class _GoFurtherScreenState extends ConsumerState<GoFurtherScreen> {
                           icon: const Icon(Icons.close_rounded),
                         ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(cornerRadius),
                     borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(cornerRadius),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(cornerRadius),
                     borderSide: BorderSide(
                       color: theme.colorScheme.primary.withValues(alpha: 0.35),
                       width: 1.2,
@@ -845,7 +845,7 @@ class _EditorField extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(cornerRadius),
           ),
         ),
       ),

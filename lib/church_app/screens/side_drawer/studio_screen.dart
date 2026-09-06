@@ -2578,7 +2578,7 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
                 ),
               ),
               const SizedBox(height: 20),
-              TextFormField(
+              AppTextField(
                 controller: _channelController,
                 decoration: InputDecoration(
                   labelText: context.t('ui.studio.youtube_channel_id'),

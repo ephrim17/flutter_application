@@ -636,7 +636,6 @@ Future<DashboardFamilyBucket?> _showFamilyDirectorySheet(
                   ),
                   const SizedBox(height: 12),
                   AppTextField(
-                    variant: AppTextFieldVariant.search,
                     onChanged: (value) {
                       setModalState(() {
                         query = value;

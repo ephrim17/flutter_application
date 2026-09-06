@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -502,10 +503,9 @@ class _FeedSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-      child: TextField(
+      child: AppTextField(
         controller: controller,
         textInputAction: TextInputAction.search,
         onChanged: onChanged,
@@ -519,22 +519,6 @@ class _FeedSearchField extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded),
                   onPressed: onClear,
                 ),
-          filled: true,
-          fillColor: theme.colorScheme.surface,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline.withValues(alpha: 0.24),
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline.withValues(alpha: 0.24),
-            ),
-          ),
         ),
       ),
     );

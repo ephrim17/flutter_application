@@ -317,15 +317,18 @@ class _FinancialDashboardScreenState
                                       icon: const Icon(Icons.close_rounded),
                                     ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius:
+                                    BorderRadius.circular(cornerRadius),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius:
+                                    BorderRadius.circular(cornerRadius),
                                 borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius:
+                                    BorderRadius.circular(cornerRadius),
                                 borderSide: BorderSide(
                                   color: theme.colorScheme.primary
                                       .withValues(alpha: 0.35),
@@ -2981,7 +2984,7 @@ class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
                 hintText: context.t('ui.financial_dashboard.search_members'),
                 prefixIcon: const Icon(Icons.search_rounded),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(cornerRadius),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,

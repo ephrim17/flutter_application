@@ -940,99 +940,91 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.favorite_rounded,
-              color: Colors.redAccent,
-              size: 76,
-            ),
-            const SizedBox(height: 28),
-            Text(
-              ref.t('settings.feedback_sheet_title'),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: theme.colorScheme.onSurface,
+        child: Container(
+          decoration: carouselBoxDecoration(context),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.favorite_rounded,
+                color: Colors.redAccent,
+                size: 76,
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              ref.t('settings.feedback_sheet_subtitle'),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 30),
-            TextField(
-              controller: _controller,
-              minLines: 5,
-              maxLines: 7,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: ref.t('settings.feedback_hint'),
-                filled: true,
-                fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+              const SizedBox(height: 28),
+              Text(
+                ref.t('settings.feedback_sheet_title'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: theme.colorScheme.onSurface,
                 ),
-                contentPadding: const EdgeInsets.all(22),
               ),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: FilledButton(
-                onPressed: canSend ? _send : null,
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  disabledBackgroundColor:
-                      theme.colorScheme.onSurface.withValues(alpha: 0.34),
-                  disabledForegroundColor:
-                      theme.colorScheme.surface.withValues(alpha: 0.92),
-                ),
-                child: _isSending
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(
-                        ref.t('common.send'),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: canSend
-                              ? theme.colorScheme.onPrimary
-                              : theme.colorScheme.surface
-                                  .withValues(alpha: 0.92),
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: _isSending ? null : () => Navigator.of(context).pop(),
-              child: Text(
-                ref.t('settings.not_now'),
+              const SizedBox(height: 16),
+              Text(
+                ref.t('settings.feedback_sheet_subtitle'),
+                textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+                  height: 1.4,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+              AppTextField(
+                controller: _controller,
+                minLines: 5,
+                maxLines: 7,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: ref.t('settings.feedback_hint'),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 58,
+                child: FilledButton(
+                  onPressed: canSend ? _send : null,
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    disabledBackgroundColor:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.34),
+                    disabledForegroundColor:
+                        theme.colorScheme.surface.withValues(alpha: 0.92),
+                  ),
+                  child: _isSending
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          ref.t('common.send'),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: canSend
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.surface
+                                    .withValues(alpha: 0.92),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: _isSending ? null : () => Navigator.of(context).pop(),
+                child: Text(
+                  ref.t('settings.not_now'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1420,33 +1412,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: welcomeBackCardDecoration(context),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ref.t('settings.edit_profile_title'),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    ref.t('settings.edit_profile_sheet_subtitle'),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimary
-                              .withValues(alpha: 0.88),
-                        ),
-                  ),
-                ],
-              ),
-            ),
+            
             const SizedBox(height: 16),
             Center(
               child: Column(
