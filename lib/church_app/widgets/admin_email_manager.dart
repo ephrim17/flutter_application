@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 class AdminEmailManager extends StatefulWidget {
@@ -107,30 +108,17 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
     }
 
     final email = _admins[index];
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.person_remove_outlined),
-        title: Text(context.t('studio.admin_remove_title')),
-        content: Text(
-          context.t(
-            'studio.admin_remove_message',
-            parameters: {'email': email},
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(context.t('common.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(context.t('studio.admin_remove_action')),
-          ),
-        ],
+      title: context.t('studio.admin_remove_title'),
+      message: context.t(
+        'studio.admin_remove_message',
+        parameters: {'email': email},
       ),
+      confirmLabel: context.t('studio.admin_remove_action'),
+      isDestructive: true,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final nextAdmins = List<String>.from(_admins)..removeAt(index);
     await _persist(nextAdmins);

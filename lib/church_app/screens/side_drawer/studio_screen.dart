@@ -1763,6 +1763,7 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                           final verse = entry.value;
                           final parsed = BibleSwipeVerseModel.tryParse(verse);
                           return Container(
+                            key: ValueKey<String>('$verse-$index'),
                             decoration: carouselBoxDecoration(context),
                             margin: const EdgeInsets.only(bottom: 12),
                             child: ListTile(
@@ -1798,6 +1799,15 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline),
                                     onPressed: () async {
+                                      final confirmed =
+                                          await showAppConfirmDialog(
+                                        context: context,
+                                        title: context.t('studio.delete_title'),
+                                        message:
+                                            '${context.t('studio.delete_confirm_remove_prefix')} "$verse"?',
+                                        isDestructive: true,
+                                      );
+                                      if (!confirmed) return;
                                       final updated = [...verses]
                                         ..removeAt(index);
                                       await repository.updateBibleSwipeVerses(
@@ -1979,6 +1989,7 @@ class _FooterCollectionCard extends StatelessWidget {
                   else
                     ...docs.map(
                       (doc) => Container(
+                        key: ValueKey<String>(doc.id),
                         decoration: carouselBoxDecoration(context),
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
@@ -1995,7 +2006,16 @@ class _FooterCollectionCard extends StatelessWidget {
                               IconButton(
                                 icon: const Icon(Icons.delete_outline),
                                 onPressed: () async {
-                                  await onDelete(doc);
+                                  final confirmed = await showAppConfirmDialog(
+                                    context: context,
+                                    title: context.t('studio.delete_title'),
+                                    message:
+                                        '${context.t('studio.delete_confirm_remove_prefix')} "${tileTitle(doc.data())}"?',
+                                    isDestructive: true,
+                                  );
+                                  if (confirmed) {
+                                    await onDelete(doc);
+                                  }
                                 },
                               ),
                             ],
