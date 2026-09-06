@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/bible_swipe_verse_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
+import 'package:flutter_application/church_app/models/footer_support_models/social_icon_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -1887,7 +1888,8 @@ class _FooterEditor extends StatelessWidget {
           stream: repository.watchSocialItems(),
           addLabel: context.t('studio.footer_social_add'),
           emptyText: context.t('studio.footer_social_empty'),
-          tileTitle: (data) => (data['icon'] ?? '') as String,
+          tileTitle: (data) =>
+              SocialPlatform.fromStored(data['icon'] as String?).label,
           tileSubtitle: (data) {
             final parts = <String>[
               if ((data['platform'] ?? '').toString().isNotEmpty)
@@ -3563,8 +3565,7 @@ Future<void> _showFooterSocialEditor(
   QueryDocumentSnapshot<Map<String, dynamic>>? doc,
 }) {
   final data = doc?.data() ?? <String, dynamic>{};
-  final iconController =
-      TextEditingController(text: (data['icon'] ?? '') as String);
+  var selectedIcon = SocialPlatform.fromStored(data['icon'] as String?);
   final platformController =
       TextEditingController(text: (data['platform'] ?? '') as String);
   final urlController =
@@ -3612,10 +3613,26 @@ Future<void> _showFooterSocialEditor(
                   ),
                   const SizedBox(height: 12),
                 ],
-                AppTextField(
-                  controller: iconController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_icon_label'),
+                AppDropdownField<SocialPlatform>(
+                  labelText: context.t('studio.footer_icon_label'),
+                  initialValue: selectedIcon,
+                  items: SocialPlatform.values
+                      .map(
+                        (platform) => DropdownMenuItem<SocialPlatform>(
+                          value: platform,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(platform.icon, size: 20),
+                              const SizedBox(width: 10),
+                              Text(platform.label),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(
+                    () => selectedIcon = value ?? SocialPlatform.others,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -3665,7 +3682,7 @@ Future<void> _showFooterSocialEditor(
                             }
                             setState(() => isSaving = true);
                             final payload = {
-                              'icon': iconController.text.trim(),
+                              'icon': selectedIcon.storedValue,
                               'platform': platformController.text.trim(),
                               'url': urlController.text.trim(),
                               'order':

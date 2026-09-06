@@ -5,6 +5,10 @@ import 'package:flutter_application/church_app/providers/footer/footer_provider.
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+extension _SocialIconModelPlatform on SocialIconModel {
+  SocialPlatform get platform => SocialPlatform.fromStored(icon);
+}
+
 class FooterSocialIconsWidget extends ConsumerWidget {
   const FooterSocialIconsWidget({super.key});
 
@@ -54,10 +58,10 @@ class FooterSocialIconsWidget extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _socialIconType(item.icon),
+                      Icon(item.platform.icon),
                       const SizedBox(height: 8),
                       Text(
-                        item.icon,
+                        item.platform.label,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -68,16 +72,5 @@ class FooterSocialIconsWidget extends ConsumerWidget {
         ),
       ],
     );
-  }
-}
-
-Icon _socialIconType(String type) {
-  switch (type) {
-    case 'Facebook':
-      return const Icon(Icons.facebook);
-    case 'Youtube':
-      return const Icon(Icons.play_arrow);
-    default:
-      return const Icon(Icons.link);
   }
 }
