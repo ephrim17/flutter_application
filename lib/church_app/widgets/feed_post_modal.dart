@@ -312,6 +312,12 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                             );
                           }
                         },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                   child: state.isLoading
                       ? const SizedBox(
                           height: 18,

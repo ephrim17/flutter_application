@@ -20,7 +20,7 @@ import 'package:flutter_application/church_app/services/side_drawer/bible_book_r
 import 'package:flutter_application/church_app/services/faith_engagement_repository.dart';
 import 'package:flutter_application/church_app/services/studio/studio_repository.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/faith_engagement_studio_screen.dart';
-import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/admin_email_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -931,6 +931,7 @@ class _CollectionEditor extends StatelessWidget {
             final subtitle = tileSubtitle(data);
 
             return Container(
+              key: ValueKey<String>(doc.id),
               decoration: carouselBoxDecoration(context),
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
@@ -958,28 +959,16 @@ class _CollectionEditor extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
-                        final confirmed = await showDialog<bool>(
+                        final confirmed = await showAppConfirmDialog(
                           context: context,
-                          builder: (context) => AlertDialog(
-                            title: AppBarTitle(
-                              text: context.t('studio.delete_title'),
-                            ),
-                            content: Text(
+                          title: context.t('studio.delete_title'),
+                          message:
                               '${context.t('studio.delete_confirm_remove_prefix')} "${tileTitle(data)}"?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text(context.t('settings.cancel')),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: Text(context.t('common.delete')),
-                              ),
-                            ],
-                          ),
+                          cancelLabel: context.t('settings.cancel'),
+                          confirmLabel: context.t('common.delete'),
+                          isDestructive: true,
                         );
-                        if (confirmed == true) {
+                        if (confirmed) {
                           if (!context.mounted) return;
                           await _runWithBlockingLoader(
                             context,

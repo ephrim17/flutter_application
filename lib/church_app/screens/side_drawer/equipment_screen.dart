@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -690,28 +691,17 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
 
   Future<void> _deleteEquipment(
       BuildContext context, EquipmentItem item) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.t('ui.equipment.delete_equipment_2c00')),
-        content: Text(
-          context
-              .t('equipment.delete_message', parameters: {'name': item.name}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(context.t('ui.equipment.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t('ui.equipment.delete')),
-          ),
-        ],
-      ),
+      title: context.t('ui.equipment.delete_equipment_2c00'),
+      message: context
+          .t('equipment.delete_message', parameters: {'name': item.name}),
+      cancelLabel: context.t('ui.equipment.cancel'),
+      confirmLabel: context.t('ui.equipment.delete'),
+      isDestructive: true,
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     try {
       await ref.read(equipmentViewModelProvider.notifier).deleteEquipment(item);
     } catch (error) {
