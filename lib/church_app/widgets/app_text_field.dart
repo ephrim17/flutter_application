@@ -152,6 +152,7 @@ class AppTextField extends StatelessWidget {
       helperMaxLines: decoration?.helperMaxLines,
       errorText: decoration?.errorText,
       errorStyle: decoration?.errorStyle,
+      errorMaxLines: decoration?.errorMaxLines,
       counterText: decoration?.counterText,
       contentPadding:
           decoration?.contentPadding ?? baseDecoration.contentPadding,

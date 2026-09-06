@@ -204,6 +204,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
                         parameters: {'count': '${widget.maxAdminCount}'},
                       )
                     : null),
+            errorMaxLines: 3,
           ),
         ),
         const SizedBox(height: 12),
