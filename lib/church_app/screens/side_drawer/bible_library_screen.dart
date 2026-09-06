@@ -188,6 +188,9 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
     BibleVersion version,
     _BibleVersionDownloadState state,
   ) {
+    // Uses a plain dialog rather than showAppConfirmDialog because the
+    // caller distinguishes an explicit "continue with current" (false) from
+    // the dialog being dismissed without a choice (null).
     return showDialog<bool>(
       context: context,
       builder: (context) {
@@ -208,6 +211,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
               child: Text(context.t('ui.bible_library.continue_current')),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: Size.zero),
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(context.t('ui.bible_library.update_now')),
             ),

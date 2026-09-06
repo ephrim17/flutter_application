@@ -5,6 +5,7 @@ import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/learning_module_models.dart';
 import 'package:flutter_application/church_app/screens/super_admin/learning_modules_admin_screen.dart';
 import 'package:flutter_application/church_app/services/learning_module_repository.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 
@@ -342,28 +343,18 @@ class _SetupBody extends StatelessWidget {
   }
 }
 
-Future<bool?> _confirm(
+Future<bool> _confirm(
   BuildContext context, {
   required String title,
   required String message,
   required String action,
 }) =>
-    showDialog<bool>(
+    showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(context.t('common.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(action),
-          ),
-        ],
-      ),
+      title: title,
+      message: message,
+      confirmLabel: action,
+      isDestructive: true,
     );
 
 class _GlobalModuleTile extends StatelessWidget {

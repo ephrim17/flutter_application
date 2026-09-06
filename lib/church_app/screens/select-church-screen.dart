@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/app_assets.dart';
@@ -100,32 +101,13 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   }
 
   Future<bool> _showRequestAccessPrompt(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(
-              context.t('auth.user_not_found_title'),
-            ),
-            content: Text(
-              context.t('auth.no_account_found_request_access'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(
-                  context.t('settings.cancel'),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(
-                  context.t('auth.request_access'),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return showAppConfirmDialog(
+      context: context,
+      title: context.t('auth.user_not_found_title'),
+      message: context.t('auth.no_account_found_request_access'),
+      cancelLabel: context.t('settings.cancel'),
+      confirmLabel: context.t('auth.request_access'),
+    );
   }
 
   Future<void> _handleContinue(

@@ -15,6 +15,7 @@ Future<bool> showAppConfirmDialog({
   String? confirmLabel,
   String? cancelLabel,
   bool isDestructive = false,
+  IconData? icon,
 }) async {
   final theme = Theme.of(context);
   final compactStyle = FilledButton.styleFrom(
@@ -27,6 +28,7 @@ Future<bool> showAppConfirmDialog({
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
+      icon: icon == null ? null : Icon(icon),
       title: Text(title),
       content: Text(message),
       actions: [

@@ -19,6 +19,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_path
 import 'package:flutter_application/church_app/services/learning_module_repository.dart';
 import 'package:flutter_application/church_app/services/super_admin/super_admin_church_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
@@ -848,34 +849,17 @@ Future<bool?> _confirmDeleteFeedback(
   final userName = (data['userName'] ?? '').toString().trim();
   final message = (data['message'] ?? '').toString().trim();
 
-  return showDialog<bool>(
+  return showAppConfirmDialog(
     context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(context.t('ui.super_admin_home.delete_feedback')),
-        content: Text(
-          [
-            if (userName.isNotEmpty) 'From: $userName',
-            if (message.isNotEmpty) message,
-            'This cannot be undone.',
-          ].join('\n\n'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(context.t('ui.super_admin_home.cancel')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t('ui.super_admin_home.delete')),
-          ),
-        ],
-      );
-    },
+    title: context.t('ui.super_admin_home.delete_feedback'),
+    message: [
+      if (userName.isNotEmpty) 'From: $userName',
+      if (message.isNotEmpty) message,
+      'This cannot be undone.',
+    ].join('\n\n'),
+    cancelLabel: context.t('ui.super_admin_home.cancel'),
+    confirmLabel: context.t('ui.super_admin_home.delete'),
+    isDestructive: true,
   );
 }
 

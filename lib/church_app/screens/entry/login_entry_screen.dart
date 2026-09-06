@@ -22,6 +22,7 @@ import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -63,32 +64,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<bool> _showRegisterPrompt(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(
-              context.t('auth.user_not_found_title'),
-            ),
-            content: Text(
-              context.t('auth.user_not_found_message'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(
-                  context.t('settings.cancel'),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(
-                  context.t('auth.register'),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return showAppConfirmDialog(
+      context: context,
+      title: context.t('auth.user_not_found_title'),
+      message: context.t('auth.user_not_found_message'),
+      cancelLabel: context.t('settings.cancel'),
+      confirmLabel: context.t('auth.register'),
+    );
   }
 
   Future<bool> _churchUserExistsByEmail(

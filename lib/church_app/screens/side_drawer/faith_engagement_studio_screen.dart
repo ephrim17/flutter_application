@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/services/faith_engagement_repository.dart';
@@ -183,24 +184,13 @@ class _FaithContentList extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context, String id) async {
     final messenger = ScaffoldMessenger.of(context);
     final failureMessage = context.t('faith.delete_failed');
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.t('faith.delete_title')),
-        content: Text(context.t('faith.delete_message')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(context.t('common.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(context.t('common.delete')),
-          ),
-        ],
-      ),
+      title: context.t('faith.delete_title'),
+      message: context.t('faith.delete_message'),
+      isDestructive: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     try {
       switch (type) {
         case _FaithContentType.circle:

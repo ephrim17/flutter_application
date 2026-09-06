@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
@@ -394,34 +395,16 @@ class FeedCard extends ConsumerWidget {
 
   Future<void> _confirmAndDeletePost(
       BuildContext context, WidgetRef ref) async {
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          ref.t('feed.delete_confirm_title'),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        content: Text(
-          ref.t('feed.delete_confirm_message'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(
-              ref.t('settings.cancel'),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-              ref.t('common.delete'),
-            ),
-          ),
-        ],
-      ),
+      title: ref.t('feed.delete_confirm_title'),
+      message: ref.t('feed.delete_confirm_message'),
+      cancelLabel: ref.t('settings.cancel'),
+      confirmLabel: ref.t('common.delete'),
+      isDestructive: true,
     );
 
-    if (shouldDelete != true) return;
+    if (!shouldDelete) return;
 
     final churchId = ref.read(currentChurchIdProvider).value;
     if (!isGlobal && churchId == null) return;

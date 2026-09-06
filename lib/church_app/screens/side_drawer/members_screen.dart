@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -1273,44 +1274,15 @@ Future<void> _showMemberDetailsSheet(
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: () async {
-                                final shouldDelete = await showDialog<bool>(
+                                final shouldDelete = await showAppConfirmDialog(
                                   context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    title: Text(
-                                      context.t('members.delete_title'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium,
-                                    ),
-                                    content: Text(
-                                      context.t('members.delete_message'),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(dialogContext)
-                                                .pop(false),
-                                        child: Text(
-                                          context.t('settings.cancel'),
-                                        ),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () =>
-                                            Navigator.of(dialogContext)
-                                                .pop(true),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor:
-                                              theme.colorScheme.error,
-                                        ),
-                                        child: Text(
-                                          context.t('common.delete'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  title: context.t('members.delete_title'),
+                                  message: context.t('members.delete_message'),
+                                  cancelLabel: context.t('settings.cancel'),
+                                  isDestructive: true,
                                 );
 
-                                if (shouldDelete != true) return;
+                                if (!shouldDelete) return;
 
                                 final churchId = await container
                                     .read(currentChurchIdProvider.future);

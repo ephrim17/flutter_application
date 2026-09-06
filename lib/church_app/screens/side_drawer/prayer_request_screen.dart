@@ -1,5 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
@@ -203,29 +204,15 @@ class _PrayerRequestScreenState extends ConsumerState<PrayerRequestScreen> {
     PrayerRequest prayer,
     PrayerSegment segment,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.delete_outline_rounded),
-        title: Text(
-          context.t('prayer.delete_confirm_title'),
-        ),
-        content: Text(
-          context.t('prayer.delete_confirm_message'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(context.t('settings.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(context.t('common.delete')),
-          ),
-        ],
-      ),
+      icon: Icons.delete_outline_rounded,
+      title: context.t('prayer.delete_confirm_title'),
+      message: context.t('prayer.delete_confirm_message'),
+      cancelLabel: context.t('settings.cancel'),
+      isDestructive: true,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     try {
       await ref.read(prayerRepositoryProvider).deletePrayer(prayer.id);
