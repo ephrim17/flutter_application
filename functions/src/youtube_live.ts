@@ -108,7 +108,7 @@ export const syncYouTubeChannelSubscription = onDocumentWritten(
     const newChannelId = readChannelId(after);
 
     if (oldChannelId && oldChannelId != newChannelId) {
-      await updateHubSubscription(oldChannelId, "unsubscribe");
+      await trySubscribe(oldChannelId, "unsubscribe");
     }
     if (oldChannelId != newChannelId || after?.enabled !== true) {
       const statusRef = event.data?.after.ref.parent.doc("status") ??
@@ -116,13 +116,13 @@ export const syncYouTubeChannelSubscription = onDocumentWritten(
       if (statusRef) await statusRef.set(endedStatus(), {merge: true});
     }
     if (newChannelId && after?.enabled === true) {
-      await updateHubSubscription(newChannelId, "subscribe");
+      await trySubscribe(newChannelId, "subscribe");
       const liveVideo = await findCurrentLiveVideo(newChannelId);
       if (liveVideo) {
         await publishVideoState(newChannelId, liveVideo);
       }
     } else if (newChannelId) {
-      await updateHubSubscription(newChannelId, "unsubscribe");
+      await trySubscribe(newChannelId, "unsubscribe");
     }
   },
 );
@@ -236,6 +236,21 @@ export const refreshKnownYouTubeBroadcasts = onSchedule(
     }
   },
 );
+
+async function trySubscribe(
+  channelId: string,
+  mode: "subscribe" | "unsubscribe",
+): Promise<void> {
+  try {
+    await updateHubSubscription(channelId, mode);
+  } catch (error) {
+    logger.error("YouTube hub subscription request failed.", {
+      channelId,
+      mode,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 async function updateHubSubscription(
   channelId: string,
