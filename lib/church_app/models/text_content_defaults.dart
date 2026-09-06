@@ -24,6 +24,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'common.loading': 'Loading...',
   'common.retry': 'Retry',
   'common.delete': 'Delete',
+  'common.disable': 'Disable',
   'common.save': 'Save',
   'common.create': 'Create',
   'common.edit': 'Edit',
@@ -287,6 +288,11 @@ const Map<String, String> preAuthDefaultTextContents = {
   'super_admin.disabled_count': 'Disabled',
   'super_admin.disabled_label': 'Disabled',
   'super_admin.status_updated': 'Church status updated',
+  'super_admin.status_update_failed':
+      'Could not update church status. Please try again.',
+  'super_admin.disable_church_title': 'Disable this church?',
+  'super_admin.disable_church_message':
+      'Members of {church} will lose access immediately. You can re-enable it anytime.',
 };
 
 const Map<String, String> defaultChurchTextContents = {

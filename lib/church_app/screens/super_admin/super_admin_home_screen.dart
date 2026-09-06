@@ -494,27 +494,46 @@ class _SuperAdminChurchTile extends ConsumerWidget {
               Switch(
                 value: church.enabled,
                 onChanged: (value) async {
-                  await SuperAdminChurchService(
-                    ref.read(firestoreProvider),
-                  ).updateChurchEnabled(
-                    churchId: church.id,
-                    enabled: value,
-                  );
-                  FirebaseAnalytics.instance.logEvent(
-                    name: 'church_status_changed',
-                    parameters: {
-                      'church_id': church.id,
-                      'enabled': value.toString(),
-                    },
-                  );
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.t('super_admin.status_updated'),
+                  if (!value) {
+                    final confirmed = await showAppConfirmDialog(
+                      context: context,
+                      title: context.t('super_admin.disable_church_title'),
+                      message: context.t(
+                        'super_admin.disable_church_message',
+                        parameters: {'church': church.name},
                       ),
-                    ),
-                  );
+                      confirmLabel: context.t('common.disable'),
+                      isDestructive: true,
+                    );
+                    if (!confirmed || !context.mounted) return;
+                  }
+                  final messenger = ScaffoldMessenger.of(context);
+                  final successMessage =
+                      context.t('super_admin.status_updated');
+                  final failureMessage =
+                      context.t('super_admin.status_update_failed');
+                  try {
+                    await SuperAdminChurchService(
+                      ref.read(firestoreProvider),
+                    ).updateChurchEnabled(
+                      churchId: church.id,
+                      enabled: value,
+                    );
+                    FirebaseAnalytics.instance.logEvent(
+                      name: 'church_status_changed',
+                      parameters: {
+                        'church_id': church.id,
+                        'enabled': value.toString(),
+                      },
+                    );
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(successMessage)),
+                    );
+                  } catch (_) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(failureMessage)),
+                    );
+                  }
                 },
               ),
             ],
@@ -1129,24 +1148,25 @@ class _FeatureToggleChip extends ConsumerWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: () async {
           final nextValue = !enabled;
-          await SuperAdminChurchService(
-            ref.read(firestoreProvider),
-          ).updateChurchFeature(
-            churchId: churchId,
-            featureKey: item.key,
-            enabled: nextValue,
+          final messenger = ScaffoldMessenger.of(context);
+          final successMessage = context.t(
+            'super_admin.feature_updated',
+            parameters: {'feature': context.t(item.labelKey)},
           );
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.t(
-                  'super_admin.feature_updated',
-                  parameters: {'feature': context.t(item.labelKey)},
-                ),
-              ),
-            ),
-          );
+          final failureMessage =
+              context.t('super_admin.status_update_failed');
+          try {
+            await SuperAdminChurchService(
+              ref.read(firestoreProvider),
+            ).updateChurchFeature(
+              churchId: churchId,
+              featureKey: item.key,
+              enabled: nextValue,
+            );
+            messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+          } catch (_) {
+            messenger.showSnackBar(SnackBar(content: Text(failureMessage)));
+          }
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

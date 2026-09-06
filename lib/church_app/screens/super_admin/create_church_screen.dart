@@ -863,44 +863,20 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                       Container(
                         decoration: carouselBoxDecoration(context),
                         padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.t(
-                                _isEditMode
-                                    ? 'super_admin.edit_church_title'
-                                    : _isPublicRegistrationMode
-                                        ? 'church.register_your_church'
-                                        : 'super_admin.create_church_title',
-                                fallback: _isEditMode
-                                    ? 'Edit Church'
-                                    : _isPublicRegistrationMode
-                                        ? 'Register your church'
-                                        : 'Create Church',
-                              ),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              context.t(
-                                _isEditMode
-                                    ? 'super_admin.edit_church_subtitle'
-                                    : _isPublicRegistrationMode
-                                        ? 'church.register_subtitle'
-                                        : 'super_admin.create_church_subtitle',
-                                fallback: _isEditMode
-                                    ? 'Update the selected church details and media.'
-                                    : _isPublicRegistrationMode
-                                        ? 'Share your church details. It will stay hidden until a super admin approves it.'
-                                        : 'Create a new church and bootstrap the essential starter structure.',
-                              ),
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
+                        child: Text(
+                          context.t(
+                            _isEditMode
+                                ? 'super_admin.edit_church_subtitle'
+                                : _isPublicRegistrationMode
+                                    ? 'church.register_subtitle'
+                                    : 'super_admin.create_church_subtitle',
+                            fallback: _isEditMode
+                                ? 'Update the selected church details and media.'
+                                : _isPublicRegistrationMode
+                                    ? 'Share your church details. It will stay hidden until a super admin approves it.'
+                                    : 'Create a new church and bootstrap the essential starter structure.',
+                          ),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
                       const SizedBox(height: 16),
