@@ -29,7 +29,7 @@ import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
 
-class FeedCard extends ConsumerWidget {
+class FeedCard extends ConsumerStatefulWidget {
   static final DateFormat _feedDateFormat = DateFormat('MMM d');
   static final DateFormat _feedTimeFormat = DateFormat('h:mm a');
 
@@ -51,7 +51,24 @@ class FeedCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FeedCard> createState() => _FeedCardState();
+}
+
+class _FeedCardState extends ConsumerState<FeedCard> {
+  static DateFormat get _feedDateFormat => FeedCard._feedDateFormat;
+  static DateFormat get _feedTimeFormat => FeedCard._feedTimeFormat;
+
+  bool _isBusy = false;
+
+  FeedPost get post => widget.post;
+  String? get currentUid => widget.currentUid;
+  bool get isAdmin => widget.isAdmin;
+  bool get isGlobal => widget.isGlobal;
+  ValueChanged<String>? get onHashtagTap => widget.onHashtagTap;
+  VoidCallback? get onPostChanged => widget.onPostChanged;
+
+  @override
+  Widget build(BuildContext context) {
     final postChurchId = post.churchId?.trim() ?? '';
     final isPostChurchAdmin = isGlobal && postChurchId.isNotEmpty
         ? ref.watch(churchAdminProvider(postChurchId))
@@ -133,28 +150,43 @@ class FeedCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (canEdit || canDelete || canPin || canManageGlobal)
+                if (_isBusy)
+                  const Padding(
+                    padding: EdgeInsets.all(9),
+                    child: SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else if (canEdit || canDelete || canPin || canManageGlobal)
                   AppPopupMenu<_FeedPostAction>(
                     onSelected: (action) async {
-                      switch (action) {
-                        case _FeedPostAction.edit:
-                          await _editPost(context, ref);
-                          break;
-                        case _FeedPostAction.pin:
-                          await _setPinnedPost(context, ref, pinned: true);
-                          break;
-                        case _FeedPostAction.unpin:
-                          await _setPinnedPost(context, ref, pinned: false);
-                          break;
-                        case _FeedPostAction.makeGlobal:
-                          await _setPostGlobal(context, ref, makeGlobal: true);
-                          break;
-                        case _FeedPostAction.removeGlobal:
-                          await _setPostGlobal(context, ref, makeGlobal: false);
-                          break;
-                        case _FeedPostAction.delete:
-                          await _confirmAndDeletePost(context, ref);
-                          break;
+                      setState(() => _isBusy = true);
+                      try {
+                        switch (action) {
+                          case _FeedPostAction.edit:
+                            await _editPost(context, ref);
+                            break;
+                          case _FeedPostAction.pin:
+                            await _setPinnedPost(context, ref, pinned: true);
+                            break;
+                          case _FeedPostAction.unpin:
+                            await _setPinnedPost(context, ref, pinned: false);
+                            break;
+                          case _FeedPostAction.makeGlobal:
+                            await _setPostGlobal(context, ref,
+                                makeGlobal: true);
+                            break;
+                          case _FeedPostAction.removeGlobal:
+                            await _setPostGlobal(context, ref,
+                                makeGlobal: false);
+                            break;
+                          case _FeedPostAction.delete:
+                            await _confirmAndDeletePost(context, ref);
+                            break;
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isBusy = false);
                       }
                     },
                     actions: [

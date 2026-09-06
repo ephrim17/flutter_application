@@ -773,6 +773,8 @@ Future<void> _showMemberDetailsSheet(
               churchId: churchId,
             );
       var approvedValue = member.approved;
+      var isUpdatingApproval = false;
+      var isDeletingMember = false;
       return FractionallySizedBox(
         heightFactor: 0.9,
         child: StreamBuilder<AppUser?>(
@@ -837,29 +839,40 @@ Future<void> _showMemberDetailsSheet(
                             title: Text(
                               context.t('members.approve_member'),
                             ),
-                            subtitle: Text(
-                              approvedValue
-                                  ? context.t('common.approved')
-                                  : context.t('common.pending_approval'),
-                            ),
+                            subtitle: isUpdatingApproval
+                                ? const SizedBox.square(
+                                    dimension: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : Text(
+                                    approvedValue
+                                        ? context.t('common.approved')
+                                        : context.t('common.pending_approval'),
+                                  ),
                             value: approvedValue,
-                            onChanged: (val) async {
-                              setModalState(() {
-                                approvedValue = val;
-                              });
+                            onChanged: isUpdatingApproval
+                                ? null
+                                : (val) async {
+                                    setModalState(() {
+                                      isUpdatingApproval = true;
+                                      approvedValue = val;
+                                    });
 
-                              final success = await _updateMemberApproval(
-                                context,
-                                userId: member.uid,
-                                value: val,
-                              );
+                                    final success = await _updateMemberApproval(
+                                      context,
+                                      userId: member.uid,
+                                      value: val,
+                                    );
 
-                              if (!success && context.mounted) {
-                                setModalState(() {
-                                  approvedValue = currentMember.approved;
-                                });
-                              }
-                            },
+                                    if (!context.mounted) return;
+                                    setModalState(() {
+                                      isUpdatingApproval = false;
+                                      if (!success) {
+                                        approvedValue = currentMember.approved;
+                                      }
+                                    });
+                                  },
                           ),
                         const SizedBox(height: 20),
                         _MemberDetailSection(
@@ -1273,50 +1286,70 @@ Future<void> _showMemberDetailsSheet(
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final shouldDelete = await showAppConfirmDialog(
-                                  context: context,
-                                  title: context.t('members.delete_title'),
-                                  message: context.t('members.delete_message'),
-                                  cancelLabel: context.t('settings.cancel'),
-                                  isDestructive: true,
-                                );
+                              onPressed: isDeletingMember
+                                  ? null
+                                  : () async {
+                                      final shouldDelete =
+                                          await showAppConfirmDialog(
+                                        context: context,
+                                        title:
+                                            context.t('members.delete_title'),
+                                        message: context
+                                            .t('members.delete_message'),
+                                        cancelLabel:
+                                            context.t('settings.cancel'),
+                                        isDestructive: true,
+                                      );
 
-                                if (!shouldDelete) return;
+                                      if (!shouldDelete) return;
+                                      if (!context.mounted) return;
 
-                                final churchId = await container
-                                    .read(currentChurchIdProvider.future);
-                                if (churchId == null ||
-                                    !rootNavigator.mounted) {
-                                  return;
-                                }
+                                      setModalState(
+                                        () => isDeletingMember = true,
+                                      );
 
-                                final repo = MembersRepository(
-                                  firestore: container.read(firestoreProvider),
-                                  churchId: churchId,
-                                );
+                                      final churchId = await container.read(
+                                          currentChurchIdProvider.future);
+                                      if (churchId == null ||
+                                          !rootNavigator.mounted) {
+                                        setModalState(
+                                          () => isDeletingMember = false,
+                                        );
+                                        return;
+                                      }
 
-                                await repo.deleteMember(member.uid);
-                                await logChurchAnalyticsEventFromContainer(
-                                  container,
-                                  name: 'member_deleted',
-                                  parameters: {
-                                    'member_id': member.uid,
-                                  },
-                                );
+                                      final repo = MembersRepository(
+                                        firestore:
+                                            container.read(firestoreProvider),
+                                        churchId: churchId,
+                                      );
 
-                                if (!context.mounted) return;
-                                final messenger = ScaffoldMessenger.of(context);
-                                Navigator.of(context).pop();
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      context.t('members.delete_success'),
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.delete_outline),
+                                      await repo.deleteMember(member.uid);
+                                      await logChurchAnalyticsEventFromContainer(
+                                        container,
+                                        name: 'member_deleted',
+                                        parameters: {
+                                          'member_id': member.uid,
+                                        },
+                                      );
+
+                                      if (!context.mounted) return;
+                                      final messenger =
+                                          ScaffoldMessenger.of(context);
+                                      final message = context
+                                          .t('members.delete_success');
+                                      Navigator.of(context).pop();
+                                      messenger.showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    },
+                              icon: isDeletingMember
+                                  ? const SizedBox.square(
+                                      dimension: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.delete_outline),
                               label: Text(
                                 context.t('common.delete'),
                               ),

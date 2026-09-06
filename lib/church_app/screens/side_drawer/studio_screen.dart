@@ -1809,10 +1809,13 @@ class _BibleSwipeVersesEditor extends StatelessWidget {
                                         isDestructive: true,
                                       );
                                       if (!confirmed) return;
+                                      if (!context.mounted) return;
                                       final updated = [...verses]
                                         ..removeAt(index);
-                                      await repository.updateBibleSwipeVerses(
-                                        updated,
+                                      await _runWithBlockingLoader(
+                                        context,
+                                        () => repository
+                                            .updateBibleSwipeVerses(updated),
                                       );
                                       if (!context.mounted) return;
                                       ScaffoldMessenger.of(context)
@@ -2016,7 +2019,11 @@ class _FooterCollectionCard extends StatelessWidget {
                                     isDestructive: true,
                                   );
                                   if (confirmed) {
-                                    await onDelete(doc);
+                                    if (!context.mounted) return;
+                                    await _runWithBlockingLoader(
+                                      context,
+                                      () => onDelete(doc),
+                                    );
                                   }
                                 },
                               ),

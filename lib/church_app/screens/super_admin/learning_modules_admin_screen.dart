@@ -18,11 +18,20 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_picker_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LearningModulesAdminScreen extends ConsumerWidget {
+class LearningModulesAdminScreen extends ConsumerStatefulWidget {
   const LearningModulesAdminScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LearningModulesAdminScreen> createState() =>
+      _LearningModulesAdminScreenState();
+}
+
+class _LearningModulesAdminScreenState
+    extends ConsumerState<LearningModulesAdminScreen> {
+  final Set<String> _busyModuleIds = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
     final repository = LearningModuleRepository(
       firestore: ref.read(firestoreProvider),
     );
@@ -46,6 +55,7 @@ class LearningModulesAdminScreen extends ConsumerWidget {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final module = modules[index];
+              final isBusy = _busyModuleIds.contains(module.id);
               return Container(
                 decoration: carouselBoxDecoration(context),
                 child: ListTile(
@@ -64,57 +74,80 @@ class LearningModulesAdminScreen extends ConsumerWidget {
                       parameters: {'count': module.sections.length},
                     ),
                   ),
-                  trailing: AppPopupMenu<String>(
-                    actions: [
-                      if (index > 0)
-                        AppPopupMenuAction(
-                          value: 'move_up',
-                          icon: Icons.arrow_upward_rounded,
-                          label: context.t('common.move_up'),
+                  trailing: isBusy
+                      ? const Padding(
+                          padding: EdgeInsets.all(9),
+                          child: SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : AppPopupMenu<String>(
+                          actions: [
+                            if (index > 0)
+                              AppPopupMenuAction(
+                                value: 'move_up',
+                                icon: Icons.arrow_upward_rounded,
+                                label: context.t('common.move_up'),
+                              ),
+                            if (index < modules.length - 1)
+                              AppPopupMenuAction(
+                                value: 'move_down',
+                                icon: Icons.arrow_downward_rounded,
+                                label: context.t('common.move_down'),
+                              ),
+                            AppPopupMenuAction(
+                              value: 'edit',
+                              icon: Icons.edit_outlined,
+                              label: context.t('common.edit'),
+                            ),
+                            AppPopupMenuAction(
+                              value: 'delete',
+                              icon: Icons.delete_outline,
+                              label: context.t('common.delete'),
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ],
+                          onSelected: (action) async {
+                            if (action == 'edit') {
+                              await _openEditor(context, repository,
+                                  module: module);
+                              return;
+                            }
+                            setState(() => _busyModuleIds.add(module.id));
+                            try {
+                              if (action == 'move_up') {
+                                await _moveModule(
+                                  context,
+                                  repository,
+                                  modules,
+                                  index,
+                                  -1,
+                                );
+                              } else if (action == 'move_down') {
+                                await _moveModule(
+                                  context,
+                                  repository,
+                                  modules,
+                                  index,
+                                  1,
+                                );
+                              } else {
+                                await _deleteModule(
+                                    context, repository, module);
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(
+                                    () => _busyModuleIds.remove(module.id));
+                              }
+                            }
+                          },
                         ),
-                      if (index < modules.length - 1)
-                        AppPopupMenuAction(
-                          value: 'move_down',
-                          icon: Icons.arrow_downward_rounded,
-                          label: context.t('common.move_down'),
-                        ),
-                      AppPopupMenuAction(
-                        value: 'edit',
-                        icon: Icons.edit_outlined,
-                        label: context.t('common.edit'),
-                      ),
-                      AppPopupMenuAction(
-                        value: 'delete',
-                        icon: Icons.delete_outline,
-                        label: context.t('common.delete'),
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ],
-                    onSelected: (action) async {
-                      if (action == 'move_up') {
-                        await _moveModule(
-                          context,
-                          repository,
-                          modules,
-                          index,
-                          -1,
-                        );
-                      } else if (action == 'move_down') {
-                        await _moveModule(
-                          context,
-                          repository,
-                          modules,
-                          index,
-                          1,
-                        );
-                      } else if (action == 'edit') {
-                        await _openEditor(context, repository, module: module);
-                      } else {
-                        await _deleteModule(context, repository, module);
-                      }
-                    },
-                  ),
-                  onTap: () => _openEditor(context, repository, module: module),
+                  onTap: isBusy
+                      ? null
+                      : () =>
+                          _openEditor(context, repository, module: module),
                 ),
               );
             },
