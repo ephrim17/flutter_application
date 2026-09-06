@@ -262,7 +262,9 @@ class _ResultTile extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            module?.title ?? context.t('learning.results_unknown_module'),
+            result.moduleTitle.isNotEmpty
+                ? result.moduleTitle
+                : module?.title ?? context.t('learning.results_unknown_module'),
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 3),

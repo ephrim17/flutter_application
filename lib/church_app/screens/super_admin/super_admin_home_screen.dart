@@ -391,16 +391,28 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                           ),
                                           tabs: [
                                             Tab(
-                                              text:
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
                                                   'Not Approved (${pendingChurches.length})',
+                                                ),
+                                              ),
                                             ),
                                             Tab(
-                                              text:
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
                                                   'Approved (${approvedChurches.length})',
+                                                ),
+                                              ),
                                             ),
                                             Tab(
-                                              text:
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
                                                   'Feedback (${feedbackAsync.maybeWhen(data: (items) => items.length, orElse: () => 0)})',
+                                                ),
+                                              ),
                                             ),
                                           ],
                                         );
@@ -440,7 +452,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
   }
 }
 
-class _SuperAdminChurchTile extends ConsumerWidget {
+class _SuperAdminChurchTile extends ConsumerStatefulWidget {
   const _SuperAdminChurchTile({
     required this.church,
   });
@@ -448,7 +460,17 @@ class _SuperAdminChurchTile extends ConsumerWidget {
   final Church church;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SuperAdminChurchTile> createState() =>
+      _SuperAdminChurchTileState();
+}
+
+class _SuperAdminChurchTileState extends ConsumerState<_SuperAdminChurchTile> {
+  bool _isTogglingStatus = false;
+
+  Church get church => widget.church;
+
+  @override
+  Widget build(BuildContext context) {
     final config = ref.watch(churchAppConfigProvider(church.id)).asData?.value;
 
     return Container(
@@ -491,51 +513,63 @@ class _SuperAdminChurchTile extends ConsumerWidget {
                   ],
                 ),
               ),
-              Switch(
-                value: church.enabled,
-                onChanged: (value) async {
-                  if (!value) {
-                    final confirmed = await showAppConfirmDialog(
-                      context: context,
-                      title: context.t('super_admin.disable_church_title'),
-                      message: context.t(
-                        'super_admin.disable_church_message',
-                        parameters: {'church': church.name},
-                      ),
-                      confirmLabel: context.t('common.disable'),
-                      isDestructive: true,
-                    );
-                    if (!confirmed || !context.mounted) return;
-                  }
-                  final messenger = ScaffoldMessenger.of(context);
-                  final successMessage =
-                      context.t('super_admin.status_updated');
-                  final failureMessage =
-                      context.t('super_admin.status_update_failed');
-                  try {
-                    await SuperAdminChurchService(
-                      ref.read(firestoreProvider),
-                    ).updateChurchEnabled(
-                      churchId: church.id,
-                      enabled: value,
-                    );
-                    FirebaseAnalytics.instance.logEvent(
-                      name: 'church_status_changed',
-                      parameters: {
-                        'church_id': church.id,
-                        'enabled': value.toString(),
-                      },
-                    );
-                    messenger.showSnackBar(
-                      SnackBar(content: Text(successMessage)),
-                    );
-                  } catch (_) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text(failureMessage)),
-                    );
-                  }
-                },
-              ),
+              if (_isTogglingStatus)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                Switch(
+                  value: church.enabled,
+                  onChanged: (value) async {
+                    if (!value) {
+                      final confirmed = await showAppConfirmDialog(
+                        context: context,
+                        title: context.t('super_admin.disable_church_title'),
+                        message: context.t(
+                          'super_admin.disable_church_message',
+                          parameters: {'church': church.name},
+                        ),
+                        confirmLabel: context.t('common.disable'),
+                        isDestructive: true,
+                      );
+                      if (!confirmed || !context.mounted) return;
+                    }
+                    final messenger = ScaffoldMessenger.of(context);
+                    final successMessage =
+                        context.t('super_admin.status_updated');
+                    final failureMessage =
+                        context.t('super_admin.status_update_failed');
+                    setState(() => _isTogglingStatus = true);
+                    try {
+                      await SuperAdminChurchService(
+                        ref.read(firestoreProvider),
+                      ).updateChurchEnabled(
+                        churchId: church.id,
+                        enabled: value,
+                      );
+                      FirebaseAnalytics.instance.logEvent(
+                        name: 'church_status_changed',
+                        parameters: {
+                          'church_id': church.id,
+                          'enabled': value.toString(),
+                        },
+                      );
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(successMessage)),
+                      );
+                    } catch (_) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(failureMessage)),
+                      );
+                    } finally {
+                      if (mounted) setState(() => _isTogglingStatus = false);
+                    }
+                  },
+                ),
             ],
           ),
           if (config != null) ...[
@@ -1126,7 +1160,7 @@ class _FeatureStatChip extends StatelessWidget {
   }
 }
 
-class _FeatureToggleChip extends ConsumerWidget {
+class _FeatureToggleChip extends ConsumerStatefulWidget {
   const _FeatureToggleChip({
     required this.churchId,
     required this.item,
@@ -1138,7 +1172,17 @@ class _FeatureToggleChip extends ConsumerWidget {
   final bool enabled;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_FeatureToggleChip> createState() =>
+      _FeatureToggleChipState();
+}
+
+class _FeatureToggleChipState extends ConsumerState<_FeatureToggleChip> {
+  bool _isUpdating = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final enabled = widget.enabled;
     return Material(
       color: enabled
           ? item.color.withValues(alpha: 0.12)
@@ -1146,28 +1190,37 @@ class _FeatureToggleChip extends ConsumerWidget {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () async {
-          final nextValue = !enabled;
-          final messenger = ScaffoldMessenger.of(context);
-          final successMessage = context.t(
-            'super_admin.feature_updated',
-            parameters: {'feature': context.t(item.labelKey)},
-          );
-          final failureMessage =
-              context.t('super_admin.status_update_failed');
-          try {
-            await SuperAdminChurchService(
-              ref.read(firestoreProvider),
-            ).updateChurchFeature(
-              churchId: churchId,
-              featureKey: item.key,
-              enabled: nextValue,
-            );
-            messenger.showSnackBar(SnackBar(content: Text(successMessage)));
-          } catch (_) {
-            messenger.showSnackBar(SnackBar(content: Text(failureMessage)));
-          }
-        },
+        onTap: _isUpdating
+            ? null
+            : () async {
+                final nextValue = !enabled;
+                final messenger = ScaffoldMessenger.of(context);
+                final successMessage = context.t(
+                  'super_admin.feature_updated',
+                  parameters: {'feature': context.t(item.labelKey)},
+                );
+                final failureMessage =
+                    context.t('super_admin.status_update_failed');
+                setState(() => _isUpdating = true);
+                try {
+                  await SuperAdminChurchService(
+                    ref.read(firestoreProvider),
+                  ).updateChurchFeature(
+                    churchId: widget.churchId,
+                    featureKey: item.key,
+                    enabled: nextValue,
+                  );
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(successMessage)),
+                  );
+                } catch (_) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(failureMessage)),
+                  );
+                } finally {
+                  if (mounted) setState(() => _isUpdating = false);
+                }
+              },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
@@ -1189,13 +1242,20 @@ class _FeatureToggleChip extends ConsumerWidget {
                     ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                enabled
-                    ? Icons.check_circle_rounded
-                    : Icons.add_circle_outline_rounded,
-                size: 18,
-                color: enabled ? item.color : Theme.of(context).disabledColor,
-              ),
+              if (_isUpdating)
+                const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(
+                  enabled
+                      ? Icons.check_circle_rounded
+                      : Icons.add_circle_outline_rounded,
+                  size: 18,
+                  color:
+                      enabled ? item.color : Theme.of(context).disabledColor,
+                ),
             ],
           ),
         ),

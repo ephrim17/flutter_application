@@ -154,6 +154,7 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
   bool _isLoadingStructure = true;
   bool _isSaving = false;
   bool _structureLoadFailed = false;
+  Map<String, dynamic>? _bookData;
 
   @override
   void initState() {
@@ -176,8 +177,10 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
     });
 
     try {
-      final structure = await _readStructure();
+      final data = await _bibleRepository.loadBook(_selectedBook.key);
+      final structure = _computeStructure(data);
       if (!mounted) return;
+      _bookData = data;
       setState(() {
         _chapterCount = structure.chapterCount;
         _verseCount = structure.verseCount;
@@ -195,12 +198,32 @@ class _BibleVersePickerSheetState extends State<_BibleVersePickerSheet> {
     }
   }
 
+  // Chapter/verse picks within the same book don't need another repository
+  // round-trip (and shouldn't flash the loading state) since the whole
+  // book's verse data is already sitting in `_bookData` from the initial
+  // load. Only fall back to a full reload if that cache is somehow missing.
   Future<void> _reloadVerseCount() async {
+    final data = _bookData;
+    if (data != null) {
+      try {
+        final structure = _computeStructure(data);
+        if (!mounted) return;
+        setState(() {
+          _chapterCount = structure.chapterCount;
+          _verseCount = structure.verseCount;
+          _selectedChapter = structure.chapter;
+          _selectedVerse = structure.verse;
+          _selectedEndVerse = structure.endVerse;
+        });
+        return;
+      } catch (_) {
+        // Fall through to a fresh load from the repository below.
+      }
+    }
     await _loadStructure();
   }
 
-  Future<_BibleStructure> _readStructure() async {
-    final data = await _bibleRepository.loadBook(_selectedBook.key);
+  _BibleStructure _computeStructure(Map<String, dynamic> data) {
     final rawChapters = data['chapters'];
     if (rawChapters is! List || rawChapters.isEmpty) {
       throw const FormatException('Bible book has no chapters.');

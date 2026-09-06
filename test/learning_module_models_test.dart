@@ -139,6 +139,7 @@ void main() {
       userName: 'Learner',
       userEmail: 'learner@example.com',
       moduleId: 'module-1',
+      moduleTitle: 'Module One',
       sectionId: 'section-1',
       answers: [0, 1, 2, 3],
       score: 3,

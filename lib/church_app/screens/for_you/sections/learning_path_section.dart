@@ -1266,6 +1266,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
             churchId: churchId,
             userId: userId,
             moduleId: widget.module.id,
+            moduleTitle: widget.module.title,
             userName: appUser?.name ?? '',
             userEmail: appUser?.email ?? '',
             answers: _answers.cast<int>(),

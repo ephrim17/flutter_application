@@ -530,6 +530,7 @@ class LearningQuizResult {
     required this.userName,
     required this.userEmail,
     required this.moduleId,
+    required this.moduleTitle,
     required this.sectionId,
     required this.answers,
     required this.score,
@@ -545,6 +546,7 @@ class LearningQuizResult {
   final String userName;
   final String userEmail;
   final String moduleId;
+  final String moduleTitle;
   final String sectionId;
   final List<int> answers;
   final int score;
@@ -567,6 +569,7 @@ class LearningQuizResult {
       userName: _learningText(data['userName']),
       userEmail: _learningText(data['userEmail']),
       moduleId: _learningText(data['moduleId']),
+      moduleTitle: _learningText(data['moduleTitle']),
       sectionId: _learningText(data['sectionId']),
       answers: data['answers'] is Iterable
           ? (data['answers'] as Iterable)

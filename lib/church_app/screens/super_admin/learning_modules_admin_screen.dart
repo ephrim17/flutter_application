@@ -393,6 +393,7 @@ class _LearningModuleEditorState extends State<LearningModuleEditorScreen> {
                         onDelete: () => setState(() {
                           _finalExamQuestions.removeAt(index).dispose();
                         }),
+                        onOptionsChanged: () => setState(() {}),
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -1078,12 +1079,14 @@ class _QuestionEditor extends StatelessWidget {
     required this.draft,
     required this.canDelete,
     required this.onDelete,
+    required this.onOptionsChanged,
   });
 
   final int index;
   final _QuestionDraft draft;
   final bool canDelete;
   final VoidCallback onDelete;
+  final VoidCallback onOptionsChanged;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1129,7 +1132,34 @@ class _QuestionEditor extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  onPressed: draft.canRemoveOption
+                      ? () {
+                          draft.removeLastOption();
+                          onOptionsChanged();
+                        }
+                      : null,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text(context.t('learning.remove_option')),
+                ),
+                TextButton.icon(
+                  onPressed: draft.canAddOption
+                      ? () {
+                          draft.addOption();
+                          onOptionsChanged();
+                        }
+                      : null,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(context.t('learning.add_option')),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             DropdownButtonFormField<int>(
+              key: ValueKey(draft.options.length),
               initialValue: draft.correctOptionIndex,
               decoration: appTextFieldDecoration(
                 context,
@@ -1361,28 +1391,50 @@ class _QuestionDraft {
     required this.correctOptionIndex,
   });
 
+  static const minOptions = 2;
+  static const maxOptions = 4;
+
   factory _QuestionDraft.empty() => _QuestionDraft(
         prompt: TextEditingController(),
-        options: List.generate(4, (_) => TextEditingController()),
+        options: List.generate(minOptions, (_) => TextEditingController()),
         correctOptionIndex: 0,
       );
 
-  factory _QuestionDraft.fromQuestion(LearningQuizQuestion question) =>
-      _QuestionDraft(
-        prompt: TextEditingController(text: question.prompt),
-        options: List.generate(
-          4,
-          (index) => TextEditingController(
-            text:
-                index < question.options.length ? question.options[index] : '',
-          ),
+  factory _QuestionDraft.fromQuestion(LearningQuizQuestion question) {
+    final optionCount =
+        question.options.length.clamp(minOptions, maxOptions);
+    return _QuestionDraft(
+      prompt: TextEditingController(text: question.prompt),
+      options: List.generate(
+        optionCount,
+        (index) => TextEditingController(
+          text: index < question.options.length ? question.options[index] : '',
         ),
-        correctOptionIndex: question.correctOptionIndex.clamp(0, 3),
-      );
+      ),
+      correctOptionIndex:
+          question.correctOptionIndex.clamp(0, optionCount - 1),
+    );
+  }
 
   final TextEditingController prompt;
   final List<TextEditingController> options;
   int correctOptionIndex;
+
+  bool get canAddOption => options.length < maxOptions;
+  bool get canRemoveOption => options.length > minOptions;
+
+  void addOption() {
+    if (!canAddOption) return;
+    options.add(TextEditingController());
+  }
+
+  void removeLastOption() {
+    if (!canRemoveOption) return;
+    options.removeLast().dispose();
+    if (correctOptionIndex > options.length - 1) {
+      correctOptionIndex = options.length - 1;
+    }
+  }
 
   bool get isConfigured =>
       prompt.text.trim().isNotEmpty &&

@@ -2008,6 +2008,8 @@ const Map<String, String> defaultChurchTextContents = {
   'learning.section_completed': 'Lesson completed',
   'learning.question_number': 'Question {count}',
   'learning.option_number': 'Option {count}',
+  'learning.add_option': 'Add option',
+  'learning.remove_option': 'Remove last option',
   'learning.passing_percentage': 'Passing percentage',
   'learning.percentage_required': 'Enter a percentage from 1 to 100.',
   'learning.section_incomplete':
