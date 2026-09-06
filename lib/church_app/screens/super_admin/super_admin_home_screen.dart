@@ -575,6 +575,11 @@ class _SuperAdminChurchTileState extends ConsumerState<_SuperAdminChurchTile> {
           if (config != null) ...[
             const SizedBox(height: 14),
             _FeatureToggleGrid(church: church, config: config),
+            const SizedBox(height: 10),
+            _AdminLimitSelector(
+              churchId: church.id,
+              maxAdminCount: config.maxAdminCount,
+            ),
           ],
           if (church.email.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -1260,6 +1265,86 @@ class _FeatureToggleChipState extends ConsumerState<_FeatureToggleChip> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AdminLimitSelector extends ConsumerStatefulWidget {
+  const _AdminLimitSelector({
+    required this.churchId,
+    required this.maxAdminCount,
+  });
+
+  final String churchId;
+  final int maxAdminCount;
+
+  @override
+  ConsumerState<_AdminLimitSelector> createState() =>
+      _AdminLimitSelectorState();
+}
+
+class _AdminLimitSelectorState extends ConsumerState<_AdminLimitSelector> {
+  bool _isUpdating = false;
+
+  static const _options = [3, 5];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          context.t('super_admin.admin_limit_label'),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(width: 10),
+        if (_isUpdating)
+          const SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            children: _options
+                .map(
+                  (option) => ChoiceChip(
+                    label: Text('$option'),
+                    selected: widget.maxAdminCount == option,
+                    onSelected: (selected) async {
+                      if (!selected || widget.maxAdminCount == option) return;
+                      final messenger = ScaffoldMessenger.of(context);
+                      final successMessage = context.t(
+                        'super_admin.admin_limit_updated',
+                        parameters: {'count': '$option'},
+                      );
+                      final failureMessage =
+                          context.t('super_admin.status_update_failed');
+                      setState(() => _isUpdating = true);
+                      try {
+                        await SuperAdminChurchService(
+                          ref.read(firestoreProvider),
+                        ).updateMaxAdminCount(
+                          churchId: widget.churchId,
+                          maxAdminCount: option,
+                        );
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(successMessage)),
+                        );
+                      } catch (_) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(failureMessage)),
+                        );
+                      } finally {
+                        if (mounted) setState(() => _isUpdating = false);
+                      }
+                    },
+                  ),
+                )
+                .toList(growable: false),
+          ),
+      ],
     );
   }
 }

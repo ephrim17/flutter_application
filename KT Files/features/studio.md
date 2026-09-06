@@ -35,6 +35,10 @@ drawer shows Studio only to a church admin when `studioEnabled` is true.
 
 - Church maintenance/admin mode.
 - Meaningful admin-email CRUD rather than a raw comma-separated field.
+- Admin count is capped by the super-admin-configured per-church limit
+  (`config/app.features.maxAdminCount`, 3 or 5, default 5); adding a new admin
+  is blocked once the limit is reached, but editing/removing existing admins
+  is always allowed even if the church is already over a newly lowered limit.
 
 Global/church Bible Learning is deliberately not managed here; only super admin
 can manage it.
@@ -76,5 +80,6 @@ can manage it.
 | STUDIO-12 | Notification composer | Required fields validate; one request sends to correct church topic. |
 | STUDIO-13 | Prompt/admin mode | Prompt deduplicates; maintenance blocks members but not admins. |
 | STUDIO-14 | Admin email add/edit/delete/duplicate | CRUD is clear, normalized and prevents duplicate/removing final admin. |
+| STUDIO-14b | Admin count at/over super-admin limit | Adding a new admin is blocked with a clear message once at the limit; editing/removing existing admins (even past a lowered limit) still works. |
 | STUDIO-15 | Keyboard/small screen/large text | Every editor remains scrollable with visible actions and no overlap. |
 | STUDIO-16 | Offline/double-submit | No duplicate record; draft/error recovery is clear. |

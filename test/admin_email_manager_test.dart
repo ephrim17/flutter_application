@@ -16,6 +16,7 @@ void main() {
               'second@example.com',
             ],
             onSave: (admins) async => savedAdmins = List<String>.from(admins),
+            maxAdminCount: 5,
           ),
         ),
       ),
@@ -63,6 +64,7 @@ void main() {
           body: AdminEmailManager(
             initialAdmins: const ['only@example.com'],
             onSave: (_) async => saveCalls++,
+            maxAdminCount: 5,
           ),
         ),
       ),
@@ -80,5 +82,42 @@ void main() {
       findsOneWidget,
     );
     expect(saveCalls, 0);
+  });
+
+  testWidgets('admin manager blocks new admins once the limit is reached',
+      (tester) async {
+    var saveCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AdminEmailManager(
+            initialAdmins: const [
+              'first@example.com',
+              'second@example.com',
+              'third@example.com',
+            ],
+            onSave: (_) async => saveCalls++,
+            maxAdminCount: 3,
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextFormField), 'fourth@example.com');
+    await tester.tap(find.byKey(const ValueKey('admin-email-submit')));
+    await tester.pump();
+
+    expect(find.text('Admin limit reached (3 max). Remove an admin before adding a new one.'),
+        findsOneWidget);
+    expect(saveCalls, 0);
+
+    await tester.tap(find.byTooltip('Edit admin').first);
+    await tester.pump();
+    await tester.enterText(find.byType(TextFormField), 'updated@example.com');
+    await tester.tap(find.byKey(const ValueKey('admin-email-submit')));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, 1);
   });
 }

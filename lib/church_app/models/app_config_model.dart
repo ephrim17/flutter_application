@@ -1,7 +1,10 @@
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 
+const defaultMaxAdminCount = 5;
+
 class AppConfig {
   final List<String> admins;
+  final int maxAdminCount;
   final bool membersEnabled;
   final bool eventsEnabled;
   final bool dashboardEnabled;
@@ -28,6 +31,7 @@ class AppConfig {
 
   const AppConfig(
       {required this.admins,
+      required this.maxAdminCount,
       required this.membersEnabled,
       required this.eventsEnabled,
       required this.dashboardEnabled,
@@ -55,6 +59,7 @@ class AppConfig {
   factory AppConfig.fallback() {
     return AppConfig(
       admins: const [],
+      maxAdminCount: defaultMaxAdminCount,
       membersEnabled: false,
       eventsEnabled: false,
       dashboardEnabled: false,
@@ -90,6 +95,8 @@ class AppConfig {
           .map((value) => value.toString().trim().toLowerCase())
           .where((value) => value.isNotEmpty)
           .toList(growable: false),
+      maxAdminCount:
+          (features['maxAdminCount'] as num?)?.toInt() ?? defaultMaxAdminCount,
       dailyVerseRef: DailyVerseRef.fromMap(_stringMap(data['dailyVerse'])),
       promiseVerseRef: PromiseVerseRef.fromMap(_stringMap(data['promiseWord'])),
       promptSheet: PromptSheetModel.fromMap(_stringMap(data['promptSheet'])),

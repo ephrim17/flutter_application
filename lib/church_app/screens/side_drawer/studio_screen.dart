@@ -2686,6 +2686,7 @@ class _AdminsEditor extends ConsumerWidget {
       data: (config) => _AdminsEditorForm(
         initialAdmins: config.admins,
         onSave: onSave,
+        maxAdminCount: config.maxAdminCount,
       ),
     );
   }
@@ -2695,10 +2696,12 @@ class _AdminsEditorForm extends StatefulWidget {
   const _AdminsEditorForm({
     required this.initialAdmins,
     required this.onSave,
+    required this.maxAdminCount,
   });
 
   final List<String> initialAdmins;
   final Future<void> Function(List<String> admins) onSave;
+  final int maxAdminCount;
 
   @override
   State<_AdminsEditorForm> createState() => _AdminsEditorFormState();
@@ -2710,6 +2713,7 @@ class _AdminsEditorFormState extends State<_AdminsEditorForm> {
     return AdminEmailManager(
       initialAdmins: widget.initialAdmins,
       onSave: widget.onSave,
+      maxAdminCount: widget.maxAdminCount,
     );
   }
 }

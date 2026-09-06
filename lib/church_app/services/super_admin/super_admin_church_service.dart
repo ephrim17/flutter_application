@@ -605,6 +605,20 @@ class SuperAdminChurchService {
     );
   }
 
+  Future<void> updateMaxAdminCount({
+    required String churchId,
+    required int maxAdminCount,
+  }) async {
+    await FirestorePaths.churchAppConfig(_firestore, churchId.trim()).set(
+      {
+        'features': {
+          'maxAdminCount': maxAdminCount,
+        },
+      },
+      SetOptions(merge: true),
+    );
+  }
+
   Future<String> _uploadChurchLogo({
     required String churchId,
     required PickedImageData imageFile,

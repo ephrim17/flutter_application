@@ -9,10 +9,12 @@ class AdminEmailManager extends StatefulWidget {
     super.key,
     required this.initialAdmins,
     required this.onSave,
+    required this.maxAdminCount,
   });
 
   final List<String> initialAdmins;
   final Future<void> Function(List<String> admins) onSave;
+  final int maxAdminCount;
 
   @override
   State<AdminEmailManager> createState() => _AdminEmailManagerState();
@@ -89,6 +91,16 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
       return;
     }
 
+    if (_editingIndex == null && _admins.length >= widget.maxAdminCount) {
+      setState(
+        () => _errorText = context.t(
+          'studio.admin_limit_reached',
+          parameters: {'count': '${widget.maxAdminCount}'},
+        ),
+      );
+      return;
+    }
+
     final nextAdmins = List<String>.from(_admins);
     final editingIndex = _editingIndex;
     if (editingIndex == null) {
@@ -156,6 +168,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final editing = _editingIndex != null;
+    final limitReached = !editing && _admins.length >= widget.maxAdminCount;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -184,7 +197,13 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
               editing ? 'studio.admin_update_label' : 'studio.admin_add_label',
             ),
             prefixIcon: const Icon(Icons.alternate_email_rounded),
-            errorText: _errorText,
+            errorText: _errorText ??
+                (limitReached
+                    ? context.t(
+                        'studio.admin_limit_reached',
+                        parameters: {'count': '${widget.maxAdminCount}'},
+                      )
+                    : null),
           ),
         ),
         const SizedBox(height: 12),
@@ -193,7 +212,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
             Expanded(
               child: FilledButton.icon(
                 key: const ValueKey('admin-email-submit'),
-                onPressed: _isSaving ? null : _submit,
+                onPressed: (_isSaving || limitReached) ? null : _submit,
                 icon: _isSaving
                     ? const SizedBox.square(
                         dimension: 18,
@@ -233,7 +252,7 @@ class _AdminEmailManagerState extends State<AdminEmailManager> {
             ),
             const Spacer(),
             Text(
-              '${_admins.length}',
+              '${_admins.length} / ${widget.maxAdminCount}',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w800,

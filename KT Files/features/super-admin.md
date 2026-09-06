@@ -13,6 +13,8 @@ Super admin can:
 - list/search enabled, disabled and pending churches;
 - create/edit churches, branding, contact and initial pastor;
 - enable/disable churches and configure feature flags;
+- set a per-church Studio admin-count limit (3 or 5), enforced when a church
+  admin tries to add a new Studio admin;
 - review public registrations;
 - review/delete/mark global feedback;
 - open per-church Bible Learning setup and results.
@@ -58,4 +60,5 @@ and church results. See [Bible Learning](bible-learning.md).
 | SUPER-11 | Direct privileged call as non-super admin | Backend/rules reject it. |
 | SUPER-12 | Failed image/upload/bootstrap | Error is recoverable; no misleading complete church remains. |
 | SUPER-13 | Large church list | Search/filter/tabs stay smooth and counts accurate. |
+| SUPER-14 | Set admin-count limit (3/5) | `config/app.features.maxAdminCount` updates for only the target church; defaults to 5 (unlimited-of-5) when unset; lowering the limit below the current admin count does not remove existing admins, only blocks new additions in Studio. |
 

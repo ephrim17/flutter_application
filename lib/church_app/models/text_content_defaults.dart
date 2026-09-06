@@ -293,6 +293,8 @@ const Map<String, String> preAuthDefaultTextContents = {
   'super_admin.disable_church_title': 'Disable this church?',
   'super_admin.disable_church_message':
       'Members of {church} will lose access immediately. You can re-enable it anytime.',
+  'super_admin.admin_limit_label': 'Max admins',
+  'super_admin.admin_limit_updated': 'Max admin count set to {count}.',
 };
 
 const Map<String, String> defaultChurchTextContents = {
@@ -594,6 +596,8 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.admin_email_duplicate': 'This admin is already in the list.',
   'studio.admin_last_remove_error':
       'Add another admin before removing the last administrator.',
+  'studio.admin_limit_reached':
+      'Admin limit reached ({count} max). Remove an admin before adding a new one.',
   'studio.admin_update_failed':
       'Could not update administrators. Please try again.',
   // Feed screen / modal
