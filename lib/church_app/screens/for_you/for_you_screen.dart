@@ -52,27 +52,21 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<int>(
-              segments: [
-                ButtonSegment(
-                  value: 0,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: Text(context.t('for_you.highlights_tab')),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  icon: const Icon(Icons.groups_rounded, size: 18),
-                  label: Text(context.t('for_you.community_tab')),
-                ),
-              ],
-              selected: {_segment},
-              showSelectedIcon: false,
-              onSelectionChanged: (selection) =>
-                  setState(() => _segment = selection.first),
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              _ForYouSegmentTab(
+                label: context.t('for_you.highlights_tab'),
+                selected: _segment == 0,
+                onTap: () => setState(() => _segment = 0),
+              ),
+              const SizedBox(width: 28),
+              _ForYouSegmentTab(
+                label: context.t('for_you.community_tab'),
+                selected: _segment == 1,
+                onTap: () => setState(() => _segment = 1),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -85,6 +79,53 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ForYouSegmentTab extends StatelessWidget {
+  const _ForYouSegmentTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: IntrinsicWidth(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 3,
+              decoration: BoxDecoration(
+                color: selected ? theme.colorScheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
