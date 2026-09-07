@@ -131,6 +131,22 @@ class StudioRepository {
     return pastorsRef.snapshots().map((snapshot) => snapshot.docs);
   }
 
+  // Studio's home screen only needs these numbers for a tile badge, so a
+  // server-side count avoids downloading every document just to discard it.
+  Stream<int> _countStreamFor(Query<Map<String, dynamic>> query) {
+    return Stream.fromFuture(
+      query.count().get().then((snapshot) => snapshot.count ?? 0),
+    );
+  }
+
+  Stream<int> countPastors() => _countStreamFor(pastorsRef);
+
+  Stream<int> countAnnouncements() => _countStreamFor(announcementsRef);
+
+  Stream<int> countEvents() => _countStreamFor(eventsRef);
+
+  Stream<int> countArticles() => _countStreamFor(articlesRef);
+
   Stream<List<String>> watchBibleSwipeVerses() {
     return bibleSwipeRef.snapshots().map((snapshot) {
       final data = snapshot.data();

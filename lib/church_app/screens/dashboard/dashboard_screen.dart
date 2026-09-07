@@ -136,14 +136,14 @@ class DashboardScreen extends ConsumerWidget {
             isLoading: dashboardStateAsync.isLoading,
           ),
           if (disabledFeatureTips.isNotEmpty) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             _DashboardSectionCard(
               title: context.t('dashboard.features_disabled_title'),
               subtitle: context.t('dashboard.features_disabled_subtitle'),
               child: DisabledFeatureTips(tips: disabledFeatureTips),
             ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           _DashboardSectionCard(
             title: context.t('dashboard.special_days_title'),
             subtitle: context.t('dashboard.special_days_subtitle'),
@@ -152,7 +152,7 @@ class DashboardScreen extends ConsumerWidget {
               anniversaries: anniversaryMembers,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           _DashboardSectionCard(
             title: context.t('dashboard.insights_title'),
             subtitle: context.t('dashboard.insights_subtitle'),
@@ -160,7 +160,7 @@ class DashboardScreen extends ConsumerWidget {
               state: dashboardState,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           _DashboardSectionCard(
             title: context.t('dashboard.faith_loop_updates_title'),
             subtitle: context.t('dashboard.faith_loop_updates_subtitle'),
@@ -169,7 +169,7 @@ class DashboardScreen extends ConsumerWidget {
               members: dashboardMembers,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 860;
@@ -194,7 +194,7 @@ class DashboardScreen extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           _DashboardSectionCard(
             title: context.t('dashboard.join_history_title'),
             subtitle: context.t('dashboard.join_history_subtitle'),
@@ -202,7 +202,7 @@ class DashboardScreen extends ConsumerWidget {
               summary: dashboardState.memberMetrics,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           _DashboardSectionCard(
             title: context.t('dashboard.streaks_title'),
             subtitle: context.t('dashboard.streaks_subtitle'),
@@ -210,7 +210,7 @@ class DashboardScreen extends ConsumerWidget {
               summary: dashboardState.memberMetrics,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: sectionSpacing),
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 860;
@@ -233,7 +233,7 @@ class DashboardScreen extends ConsumerWidget {
                     isLoading: dashboardStateAsync.isLoading,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: sectionSpacing),
                 _DashboardSectionCard(
                   title: context.t('dashboard.events_title'),
                   subtitle: context.t('dashboard.events_subtitle'),
@@ -248,7 +248,7 @@ class DashboardScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     ...leftColumn,
-                    const SizedBox(height: 18),
+                    const SizedBox(height: sectionSpacing),
                     ...rightColumn,
                   ],
                 );

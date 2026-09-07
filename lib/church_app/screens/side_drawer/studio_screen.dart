@@ -130,8 +130,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 subtitle: context
                     .t('ui.studio.manage_pastor_entries_and_contact_details'),
                 icon: Icons.person_outline_rounded,
-                countStream:
-                    repository.watchPastors().map((docs) => docs.length),
+                countStream: repository.countPastors(),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchPastors(),
                   addLabel: ref.t('studio.add_pastor'),
@@ -173,8 +172,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 subtitle: context.t(
                     'ui.studio.publish_important_updates_with_optional_images'),
                 icon: Icons.campaign_outlined,
-                countStream:
-                    repository.watchAnnouncements().map((docs) => docs.length),
+                countStream: repository.countAnnouncements(),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchAnnouncements(),
                   addLabel: ref.t('studio.add_announcement'),
@@ -211,8 +209,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 subtitle:
                     context.t('ui.studio.create_and_organize_church_events'),
                 icon: Icons.event_outlined,
-                countStream:
-                    repository.watchEvents().map((docs) => docs.length),
+                countStream: repository.countEvents(),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchEvents(),
                   addLabel: ref.t('studio.add_event'),
@@ -260,8 +257,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 subtitle: context
                     .t('ui.studio.publish_long_form_inspirational_content'),
                 icon: Icons.article_outlined,
-                countStream:
-                    repository.watchArticles().map((docs) => docs.length),
+                countStream: repository.countArticles(),
                 builder: (screenContext) => _CollectionEditor(
                   stream: repository.watchArticles(),
                   addLabel: ref.t('studio.add_article'),
@@ -491,10 +487,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 subtitle: context.t(
                     'ui.studio.manage_branding_content_engagement_and_admin_control'),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: sectionSpacing),
               for (final category in categories) ...[
                 _StudioCategorySection(category: category),
-                const SizedBox(height: 18),
+                const SizedBox(height: sectionSpacing),
               ],
             ],
           ),

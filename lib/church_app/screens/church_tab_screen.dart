@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
@@ -28,14 +29,32 @@ class ChurchTabScreen extends ConsumerStatefulWidget {
 
 class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   int selectedIndex = 0;
+  bool _appBarVisible = true;
 
   Future<void> setActiveScreen(int index) async {
     if (!mounted) return;
     setState(() {
       selectedIndex = index;
+      _appBarVisible = true;
     });
 
     await _logTabOpen(index);
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification is UserScrollNotification) {
+      if (notification.direction == ScrollDirection.reverse) {
+        if (_appBarVisible) setState(() => _appBarVisible = false);
+      } else if (notification.direction == ScrollDirection.forward) {
+        if (!_appBarVisible) setState(() => _appBarVisible = true);
+      }
+    } else if (notification is ScrollUpdateNotification ||
+        notification is ScrollEndNotification) {
+      if (notification.metrics.pixels <= 0 && !_appBarVisible) {
+        setState(() => _appBarVisible = true);
+      }
+    }
+    return false;
   }
 
   void _onSelectedMenu(String menu) async {
@@ -184,16 +203,28 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        toolbarHeight: 88,
-        title: ChurchAppBarBrandTitle(
-          text: ref.t('church_tab.app_title'),
-          logo: selectedChurch?.logo ?? '',
-          maxWidth: MediaQuery.of(context).size.width * 0.68,
-        ),
+      body: Column(
+        children: [
+          _HideableAppBar(
+            visible: _appBarVisible,
+            appBar: AppBar(
+              centerTitle: true,
+              toolbarHeight: 88,
+              title: ChurchAppBarBrandTitle(
+                text: ref.t('church_tab.app_title'),
+                logo: selectedChurch?.logo ?? '',
+                maxWidth: MediaQuery.of(context).size.width * 0.68,
+              ),
+            ),
+          ),
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _handleScrollNotification,
+              child: screens[selectedIndex],
+            ),
+          ),
+        ],
       ),
-      body: screens[selectedIndex],
       drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
       bottomNavigationBar: AppBottomTabBar(
         currentIndex: selectedIndex,
@@ -205,4 +236,38 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
   bool _sameGroups(List<String> left, List<String> right) =>
       left.length == right.length && left.toSet().containsAll(right);
+}
+
+/// Collapses [appBar] out of view (Instagram-style) rather than pushing it
+/// off-screen — the reserved slot never resizes, only the visible slice does,
+/// so hiding/showing never triggers a Scaffold relayout of the body below.
+class _HideableAppBar extends StatelessWidget {
+  const _HideableAppBar({
+    required this.visible,
+    required this.appBar,
+  });
+
+  final bool visible;
+  final PreferredSizeWidget appBar;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight =
+        appBar.preferredSize.height + MediaQuery.of(context).padding.top;
+
+    return ClipRect(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        height: visible ? maxHeight : 0,
+        alignment: Alignment.topCenter,
+        child: OverflowBox(
+          minHeight: maxHeight,
+          maxHeight: maxHeight,
+          alignment: Alignment.topCenter,
+          child: appBar,
+        ),
+      ),
+    );
+  }
 }

@@ -180,7 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           slivers.add(
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: _WelcomeCard(
                   userName: userName,
                   dayStreak: appUser?.dayStreak ?? 10,

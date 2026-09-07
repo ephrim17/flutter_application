@@ -52,7 +52,7 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, sectionSpacing),
           child: Row(
             children: [
               _ForYouSegmentTab(

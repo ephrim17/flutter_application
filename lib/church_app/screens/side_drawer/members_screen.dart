@@ -245,61 +245,64 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                 .toList();
             final groupedFamilies = _groupFamilies(familyMembers);
 
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Column(
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _CountChip(
-                            label: context.t('members.all_tab'),
-                            count: filteredMembers.length,
-                          ),
-                          _CountChip(
-                            label: context.t('members.families_tab'),
-                            count: groupedFamilies.length,
-                          ),
-                          _CountChip(
-                            label: context.t('members.individuals_tab'),
-                            count: individualMembers.length,
-                          ),
-                        ],
-                      ),
-                    ],
+            return RefreshIndicator(
+              onRefresh: () => ref.refresh(membersProvider.future),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _CountChip(
+                              label: context.t('members.all_tab'),
+                              count: filteredMembers.length,
+                            ),
+                            _CountChip(
+                              label: context.t('members.families_tab'),
+                              count: groupedFamilies.length,
+                            ),
+                            _CountChip(
+                              label: context.t('members.individuals_tab'),
+                              count: individualMembers.length,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _MembersListView(
-                        members: filteredMembers,
-                        isAdmin: isAdmin,
-                        currentUid: currentUid,
-                      ),
-                      _FamilyGroupsView(
-                        groups: groupedFamilies,
-                        isAdmin: isAdmin,
-                        currentUid: currentUid,
-                      ),
-                      _MembersListView(
-                        members: individualMembers,
-                        isAdmin: isAdmin,
-                        currentUid: currentUid,
-                      ),
-                      _SpecialDaysView(
-                        birthdays: todayBirthdays,
-                        anniversaries: todayAnniversaries,
-                        isAdmin: isAdmin,
-                        currentUid: currentUid,
-                      ),
-                    ],
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _MembersListView(
+                          members: filteredMembers,
+                          isAdmin: isAdmin,
+                          currentUid: currentUid,
+                        ),
+                        _FamilyGroupsView(
+                          groups: groupedFamilies,
+                          isAdmin: isAdmin,
+                          currentUid: currentUid,
+                        ),
+                        _MembersListView(
+                          members: individualMembers,
+                          isAdmin: isAdmin,
+                          currentUid: currentUid,
+                        ),
+                        _SpecialDaysView(
+                          birthdays: todayBirthdays,
+                          anniversaries: todayAnniversaries,
+                          isAdmin: isAdmin,
+                          currentUid: currentUid,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -336,16 +339,20 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     );
                     if (!mounted || !context.mounted) return;
                     Navigator.of(context).pop();
-                    rootNavigator.push(
-                      MaterialPageRoute(
-                        builder: (_) => CreateAuthAccountScreen(
-                          adminCreateMode: true,
-                          churchId: selectedChurch.id,
-                          churchName: selectedChurch.name,
-                          churchLogo: selectedChurch.logo,
-                        ),
-                      ),
-                    );
+                    rootNavigator
+                        .push(
+                          MaterialPageRoute(
+                            builder: (_) => CreateAuthAccountScreen(
+                              adminCreateMode: true,
+                              churchId: selectedChurch.id,
+                              churchName: selectedChurch.name,
+                              churchLogo: selectedChurch.logo,
+                            ),
+                          ),
+                        )
+                        .then((_) {
+                      if (mounted) ref.invalidate(membersProvider);
+                    });
                   },
                 ),
                 ListTile(
@@ -367,16 +374,20 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     );
                     if (!mounted || !context.mounted) return;
                     Navigator.of(context).pop();
-                    rootNavigator.push(
-                      MaterialPageRoute(
-                        builder: (_) => LoginRequestScreen(
-                          churchId: selectedChurch.id,
-                          churchName: selectedChurch.name,
-                          churchLogo: selectedChurch.logo,
-                          adminCreateMode: true,
-                        ),
-                      ),
-                    );
+                    rootNavigator
+                        .push(
+                          MaterialPageRoute(
+                            builder: (_) => LoginRequestScreen(
+                              churchId: selectedChurch.id,
+                              churchName: selectedChurch.name,
+                              churchLogo: selectedChurch.logo,
+                              adminCreateMode: true,
+                            ),
+                          ),
+                        )
+                        .then((_) {
+                      if (mounted) ref.invalidate(membersProvider);
+                    });
                   },
                 ),
               ],
@@ -1239,18 +1250,24 @@ Future<void> _showMemberDetailsSheet(
                                     },
                                   );
                                   if (!rootNavigator.mounted) return;
-                                  rootNavigator.push(
-                                    MaterialPageRoute(
-                                      builder: (_) => CreateAuthAccountScreen(
-                                        adminCreateMode: true,
-                                        churchId: currentChurch.id,
-                                        churchName: currentChurch.name,
-                                        churchLogo: currentChurch.logo,
-                                        existingMember: member,
-                                        continueToEditAfterCreate: true,
-                                      ),
-                                    ),
-                                  );
+                                  rootNavigator
+                                      .push(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              CreateAuthAccountScreen(
+                                            adminCreateMode: true,
+                                            churchId: currentChurch.id,
+                                            churchName: currentChurch.name,
+                                            churchLogo: currentChurch.logo,
+                                            existingMember: member,
+                                            continueToEditAfterCreate: true,
+                                          ),
+                                        ),
+                                      )
+                                      .then(
+                                        (_) => container
+                                            .invalidate(membersProvider),
+                                      );
                                   return;
                                 }
                                 await logChurchAnalyticsEventFromContainer(
@@ -1262,17 +1279,22 @@ Future<void> _showMemberDetailsSheet(
                                   },
                                 );
                                 if (!rootNavigator.mounted) return;
-                                rootNavigator.push(
-                                  MaterialPageRoute(
-                                    builder: (_) => LoginRequestScreen(
-                                      churchId: currentChurch.id,
-                                      churchName: currentChurch.name,
-                                      churchLogo: currentChurch.logo,
-                                      adminCreateMode: true,
-                                      existingMember: member,
-                                    ),
-                                  ),
-                                );
+                                rootNavigator
+                                    .push(
+                                      MaterialPageRoute(
+                                        builder: (_) => LoginRequestScreen(
+                                          churchId: currentChurch.id,
+                                          churchName: currentChurch.name,
+                                          churchLogo: currentChurch.logo,
+                                          adminCreateMode: true,
+                                          existingMember: member,
+                                        ),
+                                      ),
+                                    )
+                                    .then(
+                                      (_) =>
+                                          container.invalidate(membersProvider),
+                                    );
                               },
                               icon: const Icon(Icons.edit_outlined),
                               label: Text(
@@ -1325,6 +1347,7 @@ Future<void> _showMemberDetailsSheet(
                                       );
 
                                       await repo.deleteMember(member.uid);
+                                      container.invalidate(membersProvider);
                                       await logChurchAnalyticsEventFromContainer(
                                         container,
                                         name: 'member_deleted',

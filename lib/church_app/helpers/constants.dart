@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+const double sectionSpacing = 15;
+
 double spacingForOrder(int order) {
-  return 15;
+  return sectionSpacing;
 }
 
 //cardHeights

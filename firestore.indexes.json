@@ -75,6 +75,20 @@
       ]
     },
     {
+      "collectionGroup": "prayer_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "visibleToChurchMembers",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiryDate",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "socialItems",
       "queryScope": "COLLECTION",
       "fields": [

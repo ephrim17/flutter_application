@@ -1,0 +1,300 @@
+rules_version = '2';
+
+// Authority model (see CLAUDE.local.md):
+//   - member    : approved == true on churches/{churchId}/users/{uid}
+//   - church admin : caller's email is in churches/{churchId}/config/app.admins
+//   - super admin  : a superAdmins/{email} doc exists with enabled == true
+//
+// superAdmins must be keyed by the admin's lowercased email (not an
+// auto-generated ID) for isSuperAdmin() below to work — re-key any existing
+// docs before deploying this file. See the migration note in the summary.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isChurchAdmin(churchId) {
+      return isSignedIn() &&
+        myEmail() in get(/databases/$(database)/documents/churches/$(churchId)/config/app).data.admins;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/superAdmins/$(myEmail())) &&
+        get(/databases/$(database)/documents/superAdmins/$(myEmail())).data.enabled == true;
+    }
+
+    function isApprovedMember(churchId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/churches/$(churchId)/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/churches/$(churchId)/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    function isChurchStaff(churchId) {
+      return isChurchAdmin(churchId) || isSuperAdmin();
+    }
+
+    function isPrayerSourceOwner(sourceChurchId, sourcePrayerId) {
+      return sourceChurchId is string && sourcePrayerId is string &&
+        get(/databases/$(database)/documents/churches/$(sourceChurchId)/prayer_requests/$(sourcePrayerId)).data.userId == request.auth.uid;
+    }
+
+    // ---------- churches ----------
+    match /churches/{churchId} {
+      // Public directory read (church picker browses all churches).
+      allow read: if true;
+      allow create, delete: if isSuperAdmin();
+      allow update: if isChurchStaff(churchId);
+
+      // Admin/staff-only operational data.
+      match /config/{configId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /financial_transactions/{docId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+      match /dashboard_metrics/{docId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+      match /notification_requests/{docId} {
+        // Regular member actions (posting a feed item, completing a faith
+        // engagement step) enqueue their own notification job.
+        allow create: if isApprovedMember(churchId) &&
+          request.resource.data.status == 'queued';
+        allow read, update, delete: if isChurchStaff(churchId);
+      }
+
+      // Public/browsable content — admin-authored, open read.
+      match /announcements/{docId} {
+        allow read: if true;
+        allow write: if isChurchStaff(churchId);
+      }
+      match /events/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /pastor/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /about/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /articles/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /home_sections/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /for_you_section/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /live_church/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /footerSupport/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+
+        match /contactItems/{itemId} {
+          allow read: if isSignedIn();
+          allow write: if isChurchStaff(churchId);
+        }
+        match /socialItems/{itemId} {
+          allow read: if isSignedIn();
+          allow write: if isChurchStaff(churchId);
+        }
+      }
+      match /learning_config/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /learning_modules/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+      match /bibleRandomSwipeVerses/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isChurchStaff(churchId);
+      }
+
+      // Member-visible, admin-managed.
+      match /families/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /groups/{groupId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+
+        match /users/{uid} {
+          allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+          allow write: if isChurchStaff(churchId);
+        }
+      }
+      match /youth_circles/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /faith_reflections/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /faith_engagement/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /equipments/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId);
+      }
+      match /learning_results/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow create: if isApprovedMember(churchId);
+        allow update, delete: if isChurchStaff(churchId);
+      }
+
+      // Church-scoped feed.
+      match /feeds/{postId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow create: if isApprovedMember(churchId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.churchId == churchId;
+        allow update: if isChurchStaff(churchId) ||
+          (resource.data.userId == request.auth.uid &&
+           request.resource.data.userId == resource.data.userId &&
+           // Client enforces a 30-minute self-edit window — mirror it here
+           // so a direct API call can't bypass it (see FeedPost.editWindow).
+           request.time < resource.data.createdAt + duration.value(30, 'm'));
+        allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
+      }
+
+      // Prayer requests: authors see their own + church-visible ones;
+      // staff can moderate everything (including hidden requests).
+      match /prayer_requests/{prayerId} {
+        allow read: if isChurchStaff(churchId) ||
+          (isApprovedMember(churchId) &&
+           (resource.data.userId == request.auth.uid ||
+            resource.data.visibleToChurchMembers == true));
+        allow create: if isApprovedMember(churchId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.churchId == churchId;
+        allow update: if isChurchStaff(churchId) ||
+          (resource.data.userId == request.auth.uid &&
+           request.resource.data.userId == resource.data.userId);
+        allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
+      }
+
+      // Church membership doc.
+      match /users/{uid} {
+        allow read: if isSelf(uid) || isChurchStaff(churchId);
+        // A user can only ever create their own membership doc as
+        // unapproved; a super admin may seed an approved owner doc when
+        // standing up a new church.
+        allow create: if (isSelf(uid) && request.resource.data.approved == false) ||
+          isSuperAdmin();
+        // Self can edit their own profile fields but can never flip
+        // `approved` themselves — only staff can approve/demote.
+        allow update: if isChurchStaff(churchId) ||
+          (isSelf(uid) && request.resource.data.approved == resource.data.approved);
+        allow delete: if isSelf(uid) || isChurchStaff(churchId);
+
+        match /readingPlans/{planId} {
+          allow read: if isSelf(uid) || isChurchStaff(churchId);
+          allow write: if isSelf(uid);
+        }
+        match /learning_progress/{docId} {
+          allow read: if isSelf(uid) || isChurchStaff(churchId);
+          allow write: if isSelf(uid);
+        }
+      }
+    }
+
+    // ---------- top-level ----------
+
+    // Vestigial global profile doc — owner-only until/unless this becomes
+    // the real cross-church identity record.
+    match /users/{uid} {
+      allow read, write: if isSelf(uid);
+
+      match /readingPlans/{planId} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    match /globalFeeds/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSuperAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.userId == resource.data.userId) ||
+        (resource.data.churchId is string && isChurchAdmin(resource.data.churchId));
+      // deletePost() unconditionally tries to delete a possibly-nonexistent
+      // mirror doc as part of a batch — that must stay a harmless no-op.
+      allow delete: if !exists(/databases/$(database)/documents/globalFeeds/$(postId)) ||
+        isSuperAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        (resource.data.churchId is string && isChurchAdmin(resource.data.churchId));
+    }
+
+    match /globalPrayerRequests/{prayerId} {
+      allow read: if isSignedIn();
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.sourceChurchId is string &&
+         isChurchAdmin(request.resource.data.sourceChurchId));
+      allow update: if isSuperAdmin() ||
+        (request.resource.data.sourceChurchId is string &&
+         isChurchAdmin(request.resource.data.sourceChurchId)) ||
+        isPrayerSourceOwner(resource.data.sourceChurchId, resource.data.sourcePrayerId);
+      // deletePrayer() unconditionally tries to delete a possibly-nonexistent
+      // mirror doc as part of a batch — that must stay a harmless no-op.
+      allow delete: if !exists(/databases/$(database)/documents/globalPrayerRequests/$(prayerId)) ||
+        isSuperAdmin() ||
+        (resource.data.sourceChurchId is string && isChurchAdmin(resource.data.sourceChurchId)) ||
+        isPrayerSourceOwner(resource.data.sourceChurchId, resource.data.sourcePrayerId);
+    }
+
+    match /globalFeedback/{docId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /learning_modules/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    match /bible_versions/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Super-admin roster — console/functions managed only.
+    match /superAdmins/{docId} {
+      allow read: if isSignedIn() && resource.data.email == myEmail();
+      allow write: if false;
+    }
+
+    // Trigger-Email extension queue — functions/extension only.
+    match /mail/{docId} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -160,6 +160,8 @@ class PrayerRepository {
         );
   }
 
+  static const int _activePrayerCap = 200;
+
   /// WATCH ALL ACTIVE PRAYERS
   Stream<List<PrayerRequest>> getAllPrayers() {
     final today = DateTime.now();
@@ -172,6 +174,7 @@ class PrayerRepository {
         )
         .orderBy('expiryDate')
         .orderBy('createdAt', descending: true)
+        .limit(_activePrayerCap)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs.map(PrayerRequest.fromDoc).toList(),
@@ -184,15 +187,17 @@ class PrayerRepository {
 
     return collectionRef()
         .where('visibleToChurchMembers', isEqualTo: true)
+        .where(
+          'expiryDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday),
+        )
+        .orderBy('expiryDate')
+        .limit(_activePrayerCap)
         .snapshots()
-        .map((snapshot) {
-      final prayers = snapshot.docs
-          .map(PrayerRequest.fromDoc)
-          .where((prayer) => !prayer.expiryDate.isBefore(startOfToday))
-          .toList(growable: false)
-        ..sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
-      return prayers;
-    });
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(PrayerRequest.fromDoc).toList(growable: false),
+        );
   }
 
   Stream<List<PrayerRequest>> watchGlobalPrayers() {
@@ -206,6 +211,7 @@ class PrayerRepository {
         )
         .orderBy('expiryDate')
         .orderBy('createdAt', descending: true)
+        .limit(_activePrayerCap)
         .snapshots()
         .map(
           (snapshot) =>
@@ -277,6 +283,7 @@ class PrayerRepository {
         )
         .orderBy('expiryDate')
         .orderBy('createdAt', descending: true)
+        .limit(_activePrayerCap)
         .get();
 
     return snapshot.docs.map(PrayerRequest.fromDoc).toList(growable: false);

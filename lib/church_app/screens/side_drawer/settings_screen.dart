@@ -62,7 +62,7 @@ class SettingsScreen extends ConsumerWidget {
               userAsync: userAsync,
               churchName: selectedChurch?.name ?? '',
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.profile_title'),
               subtitle: ref.t('settings.profile_subtitle'),
@@ -73,7 +73,7 @@ class SettingsScreen extends ConsumerWidget {
                 _EditProfileSection(),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.preferences_title'),
               subtitle: ref.t('settings.preferences_subtitle'),
@@ -86,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
                 _PrayerReminderSection(),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.feedback_title'),
               subtitle: ref.t('settings.feedback_subtitle'),
@@ -97,7 +97,7 @@ class SettingsScreen extends ConsumerWidget {
                 _FeedbackSection(),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.account_title'),
               subtitle: ref.t('settings.account_subtitle'),
@@ -109,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                 _LogoutSection(),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: sectionSpacing),
             const PraiseTheLordCard(),
             const SizedBox(height: 10),
             const CopyrightWidget(),

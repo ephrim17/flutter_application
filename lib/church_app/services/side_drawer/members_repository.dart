@@ -22,12 +22,6 @@ class MembersRepository extends ChurchScopedRepository {
     );
   }
 
-  Stream<List<AppUser>> getMembers() {
-    return collectionRef().snapshots().map(
-          (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
-        );
-  }
-
   Future<List<AppUser>> getMembersOnce() async {
     final snapshot = await collectionRef().get();
     final members = snapshot.docs.map((doc) => doc.data()).toList()

@@ -4,14 +4,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/file_download.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
+import 'package:flutter_application/church_app/models/verse_image_template.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -22,6 +25,20 @@ enum ShareFormat { square, story }
 enum BackgroundType { color, image }
 
 enum VerseFontStyleOption { bold, normal, italic }
+
+class _DateStyleOption {
+  const _DateStyleOption({required this.pattern});
+
+  final String pattern;
+}
+
+const _dateStyleOptions = [
+  _DateStyleOption(pattern: 'dd/MM/yyyy'),
+  _DateStyleOption(pattern: 'd MMM yyyy'),
+  _DateStyleOption(pattern: 'MMMM d, yyyy'),
+  _DateStyleOption(pattern: 'EEEE, MMM d'),
+  _DateStyleOption(pattern: 'yyyy.MM.dd'),
+];
 
 Future<void> showVerseShareModal(
   BuildContext context, {
@@ -63,6 +80,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
 
   ShareFormat format = ShareFormat.square;
   BackgroundType backgroundType = BackgroundType.color;
+  VerseLayoutKind layout = VerseLayoutKind.centered;
 
   Color backgroundColor = const Color(0xFFD6E3E7);
   Color fontColor = Colors.black;
@@ -71,13 +89,16 @@ class _VerseShareModalState extends State<VerseShareModal> {
   double fontSize = 20;
   VerseFontStyleOption fontStyleOption = VerseFontStyleOption.bold;
   double blurIntensity = 10;
-  double _editorPanelFraction = 0.52;
   bool _editorPanelVisible = true;
+  bool _showFullPreview = false;
+  String _dateFormatPattern = _dateStyleOptions.first.pattern;
   bool _isDownloading = false;
 
   PickedImageData? selectedImage;
   final List<_HighlightRule> _highlightRules = [];
   String? _activeHighlightRuleId;
+  String? _selectedTemplateId;
+  bool _isApplyingTemplate = false;
 
   String get _verseText => _verseController.text.trim().isEmpty
       ? widget.text
@@ -86,35 +107,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
   String get _referenceText => _referenceController.text.trim().isEmpty
       ? widget.reference
       : _referenceController.text.trim();
-
-  final List<Color> backgroundPalette = const [
-    Color(0xFFF5E6E1),
-    Color(0xFFD6E3E7),
-    Color(0xFFDDE6DD),
-    Color(0xFFE8E0F2),
-    Color(0xFFF3E4DC),
-    Color(0xFF1C1C2E),
-  ];
-
-  final List<Color> fontPalette = const [
-    Colors.transparent,
-    Colors.black,
-    Colors.white,
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-  ];
-
-  final List<Color> fillPalette = const [
-    Colors.transparent,
-    Colors.black,
-    Colors.white,
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-  ];
 
   @override
   void initState() {
@@ -134,34 +126,55 @@ class _VerseShareModalState extends State<VerseShareModal> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: context.t('common.close'),
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.close_rounded),
-        ),
-        title: Text(context.t('ui.verse_share.verse_story_editor')),
-      ),
+      appBar: _showFullPreview
+          ? null
+          : AppBar(
+              leading: IconButton(
+                tooltip: context.t('common.close'),
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+              title: Text(context.t('ui.verse_share.verse_story_editor')),
+              actions: [
+                IconButton(
+                  tooltip: context.t('ui.verse_share.preview'),
+                  onPressed: () => setState(() => _showFullPreview = true),
+                  icon: const Icon(Icons.visibility_outlined),
+                ),
+              ],
+            ),
       body: SafeArea(
-        child: LayoutBuilder(
+        child: _showFullPreview
+            ? _buildFullPreviewOverlay()
+            : LayoutBuilder(
           builder: (context, constraints) {
             final screenHeight = constraints.maxHeight.isFinite
                 ? constraints.maxHeight
                 : MediaQuery.of(context).size.height;
-            final panelHeight = screenHeight * _editorPanelFraction;
-            final bottomReserve =
-                _editorPanelVisible ? panelHeight + 24.0 : 54.0 + 80.0;
-            final previewHeight =
-                math.max(240.0, screenHeight - bottomReserve - 18.0);
+            final panelHeight = screenHeight * 0.9;
+            final bottomReserve = _editorPanelVisible ? 24.0 : 54.0 + 80.0;
+            const stripsHeight = 104.0 + 88.0;
+            final previewHeight = math.max(
+              200.0,
+              screenHeight - bottomReserve - 18.0 - stripsHeight,
+            );
 
             return Stack(
               children: [
                 Positioned.fill(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(0, 12, 0, bottomReserve),
-                    child: RepaintBoundary(
-                      key: _previewKey,
-                      child: _buildPreview(previewHeight),
+                    child: Column(
+                      children: [
+                        _buildTemplateStrip(),
+                        const SizedBox(height: 8),
+                        _buildLayoutStrip(),
+                        const SizedBox(height: 12),
+                        RepaintBoundary(
+                          key: _previewKey,
+                          child: _buildPreview(previewHeight),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -170,11 +183,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   curve: Curves.easeOutCubic,
                   left: 0,
                   right: 0,
-                  bottom: _editorPanelVisible ? 12 : -panelHeight,
-                  child: _buildInlineEditorPanel(
-                    height: panelHeight,
-                    screenHeight: screenHeight,
-                  ),
+                  bottom: _editorPanelVisible ? 0 : -panelHeight,
+                  height: panelHeight,
+                  child: _buildInlineEditorPanel(),
                 ),
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 220),
@@ -208,85 +219,89 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  void _resizeEditorPanel(DragUpdateDetails details, double screenHeight) {
-    setState(() {
-      _editorPanelFraction =
-          (_editorPanelFraction - details.delta.dy / screenHeight)
-              .clamp(0.28, 0.95);
-    });
-  }
-
-  Widget _buildInlineEditorPanel({
-    required double height,
-    required double screenHeight,
-  }) {
+  Widget _buildInlineEditorPanel() {
     return DefaultTabController(
       length: 3,
-      child: Container(
-        height: height,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Column(
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragUpdate: (details) {
-                  _resizeEditorPanel(details, screenHeight);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() => _editorPanelVisible = false);
-                        },
-                        icon:
-                            const Icon(Icons.visibility_off_rounded, size: 18),
-                        label: Text(context.t('ui.verse_share.hide')),
-                      ),
-                    ],
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: 0.6,
                   ),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 28,
+                  offset: const Offset(0, -6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragEnd: (details) {
+                    if ((details.primaryVelocity ?? 0) > 250) {
+                      setState(() => _editorPanelVisible = false);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: context.t('ui.verse_share.hide'),
+                          onPressed: () {
+                            setState(() => _editorPanelVisible = false);
+                          },
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.only(right: 28),
                     dividerColor: Colors.transparent,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    labelColor: Theme.of(context).colorScheme.onSurface,
+                    unselectedLabelColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overlayColor: WidgetStateProperty.all(Colors.transparent),
                     tabs: [
                       Tab(
                         text: context.t('verse_share.layout'),
@@ -300,21 +315,21 @@ class _VerseShareModalState extends State<VerseShareModal> {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: TabBarView(
-                    children: [
-                      _buildLayoutTab(),
-                      _buildStyleTab(),
-                      _buildFooterTab(),
-                    ],
+                const SizedBox(height: 10),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TabBarView(
+                      children: [
+                        _buildLayoutTab(),
+                        _buildStyleTab(),
+                        _buildFooterTab(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -333,7 +348,139 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  Widget _buildPreview(double height) {
+  Widget _buildTemplateStrip() {
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: verseImageTemplates.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final template = verseImageTemplates[index];
+          final selected = _selectedTemplateId == template.id;
+          return GestureDetector(
+            onTap: () => _applyTemplate(template),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.transparent,
+                      width: 2.5,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(13),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(template.assetPath, fit: BoxFit.cover),
+                        if (selected && _isApplyingTemplate)
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            child: const Center(
+                              child: SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.t(template.nameKey),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLayoutStrip() {
+    return SizedBox(
+      height: 76,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: verseLayoutStyles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final style = verseLayoutStyles[index];
+          final selected = layout == style.kind;
+          return GestureDetector(
+            onTap: () => _applyLayout(style.kind),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary.withValues(
+                              alpha: 0.14,
+                            )
+                        : Theme.of(context).colorScheme.surfaceContainerLow,
+                    border: Border.all(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).dividerColor.withValues(
+                                alpha: 0.18,
+                              ),
+                      width: selected ? 1.6 : 1,
+                    ),
+                  ),
+                  child: Icon(
+                    style.icon,
+                    size: 22,
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.t(style.nameKey),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPreview(double height, {bool interactive = true}) {
     final storyCaption = _storyCaptionController.text.trim();
     final footerHeight = _reservedFooterHeight(storyCaption);
     final aspectRatio = format == ShareFormat.square ? 1.0 : 9 / 16;
@@ -347,7 +494,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
         return Center(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: backgroundType == BackgroundType.image ? pickImage : null,
+            onTap: interactive && backgroundType == BackgroundType.image
+                ? pickImage
+                : null,
             child: Container(
               height: targetHeight,
               width: targetWidth,
@@ -383,67 +532,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
                           color: Colors.black.withValues(alpha: 0.2),
                         ),
                       ),
-                    Center(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          format == ShareFormat.story ? 18 : 24,
-                          format == ShareFormat.story ? 44 : 28,
-                          format == ShareFormat.story ? 18 : 24,
-                          footerHeight + 12,
-                        ),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final fittedSize = _fitVerseTextSize(
-                              maxWidth: constraints.maxWidth,
-                              maxHeight: constraints.maxHeight,
-                            );
-                            return SizedBox(
-                              width: constraints.maxWidth,
-                              height: constraints.maxHeight,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.center,
-                                child: SizedBox(
-                                  width: constraints.maxWidth,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text.rich(
-                                        TextSpan(
-                                          children: _buildVerseInlineSpans(
-                                              fittedSize),
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      SizedBox(height: fittedSize * 0.8),
-                                      Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                              text: '- ',
-                                              style: _referenceTextStyle(
-                                                fittedSize,
-                                              ),
-                                            ),
-                                            TextSpan(
-                                              text: _referenceText,
-                                              style: _referenceTextStyle(
-                                                fittedSize,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                    _buildVerseTextArea(footerHeight),
                     if (backgroundType == BackgroundType.image &&
                         selectedImage == null)
                       Positioned.fill(
@@ -523,6 +612,322 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
+  Widget _buildFullPreviewOverlay() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _showFullPreview = false),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Theme.of(context).colorScheme.surface,
+        child: Center(
+          child: _buildPreview(
+            MediaQuery.of(context).size.height * 0.75,
+            interactive: false,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerseTextArea(double footerHeight) {
+    if (layout == VerseLayoutKind.splitCorners) {
+      return _buildSplitCornersArea(footerHeight);
+    }
+
+    final cornerAnchored = layout == VerseLayoutKind.cornerAnchored;
+    final sideBar = layout == VerseLayoutKind.sideBarAccent;
+    final alignment = cornerAnchored ? Alignment.topCenter : Alignment.center;
+    final crossAxis =
+        sideBar ? CrossAxisAlignment.start : CrossAxisAlignment.center;
+    final textAlign = sideBar ? TextAlign.left : TextAlign.center;
+
+    return Align(
+      alignment: alignment,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          format == ShareFormat.story ? 18 : 24,
+          cornerAnchored
+              ? (format == ShareFormat.story ? 64 : 40)
+              : (format == ShareFormat.story ? 44 : 28),
+          format == ShareFormat.story ? 18 : 24,
+          cornerAnchored ? 12 : footerHeight + 12,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final fittedSize = _fitVerseTextSize(
+              maxWidth: constraints.maxWidth,
+              maxHeight: constraints.maxHeight,
+            );
+            final verseText = Text.rich(
+              TextSpan(children: _buildVerseInlineSpans(fittedSize)),
+              textAlign: textAlign,
+            );
+            final referenceLine = _buildReferenceLine(
+              fittedSize,
+              align: textAlign,
+            );
+
+            Widget content = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: crossAxis,
+              children: [
+                verseText,
+                SizedBox(height: fittedSize * 0.8),
+                switch (layout) {
+                  VerseLayoutKind.dividerPill => Column(
+                      crossAxisAlignment: crossAxis,
+                      children: [
+                        Container(
+                          height: 1.5,
+                          width: 64,
+                          color: fontColor.withValues(alpha: 0.45),
+                        ),
+                        SizedBox(height: fittedSize * 0.5),
+                        _buildReferencePill(fittedSize),
+                      ],
+                    ),
+                  VerseLayoutKind.badgeCircle => _buildReferenceBadge(
+                      fittedSize,
+                    ),
+                  VerseLayoutKind.archBanner => _buildReferenceRibbon(
+                      fittedSize,
+                    ),
+                  _ => referenceLine,
+                },
+              ],
+            );
+
+            if (layout == VerseLayoutKind.boxedFrame) {
+              content = _wrapInFramedPanel(content, fittedSize);
+            } else if (layout == VerseLayoutKind.stackedCards) {
+              content = _wrapInStackedCards(content, fittedSize);
+            } else if (layout == VerseLayoutKind.quoteMark) {
+              content = _wrapWithQuoteMark(content, fittedSize);
+            } else if (layout == VerseLayoutKind.sideBarAccent) {
+              content = _wrapWithSideBar(content);
+            }
+
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: alignment,
+                child: SizedBox(
+                  width: constraints.maxWidth,
+                  child: content,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSplitCornersArea(double footerHeight) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        format == ShareFormat.story ? 18 : 24,
+        format == ShareFormat.story ? 44 : 28,
+        format == ShareFormat.story ? 18 : 24,
+        footerHeight + 12,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final fittedSize = _fitVerseTextSize(
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight * 0.6,
+          );
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Text.rich(
+                    TextSpan(children: _buildVerseInlineSpans(fittedSize)),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: _buildReferenceLine(
+                    fittedSize,
+                    align: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildReferenceLine(double fittedSize, {TextAlign align = TextAlign.center}) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: '- ', style: _referenceTextStyle(fittedSize)),
+          TextSpan(text: _referenceText, style: _referenceTextStyle(fittedSize)),
+        ],
+      ),
+      textAlign: align,
+    );
+  }
+
+  Widget _buildReferencePill(double fittedSize) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: fontColor.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        _referenceText,
+        style: _referenceTextStyle(fittedSize).copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferenceBadge(double fittedSize) {
+    final dimension = fittedSize * 3.4;
+    return Container(
+      width: dimension,
+      height: dimension,
+      alignment: Alignment.center,
+      padding: EdgeInsets.all(fittedSize * 0.3),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: fontColor.withValues(alpha: 0.6), width: 1.4),
+      ),
+      child: Text(
+        _referenceText,
+        textAlign: TextAlign.center,
+        style: _referenceTextStyle(fittedSize).copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferenceRibbon(double fittedSize) {
+    return CustomPaint(
+      painter: _RibbonPainter(
+        fillColor: fontColor.withValues(alpha: 0.16),
+        borderColor: fontColor.withValues(alpha: 0.55),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: fittedSize * 1.1,
+          vertical: fittedSize * 0.4,
+        ),
+        child: Text(
+          _referenceText,
+          style: _referenceTextStyle(fittedSize).copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _wrapInFramedPanel(Widget content, double fittedSize) {
+    final panelColor = fontColor.computeLuminance() > 0.5
+        ? Colors.black.withValues(alpha: 0.28)
+        : Colors.white.withValues(alpha: 0.22);
+    return Container(
+      padding: EdgeInsets.all(fittedSize * 0.9),
+      decoration: BoxDecoration(
+        color: panelColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: fontColor.withValues(alpha: 0.5)),
+      ),
+      child: content,
+    );
+  }
+
+  Widget _wrapInStackedCards(Widget content, double fittedSize) {
+    final panelColor = fontColor.computeLuminance() > 0.5
+        ? Colors.black.withValues(alpha: 0.24)
+        : Colors.white.withValues(alpha: 0.2);
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Positioned.fill(
+          child: Transform.rotate(
+            angle: -0.05,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: panelColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: fontColor.withValues(alpha: 0.3)),
+              ),
+            ),
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.all(fittedSize * 0.9),
+          decoration: BoxDecoration(
+            color: panelColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: fontColor.withValues(alpha: 0.45)),
+          ),
+          child: content,
+        ),
+      ],
+    );
+  }
+
+  Widget _wrapWithQuoteMark(Widget content, double fittedSize) {
+    return Padding(
+      padding: EdgeInsets.only(top: fittedSize * 1.1),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          Positioned(
+            top: -fittedSize * 1.1,
+            child: Icon(
+              Icons.format_quote_rounded,
+              size: fittedSize * 2.2,
+              color: fontColor.withValues(alpha: 0.18),
+            ),
+          ),
+          content,
+        ],
+      ),
+    );
+  }
+
+  Widget _wrapWithSideBar(Widget content) {
+    return IntrinsicHeight(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: 4,
+            decoration: BoxDecoration(
+              color: fontColor.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Flexible(child: content),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLayoutTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 12),
@@ -577,7 +982,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
                         label: Text(context.t('ui.verse_share.color')),
                         selected: backgroundType == BackgroundType.color,
                         onSelected: (_) {
-                          setState(() => backgroundType = BackgroundType.color);
+                          setState(() {
+                            backgroundType = BackgroundType.color;
+                            _selectedTemplateId = null;
+                          });
                         },
                       ),
                     ),
@@ -596,11 +1004,12 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 ),
                 if (backgroundType == BackgroundType.color) ...[
                   const SizedBox(height: 16),
-                  _buildColorPaletteSection(
+                  _buildColorSliderSection(
                     title: context.t('ui.verse_share.background_color'),
                     selectedColor: backgroundColor,
-                    colors: backgroundPalette,
-                    onSelected: (color) {
+                    saturation: 0.55,
+                    lightness: 0.82,
+                    onChanged: (color) {
                       setState(() => backgroundColor = color);
                     },
                   ),
@@ -692,11 +1101,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   divisions: 18,
                   onChanged: (value) => setState(() => fontSize = value),
                 ),
-                _buildColorPaletteSection(
+                _buildColorSliderSection(
                   title: context.t('ui.verse_share.font_color'),
                   selectedColor: fontColor,
-                  colors: fontPalette,
-                  onSelected: (color) => setState(() => fontColor = color),
+                  saturation: 0.65,
+                  lightness: 0.42,
+                  quickColors: const [Colors.black, Colors.white],
+                  onChanged: (color) => setState(() => fontColor = color),
                 ),
               ],
             ),
@@ -737,12 +1148,36 @@ class _VerseShareModalState extends State<VerseShareModal> {
           Text(
             context.t('verse_share.footer_date_note'),
           ),
+          const SizedBox(height: 14),
+          Text(
+            context.t('verse_share.date_style'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _dateStyleOptions.map((option) {
+              final selected = _dateFormatPattern == option.pattern;
+              return ChoiceChip(
+                label: Text(
+                  DateFormat(option.pattern).format(DateTime.now()),
+                ),
+                selected: selected,
+                onSelected: (_) {
+                  setState(() => _dateFormatPattern = option.pattern);
+                },
+              );
+            }).toList(growable: false),
+          ),
           const SizedBox(height: 20),
-          _buildColorPaletteSection(
+          _buildColorSliderSection(
             title: context.t('verse_share.footer_color'),
             selectedColor: footerColor,
-            colors: fontPalette,
-            onSelected: (color) => setState(() => footerColor = color),
+            saturation: 0.65,
+            lightness: 0.42,
+            quickColors: const [Colors.black, Colors.white],
+            onChanged: (color) => setState(() => footerColor = color),
           ),
           const SizedBox(height: 20),
           if (format == ShareFormat.story)
@@ -773,7 +1208,34 @@ class _VerseShareModalState extends State<VerseShareModal> {
     setState(() {
       selectedImage = imageData;
       backgroundType = BackgroundType.image;
+      _selectedTemplateId = null;
     });
+  }
+
+  Future<void> _applyTemplate(VerseImageTemplate template) async {
+    if (_isApplyingTemplate) return;
+    setState(() => _isApplyingTemplate = true);
+    try {
+      final data = await rootBundle.load(template.assetPath);
+      if (!mounted) return;
+      setState(() {
+        selectedImage = PickedImageData(
+          bytes: data.buffer.asUint8List(),
+          name: template.id,
+        );
+        backgroundType = BackgroundType.image;
+        fontColor = template.fontColor;
+        footerColor = template.footerColor;
+        blurIntensity = template.blurIntensity;
+        _selectedTemplateId = template.id;
+      });
+    } finally {
+      if (mounted) setState(() => _isApplyingTemplate = false);
+    }
+  }
+
+  void _applyLayout(VerseLayoutKind kind) {
+    setState(() => layout = kind);
   }
 
   Future<void> downloadImage() async {
@@ -889,7 +1351,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
     required double size,
   }) {
     final hasFill = rule.fillColor != Colors.transparent;
-    return TextStyle(
+    final baseStyle = TextStyle(
       fontSize: size * rule.sizeScale,
       color: rule.textColor,
       fontStyle: rule.fontStyleOption == VerseFontStyleOption.italic
@@ -905,6 +1367,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
       decoration: TextDecoration.none,
       height: 1.28,
     );
+    if (rule.fontFamily == _kDefaultHighlightFont) return baseStyle;
+    return GoogleFonts.getFont(rule.fontFamily, textStyle: baseStyle);
   }
 
   List<Shadow> _buildHighlightBorderShadows(Color borderColor) {
@@ -977,7 +1441,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
     return candidate * scale;
   }
 
-  String _todayDateLabel() => DateFormat('dd/MM/yyyy').format(DateTime.now());
+  String _todayDateLabel() =>
+      DateFormat(_dateFormatPattern).format(DateTime.now());
 
   Widget _buildSectionCard({
     required String title,
@@ -1012,31 +1477,57 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  Widget _buildColorPaletteSection({
+  Widget _buildColorSliderSection({
     required String title,
     required Color selectedColor,
-    required List<Color> colors,
-    required ValueChanged<Color> onSelected,
+    required double saturation,
+    required double lightness,
+    required ValueChanged<Color> onChanged,
+    List<Color> quickColors = const [],
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: colors.map((color) {
-            return GestureDetector(
-              onTap: () => onSelected(color),
-              child: _buildColorDot(
-                color: color,
-                isSelected: selectedColor == color,
-                isClear: color == Colors.transparent,
+        Row(
+          children: [
+            Expanded(
+              child: _SmoothColorSlider(
+                value: selectedColor,
+                saturation: saturation,
+                lightness: lightness,
+                onChanged: onChanged,
               ),
-            );
-          }).toList(),
+            ),
+            const SizedBox(width: 14),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: selectedColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade400, width: 1.5),
+              ),
+            ),
+          ],
         ),
+        if (quickColors.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            children: quickColors.map((color) {
+              return GestureDetector(
+                onTap: () => onChanged(color),
+                child: _buildColorDot(
+                  color: color,
+                  isSelected: selectedColor == color,
+                  isClear: color == Colors.transparent,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ],
     );
   }
@@ -1368,13 +1859,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
               );
             },
           ),
-          _buildColorPaletteSection(
+          _buildColorSliderSection(
             title: context.t('verse_share.highlight_text_color'),
             selectedColor: rule.textColor,
-            colors: fillPalette.where((color) {
-              return color != Colors.transparent;
-            }).toList(growable: false),
-            onSelected: (color) {
+            saturation: 0.7,
+            lightness: 0.42,
+            quickColors: const [Colors.black, Colors.white],
+            onChanged: (color) {
               _updateHighlightRule(
                 rule,
                 (current) => current.copyWith(textColor: color),
@@ -1382,11 +1873,13 @@ class _VerseShareModalState extends State<VerseShareModal> {
             },
           ),
           const SizedBox(height: 12),
-          _buildColorPaletteSection(
+          _buildColorSliderSection(
             title: context.t('verse_share.highlight_fill_color'),
             selectedColor: rule.fillColor,
-            colors: fillPalette,
-            onSelected: (color) {
+            saturation: 0.6,
+            lightness: 0.75,
+            quickColors: const [Colors.transparent],
+            onChanged: (color) {
               _updateHighlightRule(
                 rule,
                 (current) => current.copyWith(fillColor: color),
@@ -1394,16 +1887,55 @@ class _VerseShareModalState extends State<VerseShareModal> {
             },
           ),
           const SizedBox(height: 12),
-          _buildColorPaletteSection(
+          _buildColorSliderSection(
             title: context.t('verse_share.highlight_border_color'),
             selectedColor: rule.borderColor,
-            colors: fillPalette,
-            onSelected: (color) {
+            saturation: 0.7,
+            lightness: 0.5,
+            quickColors: const [Colors.transparent],
+            onChanged: (color) {
+              // A border always replaces any fill — the two looks aren't
+              // meant to combine, so picking a real border color clears fill.
               _updateHighlightRule(
                 rule,
-                (current) => current.copyWith(borderColor: color),
+                (current) => current.copyWith(
+                  borderColor: color,
+                  fillColor:
+                      color == Colors.transparent
+                          ? current.fillColor
+                          : Colors.transparent,
+                ),
               );
             },
+          ),
+          const SizedBox(height: 16),
+          Text(
+            context.t('verse_share.highlight_font_family'),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _highlightFontOptions.map((family) {
+              final selected = rule.fontFamily == family;
+              final label = family == _kDefaultHighlightFont
+                  ? context.t('verse_share.highlight_font_default')
+                  : family;
+              final labelStyle = family == _kDefaultHighlightFont
+                  ? const TextStyle()
+                  : GoogleFonts.getFont(family);
+              return ChoiceChip(
+                label: Text(label, style: labelStyle),
+                selected: selected,
+                onSelected: (_) {
+                  _updateHighlightRule(
+                    rule,
+                    (current) => current.copyWith(fontFamily: family),
+                  );
+                },
+              );
+            }).toList(growable: false),
           ),
         ],
       ),
@@ -1625,6 +2157,18 @@ class _BrandText extends StatelessWidget {
   }
 }
 
+const _kDefaultHighlightFont = 'Default';
+
+const _highlightFontOptions = [
+  _kDefaultHighlightFont,
+  'Playfair Display',
+  'Merriweather',
+  'Poppins',
+  'Pacifico',
+  'Caveat',
+  'Dancing Script',
+];
+
 class _HighlightRule {
   const _HighlightRule({
     required this.id,
@@ -1636,6 +2180,7 @@ class _HighlightRule {
     required this.fillColor,
     required this.borderColor,
     required this.sizeScale,
+    this.fontFamily = _kDefaultHighlightFont,
   });
 
   final String id;
@@ -1647,6 +2192,7 @@ class _HighlightRule {
   final Color fillColor;
   final Color borderColor;
   final double sizeScale;
+  final String fontFamily;
 
   _HighlightRule copyWith({
     String? phrase,
@@ -1657,6 +2203,7 @@ class _HighlightRule {
     Color? fillColor,
     Color? borderColor,
     double? sizeScale,
+    String? fontFamily,
   }) {
     return _HighlightRule(
       id: id,
@@ -1668,6 +2215,7 @@ class _HighlightRule {
       fillColor: fillColor ?? this.fillColor,
       borderColor: borderColor ?? this.borderColor,
       sizeScale: sizeScale ?? this.sizeScale,
+      fontFamily: fontFamily ?? this.fontFamily,
     );
   }
 }
@@ -1738,4 +2286,129 @@ Widget _buildColorDot({
       ),
     ),
   );
+}
+
+class _SmoothColorSlider extends StatelessWidget {
+  const _SmoothColorSlider({
+    required this.value,
+    required this.saturation,
+    required this.lightness,
+    required this.onChanged,
+  });
+
+  final Color value;
+  final double saturation;
+  final double lightness;
+  final ValueChanged<Color> onChanged;
+
+  Color _colorForHue(double hue) {
+    return HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
+  }
+
+  void _handlePosition(double dx, double width) {
+    if (width <= 0) return;
+    final fraction = (dx / width).clamp(0.0, 1.0);
+    onChanged(_colorForHue(fraction * 359.999));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = HSLColor.fromColor(value).hue;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const thumbSize = 28.0;
+        final thumbLeft =
+            ((hue / 360) * width - thumbSize / 2).clamp(0.0, width - thumbSize);
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) =>
+              _handlePosition(details.localPosition.dx, width),
+          onHorizontalDragUpdate: (details) =>
+              _handlePosition(details.localPosition.dx, width),
+          child: SizedBox(
+            height: thumbSize + 4,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: (thumbSize + 4 - 14) / 2,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      gradient: LinearGradient(
+                        colors: List.generate(
+                          13,
+                          (i) => _colorForHue(i * 30.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 60),
+                  left: thumbLeft,
+                  top: 0,
+                  child: Container(
+                    width: thumbSize,
+                    height: thumbSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: value,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RibbonPainter extends CustomPainter {
+  const _RibbonPainter({required this.fillColor, required this.borderColor});
+
+  final Color fillColor;
+  final Color borderColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final notch = size.height * 0.35;
+    final path = Path()
+      ..moveTo(notch, 0)
+      ..lineTo(size.width - notch, 0)
+      ..lineTo(size.width, size.height / 2)
+      ..lineTo(size.width - notch, size.height)
+      ..lineTo(notch, size.height)
+      ..lineTo(0, size.height / 2)
+      ..close();
+    canvas.drawPath(path, Paint()..color = fillColor);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RibbonPainter oldDelegate) =>
+      oldDelegate.fillColor != fillColor ||
+      oldDelegate.borderColor != borderColor;
 }
