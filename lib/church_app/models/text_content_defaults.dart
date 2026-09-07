@@ -939,7 +939,10 @@ const Map<String, String> defaultChurchTextContents = {
   // Dashboard
   'dashboard.admin_only': 'Dashboard is available only for admins.',
   'church_tab.go_further': 'Go Further',
+  'church_tab.discover': 'Discover',
   'church_tab.dashboard': 'Dashboard',
+  'for_you.highlights_tab': 'Highlights',
+  'for_you.community_tab': 'Community',
   'dashboard.admin_title': 'Admin Dashboard',
   'dashboard.church_fallback': 'Church',
   'dashboard.hero_subtitle':

@@ -9,7 +9,6 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
-import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/go_further_screen.dart';
@@ -112,8 +111,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final eventName = switch (index) {
       0 => 'home_opened',
       1 => 'for_you_opened',
-      2 => 'feed_opened',
-      3 => 'go_further_opened',
+      2 => 'discover_opened',
       _ => null,
     };
 
@@ -154,7 +152,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final screens = <Widget>[
       HomeScreen(),
       ForYouScreen(),
-      FeedScreen(),
       const GoFurtherScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
@@ -170,14 +167,9 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         label: ref.t('church_tab.for_you'),
       ),
       AppBottomTabItem(
-        icon: Icons.newspaper_outlined,
-        selectedIcon: Icons.newspaper_rounded,
-        label: ref.t('church_tab.feeds'),
-      ),
-      AppBottomTabItem(
         icon: Icons.travel_explore_outlined,
         selectedIcon: Icons.travel_explore_rounded,
-        label: ref.t('church_tab.go_further'),
+        label: ref.t('church_tab.discover'),
       ),
       if (canSeeDashboard)
         AppBottomTabItem(

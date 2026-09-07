@@ -2,6 +2,10 @@
 
 ## Purpose
 
+Feeds is embedded as the "Community" segment inside the For You tab (see
+[For You content](for-you-content.md)) rather than its own bottom tab; the
+screen widget and behaviour below are unchanged.
+
 Feeds provide church-local and global social posts. Posts support text,
 hashtags, multiple images, author details, optional shared profile information,
 pinning, promotion to global scope, search and fast movement between latest and

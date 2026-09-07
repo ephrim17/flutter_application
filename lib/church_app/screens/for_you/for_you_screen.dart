@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
+import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
@@ -24,6 +25,79 @@ class ForYouScreen extends ConsumerStatefulWidget {
 }
 
 class _ForYouScreenState extends ConsumerState<ForYouScreen> {
+  int _segment = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    notificationDestinationRequest.addListener(_handleSegmentSwitch);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleSegmentSwitch());
+  }
+
+  @override
+  void dispose() {
+    notificationDestinationRequest.removeListener(_handleSegmentSwitch);
+    super.dispose();
+  }
+
+  void _handleSegmentSwitch() {
+    if (notificationDestinationRequest.value == null || !mounted) return;
+    if (_segment != 0) {
+      setState(() => _segment = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<int>(
+              segments: [
+                ButtonSegment(
+                  value: 0,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  label: Text(context.t('for_you.highlights_tab')),
+                ),
+                ButtonSegment(
+                  value: 1,
+                  icon: const Icon(Icons.groups_rounded, size: 18),
+                  label: Text(context.t('for_you.community_tab')),
+                ),
+              ],
+              selected: {_segment},
+              showSelectedIcon: false,
+              onSelectionChanged: (selection) =>
+                  setState(() => _segment = selection.first),
+            ),
+          ),
+        ),
+        Expanded(
+          child: IndexedStack(
+            index: _segment,
+            children: const [
+              _ForYouHighlightsBody(),
+              FeedScreen(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ForYouHighlightsBody extends ConsumerStatefulWidget {
+  const _ForYouHighlightsBody();
+
+  @override
+  ConsumerState<_ForYouHighlightsBody> createState() =>
+      _ForYouHighlightsBodyState();
+}
+
+class _ForYouHighlightsBodyState extends ConsumerState<_ForYouHighlightsBody> {
   final _scrollController = ScrollController();
   final _prayForOthersKey = GlobalKey();
   final _dailyFaithLoopKey = GlobalKey();

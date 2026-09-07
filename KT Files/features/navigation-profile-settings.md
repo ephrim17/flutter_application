@@ -2,10 +2,12 @@
 
 ## Scope
 
-The authenticated shell provides Home, For You, Feeds and Go Further tabs,
-plus an admin-only Dashboard when enabled. The drawer exposes permitted
-features and compact counts. Settings owns profile, appearance, notifications,
-prayer reminders, feedback, local-data clearing and logout.
+The authenticated shell provides Home, For You and Discover tabs, plus an
+admin-only Dashboard when enabled. Feeds is no longer a standalone bottom tab
+— it lives inside For You as the "Community" segment (see
+[For You content](for-you-content.md)). The drawer exposes permitted features
+and compact counts. Settings owns profile, appearance, notifications, prayer
+reminders, feedback, local-data clearing and logout.
 
 ## Behaviour
 
@@ -45,6 +47,7 @@ prayer reminders, feedback, local-data clearing and logout.
 | NAV-01 | Tap each bottom tab repeatedly | Correct screen opens once; no state/index crash. |
 | NAV-02 | Member vs admin shell | Member cannot see Dashboard/Studio/Equipment; eligible admin can. |
 | NAV-03 | Disable a feature remotely | Matching tab/drawer item disappears safely. |
+| NAV-08 | Switch between Highlights/Community inside For You, then back to Home/Discover and return | Segment selection and each segment's scroll/pagination state survive the round trip. |
 | NAV-04 | Badge data loading/error/success | No misleading zero while loading; final compact number is correct. |
 | SETTINGS-01 | Add/change/remove profile photo | Avatar updates across drawer, feeds, articles, circles and quick cards. |
 | SETTINGS-02 | Save valid/invalid profile | Valid values persist; validation prevents malformed phone/location/date. |

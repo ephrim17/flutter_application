@@ -2,9 +2,19 @@
 
 ## Purpose
 
-For You assembles ordered, church-configurable spiritual content in one scroll.
-Its registry currently includes Live Church, Daily Verse, Faith Engagement,
-Bible Learning, Pray for Others, Featured For You, footer and Articles.
+For You assembles ordered, church-configurable spiritual content in one scroll,
+and hosts the church/global social feed alongside it.
+
+The For You tab is split into two segments at the top:
+- **Highlights** — the registry described below (Live Church, Daily Verse,
+  Faith Engagement, Bible Learning, Pray for Others, Featured For You, footer
+  and Articles).
+- **Community** — the church/global feed (see [Feeds](feeds.md)), embedded
+  as-is; it is no longer a separate bottom tab.
+
+Switching segments preserves each side's scroll position and (for Community)
+feed pagination state, since both are kept alive in an `IndexedStack` rather
+than rebuilt on toggle.
 
 This document covers Daily Verse, Featured For You, Articles, Bible Swipe and
 Reading Plans. Faith Engagement, Learning, Live Church and Prayer have separate
@@ -15,7 +25,9 @@ documents.
 - `churches/{churchId}/for_you_section/{sectionId}` controls enabled state and
   order. Studio controls Faith Engagement sub-items independently.
 - Daily Verse uses a church-configured Bible book/chapter/verse reference and a
-  plain card presentation.
+  plain card presentation. The card grows to fit the verse text (min-height
+  only) instead of clipping it, so larger system text sizes remain fully
+  readable.
 - Featured For You is the consolidated featured/plans presentation.
 - Articles are admin-authored, record `createdBy`/`updatedBy` footprints and
   show author details like feed cards. Tapping the author opens the common user
@@ -43,6 +55,8 @@ documents.
 | FORYOU-01 | Configure enabled/order values | Registry renders only enabled sections in exact order. |
 | FORYOU-02 | Missing optional config | Documented default sections still render safely. |
 | FORYOU-03 | Daily Verse reference | Correct verse loads; plain card has no gradient/overflow. |
+| FORYOU-03b | Daily Verse at large system text size | Full verse text is readable; card grows instead of clipping mid-line. |
+| FORYOU-13 | Toggle Highlights/Community segment | Correct content shows; Community renders the same feed content/FAB as before the move. |
 | FORYOU-04 | Featured content empty/populated | Clean empty behaviour or equal-height content cards. |
 | FORYOU-05 | Create article as admin | Article persists with creator footprint and member notification is queued. |
 | FORYOU-06 | Article card/list/detail | Author avatar/details render; tapping opens common user card. |
