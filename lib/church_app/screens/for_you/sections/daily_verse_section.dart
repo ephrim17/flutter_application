@@ -54,12 +54,13 @@ class DailyVerseCard extends ConsumerWidget {
         final verseText =
             language == BibleLanguage.tamil ? verse['tamil'] : verse['english'];
 
-        return SizedBox(
-          height: forYouPrimaryCardHeight,
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: forYouPrimaryCardHeight),
           child: DecoratedScriptureCard(
             width: width - 32,
             plain: true,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -85,17 +86,15 @@ class DailyVerseCard extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Expanded(
-                  child: Text(
-                    verseText!,
-                    maxLines: 5,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 18.0,
-                          height: 1.45,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                Text(
+                  verseText!,
+                  maxLines: 8,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 18.0,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 ScriptureReferencePill(
