@@ -219,6 +219,7 @@ class UserIdentityRepository {
     required String platform,
   }) async {
     await FirestorePaths.userDevices(firestore, uid).doc(installationId).set({
+      'uid': uid,
       'fcmToken': fcmToken,
       'platform': platform,
       'updatedAt': FieldValue.serverTimestamp(),

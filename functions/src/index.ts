@@ -692,38 +692,82 @@ function churchUserTopic(churchId: string, uid: string): string {
     notificationTopicSegment(uid);
 }
 
+/**
+ * Resolves every FCM token registered across every device
+ * (`users/{uid}/devices/{installationId}`) for a set of person uids.
+ * One person can have several devices, and their token set doesn't depend
+ * on which church happens to be selected on any of them (§2.6/Phase 5) — a
+ * post in church A must still reach a device currently sitting in church B.
+ * @param uids The linked person uids to resolve devices for.
+ * @return Map of uid -> that person's distinct fcm tokens.
+ */
+async function resolveDeviceTokensByUid(
+  uids: string[],
+): Promise<Map<string, string[]>> {
+  const tokensByUid = new Map<string, string[]>();
+  const distinctUids = Array.from(new Set(uids))
+    .filter((uid) => uid.length > 0);
+  if (distinctUids.length === 0) return tokensByUid;
+
+  const chunkSize = 30; // Firestore "in" query limit.
+  for (let index = 0; index < distinctUids.length; index += chunkSize) {
+    const chunk = distinctUids.slice(index, index + chunkSize);
+    const snapshot = await admin.firestore()
+      .collectionGroup("devices")
+      .where("uid", "in", chunk)
+      .get();
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const uid = readUnknownString(data["uid"]);
+      const token = readUnknownString(data["fcmToken"]);
+      if (!uid || !token) return;
+      const existing = tokensByUid.get(uid) ?? [];
+      if (!existing.includes(token)) existing.push(token);
+      tokensByUid.set(uid, existing);
+    });
+  }
+
+  return tokensByUid;
+}
+
 async function sendFeedPostNotification(
   payload: FeedPostNotificationPayload,
 ): Promise<number> {
-  const usersSnapshot = await admin.firestore()
+  const membersSnapshot = await admin.firestore()
     .collection("churches")
     .doc(payload.churchId)
-    .collection("users")
+    .collection("members")
     .get();
+
+  const linkedUids = membersSnapshot.docs
+    .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+    .filter((uid) => uid.length > 0);
+  const tokensByUid = await resolveDeviceTokensByUid(linkedUids);
 
   const messages: admin.messaging.Message[] = [];
   const seenTokens = new Set<string>();
 
-  usersSnapshot.docs.forEach((doc) => {
-    const token = readUnknownString(doc.data().authToken);
-    if (!token || seenTokens.has(token)) return;
-    seenTokens.add(token);
-
-    const isAuthor = doc.id == payload.authorId;
-    messages.push({
-      token,
-      notification: {
-        title: isAuthor ? payload.authorTitle : payload.memberTitle,
-        body: isAuthor ? payload.authorBody : payload.memberBody,
-      },
-      data: {
-        kind: "feed_post_created",
-        churchId: payload.churchId,
-        feedId: payload.feedId,
-        authorId: payload.authorId,
-      },
-    });
-  });
+  for (const uid of tokensByUid.keys()) {
+    const isAuthor = uid === payload.authorId;
+    for (const token of tokensByUid.get(uid) ?? []) {
+      if (seenTokens.has(token)) continue;
+      seenTokens.add(token);
+      messages.push({
+        token,
+        notification: {
+          title: isAuthor ? payload.authorTitle : payload.memberTitle,
+          body: isAuthor ? payload.authorBody : payload.memberBody,
+        },
+        data: {
+          kind: "feed_post_created",
+          churchId: payload.churchId,
+          feedId: payload.feedId,
+          authorId: payload.authorId,
+        },
+      });
+    }
+  }
 
   let successCount = 0;
   for (let index = 0; index < messages.length; index += 500) {
@@ -741,9 +785,9 @@ async function sendPrayerRequestAdminNotification(
 ): Promise<{successCount: number; failureCount: number}> {
   const firestore = admin.firestore();
   const churchRef = firestore.collection("churches").doc(churchId);
-  const [configSnapshot, usersSnapshot] = await Promise.all([
+  const [configSnapshot, membersSnapshot] = await Promise.all([
     churchRef.collection("config").doc("app").get(),
-    churchRef.collection("users").get(),
+    churchRef.collection("members").get(),
   ]);
 
   const rawAdmins = configSnapshot.data()?.admins;
@@ -761,29 +805,36 @@ async function sendPrayerRequestAdminNotification(
     return {successCount: 0, failureCount: 0};
   }
 
+  const adminLinkedUids = membersSnapshot.docs
+    .filter((doc) => {
+      const email = readUnknownString(doc.data()["displayEmail"]);
+      return adminEmails.has(email.toLowerCase());
+    })
+    .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+    .filter((uid) => uid.length > 0);
+  const tokensByUid = await resolveDeviceTokensByUid(adminLinkedUids);
+
   const messages: admin.messaging.Message[] = [];
   const seenTokens = new Set<string>();
 
-  usersSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    const email = readUnknownString(data.email).toLowerCase();
-    const token = readUnknownString(data.authToken);
-    if (!adminEmails.has(email) || !token || seenTokens.has(token)) return;
-
-    seenTokens.add(token);
-    messages.push({
-      token,
-      notification: {
-        title: "New prayer request",
-        body: "A new prayer request was added to your church.",
-      },
-      data: {
-        kind: "prayer_request_created",
-        churchId,
-        prayerId,
-      },
-    });
-  });
+  for (const tokens of tokensByUid.values()) {
+    for (const token of tokens) {
+      if (seenTokens.has(token)) continue;
+      seenTokens.add(token);
+      messages.push({
+        token,
+        notification: {
+          title: "New prayer request",
+          body: "A new prayer request was added to your church.",
+        },
+        data: {
+          kind: "prayer_request_created",
+          churchId,
+          prayerId,
+        },
+      });
+    }
+  }
 
   let successCount = 0;
   let failureCount = 0;
@@ -1090,7 +1141,7 @@ export const processQueuedChurchNotification = onDocumentCreated(
 
 export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
   {
-    document: "churches/{churchId}/users/{uid}",
+    document: "churches/{churchId}/members/{uid}",
     region: "us-central1",
   },
   async (event) => {
@@ -1103,16 +1154,49 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     }
 
     try {
-      const usersSnapshot = await admin.firestore()
+      const membersSnapshot = await admin.firestore()
         .collection("churches")
         .doc(churchId)
-        .collection("users")
+        .collection("members")
         .get();
 
-      const members = usersSnapshot.docs.map((doc) => ({
-        uid: doc.id,
-        ...doc.data(),
-      }));
+      // dayStreak moved off the membership doc onto the person's identity
+      // (users/{uid}) — one global streak per person (D4). Batch-fetch it
+      // for every linked member so the per-church leaderboard still works.
+      const linkedUids = membersSnapshot.docs
+        .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+        .filter((uid): uid is string => uid.length > 0);
+      const streakByUid = new Map<string, number>();
+      if (linkedUids.length > 0) {
+        const identityRefs = linkedUids.map((uid) =>
+          admin.firestore().collection("users").doc(uid));
+        const identityDocs = await admin.firestore().getAll(...identityRefs);
+        identityDocs.forEach((doc, index) => {
+          if (doc.exists) {
+            streakByUid.set(
+              linkedUids[index],
+              readUnknownInteger(doc.data()?.["dayStreak"]),
+            );
+          }
+        });
+      }
+
+      // Adapt the new members/{uid} shape (displayName, displayDob,
+      // joinedAt, no dayStreak) back onto the field names
+      // normalizeDashboardMember/buildDashboardMemberMetrics already expect
+      // — those stay unchanged; only this trigger's input shape moved.
+      const members = membersSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const linkedUid = readUnknownString(data["linkedUid"]);
+        return {
+          ...data,
+          uid: doc.id,
+          name: data["displayName"],
+          dob: data["displayDob"],
+          createdAt: data["joinedAt"],
+          dayStreak: linkedUid ? streakByUid.get(linkedUid) ?? 0 : 0,
+        };
+      });
 
       const metrics = buildDashboardMemberMetrics(members);
 

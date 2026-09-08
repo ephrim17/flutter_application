@@ -369,22 +369,22 @@ async function ensureFinanceGroupMember(
     throw new HttpsError("unauthenticated", "Missing user identity.");
   }
 
-  const userSnapshot = await admin.firestore()
+  const memberSnapshot = await admin.firestore()
     .collection("churches")
     .doc(churchId)
-    .collection("users")
+    .collection("members")
     .doc(uid)
     .get();
 
-  if (!userSnapshot.exists) {
+  if (!memberSnapshot.exists) {
     throw new HttpsError(
       "permission-denied",
       "You must belong to the selected church to access finance data.",
     );
   }
 
-  const churchGroupIds = Array.isArray(userSnapshot.data()?.churchGroupIds) ?
-    userSnapshot.data()?.churchGroupIds as unknown[] :
+  const churchGroupIds = Array.isArray(memberSnapshot.data()?.churchGroupIds) ?
+    memberSnapshot.data()?.churchGroupIds as unknown[] :
     [];
   const normalizedGroupIds = churchGroupIds
     .map((item) => readUnknownString(item))
