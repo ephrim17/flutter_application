@@ -1,23 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
+/// Person-owned, not church-owned (§5.1/Phase 4) — a reading plan follows
+/// the person everywhere, including the guest shell, so this repository has
+/// no churchId dependency.
 class ReadingPlanProgressRepository {
   final FirebaseFirestore firestore;
-  final String churchId;
   final String uid;
 
   ReadingPlanProgressRepository({
     required this.firestore,
-    required this.churchId,
     required this.uid,
   });
 
   CollectionReference<Map<String, dynamic>> get _collection =>
-      FirestorePaths.churchUserReadingPlans(
-        firestore,
-        churchId,
-        uid,
-      );
+      FirestorePaths.userReadingPlans(firestore, uid);
 
   Future<List<int>> fetchCompletedDays(String month) async {
     final doc = await _collection.doc(month.toLowerCase()).get();

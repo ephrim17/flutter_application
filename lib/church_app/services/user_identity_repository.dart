@@ -13,7 +13,7 @@ class UserIdentityRepository {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   DocumentReference<Map<String, dynamic>> _doc(String uid) =>
-      FirestorePaths.userDoc(firestore, uid) as DocumentReference<Map<String, dynamic>>;
+      FirestorePaths.userDoc(firestore, uid);
 
   /// Signup (D5) — captures only the essentials; the rest is completed
   /// after approval (§5.5).

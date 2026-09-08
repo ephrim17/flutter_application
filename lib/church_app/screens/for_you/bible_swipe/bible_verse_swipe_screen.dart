@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
@@ -67,7 +68,15 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
                           ),
                           onPressed: () async {
                             await toggleGlobalHighlight(
-                                book, chapter, verseNumber);
+                              book,
+                              chapter,
+                              verseNumber,
+                              firestore: ref.read(firestoreProvider),
+                              uid: ref
+                                  .read(firebaseAuthProvider)
+                                  .currentUser
+                                  ?.uid,
+                            );
                             ref.invalidate(favoritesProvider);
                           },
                         ),

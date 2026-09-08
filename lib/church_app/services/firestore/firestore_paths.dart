@@ -358,32 +358,22 @@ class FirestorePaths {
         .collection(FirestorePaths.socialItemsCollection);
   }
 
-  static CollectionReference<Map<String, dynamic>> churchUserReadingPlans(
-    FirebaseFirestore firestore,
-    String churchId,
-    String uid,
-  ) {
-    return firestore
-        .collection('churches')
-        .doc(churchId)
-        .collection(users)
-        .doc(uid)
-        .collection(readingPlans);
-  }
-
-  // User readingPlans subcollection
+  // User readingPlans subcollection — person-owned (§5.1/Phase 4), follows
+  // the person everywhere, not scoped to any church.
   static const readingPlans = 'readingPlans';
-  static CollectionReference userReadingPlans(
+  static CollectionReference<Map<String, dynamic>> userReadingPlans(
       FirebaseFirestore firestore, String uid) {
     return userDoc(firestore, uid).collection(readingPlans);
   }
 
-  static CollectionReference usersCollection(FirebaseFirestore firestore) {
+  static CollectionReference<Map<String, dynamic>> usersCollection(
+      FirebaseFirestore firestore) {
     return firestore.collection(users);
   }
 
   /// Single user document
-  static DocumentReference userDoc(FirebaseFirestore firestore, String uid) {
+  static DocumentReference<Map<String, dynamic>> userDoc(
+      FirebaseFirestore firestore, String uid) {
     return usersCollection(firestore).doc(uid);
   }
 
