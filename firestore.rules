@@ -152,6 +152,15 @@ service cloud.firestore {
       match /youth_circles/{docId} {
         allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
         allow write: if isChurchStaff(churchId);
+
+        // Member comment thread on a circle (faith_engagement_repository.dart).
+        match /responses/{responseId} {
+          allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+          allow create: if isApprovedMember(churchId) &&
+            request.resource.data.userId == request.auth.uid;
+          allow delete: if isChurchStaff(churchId) ||
+            resource.data.userId == request.auth.uid;
+        }
       }
       match /faith_reflections/{docId} {
         allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
