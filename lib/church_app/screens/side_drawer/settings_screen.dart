@@ -9,7 +9,8 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
@@ -25,7 +26,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
     show selectedChurchProvider, churchesProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -44,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
     final selectedChurch = ref.watch(selectedChurchProvider);
 
     return Scaffold(
@@ -126,7 +127,7 @@ class _SettingsHeroCard extends StatelessWidget {
     required this.churchName,
   });
 
-  final AsyncValue<AppUser?> userAsync;
+  final AsyncValue<UserIdentity?> userAsync;
   final String churchName;
 
   @override
@@ -424,7 +425,7 @@ class _EditProfileSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
 
     return userAsync.when(
       loading: () => _SettingsTile(
@@ -486,8 +487,8 @@ class _LogoutSection extends ConsumerWidget {
         ref.invalidate(currentChurchIdProvider);
         ref.invalidate(churchesProvider);
         ref.invalidate(userChurchesProvider);
-        ref.invalidate(appUserProvider);
-        ref.invalidate(getCurrentUserProvider);
+        ref.invalidate(userIdentityProvider);
+        ref.invalidate(currentMembershipProvider);
         navigator.pushAndRemoveUntil(
           PageRouteBuilder(
             transitionDuration: Duration.zero,
@@ -867,7 +868,8 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       final churchId = await ref.read(currentChurchIdProvider.future);
-      final user = ref.read(appUserProvider).asData?.value;
+      final identity = ref.read(userIdentityProvider).asData?.value;
+      final membership = ref.read(currentMembershipProvider).asData?.value;
       final selectedChurch = ref.read(selectedChurchProvider);
       final notificationSettings =
           await FirebaseMessaging.instance.getNotificationSettings();
@@ -877,17 +879,19 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
         'source': 'settings',
         'churchId': churchId,
         'churchName': selectedChurch?.name,
-        'userId': firebaseUser?.uid ?? user?.uid,
-        'userName': user?.name,
-        'userEmail': firebaseUser?.email ?? user?.email,
-        'userPhone': user?.phone,
-        'userRole': user?.role,
-        'userApproved': user?.approved,
+        'userId': firebaseUser?.uid ?? identity?.uid,
+        'userName': identity?.name,
+        'userEmail': firebaseUser?.email ?? identity?.email,
+        'userPhone': identity?.phone,
+        'userRole': membership?.role,
+        'userApproved': membership?.approved,
         'submittedBy': _feedbackSubmittedBy(
           firebaseUser: firebaseUser,
-          user: user,
+          identity: identity,
+          membership: membership,
         ),
-        'userSnapshot': _feedbackUserSnapshot(user),
+        'identitySnapshot': _feedbackIdentitySnapshot(identity),
+        'membershipSnapshot': _feedbackMembershipSnapshot(membership),
         'firebaseAuthSnapshot': _feedbackAuthSnapshot(firebaseUser),
         'churchSnapshot': _feedbackChurchSnapshot(selectedChurch),
         'appSnapshot': {
@@ -1033,19 +1037,20 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
 
 Map<String, dynamic> _feedbackSubmittedBy({
   required User? firebaseUser,
-  required AppUser? user,
+  required UserIdentity? identity,
+  required ChurchMembership? membership,
 }) {
   return {
-    'uid': firebaseUser?.uid ?? user?.uid,
-    'name': user?.name,
-    'email': firebaseUser?.email ?? user?.email,
-    'phone': user?.phone,
-    'role': user?.role,
-    'approved': user?.approved,
+    'uid': firebaseUser?.uid ?? identity?.uid,
+    'name': identity?.name,
+    'email': firebaseUser?.email ?? identity?.email,
+    'phone': identity?.phone,
+    'role': membership?.role,
+    'approved': membership?.approved,
   };
 }
 
-Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
+Map<String, dynamic>? _feedbackIdentitySnapshot(UserIdentity? user) {
   if (user == null) return null;
 
   return {
@@ -1054,35 +1059,46 @@ Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
     'profilePhotoUrl': user.profilePhotoUrl,
     'email': user.email,
     'phone': user.phone,
-    'contact': user.contact,
     'location': user.location,
     'address': user.address,
     'gender': user.gender,
-    'category': user.category,
-    'familyId': user.familyId,
     'maritalStatus': user.maritalStatus,
     'weddingDay': _feedbackTimestamp(user.weddingDay),
-    'financialStabilityRating': user.financialStabilityRating,
-    'financialSupportRequired': user.financialSupportRequired,
     'educationalQualification': user.educationalQualification,
     'talentsAndGifts': user.talentsAndGifts,
-    'churchGroupIds': user.churchGroupIds,
-    'role': user.role,
     'dob': _feedbackTimestamp(user.dob),
     'createdAt': _feedbackTimestamp(user.createdAt),
     'dayStreak': user.dayStreak,
     'lastStreakRecordedAt': _feedbackTimestamp(user.lastStreakRecordedAt),
-    'approved': user.approved,
-    'solemnizedBaptism': user.solemnizedBaptism,
-    'baptismDate': _feedbackTimestamp(user.baptismDate),
-    'baptismCertificateNumber': user.baptismCertificateNumber,
-    'baptismChurchName': user.baptismChurchName,
-    'baptismPastorName': user.baptismPastorName,
-    'marriageSolemnizationChurchType': user.marriageSolemnizationChurchType,
-    'marriageSolemnizationChurchName': user.marriageSolemnizationChurchName,
-    'membershipCurrentStatus': user.membershipCurrentStatus,
-    'membershipNotes': user.membershipNotes,
-    'additionalNotes': user.additionalNotes,
+    'profileComplete': user.profileComplete,
+  };
+}
+
+Map<String, dynamic>? _feedbackMembershipSnapshot(ChurchMembership? member) {
+  if (member == null) return null;
+
+  return {
+    'docId': member.docId,
+    'churchId': member.churchId,
+    'linkedUid': member.linkedUid,
+    'category': member.category,
+    'familyId': member.familyId,
+    'financialStabilityRating': member.financialStabilityRating,
+    'financialSupportRequired': member.financialSupportRequired,
+    'churchGroupIds': member.churchGroupIds,
+    'role': member.role,
+    'joinedAt': _feedbackTimestamp(member.joinedAt),
+    'approved': member.approved,
+    'solemnizedBaptism': member.solemnizedBaptism,
+    'baptismDate': _feedbackTimestamp(member.baptismDate),
+    'baptismCertificateNumber': member.baptismCertificateNumber,
+    'baptismChurchName': member.baptismChurchName,
+    'baptismPastorName': member.baptismPastorName,
+    'marriageSolemnizationChurchType': member.marriageSolemnizationChurchType,
+    'marriageSolemnizationChurchName': member.marriageSolemnizationChurchName,
+    'membershipCurrentStatus': member.membershipCurrentStatus,
+    'membershipNotes': member.membershipNotes,
+    'additionalNotes': member.additionalNotes,
   };
 }
 
@@ -1193,7 +1209,7 @@ class _StorageSection extends ConsumerWidget {
 class _EditProfileSheet extends ConsumerStatefulWidget {
   const _EditProfileSheet({required this.user});
 
-  final AppUser user;
+  final UserIdentity user;
 
   @override
   ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -1321,9 +1337,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
     if (firebaseUser == null) return;
 
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (!mounted || churchId == null) return;
-
     final phone = _phoneController.text.trim();
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1362,9 +1375,8 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     });
 
     try {
-      final repo = ChurchUsersRepository(
+      final repo = UserIdentityRepository(
         firestore: ref.read(firestoreProvider),
-        churchId: churchId,
       );
 
       final profilePhotoUrl = await repo.updateProfile(
@@ -1372,10 +1384,11 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         phone: phone,
         location: _locationController.text,
         address: _addressController.text,
-        category: widget.user.category,
-        familyId: widget.user.familyId,
-        churchGroupIds: widget.user.churchGroupIds,
         dob: _dob,
+        maritalStatus: widget.user.maritalStatus,
+        weddingDay: widget.user.weddingDay,
+        educationalQualification: widget.user.educationalQualification,
+        talentsAndGifts: widget.user.talentsAndGifts,
         existingProfilePhotoUrl: widget.user.profilePhotoUrl,
         profilePhoto: _profilePhoto,
         removeProfilePhoto: _removeProfilePhoto,
@@ -1485,10 +1498,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 _SettingsReviewRow(
                   ref.t('members.email_label'),
                   widget.user.email,
-                ),
-                _SettingsReviewRow(
-                  ref.t('members.category_label'),
-                  widget.user.category,
                 ),
               ],
             ),
