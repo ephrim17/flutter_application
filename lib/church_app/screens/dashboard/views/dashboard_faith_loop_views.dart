@@ -46,7 +46,7 @@ class _DashboardFaithLoopUpdatesSection extends StatelessWidget {
   });
 
   final AsyncValue<FaithLoopDashboardUpdate> updatesAsync;
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
 
   @override
   Widget build(BuildContext context) => updatesAsync.when(
@@ -279,7 +279,7 @@ class _FaithLoopMemberProgressScreen extends StatelessWidget {
   });
 
   final List<DailyFaithProgressRecord> records;
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
 
   @override
   Widget build(BuildContext context) {
@@ -295,8 +295,8 @@ class _FaithLoopMemberProgressScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final record = records[index];
           final member = membersById[record.userId];
-          final name = member?.name.trim().isNotEmpty == true
-              ? member!.name
+          final name = member?.displayName.trim().isNotEmpty == true
+              ? member!.displayName
               : context.t('dashboard.unknown_member');
           return Container(
             decoration: carouselBoxDecoration(context),
@@ -304,7 +304,7 @@ class _FaithLoopMemberProgressScreen extends StatelessWidget {
               contentPadding: const EdgeInsets.all(14),
               leading: AppProfileAvatar(
                 name: name,
-                imageUrl: member?.profilePhotoUrl,
+                imageUrl: member?.displayPhotoUrl,
                 radius: 22,
               ),
               title: Text(name),

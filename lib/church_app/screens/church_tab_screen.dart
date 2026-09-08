@@ -137,14 +137,14 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(appUserProvider, (previous, next) {
-      final previousUser = previous?.asData?.value;
-      final nextUser = next.asData?.value;
-      if (nextUser == null ||
-          (previousUser?.uid == nextUser.uid &&
+    ref.listen(currentMembershipProvider, (previous, next) {
+      final previousMembership = previous?.asData?.value;
+      final nextMembership = next.asData?.value;
+      if (nextMembership == null ||
+          (previousMembership?.docId == nextMembership.docId &&
               _sameGroups(
-                previousUser?.churchGroupIds ?? const [],
-                nextUser.churchGroupIds,
+                previousMembership?.churchGroupIds ?? const [],
+                nextMembership.churchGroupIds,
               ))) {
         return;
       }

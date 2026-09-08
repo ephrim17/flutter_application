@@ -208,8 +208,8 @@ class _DashboardSpecialDaysSection extends StatelessWidget {
     required this.anniversaries,
   });
 
-  final List<AppUser> birthdays;
-  final List<AppUser> anniversaries;
+  final List<ChurchMembership> birthdays;
+  final List<ChurchMembership> anniversaries;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +232,7 @@ class _DashboardSpecialDaysSection extends StatelessWidget {
             _DashboardSpecialDayTile(
               member: member,
               type: SpecialPostType.birthday,
-              subtitle: _birthdayDashboardLabel(context, member.dob),
+              subtitle: _birthdayDashboardLabel(context, member.displayDob),
             ),
         ],
         if (anniversaries.isNotEmpty) ...[
@@ -247,7 +247,7 @@ class _DashboardSpecialDaysSection extends StatelessWidget {
               type: SpecialPostType.anniversary,
               subtitle: _anniversaryDashboardLabel(
                 context,
-                member.weddingDay,
+                member.displayWeddingDay,
               ),
             ),
         ],
@@ -292,7 +292,7 @@ class _DashboardSpecialDayTile extends StatelessWidget {
     required this.subtitle,
   });
 
-  final AppUser member;
+  final ChurchMembership member;
   final SpecialPostType type;
   final String subtitle;
 
@@ -316,10 +316,10 @@ class _DashboardSpecialDayTile extends StatelessWidget {
           );
         },
         leading: AppProfileAvatar(
-          name: member.name,
-          imageUrl: member.profilePhotoUrl,
+          name: member.displayName,
+          imageUrl: member.displayPhotoUrl,
         ),
-        title: Text(member.name),
+        title: Text(member.displayName),
         subtitle: Text(subtitle),
         trailing: Icon(
           type == SpecialPostType.birthday
