@@ -149,6 +149,26 @@ To target `migrationv1` you must:
   with no error. Do this first, verify it, then proceed.
 - Cloud Functions v2 triggers default to `(default)`. Pass the `database` option on every Firestore trigger you want firing against `migrationv1`.
 
+**Gotcha — the installed `firebase-tools` (15.11.0) silently no-ops on this
+array config.** `firebase deploy --only firestore:rules,firestore:indexes`
+against the array form prints `Deploy complete!` but skips every actual step
+(no "compiled successfully", no "released rules", no indexes build) — and a
+rules+indexes deploy targeting only `firestore:indexes` throws
+`TypeError: Cannot read properties of undefined (reading 'map')` in
+`deploy.js`. Confirmed by testing: `migrationv1` had zero rules deployed and
+every read/write failed `PERMISSION_DENIED` until worked around. Likely fixed
+in a newer `firebase-tools` (15.29.0 was available at the time), but `npx
+firebase-tools@latest` failed here on an unrelated local npm cache
+permissions error — untested whether upgrading actually fixes it.
+
+**Workaround that does work today:** temporarily replace the array with a
+single object carrying an explicit `database` key —
+`{ "database": "migrationv1", "rules": ..., "indexes": ... }` — deploy, then
+switch back to the array for the committed config. Single-object + explicit
+`database` deploys correctly (verified: rules compiled, uploaded, released;
+indexes explicitly confirmed "for migrationv1 database"). Do this once per
+database you need to update until the tooling is confirmed fixed.
+
 Verify writes land in the intended database before running anything
 destructive.
 
