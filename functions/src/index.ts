@@ -28,6 +28,7 @@ export {
 } from "./youtube_live";
 export {setFeedPostGlobal} from "./feed_global";
 export {fanOutIdentityChanges} from "./identityFanout";
+export {deleteAccount, deleteChurch, leaveChurch} from "./lifecycle";
 
 admin.initializeApp();
 

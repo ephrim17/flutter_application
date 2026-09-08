@@ -28,6 +28,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -108,8 +109,10 @@ class SettingsScreen extends ConsumerWidget {
             const _SettingsGroupCard(
               children: [
                 _StorageSection(),
+                _LeaveChurchSection(),
                 _SwitchChurchSection(),
                 _LogoutSection(),
+                _DeleteAccountSection(),
               ],
             ),
             const SizedBox(height: sectionSpacing),
@@ -465,6 +468,102 @@ class _EditProfileSection extends ConsumerWidget {
   }
 }
 
+/// Leaves the currently selected church only (§6 Phase 7) — identity,
+/// favorites, reading plans, Church Tree progress and streak all survive,
+/// since they live on `users/{uid}`, never on the membership. Hidden when
+/// no church is selected (e.g. from the guest shell).
+class _LeaveChurchSection extends ConsumerWidget {
+  const _LeaveChurchSection();
+
+  Future<void> _confirmAndLeave(
+    BuildContext context,
+    WidgetRef ref,
+    String churchId,
+    String churchName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(ref.t('settings.leave_church_title')),
+        content: Text(
+          ref.t(
+            'settings.leave_church_message',
+            parameters: {'church': churchName},
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(ref.t('settings.cancel')),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(ref.t('settings.leave_church_confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).leaveChurch(churchId: churchId);
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      await ChurchLocalStorage().clearChurch();
+      await ChurchLocalStorage().clearSubscribedChurchTopic();
+      ref.read(selectedChurchProvider.notifier).state = null;
+      ref.invalidate(currentChurchIdProvider);
+      ref.invalidate(myMembershipsProvider);
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, __, ___) => const SelectChurchScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(error))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (selectedChurch == null) return const SizedBox.shrink();
+
+    return _SettingsTile(
+      icon: Icons.exit_to_app_rounded,
+      iconColor: Colors.red,
+      title: ref.t('settings.leave_church_title'),
+      subtitle: ref.t(
+        'settings.leave_church_subtitle',
+        parameters: {'church': selectedChurch.name},
+      ),
+      onTap: () => _confirmAndLeave(
+        context,
+        ref,
+        selectedChurch.id,
+        selectedChurch.name,
+      ),
+    );
+  }
+}
+
 /// Switches the locally selected church without signing out — for a user
 /// with more than one church relationship (approved or pending elsewhere).
 /// Hidden entirely when there is nothing to switch to.
@@ -550,6 +649,99 @@ class _LogoutSection extends ConsumerWidget {
           (route) => false,
         );
       },
+    );
+  }
+}
+
+/// Deletes the person's account entirely, across every church (§6 Phase 7)
+/// — the account-deletion UI referenced in
+/// `KT Files/testing/android-release-readiness-2026-08-13.md`'s known
+/// blockers list.
+class _DeleteAccountSection extends ConsumerWidget {
+  const _DeleteAccountSection();
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final password = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(ref.t('settings.delete_account_title')),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(ref.t('settings.delete_account_message')),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: ref.t('settings.delete_account_password_label'),
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? ref.t('settings.delete_account_password_required')
+                    : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(ref.t('settings.cancel')),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () {
+              if (formKey.currentState?.validate() != true) return;
+              Navigator.pop(dialogContext, passwordController.text);
+            },
+            child: Text(ref.t('settings.delete_account_confirm')),
+          ),
+        ],
+      ),
+    );
+    passwordController.dispose();
+    if (password == null || !context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount(password: password);
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const CreateAuthAccountScreen(initialLoginMode: true),
+        ),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(error))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _SettingsTile(
+      icon: Icons.person_remove_outlined,
+      iconColor: Colors.red,
+      title: ref.t('settings.delete_account_title'),
+      subtitle: ref.t('settings.delete_account_subtitle'),
+      onTap: () => _confirmAndDelete(context, ref),
     );
   }
 }

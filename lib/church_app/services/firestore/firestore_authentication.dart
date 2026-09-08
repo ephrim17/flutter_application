@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -21,6 +22,8 @@ class CreatedAuthAccount {
 class AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(region: 'us-central1');
 
   AuthRepository(this._auth, this._firestore);
 
@@ -212,10 +215,14 @@ class AuthRepository {
     );
   }
 
-  Future<void> deleteAccount({
-    required String churchId,
-    required String password,
-  }) async {
+  /// Deletes the signed-in person's account entirely (§6 Phase 7): every
+  /// membership across every church (and that membership's own progress
+  /// and group rows), the identity doc and its subcollections, Storage
+  /// blobs, then the Auth user — done server-side by the `deleteAccount`
+  /// callable, since a client can't safely enumerate every membership
+  /// across churches it isn't itself scoped to, nor delete its own Auth
+  /// user's cross-church footprint atomically.
+  Future<void> deleteAccount({required String password}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
@@ -237,48 +244,20 @@ class AuthRepository {
       password: password,
     );
 
+    // Refreshes the ID token's auth_time — the callable checks it's recent
+    // before doing anything irreversible.
     await user.reauthenticateWithCredential(credential);
 
-    final userId = user.uid;
-    await _deleteFirestoreUserData(
-      churchId: churchId,
-      uid: userId,
-    );
-
-    await user.delete();
+    await _functions.httpsCallable('deleteAccount').call<void>();
   }
 
-  // TODO(user-church-decoupling, Phase 7): this only cleans up the caller's
-  // OWN membership + identity, not every church they've joined — full
-  // cross-church deletion (memberships, devices, Storage blobs) needs a
-  // callable function, since a client can't safely enumerate every
-  // membership across churches it isn't a member's-eye-view of otherwise.
-  Future<void> _deleteFirestoreUserData({
-    required String churchId,
-    required String uid,
-  }) async {
-    await _deleteCollection(FirestorePaths.userReadingPlans(_firestore, uid));
-    await _deleteCollection(FirestorePaths.userFavorites(_firestore, uid));
-    await _deleteCollection(FirestorePaths.userDevices(_firestore, uid));
-    await _deleteCollection(
-        FirestorePaths.userLearningProgress(_firestore, uid));
-
-    final batch = _firestore.batch();
-    batch.delete(FirestorePaths.churchMemberDoc(_firestore, churchId, uid));
-    batch.delete(FirestorePaths.userDoc(_firestore, uid));
-    await batch.commit();
-  }
-
-  Future<void> _deleteCollection(CollectionReference collectionRef) async {
-    while (true) {
-      final snapshot = await collectionRef.limit(50).get();
-      if (snapshot.docs.isEmpty) break;
-      final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
-    }
+  /// Leaves one church (§6 Phase 7): deletes the membership and group rows
+  /// there only. Identity, favorites, reading plans, Church Tree progress
+  /// and streak all live on `users/{uid}` and are untouched.
+  Future<void> leaveChurch({required String churchId}) async {
+    await _functions.httpsCallable('leaveChurch').call<void>({
+      'churchId': churchId,
+    });
   }
 
   Future<void> requestAccess(

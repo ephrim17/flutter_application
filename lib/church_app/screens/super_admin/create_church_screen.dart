@@ -291,6 +291,73 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     });
   }
 
+  Future<void> _confirmAndDeleteChurch() async {
+    final church = widget.church;
+    if (church == null) return;
+
+    final confirmController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.t('super_admin.delete_church_title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.t(
+                'super_admin.delete_church_message',
+                parameters: {'church': church.name},
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmController,
+              decoration: InputDecoration(
+                labelText: context.t(
+                  'super_admin.delete_church_type_to_confirm',
+                  parameters: {'church': church.name},
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.t('settings.cancel')),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: confirmController,
+            builder: (_, value, __) => TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: value.text.trim() == church.name.trim()
+                  ? () => Navigator.pop(dialogContext, true)
+                  : null,
+              child: Text(context.t('super_admin.delete_church_action')),
+            ),
+          ),
+        ],
+      ),
+    );
+    confirmController.dispose();
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() => _isSubmitting = true);
+    try {
+      final service = SuperAdminChurchService(ref.read(firestoreProvider));
+      await service.deleteChurch(church.id);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
   Future<void> _submit() async {
     final validationError = _validate(context);
     if (validationError != null) {
@@ -849,6 +916,14 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           elevation: 0,
           scrolledUnderElevation: 0,
           automaticallyImplyLeading: !_isSubmitting,
+          actions: [
+            if (_isEditMode && !_isSubmitting)
+              IconButton(
+                tooltip: context.t('super_admin.delete_church_action'),
+                icon: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+                onPressed: _confirmAndDeleteChurch,
+              ),
+          ],
         ),
         body: Stack(
           children: [

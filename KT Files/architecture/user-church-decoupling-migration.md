@@ -944,3 +944,54 @@ change the repo owner should trigger deliberately (`npm --prefix functions
 run deploy`, or scoped with `--only functions:fanOutIdentityChanges`), not
 something done autonomously mid-migration. `npm --prefix functions run
 lint && npm --prefix functions run build` both pass.
+
+### Addendum (Phase 7 lifecycle built, not deployed)
+
+Three callable functions in `functions/src/lifecycle.ts` (all
+`us-central1`, exported from `index.ts`):
+
+- **`leaveChurch({churchId})`** — deletes the caller's own membership doc,
+  its `learning_progress` subcollection, and its rows in that church's
+  `groups/*/groupMembers`. Identity, favorites, reading plans, Church Tree
+  progress and streak are untouched (all live on `users/{uid}`).
+- **`deleteChurch({churchId})`** — super-admin only (checked against
+  `superAdmins` by the caller's token email, same pattern as
+  `_requireSuperAdmin()` elsewhere). Uses Admin SDK's
+  `firestore.recursiveDelete()` on the `churches/{churchId}` doc — this
+  alone handles every subcollection at any depth (members, groups, feeds,
+  prayer requests, learning content, all of it) without needing to
+  enumerate them by hand. Also best-effort deletes the
+  `churches/{churchId}/` Storage prefix. Users survive — nothing outside
+  that subtree is touched.
+- **`deleteAccount()`** — no params; always acts on `request.auth.uid`.
+  Requires the ID token's `auth_time` to be within 5 minutes (the client
+  calls `reauthenticateWithCredential` immediately before invoking this,
+  which refreshes it — the server-side half of the same "recent password
+  re-entry" guarantee the old client-only flow provided). Finds every
+  membership via `collectionGroup('members').where('uid','==',uid)`,
+  deletes each one's `learning_progress` + `groupMembers` rows + the
+  membership itself + a best-effort Storage prefix delete for that
+  church's legacy avatar path, then deletes `users/{uid}` and its
+  subcollections, the person's `users/{uid}/profile/` Storage prefix, and
+  finally the Auth user itself via `admin.auth().deleteUser(uid)`.
+
+**Client wiring, closing the "no account-deletion UI" release blocker**
+(`KT Files/testing/android-release-readiness-2026-08-13.md`):
+`firestore_authentication.dart`'s `deleteAccount()` was rewritten to
+reauthenticate then call the callable, replacing its old TODO-marked
+partial client-side cleanup (own membership + identity only, silently
+missed every other church). Added a real "Delete account" section to
+Settings (password-confirmation dialog) and a "Leave church" section
+(shown only when a church is selected) — both were previously fully
+unbuilt; `deleteAccount` had no UI caller at all before this. Added a
+"Delete church" action to `CreateChurchScreen`'s edit mode (super admin
+only, type-the-church-name-to-confirm given `recursiveDelete` is
+irreversible), backed by a new `SuperAdminChurchService.deleteChurch`.
+
+**Not deployed** — same reasoning as Phases 5/6: these are exactly the
+kind of irreversible, cross-church operations that should be deployed and
+smoke-tested deliberately by the repo owner, not as a side effect of this
+session. The UI is wired and will call the callable correctly once
+`npm --prefix functions run deploy` runs; until then, tapping these
+actions in a running app will fail with a "function not found" error —
+expected, not a bug.

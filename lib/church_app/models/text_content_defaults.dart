@@ -578,6 +578,30 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.switch_church_title': 'Switch church',
   'settings.switch_church_subtitle':
       'Move to one of your other churches, or browse and request a new one.',
+  'settings.delete_account_title': 'Delete account',
+  'settings.delete_account_subtitle':
+      'Permanently delete your account and leave every church.',
+  'settings.delete_account_message':
+      'This permanently deletes your account, removes you from every '
+          'church you belong to, and cannot be undone. Enter your password '
+          'to confirm.',
+  'settings.delete_account_password_label': 'Password',
+  'settings.delete_account_password_required': 'Password is required.',
+  'settings.delete_account_confirm': 'Delete my account',
+  'settings.leave_church_title': 'Leave church',
+  'settings.leave_church_subtitle': 'Leave {church}.',
+  'settings.leave_church_message':
+      'You will lose your membership and any group assignments in '
+          '{church}. Your profile, favorites, reading plans and streak are '
+          'not affected.',
+  'settings.leave_church_confirm': 'Leave church',
+  'super_admin.delete_church_action': 'Delete church',
+  'super_admin.delete_church_title': 'Delete church permanently',
+  'super_admin.delete_church_message':
+      'This permanently deletes {church} and everything in it — members, '
+          'groups, feeds, prayer requests, learning content, all of it. '
+          'This cannot be undone. Members keep their own accounts.',
+  'super_admin.delete_church_type_to_confirm': 'Type "{church}" to confirm',
   'settings.not_now': 'Not now',
   'settings.preferences_subtitle': 'Appearance, notifications, and reminders.',
   'settings.preferences_title': 'Preferences',
@@ -700,12 +724,6 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.profile_photo_choose': 'Choose photo',
   'settings.profile_photo_remove': 'Remove',
   'settings.profile_photo_too_large': 'Choose an image smaller than 5 MB.',
-  'settings.delete_account': 'Delete Account',
-  'settings.delete_account_subtitle':
-      'Remove your profile from the selected church',
-  'settings.delete_account_message':
-      'This removes your profile from the currently selected church and takes you back to church selection.',
-  'settings.delete_account_no_church': 'No church selected.',
   'settings.push_notifications': 'Push Notifications',
   'settings.push_enabled': 'Enabled and synced for church updates',
   'settings.push_provisional': 'Enabled with provisional permission',

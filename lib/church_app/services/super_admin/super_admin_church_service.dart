@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -895,6 +896,16 @@ class SuperAdminChurchService {
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('\n', '<br>');
+  }
+
+  /// Recursively deletes a church and everything under it (§6 Phase 7,
+  /// super admin only) — members, groups, feeds, learning content, all of
+  /// it. Users survive; nothing outside `churches/{churchId}` is touched.
+  /// Irreversible.
+  Future<void> deleteChurch(String churchId) async {
+    await FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('deleteChurch')
+        .call<void>({'churchId': churchId});
   }
 }
 
