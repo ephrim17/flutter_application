@@ -134,9 +134,13 @@ class StudioRepository {
   // Studio's home screen only needs these numbers for a tile badge, so a
   // server-side count avoids downloading every document just to discard it.
   Stream<int> _countStreamFor(Query<Map<String, dynamic>> query) {
+    // Broadcast so a stray double-build that ends up with two StreamBuilders
+    // on the same instance (e.g. a duplicated route from a double-tap) can't
+    // crash with "Stream has already been listened to" — Stream.fromFuture
+    // is single-subscription by default.
     return Stream.fromFuture(
       query.count().get().then((snapshot) => snapshot.count ?? 0),
-    );
+    ).asBroadcastStream();
   }
 
   Stream<int> countPastors() => _countStreamFor(pastorsRef);

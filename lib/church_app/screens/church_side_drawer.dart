@@ -15,6 +15,23 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+// A rapid double-tap on a drawer item can fire onTap twice before the first
+// pop+push settles, landing the same const screen (and its GlobalKeys) in
+// the Navigator twice — surfaces as "Duplicate GlobalKey detected" and
+// "Stream has already been listened to" crashes in the pushed screen. This
+// debounces both drawers' taps against that.
+DateTime? _lastDrawerNavigationAt;
+
+bool _shouldDebounceDrawerNavigation() {
+  final now = DateTime.now();
+  if (_lastDrawerNavigationAt != null &&
+      now.difference(_lastDrawerNavigationAt!) < const Duration(milliseconds: 600)) {
+    return true;
+  }
+  _lastDrawerNavigationAt = now;
+  return false;
+}
+
 class ChurchSideDrawer extends StatelessWidget {
   const ChurchSideDrawer({super.key, required this.onSelectedMenu});
 
@@ -59,6 +76,7 @@ class ChurchSideDrawer extends StatelessWidget {
   }
 
   void _handleTap(BuildContext context, DrawerMenuItem item) {
+    if (_shouldDebounceDrawerNavigation()) return;
     Navigator.pop(context);
 
     if (item.route != null) {
@@ -180,6 +198,7 @@ class AppDrawer extends ConsumerWidget {
   }
 
   void _handleTap(BuildContext context, DrawerMenuItem item) {
+    if (_shouldDebounceDrawerNavigation()) return;
     Navigator.pop(context);
 
     if (item.route != null) {
