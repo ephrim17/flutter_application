@@ -759,3 +759,51 @@ being trustworthy the moment any client can write it). Fixed: staff may
 only touch display* when the row is unlinked (their own authoritative
 data); for a linked row, only the Phase 6 fan-out (Admin SDK, bypasses
 rules) may.
+
+### Addendum (found during Phase 0 rules re-verification against migrationv1)
+
+Testing the app against `migrationv1` surfaced that the Phase 1 `members`
+collection-group read rule had only ever been deployed to `migrationv1`
+during the original Phase 0 write-verification step — before that rule
+existed. `myMembershipsProvider`'s `collectionGroup('members')` query
+(§5.2/entry gate) failed with `PERMISSION_DENIED` on first real run.
+Redeployed rules+indexes to `migrationv1` only, using the documented
+single-object `firebase.json` workaround, then reverted `firebase.json`
+back to array form (`git diff` clean). No production/`(default)` rules were
+touched. **Going forward in this migration, `firestore.rules` and
+`firestore.indexes.json` are edited locally as each phase needs them, but
+are not deployed** — deployment (to `migrationv1` for continued testing,
+and to production only at Phase 8) is left as an explicit, separate step
+for the repo owner to run and verify against the console themselves.
+
+### Addendum (self-service request-access simplification, post-Phase-3 feedback)
+
+Once `CompleteProfileScreen` exists, the self-service request-access screen
+never needs to re-collect identity fields — `RequestChurchAccessScreen`
+(`screens/entry/request_church_access_screen.dart`) reads them from
+`users/{uid}` and submits with one tap, guarding against double-submission
+by checking the membership doc immediately before writing. This replaces
+`login_request_screen.dart`'s member-mode path referenced in §5.5's form
+split table; `adminCreateMode` is untouched. See
+`KT Files/features/authentication-and-entry.md` for the user-facing
+flow, and `helpers/self_signup_membership_helper.dart` for the
+category/family-id derivation shared by both screens.
+
+The Learning tab was also dropped from the guest shell (§5.3) on direct
+feedback — Church Tree modules remain reachable inside any joined church,
+just not in the pre-approval hub. `globalPublishedLearningModulesProvider`
+was removed as a result; `LearningModuleRepository.watchPublishedModules()`
+stays, since Phase 4's learning-track split (§5.6) still needs it to
+classify a module id as global vs. church.
+
+**Deliberately deferred, not forgotten:** §5.5's "Profile, after approval"
+step and its non-blocking prompt-sheet UI
+(`widgets/prompts/prompt_sheet.dart` / `prompt_sequence_provider`) for
+`maritalStatus`/`weddingDay`/`educationalQualification`/`talentsAndGifts`.
+`UserIdentityRepository.updateProfile` already accepts all of these fields
+end-to-end — only the prompt-sheet trigger and its own settings-screen UI
+surface are missing. Lower risk to leave for a follow-up pass than the
+remaining data-model phases (2, 4, 6, 7), since nothing currently writes
+bad data here — the fields are just not yet reachable through this
+specific UI, and are surfaced when the admin captures them directly (form
+edit modes on the church staff side).
