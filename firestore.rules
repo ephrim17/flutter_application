@@ -212,6 +212,9 @@ service cloud.firestore {
       }
 
       // Church membership doc.
+      // TODO(user-church-decoupling): remove once every caller is migrated
+      // to `members` below (KT Files/architecture/
+      // user-church-decoupling-migration.md §5.1, D1).
       match /users/{uid} {
         allow read: if isSelf(uid) || isChurchStaff(churchId);
         // A user can only ever create their own membership doc as
@@ -234,16 +237,76 @@ service cloud.firestore {
           allow write: if isSelf(uid);
         }
       }
+
+      // Membership only (D1 rename of `users` above) — identity fields live
+      // on the top-level `users/{uid}` doc, never here. `docId` is the auth
+      // uid for a linked member, or a random id for an admin-created member
+      // with no account (§9.3/§9.4/§9.7) — isSelf(docId) degrades safely to
+      // false for the latter, since it never matches a real caller.
+      match /members/{docId} {
+        allow read: if isSelf(docId) || isChurchStaff(churchId);
+        allow create: if (isSelf(docId) && request.resource.data.approved == false) ||
+          isChurchStaff(churchId);
+        // Self can edit their own fields but can never flip `approved`, nor
+        // touch the display* cache — that's written only by the Phase 6
+        // fan-out (which runs as Admin SDK and bypasses rules entirely), so
+        // a client write here would go stale silently (§9.2).
+        allow update: if isChurchStaff(churchId) ||
+          (isSelf(docId) &&
+           request.resource.data.approved == resource.data.approved &&
+           request.resource.data.displayName == resource.data.displayName &&
+           request.resource.data.displayEmail == resource.data.displayEmail &&
+           request.resource.data.displayPhone == resource.data.displayPhone &&
+           request.resource.data.displayPhotoUrl == resource.data.displayPhotoUrl &&
+           request.resource.data.displayDob == resource.data.displayDob &&
+           request.resource.data.displayGender == resource.data.displayGender &&
+           request.resource.data.identitySyncedAt == resource.data.identitySyncedAt);
+        allow delete: if isSelf(docId) || isChurchStaff(churchId);
+
+        // Church modules only — Church Tree (global) progress lives on
+        // users/{uid}/learning_progress instead (§5.6, D9).
+        match /learning_progress/{docId} {
+          allow read: if isSelf(docId) || isChurchStaff(churchId);
+          allow write: if isSelf(docId);
+        }
+      }
+    }
+
+    // Self-discovery only — "which churches am I a member of" (§5.2). The
+    // nested /members/{docId} block above governs everything else (admin
+    // lists, single-doc reads); this is purely for the collectionGroup
+    // query, which Firestore evaluates against this recursive-wildcard
+    // rule, not the nested one. Must test resource.data.uid, not the doc id,
+    // or the collectionGroup query is rejected outright (§9.9).
+    match /{path=**}/members/{memberId} {
+      allow read: if resource.data.uid == request.auth.uid;
     }
 
     // ---------- top-level ----------
 
-    // Vestigial global profile doc — owner-only until/unless this becomes
-    // the real cross-church identity record.
+    // The canonical, church-independent person record (§5.1). Owner-only —
+    // there is no "guest" role, these are fully authenticated users, and
+    // nothing here is admin-writable (admins only ever touch membership
+    // docs under churches/{cid}/members).
     match /users/{uid} {
-      allow read, write: if isSelf(uid);
+      allow read: if isSelf(uid);
+      allow create, update: if isSelf(uid) &&
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        (!('dayStreak' in request.resource.data) ||
+         request.resource.data.dayStreak is int);
+      allow delete: if isSelf(uid);
 
       match /readingPlans/{planId} {
+        allow read, write: if isSelf(uid);
+      }
+      match /devices/{installationId} {
+        allow read, write: if isSelf(uid);
+      }
+      match /favorites/{verseKey} {
+        allow read, write: if isSelf(uid);
+      }
+      match /learning_progress/{docId} {
         allow read, write: if isSelf(uid);
       }
     }

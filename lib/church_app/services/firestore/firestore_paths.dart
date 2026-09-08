@@ -131,9 +131,73 @@ class FirestorePaths {
   }
 
   /// Users subcollection under church
+  // TODO(user-church-decoupling): remove once every caller is migrated to
+  // churchMembers/churchMemberDoc (KT Files/architecture/
+  // user-church-decoupling-migration.md §5.1, D1 — renamed to `members`).
   static CollectionReference churchUsers(
       FirebaseFirestore firestore, String churchId) {
     return churchDoc(firestore, churchId).collection(users);
+  }
+
+  static const members = 'members';
+
+  /// Membership-only subcollection under church (D1 rename of `users`).
+  /// Identity fields live on [userDoc] — see
+  /// KT Files/architecture/user-church-decoupling-migration.md §5.1.
+  static CollectionReference<Map<String, dynamic>> churchMembers(
+      FirebaseFirestore firestore, String churchId) {
+    return churchDoc(firestore, churchId).collection(members);
+  }
+
+  static DocumentReference<Map<String, dynamic>> churchMemberDoc(
+    FirebaseFirestore firestore,
+    String churchId,
+    String docId,
+  ) {
+    return churchMembers(firestore, churchId).doc(docId);
+  }
+
+  static const devices = 'devices';
+
+  /// `users/{uid}/devices/{installationId}` — fcmToken, platform, topics.
+  /// Written every launch regardless of selected church (§5.4/Phase 5).
+  static CollectionReference<Map<String, dynamic>> userDevices(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(devices);
+  }
+
+  static const favorites = 'favorites';
+
+  /// `users/{uid}/favorites/{verseKey}` — replaces the SharedPreferences
+  /// `all_highlights` store (Phase 4).
+  static CollectionReference<Map<String, dynamic>> userFavorites(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(favorites);
+  }
+
+  /// `users/{uid}/learning_progress/{docId}` — Church Tree (global) modules
+  /// only; church modules keep their progress under the membership doc
+  /// (§5.6, D9).
+  static CollectionReference<Map<String, dynamic>> userLearningProgress(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(learningProgress);
+  }
+
+  /// `churches/{cid}/members/{docId}/learning_progress/{docId}` — church
+  /// modules only (§5.6, D9).
+  static CollectionReference<Map<String, dynamic>> churchMemberLearningProgress(
+    FirebaseFirestore firestore,
+    String churchId,
+    String memberDocId,
+  ) {
+    return churchMemberDoc(firestore, churchId, memberDocId)
+        .collection(learningProgress);
   }
 
   /// announcements subcollection under church
@@ -342,6 +406,8 @@ class FirestorePaths {
   }
 
   /// Single user document under church
+  // TODO(user-church-decoupling): remove once every caller is migrated to
+  // churchMemberDoc.
   static DocumentReference churchUserDoc(
     FirebaseFirestore firestore,
     String churchId,
