@@ -652,7 +652,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       var shouldAutoApprove = widget.adminCreateMode;
 
       if (!widget.adminCreateMode && normalizedEmail.isNotEmpty) {
-        final usersSnapshot = await FirestorePaths.churchUsers(
+        final membersSnapshot = await FirestorePaths.churchMembers(
           ref.read(firestoreProvider),
           widget.churchId,
         ).limit(1).get();
@@ -666,7 +666,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 .where((item) => item.isNotEmpty)
                 .toList(growable: false);
 
-        shouldAutoApprove = usersSnapshot.docs.isEmpty &&
+        shouldAutoApprove = membersSnapshot.docs.isEmpty &&
             admins.length == 1 &&
             admins.first == normalizedEmail;
       }

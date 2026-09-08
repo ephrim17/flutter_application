@@ -326,35 +326,57 @@ class SuperAdminChurchService {
         input.adminName != null &&
         input.adminEmail != null &&
         input.adminPhone != null) {
+      final adminUid = input.adminUid!.trim();
       batch.set(
-        FirestorePaths.churchUserDoc(
-          _firestore,
-          churchId,
-          input.adminUid!.trim(),
-        ),
+        FirestorePaths.userDoc(_firestore, adminUid),
         {
-          'uid': input.adminUid!.trim(),
           'name': input.adminName!.trim(),
           'email': normalizedAdminEmail,
           'phone': input.adminPhone!.trim(),
-          'contact': input.adminPhone!.trim(),
           'location': '',
           'address': input.address.trim(),
           'gender': '',
-          'category': 'individual',
-          'familyId': '',
           'maritalStatus': '',
           'weddingDay': null,
-          'financialStabilityRating': 0,
-          'financialSupportRequired': false,
           'educationalQualification': '',
           'talentsAndGifts': const <String>[],
+          'dob': null,
+          'profileComplete': false,
+          'schemaVersion': 1,
+          'createdAt': now,
+          'updatedAt': now,
+        },
+        SetOptions(merge: true),
+      );
+      batch.set(
+        FirestorePaths.churchMemberDoc(
+          _firestore,
+          churchId,
+          adminUid,
+        ),
+        {
+          'uid': adminUid,
+          'linkedUid': adminUid,
+          'category': 'individual',
+          'familyId': '',
+          'financialStabilityRating': 0,
+          'financialSupportRequired': false,
           'churchGroupIds': adminGroupIds,
           'role': 'admin',
-          'authToken': '',
           'approved': true,
-          'dob': null,
-          'createdAt': now,
+          'joinedAt': now,
+          'schemaVersion': 1,
+          'displayName': input.adminName!.trim(),
+          'displayEmail': normalizedAdminEmail,
+          'displayPhone': input.adminPhone!.trim(),
+          'displayAddress': input.address.trim(),
+          'displayGender': '',
+          'displayMaritalStatus': '',
+          'displayWeddingDay': null,
+          'displayEducationalQualification': '',
+          'displayTalentsAndGifts': const <String>[],
+          'displayDob': null,
+          'identitySyncedAt': now,
         },
       );
     }

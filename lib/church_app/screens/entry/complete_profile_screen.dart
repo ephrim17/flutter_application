@@ -129,11 +129,15 @@ class _CompleteProfileScreenState
               Wrap(
                 spacing: 8,
                 children: [
-                  for (final option in ['male', 'female', 'other'])
+                  for (final option in const [
+                    ('male', 'profile_step.gender_male'),
+                    ('female', 'profile_step.gender_female'),
+                    ('other', 'profile_step.gender_other'),
+                  ])
                     ChoiceChip(
-                      label: Text(ref.t('profile_step.gender_$option')),
-                      selected: _gender == option,
-                      onSelected: (_) => setState(() => _gender = option),
+                      label: Text(ref.t(option.$2)),
+                      selected: _gender == option.$1,
+                      onSelected: (_) => setState(() => _gender = option.$1),
                     ),
                 ],
               ),

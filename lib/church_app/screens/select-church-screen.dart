@@ -36,27 +36,28 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
+// One collectionGroup query instead of one read per church (§2.5/§5.2) —
+// the members rename made this possible (§9.9): before, "users" also
+// matched churches/{cid}/groups/{gid}/users, so this query would have
+// picked up group rows too.
 final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
   final firebaseUser = ref.watch(authStateProvider).value;
-  final churches = await ref.watch(churchesProvider.future);
   final uid = firebaseUser?.uid.trim() ?? '';
-  if (uid.isEmpty || churches.isEmpty) return const <Church>[];
+  if (uid.isEmpty) return const <Church>[];
 
-  final firestore = ref.read(firestoreProvider);
-  final membershipChecks = await Future.wait(
-    churches.map((church) async {
-      final userDoc = await FirestorePaths.churchUserDoc(
-        firestore,
-        church.id,
-        uid,
-      ).get();
-      return MapEntry(church, userDoc.exists);
-    }),
-  );
+  final churches = await ref.watch(churchesProvider.future);
+  if (churches.isEmpty) return const <Church>[];
+  final churchesById = {for (final church in churches) church.id: church};
 
-  final userChurches = membershipChecks
-      .where((entry) => entry.value)
-      .map((entry) => entry.key)
+  final memberships = await ref
+      .read(firestoreProvider)
+      .collectionGroup(FirestorePaths.members)
+      .where('uid', isEqualTo: uid)
+      .get();
+
+  final userChurches = memberships.docs
+      .map((doc) => churchesById[doc.reference.parent.parent?.id])
+      .whereType<Church>()
       .toList()
     ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 

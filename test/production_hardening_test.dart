@@ -2,29 +2,36 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('invalid remote user fields fall back without throwing', () {
-    final user = AppUser.fromJson({
-      'uid': 42,
+  test('invalid remote identity fields fall back without throwing', () {
+    final user = UserIdentity.fromFirestore('42', {
       'name': true,
-      'role': '',
-      'financialStabilityRating': 'not-a-number',
+      'email': 'user@example.com',
       'talentsAndGifts': 'not-a-list',
       'dob': 'invalid-date',
     });
 
     expect(user.uid, '42');
     expect(user.name, 'true');
-    expect(user.role, 'user');
-    expect(user.financialStabilityRating, 0);
     expect(user.talentsAndGifts, isEmpty);
     expect(user.dob, isNull);
+  });
+
+  test('invalid remote membership fields fall back without throwing', () {
+    final member = ChurchMembership.fromFirestore('member-1', 'church-1', {
+      'role': '',
+      'financialStabilityRating': 'not-a-number',
+    });
+
+    expect(member.role, 'user');
+    expect(member.financialStabilityRating, 0);
   });
 
   test('invalid remote theme colors use a safe fallback', () {

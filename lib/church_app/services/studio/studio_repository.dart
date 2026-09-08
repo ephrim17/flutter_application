@@ -337,7 +337,7 @@ class StudioRepository {
     }
 
     final userSnapshot =
-        await FirestorePaths.churchUserDoc(firestore, churchId, user.uid).get();
+        await FirestorePaths.userDoc(firestore, user.uid).get();
     final userData = userSnapshot.data() as Map<String, dynamic>?;
     final name =
         (userData?['name'] ?? user.displayName ?? '').toString().trim();

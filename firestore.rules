@@ -230,22 +230,17 @@ service cloud.firestore {
         allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
       }
 
-      // Church membership doc.
-      // TODO(user-church-decoupling): remove once every caller is migrated
-      // to `members` below (KT Files/architecture/
-      // user-church-decoupling-migration.md §5.1, D1).
+      // Church membership doc — no longer written (Phase 1's consumer
+      // migration to `members` below is done), but its nested
+      // readingPlans/learning_progress rules are still load-bearing:
+      // firestore_paths.dart's churchUserReadingPlans/
+      // churchUserLearningProgress still point at this path until Phase 4
+      // (reading plans, §5.6's learning split) migrates them off it. Do not
+      // remove this whole block until those callers move — only the top
+      // level fields are dead.
       match /users/{uid} {
         allow read: if isSelf(uid) || isChurchStaff(churchId);
-        // A user can only ever create their own membership doc as
-        // unapproved; a super admin may seed an approved owner doc when
-        // standing up a new church.
-        allow create: if (isSelf(uid) && request.resource.data.approved == false) ||
-          isSuperAdmin();
-        // Self can edit their own profile fields but can never flip
-        // `approved` themselves — only staff can approve/demote.
-        allow update: if isChurchStaff(churchId) ||
-          (isSelf(uid) && request.resource.data.approved == resource.data.approved);
-        allow delete: if isSelf(uid) || isChurchStaff(churchId);
+        allow write: if false;
 
         match /readingPlans/{planId} {
           allow read: if isSelf(uid) || isChurchStaff(churchId);

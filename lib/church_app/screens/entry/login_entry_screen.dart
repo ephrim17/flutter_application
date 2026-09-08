@@ -77,11 +77,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required String churchId,
     required String email,
   }) async {
-    final snapshot =
-        await FirestorePaths.churchUsers(ref.read(firestoreProvider), churchId)
-            .where('email', isEqualTo: email.trim())
-            .limit(1)
-            .get();
+    final snapshot = await FirestorePaths.churchMembers(
+            ref.read(firestoreProvider), churchId)
+        .where('displayEmail', isEqualTo: email.trim())
+        .limit(1)
+        .get();
 
     return snapshot.docs.isNotEmpty;
   }

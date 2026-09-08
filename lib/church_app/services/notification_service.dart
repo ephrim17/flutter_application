@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/device_installation_id.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -222,30 +224,35 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
   if (churchId == null) return;
   final churchTopic = 'church_$churchId';
 
-  final repo = ChurchUsersRepository(
-    firestore: container.read(firestoreProvider),
-    churchId: churchId,
-  );
+  final firestore = container.read(firestoreProvider);
+  final identityRepo = UserIdentityRepository(firestore: firestore);
   final localStorage = ChurchLocalStorage();
-  final userSnapshot = await repo.userDoc(firebaseUser.uid).get();
-  final appUser = userSnapshot.data();
-  if (appUser == null) return;
+  final installationId = await getDeviceInstallationId();
 
-  final existingToken = await repo.getExistingAuthToken(firebaseUser.uid);
+  // Written every launch regardless of selected church (§4.1, Phase 5) —
+  // this is what lets notifications for OTHER churches reach a device that
+  // last opened a different one (§2.6).
+  await identityRepo.registerDevice(
+    uid: firebaseUser.uid,
+    installationId: installationId,
+    fcmToken: token,
+    platform: defaultTargetPlatform.name,
+  );
 
-  if (existingToken != token) {
-    await repo.updateAuthToken(
-      uid: firebaseUser.uid,
-      token: token,
-    );
-  }
+  final memberSnapshot = await FirestorePaths.churchMemberDoc(
+    firestore,
+    churchId,
+    firebaseUser.uid,
+  ).get();
+  final churchGroupIds =
+      (memberSnapshot.data()?['churchGroupIds'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .where((item) => item.trim().isNotEmpty);
 
   final desiredTopics = <String>{
     churchTopic,
     _churchUserTopic(churchId, firebaseUser.uid),
-    ...appUser.churchGroupIds.map(
-      (groupId) => _churchGroupTopic(churchId, groupId),
-    ),
+    ...churchGroupIds.map((groupId) => _churchGroupTopic(churchId, groupId)),
   };
   final previousTopics = await localStorage.getSubscribedNotificationTopics();
 
@@ -262,9 +269,11 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
   await _tokenRefreshSubscription?.cancel();
   _tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
     (newToken) async {
-      await repo.updateAuthToken(
+      await identityRepo.registerDevice(
         uid: firebaseUser.uid,
-        token: newToken,
+        installationId: installationId,
+        fcmToken: newToken,
+        platform: defaultTargetPlatform.name,
       );
       await Future.wait(desiredTopics.map(messaging.subscribeToTopic));
     },

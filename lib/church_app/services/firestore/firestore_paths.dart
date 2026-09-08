@@ -130,15 +130,6 @@ class FirestorePaths {
     return firestore.collection(churches).doc(churchId);
   }
 
-  /// Users subcollection under church
-  // TODO(user-church-decoupling): remove once every caller is migrated to
-  // churchMembers/churchMemberDoc (KT Files/architecture/
-  // user-church-decoupling-migration.md §5.1, D1 — renamed to `members`).
-  static CollectionReference churchUsers(
-      FirebaseFirestore firestore, String churchId) {
-    return churchDoc(firestore, churchId).collection(users);
-  }
-
   static const members = 'members';
 
   /// Membership-only subcollection under church (D1 rename of `users`).
@@ -405,16 +396,6 @@ class FirestorePaths {
         .doc(swipeVersesDoc);
   }
 
-  /// Single user document under church
-  // TODO(user-church-decoupling): remove once every caller is migrated to
-  // churchMemberDoc.
-  static DocumentReference churchUserDoc(
-    FirebaseFirestore firestore,
-    String churchId,
-    String uid,
-  ) {
-    return churchUsers(firestore, churchId).doc(uid);
-  }
 
   /// feeds under church
   static CollectionReference feedCollection(
