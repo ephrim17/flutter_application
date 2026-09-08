@@ -4,7 +4,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -35,7 +35,7 @@ class LoginRequestScreen extends ConsumerStatefulWidget {
   final bool adminCreateMode;
   final String? targetUid;
   final String? initialEmail;
-  final AppUser? existingMember;
+  final ChurchMembership? existingMember;
 
   const LoginRequestScreen({
     super.key,
@@ -99,23 +99,23 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
     final existingMember = widget.existingMember;
     if (existingMember != null) {
-      _nameController.text = existingMember.name;
-      _phoneController.text = existingMember.phone;
-      _contactController.text = existingMember.contact;
-      _emailController.text = existingMember.email;
-      _locationController.text = existingMember.location;
-      _addressController.text = existingMember.address;
-      _dob = existingMember.dob;
-      _weddingDay = existingMember.weddingDay;
-      _gender = existingMember.gender.trim().toLowerCase();
+      _nameController.text = existingMember.displayName;
+      _phoneController.text = existingMember.displayPhone;
+      _contactController.text = existingMember.displayPhone;
+      _emailController.text = existingMember.displayEmail;
+      _locationController.text = existingMember.displayLocation;
+      _addressController.text = existingMember.displayAddress;
+      _dob = existingMember.displayDob;
+      _weddingDay = existingMember.displayWeddingDay;
+      _gender = existingMember.displayGender.trim().toLowerCase();
       _category = existingMember.category.trim().toLowerCase();
-      _maritalStatus = existingMember.maritalStatus.trim().toLowerCase();
+      _maritalStatus = existingMember.displayMaritalStatus.trim().toLowerCase();
       _financialStabilityRating = existingMember.financialStabilityRating;
       _financialSupportRequired = existingMember.financialSupportRequired;
       _educationalQualificationController.text =
-          existingMember.educationalQualification;
+          existingMember.displayEducationalQualification;
       _talentsAndGiftsController.text =
-          existingMember.talentsAndGifts.join(', ');
+          existingMember.displayTalentsAndGifts.join(', ');
       _additionalNotesController.text = existingMember.additionalNotes;
       _membershipNotesController.text = existingMember.membershipNotes;
       _solemnizedBaptism = existingMember.solemnizedBaptism;
@@ -537,12 +537,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           churchId: widget.churchId,
         );
         await repo.updateMemberDetails(
-          widget.existingMember!.uid,
+          widget.existingMember!.docId,
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
-          contact: _showAdminSections
-              ? _phoneController.text.trim()
-              : _contactController.text.trim(),
           location: _locationController.text.trim(),
           address: _addressController.text.trim(),
           gender: _gender,
@@ -588,7 +585,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           name: 'member_updated',
           parameters: {
             'church_id': widget.churchId,
-            'member_id': widget.existingMember?.uid ?? widget.targetUid,
+            'member_id': widget.existingMember?.docId ?? widget.targetUid,
           },
         );
         if (!mounted) return;
@@ -604,10 +601,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 );
 
         if (existingDoc.exists) {
-          final appUser = AppUser.fromFirestore(
-            existingDoc.id,
-            existingDoc.data() as Map<String, dynamic>,
-          );
+          final existingApproved =
+              (existingDoc.data() as Map<String, dynamic>?)?['approved'] ==
+                  true;
           await ChurchLocalStorage().saveChurch(
             id: widget.churchId,
             name: widget.churchName,
@@ -615,7 +611,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           );
           if (!mounted) return;
           ref.read(forcePreflowThemeProvider.notifier).state =
-              !appUser.approved;
+              !existingApproved;
 
           ref.read(selectedChurchProvider.notifier).state = Church(
             id: widget.churchId,
@@ -640,7 +636,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (_) => AppEntry(initialUser: appUser),
+              builder: (_) => const AppEntry(),
             ),
             (route) => false,
           );
@@ -768,49 +764,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ),
       );
 
-      final createdUser = AppUser(
-        uid: firebaseUser!.uid,
-        name: _nameController.text.trim(),
-        email: normalizedEmail,
-        role: 'user',
-        approved: shouldAutoApprove,
-        phone: _phoneController.text.trim(),
-        contact: _showAdminSections
-            ? _phoneController.text.trim()
-            : _contactController.text.trim(),
-        location: _locationController.text.trim(),
-        address: _addressController.text.trim(),
-        gender: _gender,
-        category: _category,
-        familyId: familyId,
-        maritalStatus: _maritalStatus,
-        weddingDay: _weddingDay,
-        financialStabilityRating: _financialStabilityRating,
-        financialSupportRequired: _financialSupportRequired,
-        educationalQualification:
-            _educationalQualificationController.text.trim(),
-        talentsAndGifts: _parsedTalentsAndGifts(),
-        churchGroupIds: _selectedChurchGroupIds.toList(),
-        authToken: authToken,
-        dob: _dob!,
-        solemnizedBaptism: _solemnizedBaptism,
-        baptismDate: _baptismDate,
-        baptismCertificateNumber:
-            _baptismCertificateNumberController.text.trim(),
-        baptismChurchName: _baptismChurchNameController.text.trim(),
-        baptismPastorName: _baptismPastorNameController.text.trim(),
-        marriageSolemnizationChurchType: _marriageSolemnizationChurchType,
-        marriageSolemnizationChurchName:
-            _marriageSolemnizationChurchType == 'current_church'
-                ? widget.churchName
-                : _marriageOtherChurchNameController.text.trim(),
-        membershipCurrentStatus: _membershipCurrentStatus,
-        membershipNotes: _membershipNotesController.text.trim(),
-        additionalNotes: _additionalNotesController.text.trim(),
-      );
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => AppEntry(initialUser: createdUser),
+          builder: (_) => const AppEntry(),
         ),
         (route) => false,
       );
@@ -915,7 +871,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                   Text(
                                                     _formatMemberSince(
                                                       widget.existingMember
-                                                          ?.createdAt,
+                                                          ?.joinedAt,
                                                     ),
                                                     style: Theme.of(context)
                                                         .textTheme

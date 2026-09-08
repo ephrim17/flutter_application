@@ -743,8 +743,19 @@ display* list, and per §9.2 a per-member join for a bulk list is
 impossible, not just slow. Confirmed with the owner: extend the cache
 rather than accept the regression. `ChurchMembership` now also carries
 `displayWeddingDay`, `displayMaritalStatus`,
-`displayEducationalQualification`, `displayTalentsAndGifts` — same
-cache-vs-authoritative semantics as the original display* fields (§9.2),
-same client-write-denied guard, same Phase 6 fan-out target once that
-function exists. `contact` needed no equivalent — D8 already merged it into
-`phone`.
+`displayEducationalQualification`, `displayTalentsAndGifts`,
+`displayLocation`, `displayAddress` — same cache-vs-authoritative semantics
+as the original display* fields (§9.2), same client-write-denied guard,
+same Phase 6 fan-out target once that function exists. `contact` needed no
+equivalent — D8 already merged it into `phone`. (`displayLocation`/
+`displayAddress` were added slightly later than the first four, while
+migrating `login_request_screen.dart`'s admin edit form — same gap, same
+fix, not a separate decision.)
+
+Also found while rewriting firestore.rules' `members` update rule for this:
+the first version let *staff* write display* fields unconditionally, which
+defeats the whole point of §9.2 for a *linked* member (the cache stops
+being trustworthy the moment any client can write it). Fixed: staff may
+only touch display* when the row is unlinked (their own authoritative
+data); for a linked row, only the Phase 6 fan-out (Admin SDK, bypasses
+rules) may.

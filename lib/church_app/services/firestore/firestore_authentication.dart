@@ -248,28 +248,37 @@ class AuthRepository {
     await user.delete();
   }
 
+  // TODO(user-church-decoupling, Phase 7): this only cleans up the caller's
+  // OWN membership + identity, not every church they've joined — full
+  // cross-church deletion (memberships, devices, Storage blobs) needs a
+  // callable function, since a client can't safely enumerate every
+  // membership across churches it isn't a member's-eye-view of otherwise.
   Future<void> _deleteFirestoreUserData({
     required String churchId,
     required String uid,
   }) async {
+    await _deleteCollection(FirestorePaths.userReadingPlans(_firestore, uid));
+    await _deleteCollection(FirestorePaths.userFavorites(_firestore, uid));
+    await _deleteCollection(FirestorePaths.userDevices(_firestore, uid));
+    await _deleteCollection(
+        FirestorePaths.userLearningProgress(_firestore, uid));
+
     final batch = _firestore.batch();
-
-    final readingPlans =
-        await FirestorePaths.churchUserReadingPlans(_firestore, churchId, uid)
-            .get();
-
-    for (final doc in readingPlans.docs) {
-      batch.delete(doc.reference);
-    }
-
-    batch.delete(FirestorePaths.churchUserDoc(_firestore, churchId, uid));
-
-    final globalUserDoc = await FirestorePaths.userDoc(_firestore, uid).get();
-    if (globalUserDoc.exists) {
-      batch.delete(globalUserDoc.reference);
-    }
-
+    batch.delete(FirestorePaths.churchMemberDoc(_firestore, churchId, uid));
+    batch.delete(FirestorePaths.userDoc(_firestore, uid));
     await batch.commit();
+  }
+
+  Future<void> _deleteCollection(CollectionReference collectionRef) async {
+    while (true) {
+      final snapshot = await collectionRef.limit(50).get();
+      if (snapshot.docs.isEmpty) break;
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
   }
 
   Future<void> requestAccess(
@@ -317,40 +326,33 @@ class AuthRepository {
       );
     }
 
-    final usersRef = FirestorePaths.churchUsers(_firestore, churchId);
+    final membersRef = FirestorePaths.churchMembers(_firestore, churchId);
     final generatedDocId =
-        createChurchMemberWithoutAuth ? usersRef.doc().id : null;
+        createChurchMemberWithoutAuth ? membersRef.doc().id : null;
     final uid = targetUid ?? generatedDocId ?? currentUser!.uid;
     final email = createChurchMemberWithoutAuth
         ? (targetEmail ?? '').trim().toLowerCase()
         : (targetEmail ?? currentUser?.email ?? '').trim().toLowerCase();
-    final docRef = usersRef.doc(uid);
+    final docRef = membersRef.doc(uid);
+    // Unlinked (admin-created, no auth) members have no identity doc — the
+    // fields below are THEIR authoritative profile, stored as display* on
+    // the membership itself (§9.2/§9.3). A linked signup gets a real
+    // identity doc too, since this screen still doubles as first-time
+    // signup until the dedicated profile step exists (KT Files/
+    // architecture/user-church-decoupling-migration.md §5.5).
+    final linkedUid = createChurchMemberWithoutAuth ? null : uid;
 
     await docRef.set({
-      'uid': uid,
-      'name': name.trim(),
-      'email': email,
-      'phone': phone.trim(),
-      'contact': contact.trim(),
-      'location': location.trim(),
-      'address': address.trim(),
-      'gender': gender.trim(),
+      'uid': linkedUid ?? '',
+      'linkedUid': linkedUid,
       'category': category.trim(),
       'familyId': familyId.trim(),
-      'dob': Timestamp.fromDate(dob),
-      'maritalStatus': maritalStatus.trim(),
-      'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
-      'financialStabilityRating': financialStabilityRating,
-      'financialSupportRequired': financialSupportRequired,
-      'educationalQualification': educationalQualification.trim(),
-      'talentsAndGifts': talentsAndGifts
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toList(),
       'churchGroupIds': churchGroupIds
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty)
           .toList(),
+      'financialStabilityRating': financialStabilityRating,
+      'financialSupportRequired': financialSupportRequired,
       'solemnizedBaptism': solemnizedBaptism,
       'baptismDate': solemnizedBaptism && baptismDate != null
           ? Timestamp.fromDate(baptismDate)
@@ -371,9 +373,52 @@ class AuthRepository {
       'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
       'approved': approved,
-      'authToken': authToken,
-      'createdAt': FieldValue.serverTimestamp(),
+      'joinedAt': FieldValue.serverTimestamp(),
+      'schemaVersion': 1,
+      'displayName': name.trim(),
+      'displayEmail': email,
+      'displayPhone': phone.trim(),
+      'displayDob': Timestamp.fromDate(dob),
+      'displayGender': gender.trim(),
+      'displayWeddingDay':
+          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'displayMaritalStatus': maritalStatus.trim(),
+      'displayEducationalQualification': educationalQualification.trim(),
+      'displayTalentsAndGifts': talentsAndGifts
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+      'displayLocation': location.trim(),
+      'displayAddress': address.trim(),
+      'identitySyncedAt': FieldValue.serverTimestamp(),
     });
+
+    if (linkedUid != null) {
+      final identityDocRef = FirestorePaths.userDoc(_firestore, linkedUid);
+      final identitySnapshot = await identityDocRef.get();
+      await identityDocRef.set({
+        'name': name.trim(),
+        'email': email,
+        'phone': phone.trim(),
+        'dob': Timestamp.fromDate(dob),
+        'gender': gender.trim(),
+        'location': location.trim(),
+        'address': address.trim(),
+        'maritalStatus': maritalStatus.trim(),
+        'weddingDay':
+            weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+        'educationalQualification': educationalQualification.trim(),
+        'talentsAndGifts': talentsAndGifts
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList(),
+        'profileComplete': true,
+        'schemaVersion': 1,
+        if (!identitySnapshot.exists)
+          'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
 
     await _syncChurchGroupMemberships(
       churchId: churchId,
@@ -414,7 +459,7 @@ class AuthRepository {
     required String churchId,
     required String uid,
   }) {
-    return FirestorePaths.churchUserDoc(_firestore, churchId, uid).get();
+    return FirestorePaths.churchMemberDoc(_firestore, churchId, uid).get();
   }
 
   Future<void> _syncChurchGroupMemberships({

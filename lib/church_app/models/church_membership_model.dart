@@ -48,6 +48,8 @@ class ChurchMembership {
     this.displayMaritalStatus = '',
     this.displayEducationalQualification = '',
     this.displayTalentsAndGifts = const [],
+    this.displayLocation = '',
+    this.displayAddress = '',
     this.identitySyncedAt,
   });
 
@@ -110,6 +112,8 @@ class ChurchMembership {
   final String displayMaritalStatus;
   final String displayEducationalQualification;
   final List<String> displayTalentsAndGifts;
+  final String displayLocation;
+  final String displayAddress;
   final DateTime? identitySyncedAt;
 
   bool get isLinked => linkedUid != null && linkedUid!.isNotEmpty;
@@ -185,6 +189,8 @@ class ChurchMembership {
       displayEducationalQualification:
           _string(data['displayEducationalQualification']),
       displayTalentsAndGifts: _strings(data['displayTalentsAndGifts']),
+      displayLocation: _string(data['displayLocation']),
+      displayAddress: _string(data['displayAddress']),
       identitySyncedAt: _date(data['identitySyncedAt']),
     );
   }
@@ -225,6 +231,8 @@ class ChurchMembership {
       'displayMaritalStatus': displayMaritalStatus,
       'displayEducationalQualification': displayEducationalQualification,
       'displayTalentsAndGifts': displayTalentsAndGifts,
+      'displayLocation': displayLocation,
+      'displayAddress': displayAddress,
       'identitySyncedAt': identitySyncedAt != null
           ? Timestamp.fromDate(identitySyncedAt!)
           : null,

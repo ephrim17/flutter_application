@@ -59,6 +59,8 @@ service cloud.firestore {
         request.resource.data.displayMaritalStatus == resource.data.displayMaritalStatus &&
         request.resource.data.displayEducationalQualification == resource.data.displayEducationalQualification &&
         request.resource.data.displayTalentsAndGifts == resource.data.displayTalentsAndGifts &&
+        request.resource.data.displayLocation == resource.data.displayLocation &&
+        request.resource.data.displayAddress == resource.data.displayAddress &&
         request.resource.data.identitySyncedAt == resource.data.identitySyncedAt;
     }
 

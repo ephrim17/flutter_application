@@ -250,9 +250,9 @@ class MembersRepository extends ChurchScopedRepository {
       'membershipCurrentStatus': membershipCurrentStatus.trim(),
       'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
+      'displayLocation': location.trim(),
+      'displayAddress': address.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
-      'address': address.trim(),
-      'location': location.trim(),
     });
 
     final updatedMember = (await collectionRef().doc(docId).get()).data();
