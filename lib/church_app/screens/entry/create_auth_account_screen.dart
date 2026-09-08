@@ -3,7 +3,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
@@ -38,7 +38,7 @@ class CreateAuthAccountScreen extends ConsumerStatefulWidget {
   final String? churchId;
   final String? churchName;
   final String churchLogo;
-  final AppUser? existingMember;
+  final ChurchMembership? existingMember;
   final bool continueToEditAfterCreate;
 
   @override
@@ -120,33 +120,37 @@ class _CreateAuthAccountScreenState
     return 'TempA1!${seed.substring(seed.length - 8)}';
   }
 
-  AppUser _updatedExistingMember({
+  ChurchMembership _updatedExistingMember({
     required String uid,
     required String email,
   }) {
     final existingMember = widget.existingMember!;
-    return AppUser(
+    return ChurchMembership(
+      docId: uid,
+      churchId: existingMember.churchId,
       uid: uid,
-      name: existingMember.name,
-      email: email,
-      role: existingMember.role,
+      linkedUid: uid,
       approved: existingMember.approved,
-      phone: existingMember.phone,
-      contact: existingMember.contact,
-      location: existingMember.location,
-      address: existingMember.address,
-      gender: existingMember.gender,
+      role: existingMember.role,
       category: existingMember.category,
       familyId: existingMember.familyId,
-      maritalStatus: existingMember.maritalStatus,
-      weddingDay: existingMember.weddingDay,
+      churchGroupIds: existingMember.churchGroupIds,
+      membershipCurrentStatus: existingMember.membershipCurrentStatus,
       financialStabilityRating: existingMember.financialStabilityRating,
       financialSupportRequired: existingMember.financialSupportRequired,
-      educationalQualification: existingMember.educationalQualification,
-      talentsAndGifts: existingMember.talentsAndGifts,
-      churchGroupIds: existingMember.churchGroupIds,
-      authToken: existingMember.authToken,
-      dob: existingMember.dob,
+      displayName: existingMember.displayName,
+      displayEmail: email,
+      displayPhone: existingMember.displayPhone,
+      displayPhotoUrl: existingMember.displayPhotoUrl,
+      displayDob: existingMember.displayDob,
+      displayGender: existingMember.displayGender,
+      displayWeddingDay: existingMember.displayWeddingDay,
+      displayMaritalStatus: existingMember.displayMaritalStatus,
+      displayEducationalQualification:
+          existingMember.displayEducationalQualification,
+      displayTalentsAndGifts: existingMember.displayTalentsAndGifts,
+      displayLocation: existingMember.displayLocation,
+      displayAddress: existingMember.displayAddress,
     );
   }
 
@@ -258,8 +262,8 @@ class _CreateAuthAccountScreenState
       if (!mounted) return;
       ref.read(selectedChurchProvider.notifier).state = null;
       ref.invalidate(currentChurchIdProvider);
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
+      ref.invalidate(userIdentityProvider);
+      ref.invalidate(currentMembershipProvider);
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AppEntry()),

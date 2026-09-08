@@ -299,6 +299,35 @@ const Map<String, String> preAuthDefaultTextContents = {
 };
 
 const Map<String, String> defaultChurchTextContents = {
+  // Profile step (D5 signup) and guest shell (§5.3) — both shown before any
+  // church is selected, so per §9.10 these live here, not in
+  // preAuthDefaultTextContents, so a church's own text content can never
+  // override them (fromMap(null) merges both maps when no church is
+  // selected either way, but only this map is safe from that override).
+  'profile_step.title': 'Tell us about you',
+  'profile_step.subtitle':
+      "A few essentials before you pick a church — you'll only do this once.",
+  'profile_step.validation_required': 'Please fill in every field.',
+  'profile_step.name_label': 'Full name',
+  'profile_step.phone_label': 'Phone number',
+  'profile_step.dob_label': 'Date of birth',
+  'profile_step.gender_male': 'Male',
+  'profile_step.gender_female': 'Female',
+  'profile_step.gender_other': 'Other',
+  'profile_step.continue_action': 'Continue',
+
+  'guest_shell.title': 'Church Tree',
+  'guest_shell.tab_bible': 'Bible',
+  'guest_shell.tab_learning': 'Learning',
+  'guest_shell.tab_my_churches': 'My Churches',
+  'guest_shell.learning_empty': 'No learning modules published yet.',
+  'guest_shell.learning_error': "Couldn't load learning modules.",
+  'guest_shell.pending_section_title': 'Your requests',
+  'guest_shell.pending_status': 'Pending approval',
+  'guest_shell.browse_section_title': 'Browse churches',
+  'guest_shell.churches_error': "Couldn't load churches.",
+  'guest_shell.request_access_action': 'Request access',
+
   // Migrated UI defaults
   "ui.birthday_card.saved_to_gallery": "Saved to gallery \ud83c\udf89",
   "ui.announcement_card.okay": "OKAY",

@@ -30,6 +30,32 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
+/// Every membership the signed-in user has, across every church —
+/// self-discovery via the collectionGroup('members') rule (§5.2). This is
+/// the authoritative "do I have an approved membership anywhere" signal for
+/// the entry gate (§5.4): it covers all four no-membership situations
+/// (§5.3) uniformly, unlike currentMembershipProvider, which is scoped to
+/// whatever church happens to be locally selected and can't tell "never
+/// requested" apart from "removed from my only church".
+final myMembershipsProvider =
+    StreamProvider<List<ChurchMembership>>((ref) async* {
+  final firebaseUser = ref.watch(authStateProvider).value;
+  if (firebaseUser == null) {
+    yield const [];
+    return;
+  }
+  yield* ref
+      .read(firestoreProvider)
+      .collectionGroup(FirestorePaths.members)
+      .where('uid', isEqualTo: firebaseUser.uid)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) {
+            final churchId = doc.reference.parent.parent?.id ?? '';
+            return ChurchMembership.fromFirestore(
+                doc.id, churchId, doc.data());
+          }).toList());
+});
+
 /// The canonical, church-independent person record for the signed-in user
 /// (§5.1). No churchId dependency — this is what makes the guest shell
 /// possible (§5.3/§5.4).
