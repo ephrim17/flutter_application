@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -18,6 +21,25 @@ class FeedRepository {
   static const int defaultFeedPageSize = 20;
 
   String _globalPostId(String churchId, String postId) => '${churchId}_$postId';
+
+  /// Decodes just enough of the image to read its pixel dimensions, so the
+  /// feed can size the card to the real aspect ratio instead of forcing a
+  /// crop. Returns null if the bytes can't be decoded (never blocks the
+  /// actual upload on this).
+  Future<(double, double)?> _decodeImageDimensions(
+    Uint8List bytes,
+  ) async {
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final dimensions = (image.width.toDouble(), image.height.toDouble());
+      image.dispose();
+      return dimensions;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Query<Map<String, dynamic>> _feedQuery({
     String? churchId,
@@ -55,9 +77,6 @@ class FeedRepository {
     DocumentSnapshot? startAfter,
     int limit = defaultFeedPageSize,
   }) async {
-    final pinnedPost = startAfter == null
-        ? await fetchPinnedPost(churchId: churchId, isGlobal: isGlobal)
-        : null;
     final snapshot = await _feedQuery(
       churchId: churchId,
       isGlobal: isGlobal,
@@ -65,13 +84,8 @@ class FeedRepository {
       limit: limit,
     ).get();
 
-    final posts = snapshot.docs
-        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
-        .where((post) => post.id != pinnedPost?.id)
-        .toList();
-    if (pinnedPost != null) {
-      posts.insert(0, pinnedPost);
-    }
+    final posts =
+        snapshot.docs.map((doc) => FeedPost.fromJson(doc.id, doc.data())).toList();
 
     return FeedPageResult(
       posts: posts,
@@ -89,31 +103,6 @@ class FeedRepository {
         );
       }).toList();
     });
-  }
-
-  Future<FeedPost?> fetchPinnedPost({
-    String? churchId,
-    bool isGlobal = false,
-  }) async {
-    final collection = isGlobal
-        ? FirestorePaths.globalFeedCollection(_firestore)
-        : FirestorePaths.feedCollection(_firestore, churchId!);
-
-    final snapshot = await collection
-        .where('isPinned', isEqualTo: true)
-        .limit(10)
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) =>
-              snapshot.data() ?? <String, dynamic>{},
-          toFirestore: (value, _) => value,
-        )
-        .get();
-
-    final posts = snapshot.docs
-        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
-        .toList(growable: false);
-    final sortedPosts = sortFeedPosts(posts);
-    return sortedPosts.isEmpty ? null : sortedPosts.first;
   }
 
   Future<List<FeedPost>> fetchPostsByHashtag({
@@ -259,8 +248,13 @@ class FeedRepository {
 
     // 2️⃣ Upload image if exists
     var uploadedImageUrls = const <String>[];
+    double? imageWidth;
+    double? imageHeight;
     if (imageFiles.isNotEmpty) {
       final downloadUrls = <String>[];
+      final dimensions = await _decodeImageDimensions(imageFiles.first.bytes);
+      imageWidth = dimensions?.$1;
+      imageHeight = dimensions?.$2;
       for (var index = 0; index < imageFiles.length; index++) {
         final imageFile = imageFiles[index];
         final storageRef = _feedGalleryImageRef(
@@ -279,6 +273,8 @@ class FeedRepository {
       await docRef.update({
         'imageUrl': downloadUrls.first,
         'imageUrls': downloadUrls,
+        'imageWidth': imageWidth,
+        'imageHeight': imageHeight,
       });
       uploadedImageUrls = downloadUrls;
     }
@@ -322,6 +318,8 @@ class FeedRepository {
       isGlobal: isGlobal,
       imageUrl: uploadedImageUrls.isNotEmpty ? uploadedImageUrls.first : null,
       imageUrls: uploadedImageUrls,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
       createdAt: DateTime.now(),
       likeCount: 0,
       commentCount: 0,
@@ -492,55 +490,11 @@ class FeedRepository {
     });
   }
 
-  Future<void> setPinnedPost({
-    String? churchId,
-    required String postId,
-    required bool pinned,
-    bool isGlobal = false,
-  }) async {
-    final collection = isGlobal
-        ? FirestorePaths.globalFeedCollection(_firestore)
-        : FirestorePaths.feedCollection(_firestore, churchId!);
-    final postRef = collection.doc(postId);
-
-    final batch = _firestore.batch();
-
-    if (pinned) {
-      final currentPinnedSnapshot =
-          await collection.where('isPinned', isEqualTo: true).limit(10).get();
-
-      for (final doc in currentPinnedSnapshot.docs) {
-        if (doc.id == postId) continue;
-        batch.update(doc.reference, {
-          'isPinned': false,
-          'pinnedAt': null,
-        });
-      }
-    }
-
-    batch.update(postRef, {
-      'isPinned': pinned,
-      'pinnedAt': pinned ? FieldValue.serverTimestamp() : null,
-    });
-    await batch.commit();
-  }
 }
 
 List<FeedPost> sortFeedPosts(Iterable<FeedPost> posts) {
-  final sorted = posts.toList(growable: false);
-  sorted.sort((a, b) {
-    if (a.isPinned != b.isPinned) {
-      return a.isPinned ? -1 : 1;
-    }
-
-    final aPinnedAt = a.pinnedAt;
-    final bPinnedAt = b.pinnedAt;
-    if (aPinnedAt != null && bPinnedAt != null) {
-      return bPinnedAt.compareTo(aPinnedAt);
-    }
-
-    return b.createdAt.compareTo(a.createdAt);
-  });
+  final sorted = posts.toList(growable: false)
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   return sorted;
 }
 

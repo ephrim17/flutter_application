@@ -5,8 +5,6 @@ import 'package:flutter_application/church_app/services/feed_repository.dart';
 FeedPost _post(
   String id, {
   required DateTime createdAt,
-  bool isPinned = false,
-  DateTime? pinnedAt,
 }) {
   return FeedPost(
     id: id,
@@ -15,8 +13,6 @@ FeedPost _post(
     title: 'Title $id',
     description: 'Description',
     createdAt: createdAt,
-    isPinned: isPinned,
-    pinnedAt: pinnedAt,
     likeCount: 0,
     commentCount: 0,
   );
@@ -24,22 +20,17 @@ FeedPost _post(
 
 void main() {
   group('sortFeedPosts', () {
-    test('places a freshly created post right after the pinned post', () {
-      final pinned = _post(
-        'pinned',
-        createdAt: DateTime.utc(2026, 8, 15),
-        isPinned: true,
-        pinnedAt: DateTime.utc(2026, 8, 15),
-      );
+    test('orders posts newest first', () {
+      final oldest = _post('oldest', createdAt: DateTime.utc(2026, 8, 15));
       final older = _post('older', createdAt: DateTime.utc(2026, 9, 1));
       final justCreated =
           _post('new', createdAt: DateTime.utc(2026, 9, 5, 23, 30));
 
       // Mirrors FeedPaginationController.insertLocalPost: the new post is
       // prepended to whatever is already loaded, then re-sorted.
-      final sorted = sortFeedPosts([justCreated, pinned, older]);
+      final sorted = sortFeedPosts([justCreated, oldest, older]);
 
-      expect(sorted.map((post) => post.id), ['pinned', 'new', 'older']);
+      expect(sorted.map((post) => post.id), ['new', 'older', 'oldest']);
     });
 
     test('does not duplicate a post that is inserted twice by id', () {

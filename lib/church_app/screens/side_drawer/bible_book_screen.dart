@@ -201,6 +201,12 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
   }
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
       future: _bookFuture,

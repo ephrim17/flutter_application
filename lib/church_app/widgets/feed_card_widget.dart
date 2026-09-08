@@ -1,16 +1,15 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
-import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_popup_menu.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/app_image_gallery_viewer.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -37,8 +36,11 @@ class FeedCard extends ConsumerStatefulWidget {
   final String? currentUid;
   final bool isAdmin;
   final bool isGlobal;
+  final bool fullBleed;
   final ValueChanged<String>? onHashtagTap;
   final VoidCallback? onPostChanged;
+  final VoidCallback? onDescriptionTap;
+  final VoidCallback? onTap;
 
   const FeedCard({
     super.key,
@@ -46,8 +48,11 @@ class FeedCard extends ConsumerStatefulWidget {
     required this.currentUid,
     required this.isAdmin,
     this.isGlobal = false,
+    this.fullBleed = false,
     this.onHashtagTap,
     this.onPostChanged,
+    this.onDescriptionTap,
+    this.onTap,
   });
 
   @override
@@ -66,6 +71,8 @@ class _FeedCardState extends ConsumerState<FeedCard> {
   bool get isGlobal => widget.isGlobal;
   ValueChanged<String>? get onHashtagTap => widget.onHashtagTap;
   VoidCallback? get onPostChanged => widget.onPostChanged;
+  VoidCallback? get onDescriptionTap => widget.onDescriptionTap;
+  VoidCallback? get onTap => widget.onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +91,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
         (isGlobal ? isPostChurchAdmin && isPromotedGlobal : isAdmin);
     final canDelete = !isPromotedGlobal &&
         (isOwner || (isGlobal ? isPostChurchAdmin : isAdmin));
-    final canPin = canDelete;
     final canEdit =
         isOwner && !isPromotedGlobal && post.canEditAt(DateTime.now());
     final theme = Theme.of(context);
@@ -93,7 +99,67 @@ class _FeedCardState extends ConsumerState<FeedCard> {
       '${post.title}\n${post.description}',
     );
 
-    return Container(
+    final actions = <AppPopupMenuAction<_FeedPostAction>>[
+      if (canEdit)
+        AppPopupMenuAction(
+          value: _FeedPostAction.edit,
+          icon: Icons.edit_outlined,
+          label: ref.t('feed.edit_post'),
+        ),
+      if (canManageGlobal && !post.isGlobal)
+        AppPopupMenuAction(
+          value: _FeedPostAction.makeGlobal,
+          icon: Icons.public_rounded,
+          label: ref.t('feed.make_global_action'),
+        ),
+      if (canManageGlobal && post.isGlobal)
+        AppPopupMenuAction(
+          value: _FeedPostAction.removeGlobal,
+          icon: Icons.public_off_outlined,
+          label: ref.t('feed.remove_global_action'),
+        ),
+      if (canDelete)
+        AppPopupMenuAction(
+          value: _FeedPostAction.delete,
+          icon: Icons.delete_outline_rounded,
+          label: ref.t('feed.delete_post'),
+          color: theme.colorScheme.error,
+        ),
+    ];
+
+    Future<void> handlePostAction(_FeedPostAction action) async {
+      setState(() => _isBusy = true);
+      try {
+        switch (action) {
+          case _FeedPostAction.edit:
+            await _editPost(context, ref);
+            break;
+          case _FeedPostAction.makeGlobal:
+            await _setPostGlobal(context, ref, makeGlobal: true);
+            break;
+          case _FeedPostAction.removeGlobal:
+            await _setPostGlobal(context, ref, makeGlobal: false);
+            break;
+          case _FeedPostAction.delete:
+            await _confirmAndDeletePost(context, ref);
+            break;
+        }
+      } finally {
+        if (mounted) setState(() => _isBusy = false);
+      }
+    }
+
+    if (widget.fullBleed) {
+      return _buildFullBleed(
+        context,
+        theme: theme,
+        hasImage: hasImage,
+        actions: actions,
+        onAction: handlePostAction,
+      );
+    }
+
+    final card = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: carouselBoxDecoration(context),
       child: Column(
@@ -137,10 +203,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          if (post.isPinned)
-                            _PinnedBadge(
-                              label: ref.t('feed.pinned_badge'),
-                            ),
                           if (!isGlobal && post.isGlobal)
                             _GlobalFeedBadge(
                               label: ref.t('feed.global_badge'),
@@ -158,98 +220,37 @@ class _FeedCardState extends ConsumerState<FeedCard> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
-                else if (canEdit || canDelete || canPin || canManageGlobal)
+                else if (actions.isNotEmpty)
                   AppPopupMenu<_FeedPostAction>(
-                    onSelected: (action) async {
-                      setState(() => _isBusy = true);
-                      try {
-                        switch (action) {
-                          case _FeedPostAction.edit:
-                            await _editPost(context, ref);
-                            break;
-                          case _FeedPostAction.pin:
-                            await _setPinnedPost(context, ref, pinned: true);
-                            break;
-                          case _FeedPostAction.unpin:
-                            await _setPinnedPost(context, ref, pinned: false);
-                            break;
-                          case _FeedPostAction.makeGlobal:
-                            await _setPostGlobal(context, ref,
-                                makeGlobal: true);
-                            break;
-                          case _FeedPostAction.removeGlobal:
-                            await _setPostGlobal(context, ref,
-                                makeGlobal: false);
-                            break;
-                          case _FeedPostAction.delete:
-                            await _confirmAndDeletePost(context, ref);
-                            break;
-                        }
-                      } finally {
-                        if (mounted) setState(() => _isBusy = false);
-                      }
-                    },
-                    actions: [
-                      if (canEdit)
-                        AppPopupMenuAction(
-                          value: _FeedPostAction.edit,
-                          icon: Icons.edit_outlined,
-                          label: ref.t('feed.edit_post'),
-                        ),
-                      if (canPin)
-                        AppPopupMenuAction(
-                          value: post.isPinned
-                              ? _FeedPostAction.unpin
-                              : _FeedPostAction.pin,
-                          icon: post.isPinned
-                              ? Icons.push_pin_rounded
-                              : Icons.push_pin_outlined,
-                          label: post.isPinned
-                              ? ref.t('feed.unpin_post')
-                              : ref.t('feed.pin_post'),
-                        ),
-                      if (canManageGlobal && !post.isGlobal)
-                        AppPopupMenuAction(
-                          value: _FeedPostAction.makeGlobal,
-                          icon: Icons.public_rounded,
-                          label: ref.t('feed.make_global_action'),
-                        ),
-                      if (canManageGlobal && post.isGlobal)
-                        AppPopupMenuAction(
-                          value: _FeedPostAction.removeGlobal,
-                          icon: Icons.public_off_outlined,
-                          label: ref.t('feed.remove_global_action'),
-                        ),
-                      if (canDelete)
-                        AppPopupMenuAction(
-                          value: _FeedPostAction.delete,
-                          icon: Icons.delete_outline_rounded,
-                          label: ref.t('feed.delete_post'),
-                          color: theme.colorScheme.error,
-                        ),
-                    ],
+                    onSelected: handlePostAction,
+                    actions: actions,
                   ),
               ],
             ),
           ),
-          if (hasImage) _FeedImageGallery(imageUrls: post.imageUrls),
+          if (hasImage)
+            _FeedImageGallery(
+              imageUrls: post.imageUrls,
+              aspectRatio: post.clampedImageAspectRatio ?? 1,
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                LinkifiedText(
-                  text: post.title,
-                  onHashtagTap: onHashtagTap,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
+                if (post.title.trim().isNotEmpty)
+                  LinkifiedText(
+                    text: post.title,
+                    onHashtagTap: onHashtagTap,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
                   ),
-                ),
                 if (post.description.trim().isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  LinkifiedText(
+                  _ExpandableDescription(
                     text: post.description,
                     onHashtagTap: onHashtagTap,
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
@@ -265,12 +266,177 @@ class _FeedCardState extends ConsumerState<FeedCard> {
         ],
       ),
     );
+
+    if (onTap == null) return card;
+    return InkWell(
+      borderRadius: BorderRadius.circular(cornerRadius),
+      onTap: onTap,
+      child: card,
+    );
   }
 
   String humanFormatDate(DateTime createdAt) {
     final datePart = _feedDateFormat.format(createdAt);
     final timePart = _feedTimeFormat.format(createdAt);
     return "$datePart at $timePart";
+  }
+
+  Widget _buildFullBleed(
+    BuildContext context, {
+    required ThemeData theme,
+    required bool hasImage,
+    required List<AppPopupMenuAction<_FeedPostAction>> actions,
+    required Future<void> Function(_FeedPostAction) onAction,
+  }) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: hasImage
+              ? _FeedFullBleedImages(imageUrls: post.imageUrls)
+              : ColoredBox(
+                  color: Colors.black,
+                  child: Center(
+                    child: Icon(
+                      Icons.church_outlined,
+                      size: 72,
+                      color: Colors.white.withValues(alpha: 0.25),
+                    ),
+                  ),
+                ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.78),
+                ],
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                // A little bottom clearance keeps the caption just clear of
+                // the floating (frosted, extended-body) bottom nav bar that
+                // sits over this layout in the Community tab.
+                padding: const EdgeInsets.fromLTRB(16, 70, 12, 56),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => _showPostAuthorDetails(context, ref),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AppProfileAvatar(
+                                  name: post.userName,
+                                  imageUrl: post.userPhoto,
+                                  radius: 16,
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.16),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    post.userName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                if (!isGlobal && post.isGlobal) ...[
+                                  const SizedBox(width: 8),
+                                  _GlobalFeedBadge(
+                                      label: ref.t('feed.global_badge')),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: onDescriptionTap,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (post.title.trim().isNotEmpty)
+                                  Text(
+                                    post.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                if (post.description.trim().isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      post.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.92),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_isBusy)
+                      const Padding(
+                        padding: EdgeInsets.all(9),
+                        child: SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    else if (actions.isNotEmpty)
+                      AppPopupMenu<_FeedPostAction>(
+                        onSelected: onAction,
+                        trigger: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        actions: actions,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _editPost(BuildContext context, WidgetRef ref) async {
@@ -294,13 +460,10 @@ class _FeedCardState extends ConsumerState<FeedCard> {
       },
     );
     if (!context.mounted) return;
-    await showAppModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => CreatePostModal(
-        post: post,
-        edit: true,
-        isGlobal: isGlobal,
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => CreatePostModal(post: post, edit: true),
       ),
     );
 
@@ -308,38 +471,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     onPostChanged?.call();
   }
 
-  Future<void> _setPinnedPost(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool pinned,
-  }) async {
-    await ref.read(feedPostModalControllerProvider.notifier).setPinnedPost(
-          postId: post.id,
-          pinned: pinned,
-          isGlobal: isGlobal,
-        );
-
-    await logChurchAnalyticsEvent(
-      ref,
-      name: pinned ? 'feed_post_pinned' : 'feed_post_unpinned',
-      parameters: {
-        'post_id': post.id,
-        'scope': isGlobal ? 'global' : 'church',
-      },
-    );
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          pinned ? ref.t('feed.post_pinned') : ref.t('feed.post_unpinned'),
-        ),
-      ),
-    );
-
-    await _refreshFeed(ref);
-    onPostChanged?.call();
-  }
 
   Future<void> _setPostGlobal(
     BuildContext context,
@@ -645,10 +776,77 @@ class _FeedCardState extends ConsumerState<FeedCard> {
   }
 }
 
+/// LinkedIn-style truncation: shows the first [previewLength] characters
+/// with an inline "more" toggle that expands to the full post in place.
+class _ExpandableDescription extends StatefulWidget {
+  const _ExpandableDescription({
+    required this.text,
+    required this.onHashtagTap,
+    required this.style,
+    this.previewLength = 200,
+  });
+
+  final String text;
+  final ValueChanged<String>? onHashtagTap;
+  final TextStyle? style;
+  final int previewLength;
+
+  @override
+  State<_ExpandableDescription> createState() =>
+      _ExpandableDescriptionState();
+}
+
+class _ExpandableDescriptionState extends State<_ExpandableDescription> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final trimmed = widget.text.trim();
+    final isLong = trimmed.length > widget.previewLength;
+    final displayText = !isLong || _expanded
+        ? trimmed
+        : '${trimmed.substring(0, widget.previewLength).trimRight()}…';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LinkifiedText(
+          text: displayText,
+          onHashtagTap: widget.onHashtagTap,
+          style: widget.style,
+        ),
+        if (isLong)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                _expanded
+                    ? context.t('ui.feed_card.show_less')
+                    : context.t('ui.feed_card.show_more'),
+                style: widget.style?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _FeedImageGallery extends StatefulWidget {
-  const _FeedImageGallery({required this.imageUrls});
+  const _FeedImageGallery({required this.imageUrls, required this.aspectRatio});
 
   final List<String> imageUrls;
+
+  /// Instagram/LinkedIn-style: the card's height follows the image's real
+  /// shape (clamped to a sane portrait/landscape range) instead of forcing
+  /// every photo into a fixed square crop.
+  final double aspectRatio;
 
   @override
   State<_FeedImageGallery> createState() => _FeedImageGalleryState();
@@ -667,7 +865,7 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
         color: Colors.black.withValues(alpha: 0.04),
       ),
       child: AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: widget.aspectRatio,
         child: Stack(
           children: [
             PageView.builder(
@@ -682,13 +880,15 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
                     initialIndex: index,
                     heroTagBuilder: (url, _) => 'feed-gallery-$url',
                   ),
+                  // The Hero's own child stays a bare, unconstrained image —
+                  // no nested AspectRatio/ClipRRect — so the flight can
+                  // resize it smoothly frame-by-frame instead of fighting a
+                  // locked ratio as the bounds morph toward full screen.
                   child: Hero(
                     tag: 'feed-gallery-$imageUrl',
-                    child: ShimmerImage(
+                    child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      aspectRatio: 1,
-                      borderRadius: 0,
                     ),
                   ),
                 );
@@ -717,6 +917,100 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Fills the entire post frame edge-to-edge, cropping any image whose aspect
+/// ratio doesn't match — the Instagram-Reels look this layout is built for.
+class _FeedFullBleedImages extends StatefulWidget {
+  const _FeedFullBleedImages({required this.imageUrls});
+
+  final List<String> imageUrls;
+
+  @override
+  State<_FeedFullBleedImages> createState() => _FeedFullBleedImagesState();
+}
+
+class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
+  int _page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          itemCount: widget.imageUrls.length,
+          onPageChanged: (value) => setState(() => _page = value),
+          itemBuilder: (context, index) {
+            final imageUrl = widget.imageUrls[index];
+            // A raw CachedNetworkImage (not the shimmer-wrapped helper) so
+            // this full-bleed feed shows posts as they naturally arrive —
+            // no fade-in and no shimmer sweep — and caps decode size to the
+            // device's own pixel width so swiping doesn't stall on
+            // full-resolution camera photos.
+            final devicePixelWidth =
+                (MediaQuery.of(context).size.width *
+                        MediaQuery.of(context).devicePixelRatio)
+                    .round();
+            return GestureDetector(
+              onTap: () => showAppImageGallery(
+                context,
+                imageUrls: widget.imageUrls,
+                initialIndex: index,
+                heroTagBuilder: (url, _) => 'feed-gallery-$url',
+              ),
+              child: Hero(
+                tag: 'feed-gallery-$imageUrl',
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  memCacheWidth: devicePixelWidth,
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  placeholder: (context, url) =>
+                      const ColoredBox(color: Colors.black),
+                  errorWidget: (context, url, error) => const ColoredBox(
+                    color: Colors.black,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white38,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        if (widget.imageUrls.length > 1)
+          Positioned(
+            top: 56,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.imageUrls.length, (index) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 4,
+                  width: index == _page ? 16 : 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white
+                        .withValues(alpha: index == _page ? 0.95 : 0.45),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -818,43 +1112,6 @@ class _YoutubePreviewCard extends StatelessWidget {
   }
 }
 
-class _PinnedBadge extends StatelessWidget {
-  const _PinnedBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final highlightColor = theme.colorScheme.secondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: highlightColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.push_pin_outlined,
-            size: 13,
-            color: highlightColor,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: highlightColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _GlobalFeedBadge extends StatelessWidget {
   const _GlobalFeedBadge({required this.label});
 
@@ -890,8 +1147,6 @@ class _GlobalFeedBadge extends StatelessWidget {
 
 enum _FeedPostAction {
   edit,
-  pin,
-  unpin,
   makeGlobal,
   removeGlobal,
   delete,

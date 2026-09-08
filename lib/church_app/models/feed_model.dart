@@ -26,6 +26,12 @@ class FeedPost {
   final DateTime? pinnedAt;
   final String? imageUrl;
   final List<String> imageUrls;
+  // The first image's raw pixel dimensions, captured at upload time so the
+  // feed can size its card to the image's real aspect ratio before the
+  // image itself has even downloaded — avoiding both a layout jump and a
+  // forced square crop. Null for posts uploaded before this existed.
+  final double? imageWidth;
+  final double? imageHeight;
   final DateTime createdAt;
   final int likeCount;
   final int commentCount;
@@ -54,6 +60,8 @@ class FeedPost {
     this.pinnedAt,
     this.imageUrl,
     this.imageUrls = const [],
+    this.imageWidth,
+    this.imageHeight,
     required this.createdAt,
     required this.likeCount,
     required this.commentCount,
@@ -84,6 +92,8 @@ class FeedPost {
       pinnedAt: _parseDate(json['pinnedAt']),
       imageUrl: _nullableString(json['imageUrl']),
       imageUrls: _parseImageUrls(json),
+      imageWidth: (json['imageWidth'] as num?)?.toDouble(),
+      imageHeight: (json['imageHeight'] as num?)?.toDouble(),
       createdAt: _parseDate(json['createdAt']) ??
           DateTime.fromMillisecondsSinceEpoch(0),
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
@@ -123,6 +133,21 @@ class FeedPost {
     return legacyUrl.isEmpty ? const [] : [legacyUrl];
   }
 
+  /// Clamped to the same portrait/landscape range Instagram uses, or null
+  /// if this post predates dimension capture — callers fall back to a
+  /// fixed ratio in that case rather than guessing.
+  double? get clampedImageAspectRatio {
+    final width = imageWidth;
+    final height = imageHeight;
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    return (width / height).clamp(
+      feedImageMinAspectRatio,
+      feedImageMaxAspectRatio,
+    );
+  }
+
   bool canEditAt(DateTime now) {
     return !now.isAfter(createdAt.add(editWindow));
   }
@@ -160,9 +185,17 @@ class FeedPost {
       pinnedAt: clearPinnedAt ? null : (pinnedAt ?? this.pinnedAt),
       imageUrl: imageUrl,
       imageUrls: imageUrls,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
       createdAt: createdAt,
       likeCount: likeCount,
       commentCount: commentCount,
     );
   }
 }
+
+/// Instagram settled on this same range: portrait 4:5 up to landscape
+/// 1.91:1. Anything inside it renders uncropped; only the rare
+/// extremely-tall or extremely-wide photo gets clamped (and cropped) to fit.
+const double feedImageMinAspectRatio = 4 / 5;
+const double feedImageMaxAspectRatio = 1.91;

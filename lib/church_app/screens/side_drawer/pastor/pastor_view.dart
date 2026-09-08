@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -119,10 +120,13 @@ class _PastorCard extends StatelessWidget {
               ),
               child: ClipOval(
                 child: pastor.imageUrl.trim().isNotEmpty
-                    ? Image.network(
-                        pastor.imageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: pastor.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
+                        memCacheWidth: (imageSize *
+                                MediaQuery.of(context).devicePixelRatio)
+                            .round(),
+                        errorWidget: (_, __, ___) =>
                             _PastorAvatarFallback(name: pastor.title),
                       )
                     : _PastorAvatarFallback(name: pastor.title),

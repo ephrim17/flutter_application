@@ -4,7 +4,6 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
-import 'package:flutter_application/church_app/screens/feed_screen.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
@@ -25,120 +24,6 @@ class ForYouScreen extends ConsumerStatefulWidget {
 }
 
 class _ForYouScreenState extends ConsumerState<ForYouScreen> {
-  int _segment = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    notificationDestinationRequest.addListener(_handleSegmentSwitch);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleSegmentSwitch());
-  }
-
-  @override
-  void dispose() {
-    notificationDestinationRequest.removeListener(_handleSegmentSwitch);
-    super.dispose();
-  }
-
-  void _handleSegmentSwitch() {
-    if (notificationDestinationRequest.value == null || !mounted) return;
-    if (_segment != 0) {
-      setState(() => _segment = 0);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, sectionSpacing),
-          child: Row(
-            children: [
-              _ForYouSegmentTab(
-                label: context.t('for_you.highlights_tab'),
-                selected: _segment == 0,
-                onTap: () => setState(() => _segment = 0),
-              ),
-              const SizedBox(width: 28),
-              _ForYouSegmentTab(
-                label: context.t('for_you.community_tab'),
-                selected: _segment == 1,
-                onTap: () => setState(() => _segment = 1),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: IndexedStack(
-            index: _segment,
-            children: const [
-              _ForYouHighlightsBody(),
-              FeedScreen(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ForYouSegmentTab extends StatelessWidget {
-  const _ForYouSegmentTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: IntrinsicWidth(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                color: selected
-                    ? theme.colorScheme.onSurface
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 6),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 3,
-              decoration: BoxDecoration(
-                color: selected ? theme.colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForYouHighlightsBody extends ConsumerStatefulWidget {
-  const _ForYouHighlightsBody();
-
-  @override
-  ConsumerState<_ForYouHighlightsBody> createState() =>
-      _ForYouHighlightsBodyState();
-}
-
-class _ForYouHighlightsBodyState extends ConsumerState<_ForYouHighlightsBody> {
   final _scrollController = ScrollController();
   final _prayForOthersKey = GlobalKey();
   final _dailyFaithLoopKey = GlobalKey();

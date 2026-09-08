@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
+import 'package:flutter_application/church_app/screens/community/community_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
@@ -18,6 +18,7 @@ import 'package:flutter_application/church_app/services/analytics/firebase_analy
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/hideable_app_bar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChurchTabScreen extends ConsumerStatefulWidget {
@@ -42,19 +43,11 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.reverse) {
-        if (_appBarVisible) setState(() => _appBarVisible = false);
-      } else if (notification.direction == ScrollDirection.forward) {
-        if (!_appBarVisible) setState(() => _appBarVisible = true);
-      }
-    } else if (notification is ScrollUpdateNotification ||
-        notification is ScrollEndNotification) {
-      if (notification.metrics.pixels <= 0 && !_appBarVisible) {
-        setState(() => _appBarVisible = true);
-      }
-    }
-    return false;
+    return computeHideableAppBarVisibility(
+      notification: notification,
+      currentlyVisible: _appBarVisible,
+      onChanged: (visible) => setState(() => _appBarVisible = visible),
+    );
   }
 
   void _onSelectedMenu(String menu) async {
@@ -130,7 +123,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final eventName = switch (index) {
       0 => 'home_opened',
       1 => 'for_you_opened',
-      2 => 'discover_opened',
+      2 => 'community_opened',
+      3 => 'discover_opened',
       _ => null,
     };
 
@@ -168,9 +162,11 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final config = ref.watch(appConfigProvider).asData?.value;
     final selectedChurch = ref.watch(selectedChurchProvider);
     final canSeeDashboard = isAdmin && (config?.dashboardEnabled ?? false);
+    const communityIndex = 2;
     final screens = <Widget>[
       HomeScreen(),
       ForYouScreen(),
+      const CommunityFeedScreen(),
       const GoFurtherScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
@@ -184,6 +180,11 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         icon: Icons.star_outline_rounded,
         selectedIcon: Icons.star_rounded,
         label: ref.t('church_tab.for_you'),
+      ),
+      AppBottomTabItem(
+        icon: Icons.play_circle_outline_rounded,
+        selectedIcon: Icons.play_circle_rounded,
+        label: ref.t('church_tab.community'),
       ),
       AppBottomTabItem(
         icon: Icons.travel_explore_outlined,
@@ -202,14 +203,16 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       selectedIndex = 0;
     }
 
+    final isCommunityTab = selectedIndex == communityIndex;
+
     return Scaffold(
       body: Column(
         children: [
-          _HideableAppBar(
-            visible: _appBarVisible,
+          HideableAppBar(
+            visible: _appBarVisible && !isCommunityTab,
             appBar: AppBar(
-              centerTitle: true,
-              toolbarHeight: 88,
+              centerTitle: false,
+              toolbarHeight: 40,
               title: ChurchAppBarBrandTitle(
                 text: ref.t('church_tab.app_title'),
                 logo: selectedChurch?.logo ?? '',
@@ -226,48 +229,21 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         ],
       ),
       drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-      bottomNavigationBar: AppBottomTabBar(
-        currentIndex: selectedIndex,
-        items: items,
-        onTap: setActiveScreen,
+      bottomNavigationBar: AnimatedSize(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.bottomCenter,
+        child: (isCommunityTab && !_appBarVisible)
+            ? const SizedBox(width: double.infinity, height: 0)
+            : AppBottomTabBar(
+                currentIndex: selectedIndex,
+                items: items,
+                onTap: setActiveScreen,
+              ),
       ),
     );
   }
 
   bool _sameGroups(List<String> left, List<String> right) =>
       left.length == right.length && left.toSet().containsAll(right);
-}
-
-/// Collapses [appBar] out of view (Instagram-style) rather than pushing it
-/// off-screen — the reserved slot never resizes, only the visible slice does,
-/// so hiding/showing never triggers a Scaffold relayout of the body below.
-class _HideableAppBar extends StatelessWidget {
-  const _HideableAppBar({
-    required this.visible,
-    required this.appBar,
-  });
-
-  final bool visible;
-  final PreferredSizeWidget appBar;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxHeight =
-        appBar.preferredSize.height + MediaQuery.of(context).padding.top;
-
-    return ClipRect(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        height: visible ? maxHeight : 0,
-        alignment: Alignment.topCenter,
-        child: OverflowBox(
-          minHeight: maxHeight,
-          maxHeight: maxHeight,
-          alignment: Alignment.topCenter,
-          child: appBar,
-        ),
-      ),
-    );
-  }
 }

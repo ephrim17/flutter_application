@@ -39,6 +39,66 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   final _searchController = TextEditingController();
   String _query = '';
 
+  // Members providers can re-emit the same resolved list on rebuilds
+  // triggered by unrelated state (admin flag, selected church, etc). These
+  // caches skip re-scanning/re-sorting the whole roster when neither the
+  // member list nor the search query actually changed.
+  List<AppUser>? _specialDaysSourceMembers;
+  (List<AppUser>, List<AppUser>)? _specialDaysCache;
+
+  List<AppUser>? _filteredSourceMembers;
+  String? _filteredSourceQuery;
+  (List<AppUser>, List<AppUser>, List<AppUser>,
+      List<MapEntry<String, List<AppUser>>>)? _filteredCache;
+
+  (List<AppUser>, List<AppUser>) _computeSpecialDays(List<AppUser> allMembers) {
+    if (identical(allMembers, _specialDaysSourceMembers) &&
+        _specialDaysCache != null) {
+      return _specialDaysCache!;
+    }
+    final todayBirthdays = allMembers
+        .where((member) => _isBirthdayToday(member.dob))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final todayAnniversaries = allMembers
+        .where((member) => _isAnniversaryToday(member.weddingDay))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    _specialDaysSourceMembers = allMembers;
+    _specialDaysCache = (todayBirthdays, todayAnniversaries);
+    return _specialDaysCache!;
+  }
+
+  (List<AppUser>, List<AppUser>, List<AppUser>,
+      List<MapEntry<String, List<AppUser>>>) _computeFilteredMembers(
+    List<AppUser> members,
+    String query,
+  ) {
+    if (identical(members, _filteredSourceMembers) &&
+        query == _filteredSourceQuery &&
+        _filteredCache != null) {
+      return _filteredCache!;
+    }
+
+    final sortedMembers = [...members]..sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final filteredMembers = _filterMembers(sortedMembers, query);
+    final familyMembers = filteredMembers
+        .where((member) => member.category.toLowerCase() == 'family')
+        .toList();
+    final individualMembers = filteredMembers
+        .where((member) => member.category.toLowerCase() == 'individual')
+        .toList();
+    final groupedFamilies = _groupFamilies(familyMembers);
+
+    _filteredSourceMembers = members;
+    _filteredSourceQuery = query;
+    _filteredCache =
+        (filteredMembers, familyMembers, individualMembers, groupedFamilies);
+    return _filteredCache!;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -76,14 +136,8 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                   orElse: () => null,
                 ));
     final allMembers = membersAsync.asData?.value ?? const <AppUser>[];
-    final todayBirthdays = allMembers
-        .where((member) => _isBirthdayToday(member.dob))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    final todayAnniversaries = allMembers
-        .where((member) => _isAnniversaryToday(member.weddingDay))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final (todayBirthdays, todayAnniversaries) =
+        _computeSpecialDays(allMembers);
     final specialDayCount = todayBirthdays.length + todayAnniversaries.length;
 
     return DefaultTabController(
@@ -232,18 +286,8 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               );
             }
 
-            final sortedMembers = [...members]..sort(
-                (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
-            final filteredMembers = _filterMembers(sortedMembers, _query);
-            final familyMembers = filteredMembers
-                .where((member) => member.category.toLowerCase() == 'family')
-                .toList();
-            final individualMembers = filteredMembers
-                .where(
-                    (member) => member.category.toLowerCase() == 'individual')
-                .toList();
-            final groupedFamilies = _groupFamilies(familyMembers);
+            final (filteredMembers, familyMembers, individualMembers,
+                groupedFamilies) = _computeFilteredMembers(members, _query);
 
             return RefreshIndicator(
               onRefresh: () => ref.refresh(membersProvider.future),

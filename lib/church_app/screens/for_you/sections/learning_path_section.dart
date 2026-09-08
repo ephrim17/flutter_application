@@ -19,6 +19,7 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_image_gallery_viewer.dart';
 import 'package:flutter_application/church_app/widgets/adaptive_youtube_player.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
+import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
@@ -72,30 +73,13 @@ class _LearningPathContent extends ConsumerWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Icon(
-                        Icons.school_outlined,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
+                   
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            context.t('learning.member_heading'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
+                          SectionHeader(text: context.t('learning.member_heading'), padding: 0.0,),
                           const SizedBox(height: 3),
                           Text(context.t('learning.overview_hint')),
                         ],

@@ -11,6 +11,7 @@ import 'package:flutter_application/church_app/helpers/file_download.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/models/verse_image_template.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
@@ -89,7 +90,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   double fontSize = 20;
   VerseFontStyleOption fontStyleOption = VerseFontStyleOption.bold;
   double blurIntensity = 10;
-  bool _editorPanelVisible = true;
+  bool _editorPanelVisible = false;
   bool _showFullPreview = false;
   String _dateFormatPattern = _dateStyleOptions.first.pattern;
   bool _isDownloading = false;
@@ -131,7 +132,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
           : AppBar(
               leading: IconButton(
                 tooltip: context.t('common.close'),
-                onPressed: () => Navigator.of(context).maybePop(),
+                onPressed: _handleClosePressed,
                 icon: const Icon(Icons.close_rounded),
               ),
               title: Text(context.t('ui.verse_share.verse_story_editor')),
@@ -151,8 +152,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
             final screenHeight = constraints.maxHeight.isFinite
                 ? constraints.maxHeight
                 : MediaQuery.of(context).size.height;
-            final panelHeight = screenHeight * 0.9;
-            final bottomReserve = _editorPanelVisible ? 24.0 : 54.0 + 80.0;
+            final panelHeight = screenHeight;
+            final bottomReserve = _editorPanelVisible ? 24.0 : 54.0 + 16.0;
             const stripsHeight = 104.0 + 88.0;
             final previewHeight = math.max(
               200.0,
@@ -192,31 +193,47 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   curve: Curves.easeOutCubic,
                   left: 16,
                   right: 16,
-                  bottom: _editorPanelVisible ? -68 : 76,
-                  child: _buildCollapsedEditorButton(),
-                ),
-                if (!_editorPanelVisible)
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 12,
-                    child: ElevatedButton.icon(
-                      onPressed: _isDownloading ? null : downloadImage,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
+                  bottom: _editorPanelVisible ? -70 : 16,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildFrostedActionButton(
+                          icon: Icons.tune_rounded,
+                          label: context.t('ui.verse_share.show_editor'),
+                          onPressed: () =>
+                              setState(() => _editorPanelVisible = true),
+                        ),
                       ),
-                      icon: const Icon(Icons.download_rounded),
-                      label: Text(
-                        context.t('common.download'),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildFrostedActionButton(
+                          icon: Icons.download_rounded,
+                          label: context.t('common.download'),
+                          busy: _isDownloading,
+                          onPressed: _isDownloading ? null : downloadImage,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  Future<void> _handleClosePressed() async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: context.t('verse_share.discard_title'),
+      message: context.t('verse_share.discard_message'),
+      confirmLabel: context.t('common.discard'),
+      isDestructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    Navigator.of(context).maybePop();
   }
 
   Widget _buildInlineEditorPanel() {
@@ -336,15 +353,62 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  Widget _buildCollapsedEditorButton() {
-    return FilledButton.icon(
-      onPressed: () => setState(() => _editorPanelVisible = true),
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+  /// Compact frosted-glass pill — deliberately smaller and translucent
+  /// rather than a full-width solid button, so the two actions sit side by
+  /// side without eating into the preview's vertical space.
+  Widget _buildFrostedActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+    bool busy = false,
+  }) {
+    final theme = Theme.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Material(
+          color: theme.colorScheme.surface.withValues(alpha: 0.55),
+          child: InkWell(
+            onTap: onPressed,
+            child: Container(
+              height: 46,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: busy
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 18, color: theme.colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
       ),
-      icon: const Icon(Icons.tune_rounded),
-      label: Text(context.t('ui.verse_share.show_editor')),
     );
   }
 
@@ -613,20 +677,43 @@ class _VerseShareModalState extends State<VerseShareModal> {
   }
 
   Widget _buildFullPreviewOverlay() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _showFullPreview = false),
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: _buildPreview(
-            MediaQuery.of(context).size.height * 0.75,
-            interactive: false,
+    return Stack(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _showFullPreview = false),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Theme.of(context).colorScheme.surface,
+            child: Center(
+              child: _buildPreview(
+                MediaQuery.of(context).size.height * 0.75,
+                interactive: false,
+              ),
+            ),
           ),
         ),
-      ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 8,
+          right: 12,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: IconButton(
+                tooltip: context.t('ui.verse_share.preview'),
+                onPressed: () => setState(() => _showFullPreview = false),
+                icon: const Icon(Icons.visibility_outlined),
+                style: IconButton.styleFrom(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -935,7 +1022,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionCard(
-            title: context.t('verse_share.layout'),
             description:
                 context.t('ui.verse_share.update_the_verse_text_and_card_size'),
             child: Column(
@@ -1112,9 +1198,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
           _buildSectionCard(
             title: context.t('verse_share.highlights'),
+            withTopDivider: true,
             description: context.t(
                 'ui.verse_share.tap_words_then_style_each_selected_word_differently'),
             child: Column(
@@ -1444,31 +1530,42 @@ class _VerseShareModalState extends State<VerseShareModal> {
   String _todayDateLabel() =>
       DateFormat(_dateFormatPattern).format(DateTime.now());
 
+  /// Transparent by design — this sits on the editor panel's own frosted
+  /// blur, so a solid card here would read as a hard white box on top of
+  /// glass. A top divider gives the same "this is its own section" cue
+  /// without covering the blur. [title] is optional: omit it when the
+  /// enclosing tab's own label already says the same thing (e.g. the Edit
+  /// tab), so the word doesn't render twice on screen.
   Widget _buildSectionCard({
-    required String title,
+    String? title,
     required String description,
     required Widget child,
+    bool withTopDivider = false,
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
-        ),
-      ),
+      padding: EdgeInsets.only(top: withTopDivider ? 18 : 0),
+      decoration: withTopDivider
+          ? BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                ),
+              ),
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 6),
+          if (title != null) ...[
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 6),
+          ],
           Text(description, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
           child,

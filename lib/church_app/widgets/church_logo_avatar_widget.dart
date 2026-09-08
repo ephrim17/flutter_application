@@ -6,7 +6,7 @@ class ChurchLogoAvatar extends StatelessWidget {
   const ChurchLogoAvatar({
     super.key,
     required this.logo,
-    this.size = 48,
+    this.size = 35,
   });
 
   final String logo;
@@ -28,6 +28,14 @@ class ChurchLogoAvatar extends StatelessWidget {
   }
 
   Widget _networkLogo(BuildContext context, String url) {
+    // Only cap one dimension: ResizeImage's default policy stretches the
+    // decoded bitmap to *exactly* both memCacheWidth and memCacheHeight,
+    // ignoring the source's real aspect ratio — most church logos aren't
+    // square, so forcing both to the same value warps them before BoxFit
+    // ever runs. BoxFit.cover (not fitHeight) is what correctly fills this
+    // circular frame without letting a wide/tall logo overflow and clip.
+    final cacheDimension =
+        (size * MediaQuery.of(context).devicePixelRatio).round();
     return _logoShell(
       context,
       child: ClipOval(
@@ -36,6 +44,7 @@ class ChurchLogoAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          memCacheWidth: cacheDimension,
           placeholder: (_, __) => _loading(context),
           errorWidget: (_, __, ___) => _fallback(context),
         ),

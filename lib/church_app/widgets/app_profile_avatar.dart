@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class AppProfileAvatar extends StatelessWidget {
@@ -61,12 +62,20 @@ class AppProfileAvatar extends StatelessWidget {
         errorBuilder: (_, __, ___) => fallback,
       );
     } else if ((imageUrl ?? '').trim().isNotEmpty) {
-      content = Image.network(
-        imageUrl!.trim(),
+      // Only cap one dimension: ResizeImage's default policy stretches the
+      // decoded bitmap to *exactly* both memCacheWidth and memCacheHeight,
+      // ignoring the source's real aspect ratio — giving both the same
+      // square value warps any non-square photo before BoxFit ever sees it.
+      final cacheDimension =
+          (size * MediaQuery.of(context).devicePixelRatio).round();
+      content = CachedNetworkImage(
+        imageUrl: imageUrl!.trim(),
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback,
+        memCacheWidth: cacheDimension,
+        placeholder: (_, __) => fallback,
+        errorWidget: (_, __, ___) => fallback,
       );
     }
 

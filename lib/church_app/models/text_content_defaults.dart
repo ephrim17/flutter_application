@@ -24,6 +24,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'common.loading': 'Loading...',
   'common.retry': 'Retry',
   'common.delete': 'Delete',
+  'common.discard': 'Discard',
   'common.disable': 'Disable',
   'common.save': 'Save',
   'common.create': 'Create',
@@ -327,6 +328,8 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.verse_share.clear": "Clear",
   "ui.feed_card.watch_on_youtube": "Watch on YouTube",
   "ui.feed_card.unable_to_open_youtube_link": "Unable to open YouTube link",
+  "ui.feed_card.show_more": "…more",
+  "ui.feed_card.show_less": "Show less",
   "ui.disabled_feature_tips.enable_this_feature_from_studio_when_it_is_ready":
       "Enable this feature from Studio when it is ready.",
   "ui.bible_verse_picker.choose_a_book_chapter_and_verse_from_the_bible_list":
@@ -478,11 +481,6 @@ const Map<String, String> defaultChurchTextContents = {
   'birthday.change_image': 'Change image',
   'birthday.choose_image': 'Choose image',
   'birthday.turning_prefix': 'Turning',
-  'feed.pin_post': 'Pin post',
-  'feed.pinned_badge': 'Pinned',
-  'feed.post_pinned': 'Post pinned',
-  'feed.post_unpinned': 'Post unpinned',
-  'feed.unpin_post': 'Unpin post',
   'groups.title': 'Church Groups',
   'members.additional_notes_helper':
       'Optional short notes about this member for church reference.',
@@ -612,16 +610,16 @@ const Map<String, String> defaultChurchTextContents = {
   'feed.edit_title': 'Edit Post',
   'feed.cancel': 'Cancel',
   'feed.add_image_optional': 'Add Image (Optional)',
-  'feed.validation_all_fields_required': 'All fields are required',
-  'feed.image_required': 'An image is required for this post',
-  'feed.title_label': 'Title',
-  'feed.description_label': 'Description',
+  'feed.validation_all_fields_required': 'Write something before posting',
+  'feed.caption_hint': "What's happening in your church?",
+  'feed.visibility_sheet_title': 'Post visibility',
+  'feed.visibility_sheet_subtitle':
+      'Only applies when posting to All Churches.',
   'feed.global_share_details_title': 'Share personal details',
   'feed.global_share_details_enabled':
       'Name, category, address, DOB, email, and phone will be available from this global post.',
   'feed.global_share_details_disabled':
       'Only name, church, and church pastor will be shown from this global post.',
-  'feed.change_image': 'Change Image',
   'feed.post_deleted': 'Post deleted',
   'feed.post_action': 'Post',
   'feed.update_action': 'Update',
@@ -945,8 +943,7 @@ const Map<String, String> defaultChurchTextContents = {
   'church_tab.go_further': 'Go Further',
   'church_tab.discover': 'Discover',
   'church_tab.dashboard': 'Dashboard',
-  'for_you.highlights_tab': 'Highlights',
-  'for_you.community_tab': 'Community',
+  'church_tab.community': 'Community',
   'dashboard.admin_title': 'Admin Dashboard',
   'dashboard.church_fallback': 'Church',
   'dashboard.hero_subtitle':
@@ -1166,6 +1163,9 @@ const Map<String, String> defaultChurchTextContents = {
 
   // Verse share
   'verse_share.layout': 'Edit',
+  'verse_share.discard_title': 'Discard this verse image?',
+  'verse_share.discard_message':
+      "You'll lose the text, style, and image changes you made.",
   'verse_share.style': 'Style',
   'verse_share.footer': 'Footer',
   'verse_share.format': 'Format',
@@ -1408,6 +1408,14 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.go_further.youtube_link": "YouTube link",
   "ui.feed.your_church": "Your Church",
   "ui.feed.global_churches": "Global Churches",
+  "ui.feed.all_churches": "All Churches",
+  "ui.feed.no_global_posts": "No global posts yet",
+  "ui.feed.posting": "Posting…",
+  "ui.feed.posted": "Posted",
+  "ui.feed.post_failed": "Couldn't post. Try again.",
+  "ui.feed.view_full_image": "View full image",
+  "ui.feed.show_cropped_preview": "Show cropped preview",
+  "ui.feed.use_photos": "Use Photos",
   "ui.feed.clear_search": "Clear search",
   "ui.home.late_night": "Late night",
   "ui.home.early_morning": "Early morning",

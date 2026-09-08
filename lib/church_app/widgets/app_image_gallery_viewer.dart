@@ -16,7 +16,6 @@ Future<void> showAppImageGallery(
   final safeIndex = initialIndex.clamp(0, imageUrls.length - 1);
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
-      fullscreenDialog: true,
       builder: (_) => AppImageGalleryViewer(
         imageUrls: imageUrls,
         initialIndex: safeIndex,
@@ -87,19 +86,17 @@ class _AppImageGalleryViewerState extends State<AppImageGalleryViewer> {
           itemBuilder: (context, index) {
             final imageUrl = widget.imageUrls[index];
             final heroTag = widget.heroTagBuilder?.call(imageUrl, index);
-            final image = _ZoomableNetworkImage(imageUrl: imageUrl);
-            return Center(
-              child: heroTag == null ? image : Hero(tag: heroTag, child: image),
-            );
+            return _ZoomableNetworkImage(imageUrl: imageUrl, heroTag: heroTag);
           },
         ),
       );
 }
 
 class _ZoomableNetworkImage extends StatefulWidget {
-  const _ZoomableNetworkImage({required this.imageUrl});
+  const _ZoomableNetworkImage({required this.imageUrl, this.heroTag});
 
   final String imageUrl;
+  final String? heroTag;
 
   @override
   State<_ZoomableNetworkImage> createState() => _ZoomableNetworkImageState();
@@ -116,32 +113,39 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onDoubleTapDown: (details) => _doubleTapDetails = details,
-        onDoubleTap: _toggleZoom,
-        child: InteractiveViewer(
-          transformationController: _transformationController,
-          minScale: 1,
-          maxScale: 5,
-          boundaryMargin: const EdgeInsets.all(36),
-          child: CachedNetworkImage(
-            imageUrl: widget.imageUrl,
-            width: MediaQuery.sizeOf(context).width,
-            height: MediaQuery.sizeOf(context).height,
-            fit: BoxFit.contain,
-            placeholder: (_, __) => const Center(
-              child: AppLoadingIndicator(),
-            ),
-            errorWidget: (_, __, ___) => const Center(
-              child: Icon(
-                Icons.broken_image_outlined,
-                color: Colors.white70,
-                size: 52,
-              ),
-            ),
-          ),
+  Widget build(BuildContext context) {
+    // The Hero's own child is a bare image — no InteractiveViewer inside it
+    // — so the incoming flight only ever animates plain image bounds. Pan
+    // and pinch-zoom wrap it as a separate layer that only takes over once
+    // the flight has settled.
+    final image = CachedNetworkImage(
+      imageUrl: widget.imageUrl,
+      fit: BoxFit.contain,
+      placeholder: (_, __) => const Center(child: AppLoadingIndicator()),
+      errorWidget: (_, __, ___) => const Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Colors.white70,
+          size: 52,
         ),
-      );
+      ),
+    );
+    final hero = widget.heroTag == null
+        ? image
+        : Hero(tag: widget.heroTag!, child: image);
+
+    return GestureDetector(
+      onDoubleTapDown: (details) => _doubleTapDetails = details,
+      onDoubleTap: _toggleZoom,
+      child: InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 1,
+        maxScale: 5,
+        boundaryMargin: const EdgeInsets.all(36),
+        child: Center(child: hero),
+      ),
+    );
+  }
 
   void _toggleZoom() {
     if (_transformationController.value.getMaxScaleOnAxis() > 1) {

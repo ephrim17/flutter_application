@@ -44,7 +44,10 @@ service firebase.storage {
       allow write: if isSignedIn();
     }
 
-    match /churches/global/feeds/{allPaths=**} {
+    // Multi-image gallery uploads (feed_repository.dart's createPost) use
+    // this plural "feeds" path, scoped per church id — "global" for posts
+    // in the cross-church feed.
+    match /churches/{churchId}/feeds/{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }

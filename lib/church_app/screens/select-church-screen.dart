@@ -1,5 +1,6 @@
 // ignore_for_file: file_names
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -1094,14 +1095,17 @@ class _PastorAvatar extends StatelessWidget {
     }
 
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      final cacheDimension =
+          (size * MediaQuery.of(context).devicePixelRatio).round();
       return ClipOval(
         child: SizedBox(
           width: size,
           height: size,
-          child: Image.network(
-            trimmedUrl,
+          child: CachedNetworkImage(
+            imageUrl: trimmedUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _PastorAvatarFallback(size: size),
+            memCacheWidth: cacheDimension,
+            errorWidget: (_, __, ___) => _PastorAvatarFallback(size: size),
           ),
         ),
       );
@@ -1161,13 +1165,15 @@ class _ChurchCoverImage extends StatelessWidget {
 
     if (trimmedLogo.startsWith('http://') ||
         trimmedLogo.startsWith('https://')) {
+      final dpr = MediaQuery.of(context).devicePixelRatio;
       return SizedBox(
         height: 156,
         width: double.infinity,
-        child: Image.network(
-          trimmedLogo,
+        child: CachedNetworkImage(
+          imageUrl: trimmedLogo,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const _ChurchCoverFallback(),
+          memCacheWidth: (MediaQuery.of(context).size.width * dpr).round(),
+          errorWidget: (_, __, ___) => const _ChurchCoverFallback(),
         ),
       );
     }
