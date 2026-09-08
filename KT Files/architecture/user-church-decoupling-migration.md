@@ -850,3 +850,53 @@ has not executed. Needs `gcloud auth application-default login` or a
 service account key — see the script's README — then:
 `cd functions && npm run migrate -- --database=migrationv1`, review the
 report and conflicts CSV, re-run until stable, then add `--write`.
+
+### Addendum (Phase 4 complete except avatar blob copy)
+
+- **Reading plans** moved onto the identity: `ReadingPlanProgressRepository`/
+  its provider now target `users/{uid}/readingPlans` and no longer require a
+  selected church. Deleted the now-dead `churchUserReadingPlans` path
+  helper.
+- **Favorites** moved onto the identity, SharedPreferences kept as the
+  offline cache per §6: new `FavoritesRepository` writes
+  `users/{uid}/favorites`; `FavoritesNotifier.loadFavorites()` merges any
+  local-only key into Firestore on every load (handles first sync and any
+  offline gap); `toggleGlobalHighlight` writes through to both;
+  `clearAll()` (called on logout) clears only the local cache — Firestore
+  favorites are person-owned and must survive a logout, not be deleted by
+  one.
+- **Learning split (§5.6, D9) implemented as a real behaviour change**, not
+  just a path move: `LearningModule` gained a `source` (`global`/`church`)
+  field set by the repository at load time from which collection it
+  queried (a church's own customization of a global module —
+  `sourceModuleId` set — is still `church`, since it lives under that
+  church's collection). `submitSectionQuiz`, `completeSection`, and
+  `submitModuleExam` now take `source` and route accordingly: global →
+  `users/{uid}/learning_progress`, no results row; church →
+  `churches/{cid}/members/{uid}/learning_progress` (fixed off the stale
+  `churchUserLearningProgress`/`churches/{cid}/users/...` path in the same
+  change) plus a `learning_results` row tagged `source: 'church'`.
+  `watchProgress` now merges `watchGlobalProgress` + a new
+  `watchChurchMemberProgress` via a pure `mergeLearningProgress` function
+  (unit tested) so the member UI's single merged module list gets a single
+  correctly-sourced progress view. The now-fully-dead
+  `churches/{cid}/users/{uid}` nested rules block (readingPlans,
+  learning_progress) was removed from `firestore.rules` — every former
+  consumer has moved.
+- **Avatars**: the person's own photo already uploads to
+  `users/{uid}/profile/...` (done in earlier Phase 3 work). **Not done:**
+  §6's "copy blobs, rewrite `profilePhotoUrl`" for existing users whose
+  `profilePhotoUrl` still points at the old
+  `churches/{cid}/users/{uid}/profile/...` Storage path. Deliberately
+  deferred — the cost of getting a Storage blob copy + Firebase download
+  URL reconstruction wrong (wrong bucket path, a stale/invalid download
+  token) is a broken avatar image, not data loss or a security gap, and
+  it's a strictly smaller, more isolated piece of work than Phases 6/7.
+  `storage.rules`' dual-path block (both the old and new
+  `.../profile/{allPaths=**}` matches) stays in place indefinitely as
+  compatibility for these un-migrated blobs rather than being removed on
+  the assumption every caller has moved — unlike the Firestore paths
+  above, this one genuinely hasn't. A user who re-uploads their photo via
+  Edit Profile lands on the new path immediately; existing photos just sit
+  on the old one until either they re-upload or someone writes the
+  blob-copy pass.

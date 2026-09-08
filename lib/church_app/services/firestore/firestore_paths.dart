@@ -22,16 +22,6 @@ class FirestorePaths {
   ) =>
       firestore.collection(learningModules);
 
-  static CollectionReference<Map<String, dynamic>> churchUserLearningProgress(
-    FirebaseFirestore firestore,
-    String churchId,
-    String userId,
-  ) =>
-      churchDoc(firestore, churchId)
-          .collection(users)
-          .doc(userId)
-          .collection(learningProgress);
-
   static CollectionReference<Map<String, dynamic>> churchLearningResults(
     FirebaseFirestore firestore,
     String churchId,

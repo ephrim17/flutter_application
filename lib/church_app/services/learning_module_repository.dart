@@ -52,13 +52,14 @@ class LearningModuleRepository {
 
   Stream<List<LearningModule>> watchPublishedModules() =>
       _modules.orderBy('order').snapshots().map((snapshot) => snapshot.docs
-          .map(LearningModule.fromDoc)
+          .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
           .where((module) => module.enabled && module.isConfigured)
           .toList(growable: false));
 
   Stream<List<LearningModule>> watchAllModules() =>
-      _modules.orderBy('order').snapshots().map((snapshot) =>
-          snapshot.docs.map(LearningModule.fromDoc).toList(growable: false));
+      _modules.orderBy('order').snapshots().map((snapshot) => snapshot.docs
+          .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
+          .toList(growable: false));
 
   Stream<ChurchLearningConfig> watchChurchConfig(String churchId) =>
       FirestorePaths.churchLearningConfig(firestore, churchId)
@@ -70,7 +71,7 @@ class LearningModuleRepository {
           .orderBy('order')
           .snapshots()
           .map((snapshot) => snapshot.docs
-              .map(LearningModule.fromDoc)
+              .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.church))
               .toList(growable: false));
 
   Stream<List<LearningModule>> watchResolvedPublishedModules(
@@ -123,17 +124,69 @@ class LearningModuleRepository {
     return controller.stream;
   }
 
-  Stream<LearningProgress> watchProgress({
+  /// Global-track progress only — `users/{uid}/learning_progress` (§5.6).
+  /// Used by the guest shell and merged into [watchProgress] inside a
+  /// church.
+  Stream<LearningProgress> watchGlobalProgress(String userId) =>
+      FirestorePaths.userLearningProgress(firestore, userId)
+          .doc('progress')
+          .snapshots()
+          .map((snapshot) => LearningProgress.fromMap(snapshot.data()));
+
+  /// Church-track progress only — `churches/{cid}/members/{uid}/
+  /// learning_progress` (§5.6).
+  Stream<LearningProgress> watchChurchMemberProgress({
     required String churchId,
-    required String userId,
+    required String memberId,
   }) =>
-      FirestorePaths.churchUserLearningProgress(
+      FirestorePaths.churchMemberLearningProgress(
         firestore,
         churchId,
-        userId,
+        memberId,
       ).doc('progress').snapshots().map(
             (snapshot) => LearningProgress.fromMap(snapshot.data()),
           );
+
+  /// The combined view a church's module list needs (§5.6): global and
+  /// church modules are shown together, so their progress must be too.
+  /// Section/module ids never collide across the two collections, so a
+  /// plain union is safe.
+  Stream<LearningProgress> watchProgress({
+    required String churchId,
+    required String userId,
+  }) {
+    late final StreamController<LearningProgress> controller;
+    LearningProgress? global;
+    LearningProgress? church;
+    final subscriptions = <StreamSubscription<dynamic>>[];
+
+    void emit() {
+      if (global == null || church == null) return;
+      controller.add(mergeLearningProgress(global!, church!));
+    }
+
+    controller = StreamController<LearningProgress>(
+      onListen: () {
+        subscriptions.add(watchGlobalProgress(userId).listen((value) {
+          global = value;
+          emit();
+        }, onError: controller.addError));
+        subscriptions.add(watchChurchMemberProgress(
+          churchId: churchId,
+          memberId: userId,
+        ).listen((value) {
+          church = value;
+          emit();
+        }, onError: controller.addError));
+      },
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+    return controller.stream;
+  }
 
   Stream<List<LearningQuizResult>> watchChurchResults(String churchId) =>
       FirestorePaths.churchLearningResults(firestore, churchId)
@@ -317,6 +370,9 @@ class LearningModuleRepository {
     ).doc(module.id).delete();
   }
 
+  /// §5.6/D9: a global (Church Tree) module's progress follows the person
+  /// everywhere and files no per-church result; a church module keeps the
+  /// pre-split behaviour under that church's membership.
   Future<void> submitSectionQuiz({
     required String churchId,
     required String userId,
@@ -328,14 +384,18 @@ class LearningModuleRepository {
     required int score,
     required int total,
     required bool passed,
+    required ModuleSource source,
   }) async {
-    final reference = FirestorePaths.churchUserLearningProgress(
-      firestore,
-      churchId,
-      userId,
-    ).doc('progress');
-    final resultReference =
-        FirestorePaths.churchLearningResults(firestore, churchId).doc();
+    final reference = source == ModuleSource.global
+        ? FirestorePaths.userLearningProgress(firestore, userId).doc('progress')
+        : FirestorePaths.churchMemberLearningProgress(
+            firestore,
+            churchId,
+            userId,
+          ).doc('progress');
+    final resultReference = source == ModuleSource.church
+        ? FirestorePaths.churchLearningResults(firestore, churchId).doc()
+        : null;
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(reference);
       final current = snapshot.data() ?? const <String, dynamic>{};
@@ -360,7 +420,7 @@ class LearningModuleRepository {
         reference,
         {
           'userId': userId,
-          'churchId': churchId,
+          if (source == ModuleSource.church) 'churchId': churchId,
           if (passed) 'completedSectionIds': FieldValue.arrayUnion([sectionId]),
           'attempts': attempts,
           'attemptCounts': attemptCounts,
@@ -368,20 +428,23 @@ class LearningModuleRepository {
         },
         SetOptions(merge: true),
       );
-      transaction.set(resultReference, {
-        'churchId': churchId,
-        'userId': userId,
-        'userName': userName.trim(),
-        'userEmail': userEmail.trim(),
-        'moduleId': moduleId,
-        'sectionId': sectionId,
-        'answers': answers,
-        'score': score,
-        'total': total,
-        'passed': passed,
-        'attemptNumber': attemptNumber,
-        'submittedAt': FieldValue.serverTimestamp(),
-      });
+      if (resultReference != null) {
+        transaction.set(resultReference, {
+          'churchId': churchId,
+          'userId': userId,
+          'userName': userName.trim(),
+          'userEmail': userEmail.trim(),
+          'moduleId': moduleId,
+          'sectionId': sectionId,
+          'answers': answers,
+          'score': score,
+          'total': total,
+          'passed': passed,
+          'attemptNumber': attemptNumber,
+          'source': 'church',
+          'submittedAt': FieldValue.serverTimestamp(),
+        });
+      }
     });
   }
 
@@ -389,14 +452,18 @@ class LearningModuleRepository {
     required String churchId,
     required String userId,
     required String sectionId,
+    required ModuleSource source,
   }) async {
-    await FirestorePaths.churchUserLearningProgress(
-      firestore,
-      churchId,
-      userId,
-    ).doc('progress').set({
+    final reference = source == ModuleSource.global
+        ? FirestorePaths.userLearningProgress(firestore, userId).doc('progress')
+        : FirestorePaths.churchMemberLearningProgress(
+            firestore,
+            churchId,
+            userId,
+          ).doc('progress');
+    await reference.set({
       'userId': userId,
-      'churchId': churchId,
+      if (source == ModuleSource.church) 'churchId': churchId,
       'completedSectionIds': FieldValue.arrayUnion([sectionId]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -413,14 +480,18 @@ class LearningModuleRepository {
     required int score,
     required int total,
     required bool passed,
+    required ModuleSource source,
   }) async {
-    final progressReference = FirestorePaths.churchUserLearningProgress(
-      firestore,
-      churchId,
-      userId,
-    ).doc('progress');
-    final resultReference =
-        FirestorePaths.churchLearningResults(firestore, churchId).doc();
+    final progressReference = source == ModuleSource.global
+        ? FirestorePaths.userLearningProgress(firestore, userId).doc('progress')
+        : FirestorePaths.churchMemberLearningProgress(
+            firestore,
+            churchId,
+            userId,
+          ).doc('progress');
+    final resultReference = source == ModuleSource.church
+        ? FirestorePaths.churchLearningResults(firestore, churchId).doc()
+        : null;
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(progressReference);
       final current = snapshot.data() ?? const <String, dynamic>{};
@@ -433,29 +504,32 @@ class LearningModuleRepository {
         progressReference,
         {
           'userId': userId,
-          'churchId': churchId,
+          if (source == ModuleSource.church) 'churchId': churchId,
           if (passed) 'completedModuleIds': FieldValue.arrayUnion([moduleId]),
           'moduleAttemptCounts': attemptCounts,
           'updatedAt': FieldValue.serverTimestamp(),
         },
         SetOptions(merge: true),
       );
-      transaction.set(resultReference, {
-        'churchId': churchId,
-        'userId': userId,
-        'userName': userName.trim(),
-        'userEmail': userEmail.trim(),
-        'moduleId': moduleId,
-        'moduleTitle': moduleTitle.trim(),
-        'sectionId': '',
-        'assessmentType': 'finalExam',
-        'answers': answers,
-        'score': score,
-        'total': total,
-        'passed': passed,
-        'attemptNumber': attemptNumber,
-        'submittedAt': FieldValue.serverTimestamp(),
-      });
+      if (resultReference != null) {
+        transaction.set(resultReference, {
+          'churchId': churchId,
+          'userId': userId,
+          'userName': userName.trim(),
+          'userEmail': userEmail.trim(),
+          'moduleId': moduleId,
+          'moduleTitle': moduleTitle.trim(),
+          'sectionId': '',
+          'assessmentType': 'finalExam',
+          'answers': answers,
+          'score': score,
+          'total': total,
+          'passed': passed,
+          'attemptNumber': attemptNumber,
+          'source': 'church',
+          'submittedAt': FieldValue.serverTimestamp(),
+        });
+      }
     });
   }
 

@@ -233,30 +233,11 @@ service cloud.firestore {
         allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
       }
 
-      // Church membership doc — no longer written (Phase 1's consumer
-      // migration to `members` below is done), but its nested
-      // readingPlans/learning_progress rules are still load-bearing:
-      // firestore_paths.dart's churchUserReadingPlans/
-      // churchUserLearningProgress still point at this path until Phase 4
-      // (reading plans, §5.6's learning split) migrates them off it. Do not
-      // remove this whole block until those callers move — only the top
-      // level fields are dead.
-      match /users/{uid} {
-        allow read: if isSelf(uid) || isChurchStaff(churchId);
-        allow write: if false;
-
-        match /readingPlans/{planId} {
-          allow read: if isSelf(uid) || isChurchStaff(churchId);
-          allow write: if isSelf(uid);
-        }
-        match /learning_progress/{docId} {
-          allow read: if isSelf(uid) || isChurchStaff(churchId);
-          allow write: if isSelf(uid);
-        }
-      }
-
-      // Membership only (D1 rename of `users` above) — identity fields live
-      // on the top-level `users/{uid}` doc, never here. `docId` is the auth
+      // Membership only (D1 rename of the old `churches/{cid}/users` —
+      // fully retired as of Phase 4; every former nested reader/writer
+      // (readingPlans, learning_progress) now targets users/{uid} or this
+      // members/{docId} block instead). Identity fields live on the
+      // top-level `users/{uid}` doc, never here. `docId` is the auth
       // uid for a linked member, or a random id for an admin-created member
       // with no account (§9.3/§9.4/§9.7) — isSelf(docId) degrades safely to
       // false for the latter, since it never matches a real caller.

@@ -708,6 +708,7 @@ class _LearningSectionScreenState
             churchId: churchId,
             userId: userId,
             sectionId: widget.section.id,
+            source: widget.module.source,
           );
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -1257,6 +1258,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
             score: score,
             total: questions.length,
             passed: passed,
+            source: widget.module.source,
           );
       if (!mounted) return;
       setState(() {
