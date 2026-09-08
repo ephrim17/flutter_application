@@ -7,7 +7,7 @@ import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.da
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/church_transaction_model.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
@@ -43,7 +43,7 @@ class _FinancialDashboardScreenState
     final state = ref.watch(financialDashboardViewModelProvider);
     final transactionsAsync = ref.watch(financialTransactionsProvider);
     final viewModel = ref.read(financialDashboardViewModelProvider.notifier);
-    final currentUser = ref.watch(appUserProvider).value;
+    final currentUser = ref.watch(userIdentityProvider).value;
     final theme = Theme.of(context);
 
     if (!state.isAdmin) {
@@ -2952,8 +2952,8 @@ class _MemberPartyPickerSheet extends StatefulWidget {
 
 class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
   final _queryController = TextEditingController();
-  final List<AppUser> _members = <AppUser>[];
-  DocumentSnapshot<AppUser>? _lastDocument;
+  final List<ChurchMembership> _members = <ChurchMembership>[];
+  DocumentSnapshot<ChurchMembership>? _lastDocument;
   bool _isLoading = false;
   bool _hasMore = true;
 
@@ -3014,12 +3014,13 @@ class _MemberPartyPickerSheetState extends State<_MemberPartyPickerSheet> {
                         final member = _members[index];
                         return ListTile(
                           leading: AppProfileAvatar(
-                            name: member.name,
-                            imageUrl: member.profilePhotoUrl,
+                            name: member.displayName,
+                            imageUrl: member.displayPhotoUrl,
                           ),
-                          title: Text(member.name),
-                          subtitle: Text(member.email),
-                          onTap: () => Navigator.of(context).pop(member.name),
+                          title: Text(member.displayName),
+                          subtitle: Text(member.displayEmail),
+                          onTap: () =>
+                              Navigator.of(context).pop(member.displayName),
                         );
                       },
                     ),
