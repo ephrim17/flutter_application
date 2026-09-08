@@ -610,6 +610,8 @@ const Map<String, String> defaultChurchTextContents = {
   'feed.edit_title': 'Edit Post',
   'feed.cancel': 'Cancel',
   'feed.add_image_optional': 'Add Image (Optional)',
+  'feed.take_photo': 'Take Photo',
+  'feed.choose_from_library': 'Choose from Library',
   'feed.validation_all_fields_required': 'Write something before posting',
   'feed.caption_hint': "What's happening in your church?",
   'feed.visibility_sheet_title': 'Post visibility',

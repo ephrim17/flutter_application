@@ -1,15 +1,38 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
-/// Opens the in-app gallery grid, converts the selection to bytes, then
-/// shows the crop preview — the full pick-to-confirm pipeline shared by
-/// every entry point that lets a user attach photos to a feed post.
+/// Opens the gallery, converts the selection to bytes, then shows the crop
+/// preview — the full pick-to-confirm pipeline shared by every entry point
+/// that lets a user attach photos to a feed post.
 /// Returns an empty list (never null) if the user backs out anywhere.
+///
+/// `wechat_assets_picker` (the rich in-app gallery grid) is backed by
+/// `photo_manager`, which has no web implementation, so web uses the
+/// browser's native file picker via `image_picker` instead.
 Future<List<PickedImageData>> pickAndPreviewFeedImages(
   BuildContext context, {
   int maxAssets = 10,
+}) async {
+  final List<PickedImageData> pickedImages;
+  if (kIsWeb) {
+    pickedImages = await _pickImagesWeb(maxAssets: maxAssets);
+  } else {
+    if (!context.mounted) return const [];
+    pickedImages = await _pickImagesNative(context, maxAssets: maxAssets);
+  }
+  if (pickedImages.isEmpty || !context.mounted) return const [];
+
+  final confirmed = await showFeedImageCropPreview(context, images: pickedImages);
+  return confirmed ?? const [];
+}
+
+Future<List<PickedImageData>> _pickImagesNative(
+  BuildContext context, {
+  required int maxAssets,
 }) async {
   final assets = await AssetPicker.pickAssets(
     context,
@@ -18,7 +41,7 @@ Future<List<PickedImageData>> pickAndPreviewFeedImages(
       requestType: RequestType.image,
     ),
   );
-  if (assets == null || assets.isEmpty || !context.mounted) return const [];
+  if (assets == null || assets.isEmpty) return const [];
 
   final pickedImages = <PickedImageData>[];
   for (final asset in assets) {
@@ -28,9 +51,32 @@ Future<List<PickedImageData>> pickAndPreviewFeedImages(
       PickedImageData(bytes: bytes, name: await asset.titleAsync),
     );
   }
-  if (pickedImages.isEmpty || !context.mounted) return const [];
+  return pickedImages;
+}
 
-  final confirmed = await showFeedImageCropPreview(context, images: pickedImages);
+Future<List<PickedImageData>> _pickImagesWeb({required int maxAssets}) async {
+  final files = await ImagePicker().pickMultiImage(limit: maxAssets);
+  final pickedImages = <PickedImageData>[];
+  for (final file in files) {
+    final picked = await PickedImageData.fromXFile(file);
+    if (picked != null) pickedImages.add(picked);
+  }
+  return pickedImages;
+}
+
+/// Opens the device camera, converts the capture to bytes, then shows the
+/// same crop preview used by the gallery pick flow.
+/// Returns an empty list (never null) if the user backs out anywhere.
+Future<List<PickedImageData>> captureAndPreviewFeedImage(
+  BuildContext context,
+) async {
+  final file =
+      await ImagePicker().pickImage(source: ImageSource.camera);
+  final picked = await PickedImageData.fromXFile(file);
+  if (picked == null || !context.mounted) return const [];
+
+  final confirmed =
+      await showFeedImageCropPreview(context, images: [picked]);
   return confirmed ?? const [];
 }
 

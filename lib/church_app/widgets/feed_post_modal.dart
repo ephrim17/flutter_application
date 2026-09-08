@@ -14,6 +14,8 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
 const feedCaptionMaxLength = 500;
 
+enum _ImageSource { camera, gallery }
+
 /// Instagram-style full-screen post composer: one merged caption field (no
 /// separate title/description), an audience dropdown that decides Your
 /// Church vs All Churches, and a tap-the-avatar sheet for personal-details
@@ -71,7 +73,15 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   void _handleCaptionChanged() => setState(() {});
 
   Future<void> _pickImages() async {
-    final confirmed = await pickAndPreviewFeedImages(context);
+    final source = await _showImageSourceSheet();
+    if (source == null || !mounted) return;
+
+    final List<PickedImageData> confirmed;
+    if (source == _ImageSource.camera) {
+      confirmed = await captureAndPreviewFeedImage(context);
+    } else {
+      confirmed = await pickAndPreviewFeedImages(context);
+    }
     if (confirmed.isEmpty || !mounted) return;
 
     setState(() {
@@ -80,6 +90,33 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
         ..addAll(confirmed);
       _previewIndex = 0;
     });
+  }
+
+  Future<_ImageSource?> _showImageSourceSheet() {
+    return showModalBottomSheet<_ImageSource>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: Text(ref.t('feed.take_photo')),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(_ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(ref.t('feed.choose_from_library')),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(_ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showVisibilitySheet(bool globalFeedEnabled) async {
@@ -382,7 +419,6 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
-          const Spacer(),
           FilledButton(
             onPressed: isSubmitting ? null : () => _submit(globalFeedEnabled),
             style: FilledButton.styleFrom(
