@@ -27,6 +27,7 @@ export {
   youtubeLiveWebhook,
 } from "./youtube_live";
 export {setFeedPostGlobal} from "./feed_global";
+export {fanOutIdentityChanges} from "./identityFanout";
 
 admin.initializeApp();
 

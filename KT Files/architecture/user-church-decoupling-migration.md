@@ -900,3 +900,47 @@ report and conflicts CSV, re-run until stable, then add `--write`.
   Edit Profile lands on the new path immediately; existing photos just sit
   on the old one until either they re-upload or someone writes the
   blob-copy pass.
+
+### Addendum (Phase 6 fan-out function built, not deployed)
+
+`functions/src/identityFanout.ts` exports `fanOutIdentityChanges`, a single
+`onDocumentWritten('users/{uid}')` trigger replacing all client-side
+denormalisation (§6 Phase 6):
+
+- Diffs the full extended display* field set (§5.1's addendum list —
+  name/email/phone/photo/dob/gender/weddingDay/maritalStatus/
+  educationalQualification/talentsAndGifts/location/address) between
+  before/after; short-circuits entirely when nothing in that set changed
+  (a write to `dayStreak` or `lastActiveChurchId`, say, triggers no
+  fan-out at all).
+- Refreshes `display*` on every **linked** membership found via
+  `collectionGroup('members').where('uid','==',uid)` — filtered again on
+  `linkedUid === uid` as a belt-and-braces check, though an unlinked row's
+  `uid` field is always `''` so it could never match the query in the
+  first place (§9.2/§9.3).
+- Only when `name` or `profilePhotoUrl` specifically changed (not e.g. an
+  address edit, which none of these collections display), additionally
+  updates the denormalised author fields on that person's `feeds`
+  (collection group, field names `userName`/`userPhoto`), `globalFeeds`
+  (root collection, same field names), `groupMembers` (collection group,
+  `name`/`profilePhotoUrl`), `faith_engagement` (collection group,
+  `userName`/`userPhotoUrl`), and `learning_results` (collection group,
+  `userName` only — no photo field there).
+- Every write is batched at Firestore's 500-per-batch limit and uses
+  `.set(..., {merge: true})`.
+- Added the four matching `firestore.indexes.json` fieldOverrides needed
+  for the new collection-group queries (`groupMembers.uid`, `feeds.userId`,
+  `faith_engagement.userId`, `learning_results.userId`) — same
+  COLLECTION_GROUP-scope pattern as `members.uid`/`devices.uid`.
+- Checked `UserIdentityRepository.updateProfile` for the "delete
+  updateProfile's manual photo fan-out" bullet: there was nothing to
+  delete — that repository was written fresh in Phase 3 and never
+  included one; the bullet describes the pre-migration
+  `ChurchUsersRepository`, already deleted in Phase 1.
+
+**Not deployed.** Same reasoning as the rules/indexes above — a Cloud
+Function that fires on every `users/{uid}` write is exactly the kind of
+change the repo owner should trigger deliberately (`npm --prefix functions
+run deploy`, or scoped with `--only functions:fanOutIdentityChanges`), not
+something done autonomously mid-migration. `npm --prefix functions run
+lint && npm --prefix functions run build` both pass.
