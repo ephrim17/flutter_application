@@ -771,7 +771,7 @@ class _PrayerRequestCard extends ConsumerWidget {
                       const SizedBox(width: 5),
                       Expanded(
                         child: ref
-                            .watch(churchUserNameProvider(prayer.userId))
+                            .watch(churchMemberNameProvider(prayer.userId))
                             .when(
                               loading: () => Text(
                                 context.t('prayer.by_loading'),

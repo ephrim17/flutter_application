@@ -1242,7 +1242,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
     );
     final churchId = ref.read(currentChurchIdProvider).asData?.value;
     final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
-    final appUser = ref.read(appUserProvider).asData?.value;
+    final appUser = ref.read(userIdentityProvider).asData?.value;
     if (churchId == null || userId == null) return;
     setState(() => _submitting = true);
     try {

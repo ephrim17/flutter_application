@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/date_formatter.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/article_model.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
@@ -277,14 +277,14 @@ Future<void> _showArticleAuthorDetails(
 ) async {
   final churchId = ref.read(currentChurchIdProvider).value?.trim() ?? '';
   final firestore = ref.read(firestoreProvider);
-  AppUser? author;
+  ChurchMembership? author;
   var churchName = '';
   var churchPastorName = '';
 
   if (churchId.isNotEmpty) {
     final results = await Future.wait([
       if (article.createdByUid.isNotEmpty)
-        FirestorePaths.churchUserDoc(
+        FirestorePaths.churchMemberDoc(
           firestore,
           churchId,
           article.createdByUid,
@@ -294,11 +294,12 @@ Future<void> _showArticleAuthorDetails(
 
     var resultIndex = 0;
     if (article.createdByUid.isNotEmpty) {
-      final userSnapshot = results[resultIndex++];
-      if (userSnapshot.exists) {
-        author = AppUser.fromFirestore(
-          userSnapshot.id,
-          userSnapshot.data() as Map<String, dynamic>,
+      final memberSnapshot = results[resultIndex++];
+      if (memberSnapshot.exists) {
+        author = ChurchMembership.fromFirestore(
+          memberSnapshot.id,
+          churchId,
+          memberSnapshot.data() as Map<String, dynamic>,
         );
       }
     }
@@ -314,16 +315,17 @@ Future<void> _showArticleAuthorDetails(
     }
   }
 
-  author ??= AppUser.fromJson({
-    'uid': article.createdByUid,
-    'name': article.createdByName.isNotEmpty
+  author ??= ChurchMembership(
+    docId: article.createdByUid,
+    churchId: churchId,
+    approved: true,
+    role: 'admin',
+    displayName: article.createdByName.isNotEmpty
         ? article.createdByName
         : 'Church admin',
-    'email': article.createdByEmail,
-    'profilePhotoUrl': article.createdByProfilePhotoUrl,
-    'role': 'admin',
-    'approved': true,
-  });
+    displayEmail: article.createdByEmail,
+    displayPhotoUrl: article.createdByProfilePhotoUrl,
+  );
 
   if (!context.mounted) return;
   await showUserQuickCardWithChurch(

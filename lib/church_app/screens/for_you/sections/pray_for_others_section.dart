@@ -224,7 +224,7 @@ class _PrayerAuthorLabel extends ConsumerWidget {
       );
     }
 
-    return ref.watch(churchUserNameProvider(prayer.userId)).when(
+    return ref.watch(churchMemberNameProvider(prayer.userId)).when(
           loading: () => Text(
             context.t('for_you.pray_for_others.member'),
             overflow: TextOverflow.ellipsis,
