@@ -7,7 +7,6 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -231,7 +230,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               throw Exception(loginFetchUserFailedMessage);
                             }
 
-                            final userDoc = await FirestorePaths.churchUserDoc(
+                            final memberDoc =
+                                await FirestorePaths.churchMemberDoc(
                               ref.read(firestoreProvider),
                               widget.churchId,
                               firebaseUser.uid,
@@ -242,7 +242,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 .state = false;
                             if (!context.mounted) return;
 
-                            if (!userDoc.exists) {
+                            if (!memberDoc.exists) {
                               await ref.read(firebaseAuthProvider).signOut();
                               if (!context.mounted) return;
 
@@ -263,9 +263,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               return;
                             }
 
-                            final appUser = AppUser.fromJson(
-                              userDoc.data() as Map<String, dynamic>,
-                            );
+                            final approved =
+                                memberDoc.data()?['approved'] == true;
                             await ChurchLocalStorage().saveChurch(
                               id: widget.churchId,
                               name: widget.churchName,
@@ -273,7 +272,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             );
                             if (!context.mounted) return;
                             ref.read(forcePreflowThemeProvider.notifier).state =
-                                !appUser.approved;
+                                !approved;
                             ref.read(selectedChurchProvider.notifier).state =
                                 Church(
                               id: widget.churchId,
@@ -306,7 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
-                                builder: (_) => AppEntry(initialUser: appUser),
+                                builder: (_) => const AppEntry(),
                               ),
                               (route) => false,
                             );

@@ -7,7 +7,7 @@ import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.da
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_group_member_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -81,27 +81,27 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
   }
 
   Future<void> _addMemberToGroup(
-    AppUser member,
+    ChurchMembership member,
     ChurchGroupDefinition group,
   ) async {
     final repo = await _membersRepository();
     if (repo == null) return;
 
     await repo.updateMemberChurchGroups(
-      member.uid,
+      member.docId,
       churchGroupIds: [...member.churchGroupIds, group.id],
     );
   }
 
   Future<void> _removeMemberFromGroup(
-    AppUser member,
+    ChurchMembership member,
     ChurchGroupDefinition group,
   ) async {
     final repo = await _membersRepository();
     if (repo == null) return;
 
     await repo.updateMemberChurchGroups(
-      member.uid,
+      member.docId,
       churchGroupIds: member.churchGroupIds
           .where((groupId) => groupId != group.id)
           .toList(),
@@ -113,7 +113,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
     ChurchGroupDefinition group,
   ) async {
     final isAdmin = ref.read(isAdminProvider);
-    final currentUser = ref.read(appUserProvider).value;
+    final currentUser = ref.read(currentMembershipProvider).value;
     if (!_canManageGroupMembership(
       group: group,
       isAdmin: isAdmin,
@@ -156,7 +156,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
                       'groups.member_added',
                       fallback: '{member} added to {group}',
                     )
-                    .replaceAll('{member}', member.name)
+                    .replaceAll('{member}', member.displayName)
                     .replaceAll('{group}', group.label);
                 Navigator.of(context).pop();
                 messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -246,7 +246,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(isAdminProvider);
-    final currentUser = ref.watch(appUserProvider).value;
+    final currentUser = ref.watch(currentMembershipProvider).value;
     final visibleGroups = isAdmin
         ? churchGroupDefinitions
         : churchGroupDefinitions
@@ -331,7 +331,7 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
   bool _canManageGroupMembership({
     required ChurchGroupDefinition group,
     required bool isAdmin,
-    required AppUser? currentUser,
+    required ChurchMembership? currentUser,
   }) {
     if (!isAdmin) return false;
     if (group.id != _financeGroupId) return true;
@@ -348,7 +348,7 @@ class _AddGroupMembersSheet extends StatefulWidget {
 
   final ChurchGroupDefinition group;
   final MembersRepository repository;
-  final Future<void> Function(AppUser member) onAddMember;
+  final Future<void> Function(ChurchMembership member) onAddMember;
 
   @override
   State<_AddGroupMembersSheet> createState() => _AddGroupMembersSheetState();
@@ -356,7 +356,7 @@ class _AddGroupMembersSheet extends StatefulWidget {
 
 class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
   final TextEditingController _searchController = TextEditingController();
-  final List<AppUser> _members = <AppUser>[];
+  final List<ChurchMembership> _members = <ChurchMembership>[];
   final Set<String> _memberIds = <String>{};
   final Set<String> _busyMemberIds = <String>{};
   Timer? _debounce;
@@ -364,7 +364,7 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   String _query = '';
-  DocumentSnapshot<AppUser>? _lastDocument;
+  DocumentSnapshot<ChurchMembership>? _lastDocument;
 
   @override
   void initState() {
@@ -403,13 +403,13 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
         startAfter: reset ? null : _lastDocument,
       );
 
-      final nextMembers = <AppUser>[];
+      final nextMembers = <ChurchMembership>[];
       while (true) {
         for (final member in page.members) {
           if (member.churchGroupIds.contains(widget.group.id)) {
             continue;
           }
-          if (_memberIds.add(member.uid)) {
+          if (_memberIds.add(member.docId)) {
             nextMembers.add(member);
           }
         }
@@ -454,16 +454,16 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
     });
   }
 
-  Future<void> _handleAdd(AppUser member) async {
+  Future<void> _handleAdd(ChurchMembership member) async {
     setState(() {
-      _busyMemberIds.add(member.uid);
+      _busyMemberIds.add(member.docId);
     });
     try {
       await widget.onAddMember(member);
     } finally {
       if (mounted) {
         setState(() {
-          _busyMemberIds.remove(member.uid);
+          _busyMemberIds.remove(member.docId);
         });
       }
     }
@@ -579,25 +579,25 @@ class _AddGroupMembersSheetState extends State<_AddGroupMembersSheet> {
                           }
 
                           final member = _members[index];
-                          final isBusy = _busyMemberIds.contains(member.uid);
+                          final isBusy = _busyMemberIds.contains(member.docId);
                           return Container(
                             decoration: carouselBoxDecoration(context),
                             child: ListTile(
                               leading: AppProfileAvatar(
-                                name: member.name,
-                                imageUrl: member.profilePhotoUrl,
+                                name: member.displayName,
+                                imageUrl: member.displayPhotoUrl,
                               ),
                               title: Text(
-                                member.name.trim().isEmpty
+                                member.displayName.trim().isEmpty
                                     ? 'Unnamed member'
-                                    : member.name,
+                                    : member.displayName,
                               ),
                               subtitle: Text(
                                 [
-                                  if (member.phone.trim().isNotEmpty)
-                                    member.phone,
-                                  if (member.email.trim().isNotEmpty)
-                                    member.email,
+                                  if (member.displayPhone.trim().isNotEmpty)
+                                    member.displayPhone,
+                                  if (member.displayEmail.trim().isNotEmpty)
+                                    member.displayEmail,
                                 ].join(' • '),
                               ),
                               trailing: FilledButton.tonalIcon(
