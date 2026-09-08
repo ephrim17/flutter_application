@@ -807,3 +807,46 @@ remaining data-model phases (2, 4, 6, 7), since nothing currently writes
 bad data here — the fields are just not yet reachable through this
 specific UI, and are surfaced when the admin captures them directly (form
 edit modes on the church staff side).
+
+### Addendum (Phase 0/2 harness built)
+
+`functions/scripts/migrate/` implements the backfill harness and the full
+Phase 2 logic: `cli.ts` (flag parsing — `--database` required with no
+default, refuses `--write` against `(default)`), `identity.ts`
+(cross-church field-merge/conflict resolution), `moduleSource.ts`
+(global-vs-church module/section classification, cached per church),
+`migrate.ts` (orchestration: identity merge, membership write, learning
+progress split, `learning_results` tagging, `readingPlans` move,
+`groups/{gid}/users` -> `groupMembers` re-key), and `report.ts` (JSON run
+report + conflicts CSV, always written — including on a dry run). Added
+`scripts` to `functions/tsconfig.json`'s `include` and an `npm run migrate`
+script per "reusing the existing functions toolchain" — `npm --prefix
+functions run lint && npm --prefix functions run build` already covers it.
+Usage and the credential setup it needs are in
+`functions/scripts/migrate/README.md`.
+
+**Two gaps found against the spec text while implementing, both
+documented in the script/README rather than silently resolved:**
+
+1. §5.1's "newest `updatedAt` wins" conflict rule assumes an `updatedAt`
+   field that does not exist on the pre-migration data (confirmed by
+   reading the actual `AppUser` shape and `learning_module_repository.dart`
+   — only `createdAt` exists). The script uses `createdAt` as the best
+   available recency signal instead.
+2. `groups/{gid}/users` had never actually been renamed to `groupMembers`
+   in the Flutter client despite §5.1 listing it as part of the D1 rename —
+   `firestore_paths.dart`'s `churchGroupMembers()` was still pointing at
+   `users`. Fixed alongside the harness (`firestore_paths.dart`,
+   `firestore.rules`) so the harness's re-key target actually matches what
+   the app now reads.
+
+**Not run yet.** The harness type-checks, lints, and reaches its first
+Firestore call correctly (verified locally against `migrationv1` with a
+bogus `--church=` filter to confirm it authenticates the flags and only
+then fails) — but this machine has no Google Cloud application-default
+credentials configured (`firebase login`'s session is a different,
+incompatible credential type), so the actual dry run against `migrationv1`
+has not executed. Needs `gcloud auth application-default login` or a
+service account key — see the script's README — then:
+`cd functions && npm run migrate -- --database=migrationv1`, review the
+report and conflicts CSV, re-run until stable, then add `--write`.

@@ -228,12 +228,17 @@ class FirestorePaths {
     return churchGroups(firestore, churchId).doc(groupId);
   }
 
+  static const groupMembers = 'groupMembers';
+
+  /// Renamed from `groups/{gid}/users` (D1) — a group's own member roster,
+  /// keyed by uid. Distinct from the church-wide `members` collection.
   static CollectionReference<Map<String, dynamic>> churchGroupMembers(
     FirebaseFirestore firestore,
     String churchId,
     String groupId,
   ) {
-    return churchGroupDoc(firestore, churchId, groupId).collection(users);
+    return churchGroupDoc(firestore, churchId, groupId)
+        .collection(groupMembers);
   }
 
   static CollectionReference<Map<String, dynamic>> churchNotificationRequests(

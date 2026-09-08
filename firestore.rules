@@ -163,7 +163,10 @@ service cloud.firestore {
         allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
         allow write: if isChurchStaff(churchId);
 
-        match /users/{uid} {
+        // Renamed from /users (D1) — a group's own member roster, keyed by
+        // uid, distinct from the group document itself and from the
+        // church-wide `members` collection.
+        match /groupMembers/{uid} {
           allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
           allow write: if isChurchStaff(churchId);
         }
