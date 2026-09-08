@@ -44,6 +44,10 @@ class ChurchMembership {
     this.displayPhotoUrl = '',
     this.displayDob,
     this.displayGender = '',
+    this.displayWeddingDay,
+    this.displayMaritalStatus = '',
+    this.displayEducationalQualification = '',
+    this.displayTalentsAndGifts = const [],
     this.identitySyncedAt,
   });
 
@@ -90,12 +94,22 @@ class ChurchMembership {
   final int schemaVersion;
 
   /// Cache (linked) or authoritative (unlinked) — see [linkedUid] doc above.
+  /// Extended beyond the spec's original 7-field list (KT Files/
+  /// architecture/user-church-decoupling-migration.md §5.1/§9.2) to also
+  /// cover the fields members_screen.dart's bulk search and the
+  /// birthday/anniversary widgets need across the whole roster — a join per
+  /// member is impossible for that (§9.2), same reasoning as the original
+  /// fields, just more of them.
   final String displayName;
   final String displayEmail;
   final String displayPhone;
   final String displayPhotoUrl;
   final DateTime? displayDob;
   final String displayGender;
+  final DateTime? displayWeddingDay;
+  final String displayMaritalStatus;
+  final String displayEducationalQualification;
+  final List<String> displayTalentsAndGifts;
   final DateTime? identitySyncedAt;
 
   bool get isLinked => linkedUid != null && linkedUid!.isNotEmpty;
@@ -166,6 +180,11 @@ class ChurchMembership {
       displayPhotoUrl: _string(data['displayPhotoUrl']),
       displayDob: _date(data['displayDob']),
       displayGender: _string(data['displayGender']),
+      displayWeddingDay: _date(data['displayWeddingDay']),
+      displayMaritalStatus: _string(data['displayMaritalStatus']),
+      displayEducationalQualification:
+          _string(data['displayEducationalQualification']),
+      displayTalentsAndGifts: _strings(data['displayTalentsAndGifts']),
       identitySyncedAt: _date(data['identitySyncedAt']),
     );
   }
@@ -200,6 +219,12 @@ class ChurchMembership {
       'displayPhotoUrl': displayPhotoUrl,
       'displayDob': displayDob != null ? Timestamp.fromDate(displayDob!) : null,
       'displayGender': displayGender,
+      'displayWeddingDay': displayWeddingDay != null
+          ? Timestamp.fromDate(displayWeddingDay!)
+          : null,
+      'displayMaritalStatus': displayMaritalStatus,
+      'displayEducationalQualification': displayEducationalQualification,
+      'displayTalentsAndGifts': displayTalentsAndGifts,
       'identitySyncedAt': identitySyncedAt != null
           ? Timestamp.fromDate(identitySyncedAt!)
           : null,

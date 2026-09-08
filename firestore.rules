@@ -260,6 +260,10 @@ service cloud.firestore {
            request.resource.data.displayPhotoUrl == resource.data.displayPhotoUrl &&
            request.resource.data.displayDob == resource.data.displayDob &&
            request.resource.data.displayGender == resource.data.displayGender &&
+           request.resource.data.displayWeddingDay == resource.data.displayWeddingDay &&
+           request.resource.data.displayMaritalStatus == resource.data.displayMaritalStatus &&
+           request.resource.data.displayEducationalQualification == resource.data.displayEducationalQualification &&
+           request.resource.data.displayTalentsAndGifts == resource.data.displayTalentsAndGifts &&
            request.resource.data.identitySyncedAt == resource.data.identitySyncedAt);
         allow delete: if isSelf(docId) || isChurchStaff(churchId);
 

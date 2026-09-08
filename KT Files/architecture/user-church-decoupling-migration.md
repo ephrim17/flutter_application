@@ -730,3 +730,21 @@ npm --prefix functions run lint && npm --prefix functions run build
 ## 12. Open items
 
 None blocking. All decisions are recorded in §1.
+
+### Addendum (found during Phase 1 implementation)
+
+**§5.1's display* cache was too narrow for members_screen.dart.** That
+screen's bulk search filters on `email`, `phone`, `maritalStatus`,
+`educationalQualification`, `talentsAndGifts` across the whole roster, and
+its birthday/anniversary widgets sort/filter the whole roster by `dob` and
+`weddingDay` — none of `weddingDay`, `maritalStatus`,
+`educationalQualification`, `talentsAndGifts` were in the original 7-field
+display* list, and per §9.2 a per-member join for a bulk list is
+impossible, not just slow. Confirmed with the owner: extend the cache
+rather than accept the regression. `ChurchMembership` now also carries
+`displayWeddingDay`, `displayMaritalStatus`,
+`displayEducationalQualification`, `displayTalentsAndGifts` — same
+cache-vs-authoritative semantics as the original display* fields (§9.2),
+same client-write-denied guard, same Phase 6 fan-out target once that
+function exists. `contact` needed no equivalent — D8 already merged it into
+`phone`.
