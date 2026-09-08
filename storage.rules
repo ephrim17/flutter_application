@@ -34,9 +34,19 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // TODO(user-church-decoupling): remove once every caller is migrated to
+    // users/{uid}/profile below (KT Files/architecture/
+    // user-church-decoupling-migration.md §5.1, Phase 4).
     match /churches/{churchId}/users/{uid}/profile/{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isSelf(uid) || isChurchStaff(churchId);
+    }
+
+    // Avatar blob for the person, not the membership — church-independent
+    // (§4.1, §5.1).
+    match /users/{uid}/profile/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSelf(uid);
     }
 
     match /churches/{churchId}/feed/{allPaths=**} {

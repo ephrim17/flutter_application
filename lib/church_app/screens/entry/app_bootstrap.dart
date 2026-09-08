@@ -5,7 +5,7 @@ import 'package:flutter_application/church_app/widgets/app_system_ui_overlay.dar
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_routes.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -37,9 +37,11 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         first.day == second.day;
   }
 
-  Future<void> _syncDailyStreakIfNeeded(AppUser user) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || !mounted) return;
+  // Global — one streak per person, not per membership (D4), so this no
+  // longer needs a selected church at all (fixes §2.6-adjacent: a church-less
+  // guest still ticks the streak).
+  Future<void> _syncDailyStreakIfNeeded(UserIdentity user) async {
+    if (!mounted) return;
 
     final today = DateTime.now();
     if (user.lastStreakRecordedAt != null &&
@@ -47,21 +49,16 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       return;
     }
 
-    final syncKey =
-        '$churchId:${user.uid}:${today.year}-${today.month}-${today.day}';
+    final syncKey = '${user.uid}:${today.year}-${today.month}-${today.day}';
     if (_lastDailyStreakSyncKey == syncKey) return;
 
     _lastDailyStreakSyncKey = syncKey;
-    final repository = ChurchUsersRepository(
+    final repository = UserIdentityRepository(
       firestore: ref.read(firestoreProvider),
-      churchId: churchId,
     );
 
     try {
-      await repository.updateDailyStreak(uid: user.uid);
-      if (!mounted) return;
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
+      await repository.updateDailyStreak(user.uid);
     } catch (_) {
       _lastDailyStreakSyncKey = null;
     }
@@ -77,15 +74,6 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       });
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final user = await ref.read(getCurrentUserProvider.future);
-      if (!mounted) return;
-      if (user != null) {
-        await _syncDailyStreakIfNeeded(user);
-      }
-    });
-
     ref.listenManual(currentChurchIdProvider, (previous, next) {
       next.whenData((churchId) async {
         await FirebaseAnalytics.instance.setUserProperty(
@@ -95,7 +83,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       });
     }, fireImmediately: true);
 
-    ref.listenManual(appUserProvider, (previous, next) async {
+    ref.listenManual(userIdentityProvider, (previous, next) async {
       final user = next.asData?.value;
       if (user == null) return;
       await _syncDailyStreakIfNeeded(user);

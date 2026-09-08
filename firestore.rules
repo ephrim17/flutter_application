@@ -45,6 +45,23 @@ service cloud.firestore {
       return isChurchAdmin(churchId) || isSuperAdmin();
     }
 
+    // A member doc's display* fields are a cache of users/{uid} when linked
+    // (§9.2) — used by both the client-write guard on /members/{docId} and
+    // to gate who may touch them for an unlinked (authoritative) row.
+    function displayFieldsUnchanged() {
+      return request.resource.data.displayName == resource.data.displayName &&
+        request.resource.data.displayEmail == resource.data.displayEmail &&
+        request.resource.data.displayPhone == resource.data.displayPhone &&
+        request.resource.data.displayPhotoUrl == resource.data.displayPhotoUrl &&
+        request.resource.data.displayDob == resource.data.displayDob &&
+        request.resource.data.displayGender == resource.data.displayGender &&
+        request.resource.data.displayWeddingDay == resource.data.displayWeddingDay &&
+        request.resource.data.displayMaritalStatus == resource.data.displayMaritalStatus &&
+        request.resource.data.displayEducationalQualification == resource.data.displayEducationalQualification &&
+        request.resource.data.displayTalentsAndGifts == resource.data.displayTalentsAndGifts &&
+        request.resource.data.identitySyncedAt == resource.data.identitySyncedAt;
+    }
+
     function isPrayerSourceOwner(sourceChurchId, sourcePrayerId) {
       return sourceChurchId is string && sourcePrayerId is string &&
         get(/databases/$(database)/documents/churches/$(sourceChurchId)/prayer_requests/$(sourcePrayerId)).data.userId == request.auth.uid;
@@ -247,24 +264,18 @@ service cloud.firestore {
         allow read: if isSelf(docId) || isChurchStaff(churchId);
         allow create: if (isSelf(docId) && request.resource.data.approved == false) ||
           isChurchStaff(churchId);
-        // Self can edit their own fields but can never flip `approved`, nor
-        // touch the display* cache — that's written only by the Phase 6
-        // fan-out (which runs as Admin SDK and bypasses rules entirely), so
-        // a client write here would go stale silently (§9.2).
-        allow update: if isChurchStaff(churchId) ||
+        // The display* cache is written only by the Phase 6 fan-out (Admin
+        // SDK, bypasses rules) for a LINKED member — a client write here
+        // would go stale silently (§9.2). Staff may still edit display*
+        // directly for an UNLINKED member (no identity doc exists, so it's
+        // their authoritative profile, not a cache — §9.2/§9.3). Self can
+        // edit their own non-display fields but can never flip `approved`.
+        allow update: if
+          (isChurchStaff(churchId) &&
+           (resource.data.linkedUid == null || displayFieldsUnchanged())) ||
           (isSelf(docId) &&
            request.resource.data.approved == resource.data.approved &&
-           request.resource.data.displayName == resource.data.displayName &&
-           request.resource.data.displayEmail == resource.data.displayEmail &&
-           request.resource.data.displayPhone == resource.data.displayPhone &&
-           request.resource.data.displayPhotoUrl == resource.data.displayPhotoUrl &&
-           request.resource.data.displayDob == resource.data.displayDob &&
-           request.resource.data.displayGender == resource.data.displayGender &&
-           request.resource.data.displayWeddingDay == resource.data.displayWeddingDay &&
-           request.resource.data.displayMaritalStatus == resource.data.displayMaritalStatus &&
-           request.resource.data.displayEducationalQualification == resource.data.displayEducationalQualification &&
-           request.resource.data.displayTalentsAndGifts == resource.data.displayTalentsAndGifts &&
-           request.resource.data.identitySyncedAt == resource.data.identitySyncedAt);
+           displayFieldsUnchanged());
         allow delete: if isSelf(docId) || isChurchStaff(churchId);
 
         // Church modules only — Church Tree (global) progress lives on
