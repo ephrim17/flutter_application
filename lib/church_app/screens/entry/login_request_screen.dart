@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
+import 'package:flutter_application/church_app/helpers/self_signup_membership_helper.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
@@ -179,11 +180,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
   String _resolveFamilyId() {
     if (!_showAdminSections) {
-      final seed = _nameController.text.trim();
-      if (seed.isEmpty) return '';
-      final normalizedSeed = _normalizeCategorySeed(seed);
-      if (normalizedSeed.isEmpty) return '';
-      return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
+      return resolveSelfSignupFamilyId(
+        category: _category,
+        name: _nameController.text.trim(),
+        churchId: widget.churchId,
+      );
     }
 
     if (_useExistingFamilyId &&
@@ -204,21 +205,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   }
 
   String _normalizeCategorySeed(String value) {
-    final churchSuffix = widget.churchId.toLowerCase();
-    var normalized = value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-
-    normalized = normalized
-        .replaceFirst(RegExp(r'^(family|individual)_+'), '')
-        .replaceFirst(RegExp('_$churchSuffix\$'), '')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-
-    return normalized;
+    return normalizeMembershipSeed(value, widget.churchId);
   }
 
   String _formatFamilyOptionLabel(String familyId) {
@@ -248,7 +235,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   }
 
   void _syncCategoryWithMaritalStatus() {
-    _category = _maritalStatus == 'married' ? 'family' : 'individual';
+    _category = deriveSelfSignupCategory(_maritalStatus);
     if (_category == 'individual') {
       _familyNameController.clear();
       _useExistingFamilyId = _selectedExistingFamilyId != null;

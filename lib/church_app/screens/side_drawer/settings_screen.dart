@@ -25,6 +25,7 @@ import 'package:flutter_application/church_app/providers/preflow_theme_provider.
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider, churchesProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -107,6 +108,7 @@ class SettingsScreen extends ConsumerWidget {
             const _SettingsGroupCard(
               children: [
                 _StorageSection(),
+                _SwitchChurchSection(),
                 _LogoutSection(),
               ],
             ),
@@ -463,6 +465,53 @@ class _EditProfileSection extends ConsumerWidget {
   }
 }
 
+/// Switches the locally selected church without signing out — for a user
+/// with more than one church relationship (approved or pending elsewhere).
+/// Hidden entirely when there is nothing to switch to.
+class _SwitchChurchSection extends ConsumerWidget {
+  const _SwitchChurchSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userChurchesAsync = ref.watch(userChurchesProvider);
+    final hasOtherChurches =
+        (userChurchesAsync.asData?.value.length ?? 0) > 1;
+    if (!hasOtherChurches) return const SizedBox.shrink();
+
+    return _SettingsTile(
+      icon: Icons.sync_alt_rounded,
+      title: ref.t('settings.switch_church_title'),
+      subtitle: ref.t('settings.switch_church_subtitle'),
+      onTap: () async {
+        final navigator = Navigator.of(context);
+        ref.read(logginAccessLoadingProvider.notifier).state = false;
+        ref.read(forcePreflowThemeProvider.notifier).state = true;
+        await ChurchLocalStorage().clearChurch();
+        await ChurchLocalStorage().clearSubscribedChurchTopic();
+        ref.read(selectedChurchProvider.notifier).state = null;
+        await ref.read(superAdminEntryModeProvider.notifier).setMode(
+              SuperAdminEntryMode.normal,
+            );
+        ref.invalidate(currentChurchIdProvider);
+        ref.invalidate(churchesProvider);
+        ref.invalidate(userChurchesProvider);
+        ref.invalidate(currentMembershipProvider);
+        navigator.pushAndRemoveUntil(
+          PageRouteBuilder(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (_, __, ___) => const SelectChurchScreen(),
+          ),
+          (route) => false,
+        );
+      },
+    );
+  }
+}
+
+/// Fully signs the person out of Firebase Auth — separate from switching
+/// church (`_SwitchChurchSection`), which keeps the session and just clears
+/// the locally selected church.
 class _LogoutSection extends ConsumerWidget {
   const _LogoutSection();
 
@@ -489,11 +538,14 @@ class _LogoutSection extends ConsumerWidget {
         ref.invalidate(userChurchesProvider);
         ref.invalidate(userIdentityProvider);
         ref.invalidate(currentMembershipProvider);
+        await FirebaseAuth.instance.signOut();
         navigator.pushAndRemoveUntil(
           PageRouteBuilder(
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const SelectChurchScreen(),
+            pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
+              initialLoginMode: true,
+            ),
           ),
           (route) => false,
         );

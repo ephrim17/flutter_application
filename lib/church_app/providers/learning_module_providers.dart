@@ -8,13 +8,6 @@ final learningModuleRepositoryProvider = Provider<LearningModuleRepository>(
   (ref) => LearningModuleRepository(firestore: ref.read(firestoreProvider)),
 );
 
-/// Global (Church Tree) modules only — visible in the guest shell and
-/// inside any church alike (§5.6, D9).
-final globalPublishedLearningModulesProvider =
-    StreamProvider.autoDispose<List<LearningModule>>((ref) {
-  return ref.watch(learningModuleRepositoryProvider).watchPublishedModules();
-});
-
 final publishedLearningModulesProvider =
     StreamProvider.autoDispose<List<LearningModule>>((ref) {
   final churchId = ref.watch(currentChurchIdProvider).asData?.value;

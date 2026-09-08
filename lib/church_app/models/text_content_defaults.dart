@@ -318,15 +318,17 @@ const Map<String, String> defaultChurchTextContents = {
 
   'guest_shell.title': 'Church Tree',
   'guest_shell.tab_bible': 'Bible',
-  'guest_shell.tab_learning': 'Learning',
   'guest_shell.tab_my_churches': 'My Churches',
-  'guest_shell.learning_empty': 'No learning modules published yet.',
-  'guest_shell.learning_error': "Couldn't load learning modules.",
+  'guest_shell.your_churches_section_title': 'Your churches',
+  'guest_shell.approved_status': 'Tap to open',
   'guest_shell.pending_section_title': 'Your requests',
   'guest_shell.pending_status': 'Pending approval',
   'guest_shell.browse_section_title': 'Browse churches',
   'guest_shell.churches_error': "Couldn't load churches.",
   'guest_shell.request_access_action': 'Request access',
+  'auth.request_access_explainer':
+      "We'll send your profile to this church's admin for approval — no forms to fill in.",
+  'auth.already_requested': "You've already requested access to this church.",
 
   // Migrated UI defaults
   "ui.birthday_card.saved_to_gallery": "Saved to gallery \ud83c\udf89",
@@ -572,7 +574,10 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.feedback_tile_title': 'Write Feedback',
   'settings.feedback_title': 'Feedback',
   'settings.loading_profile_subtitle': 'Fetching your current profile details.',
-  'settings.logout_subtitle': 'Sign out of the current church session.',
+  'settings.logout_subtitle': 'Sign out of your account.',
+  'settings.switch_church_title': 'Switch church',
+  'settings.switch_church_subtitle':
+      'Move to one of your other churches, or browse and request a new one.',
   'settings.not_now': 'Not now',
   'settings.preferences_subtitle': 'Appearance, notifications, and reminders.',
   'settings.preferences_title': 'Preferences',

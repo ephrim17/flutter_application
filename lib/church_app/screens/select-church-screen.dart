@@ -18,7 +18,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -176,7 +176,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => LoginRequestScreen(
+          builder: (_) => RequestChurchAccessScreen(
             churchId: selectedChurch.id,
             churchName: selectedChurch.name,
             churchLogo: selectedChurch.logo,
@@ -613,7 +613,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
                       Navigator.of(parentContext).push(
                         MaterialPageRoute(
-                          builder: (_) => LoginRequestScreen(
+                          builder: (_) => RequestChurchAccessScreen(
                             churchId: church.id,
                             churchName: church.name,
                             churchLogo: church.logo,
