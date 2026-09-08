@@ -11,8 +11,7 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
-import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
-    hide firestoreProvider;
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';

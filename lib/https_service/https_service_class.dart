@@ -7,10 +7,10 @@ import 'dart:convert';
 class HttpsService {
   // Define your HTTPS service methods and properties here
 
-  Future<void> fetchData() async {
+  Future<void> fetchData(FirebaseFirestore firestore) async {
     // Implement your data fetching logic here
-    final db = FirebaseFirestore.instance;
-    final docRef = db.collection("announcements").doc("RZoeyaObV56F5Ka0pZLT");
+    final docRef =
+        firestore.collection("announcements").doc("RZoeyaObV56F5Ka0pZLT");
     docRef.get().then(
       (DocumentSnapshot doc) {
         final data = doc.data() as Map<String, dynamic>;

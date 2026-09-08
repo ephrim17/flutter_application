@@ -25,12 +25,14 @@ final getCurrentUserProvider = FutureProvider<AppUser?>((ref) async {
   ref.keepAlive();
   final churchId = await ref.watch(currentChurchIdProvider.future);
   if (churchId == null) return null;
-  return getCurrentUser(churchId);
+  return getCurrentUser(churchId, ref.read(firestoreProvider));
 });
 
-Future<AppUser?> getCurrentUser(String churchId) async {
+Future<AppUser?> getCurrentUser(
+  String churchId,
+  FirebaseFirestore firestore,
+) async {
   final FirebaseAuth auth = FirebaseAuth.instance;
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   final user = auth.currentUser;
   if (user == null) return null;
@@ -65,7 +67,7 @@ final appUserProvider = StreamProvider<AppUser?>((ref) async* {
     return;
   }
   yield* FirestorePaths.churchUserDoc(
-    FirebaseFirestore.instance,
+    ref.read(firestoreProvider),
     churchId,
     firebaseUser.uid,
   ).snapshots().map((doc) {

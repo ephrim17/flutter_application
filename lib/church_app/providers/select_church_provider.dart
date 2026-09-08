@@ -1,13 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/services/church_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
-/// Firestore instance provider
-final firestoreProvider = Provider<FirebaseFirestore>((ref) {
-  return FirebaseFirestore.instance;
-});
+// TODO(user-church-decoupling): re-export only, kept so this file's existing
+// importers keep compiling after the firestoreProvider collapse (KT Files/
+// architecture/user-church-decoupling-migration.md §3, Phase 0). The
+// canonical declaration lives in services/firestore/firestore_provider.dart —
+// repoint importers there directly and delete this export once that's done.
+// Three import paths for one provider is the same ambiguity that caused the
+// duplication this collapse fixes.
+export 'package:flutter_application/church_app/services/firestore/firestore_provider.dart'
+    show firestoreProvider;
 
 final selectedChurchProvider = StateProvider<Church?>((ref) => null);
 

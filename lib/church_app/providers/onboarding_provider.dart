@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show FirebaseException;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application/church_app/models/onboarding_model.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +15,7 @@ final onboardingPagesProvider =
     FutureProvider<List<OnboardingModel>>((ref) async {
   try {
     final snapshot =
-        await FirebaseFirestore.instance.collection('onBoarding').get();
+        await ref.read(firestoreProvider).collection('onBoarding').get();
     final pages = snapshot.docs
         .map((doc) => OnboardingModel.fromFirestore(doc))
         .where((page) => page.isActive)

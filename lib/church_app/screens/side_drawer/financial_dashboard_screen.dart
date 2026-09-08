@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -1030,7 +1031,7 @@ class _FinancialDashboardScreenState
       isScrollControlled: true,
       builder: (_) => _MemberPartyPickerSheet(
         repository: MembersRepository(
-          firestore: FirebaseFirestore.instance,
+          firestore: ref.read(firestoreProvider),
           churchId: churchId,
         ),
       ),
