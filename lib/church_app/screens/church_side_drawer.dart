@@ -94,7 +94,7 @@ class AppDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
     final isAdmin = ref.watch(isAdminProvider);
     final config = ref.watch(appConfigProvider).asData?.value;
     final items = DrawerMenuItem.values.where((item) {

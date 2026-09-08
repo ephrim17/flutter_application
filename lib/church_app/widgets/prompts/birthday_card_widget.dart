@@ -64,7 +64,7 @@ class _BirthDayCardState extends ConsumerState<BirthDayCard> {
   @override
   Widget build(BuildContext context) {
     final swipeVersesAsync = ref.watch(swipeVersesProvider);
-    final user = ref.watch(getCurrentUserProvider).value;
+    final user = ref.watch(userIdentityProvider).value;
     final width = MediaQuery.of(context).size.width;
 
     return swipeVersesAsync.when(

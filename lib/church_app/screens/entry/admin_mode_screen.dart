@@ -114,8 +114,8 @@ class AdminModeScreen extends ConsumerWidget {
           SuperAdminEntryMode.normal,
         );
     ref.invalidate(currentChurchIdProvider);
-    ref.invalidate(appUserProvider);
-    ref.invalidate(getCurrentUserProvider);
+    ref.invalidate(userIdentityProvider);
+    ref.invalidate(currentMembershipProvider);
     navigator.pushAndRemoveUntil(
       PageRouteBuilder(
         transitionDuration: Duration.zero,

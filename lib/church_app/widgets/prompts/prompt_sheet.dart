@@ -79,7 +79,7 @@ String promptSessionKey(PromptType type, [PromptSheetModel? promptSheetModel]) {
 }
 
 final isBirthdayProvider = Provider<bool>((ref) {
-  final user = ref.watch(getCurrentUserProvider).value;
+  final user = ref.watch(userIdentityProvider).value;
   final now = ref.watch(todayProvider).value ?? DateTime.now();
 
   if (user == null || user.dob == null) return false;

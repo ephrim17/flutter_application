@@ -9,7 +9,6 @@ import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
@@ -84,8 +83,8 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     ref.read(selectedChurchProvider.notifier).state = null;
     await ref.read(superAdminEntryModeProvider.notifier).clear();
     ref.invalidate(currentChurchIdProvider);
-    ref.invalidate(appUserProvider);
-    ref.invalidate(getCurrentUserProvider);
+    ref.invalidate(userIdentityProvider);
+    ref.invalidate(currentMembershipProvider);
     await FirebaseAuth.instance.signOut();
     if (!context.mounted) return;
     navigator.pushAndRemoveUntil(
@@ -132,7 +131,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     );
 
     try {
-      final userDoc = await FirestorePaths.churchUserDoc(
+      final memberDoc = await FirestorePaths.churchMemberDoc(
         ref.read(firestoreProvider),
         selectedChurch.id,
         firebaseUser.uid,
@@ -141,12 +140,8 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      if (userDoc.exists) {
-        final appUser = AppUser.fromFirestore(
-          userDoc.id,
-          userDoc.data() as Map<String, dynamic>? ?? <String, dynamic>{},
-        );
-        if (!context.mounted) return;
+      if (memberDoc.exists) {
+        final approved = memberDoc.data()?['approved'] == true;
 
         await ref.read(superAdminEntryModeProvider.notifier).setMode(
               SuperAdminEntryMode.normal,
@@ -159,7 +154,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         );
         if (!context.mounted) return;
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
-        ref.read(forcePreflowThemeProvider.notifier).state = !appUser.approved;
+        ref.read(forcePreflowThemeProvider.notifier).state = !approved;
         ref.invalidate(currentChurchIdProvider);
         unawaited(
           syncNotificationTopicIfAuthorized(
@@ -169,7 +164,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => AppEntry(initialUser: appUser),
+            builder: (_) => const AppEntry(),
           ),
         );
         return;
