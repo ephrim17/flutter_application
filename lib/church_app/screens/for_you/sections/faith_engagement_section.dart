@@ -381,7 +381,7 @@ class _CircleDiscussionScreenState
   @override
   Widget build(BuildContext context) {
     final responses = ref.watch(circleResponsesProvider(widget.circle.id));
-    final currentUser = ref.watch(appUserProvider).asData?.value;
+    final currentUser = ref.watch(currentMembershipProvider).asData?.value;
     final isAdmin = ref.watch(isAdminProvider);
     return Scaffold(
       appBar: AppBar(title: Text(widget.circle.title)),
@@ -444,7 +444,7 @@ class _CircleDiscussionScreenState
                                 ],
                               ),
                               trailing: isAdmin ||
-                                      item.userId == currentUser?.uid
+                                      item.userId == currentUser?.docId
                                   ? IconButton(
                                       tooltip: context.t('common.delete'),
                                       onPressed: () => ref
@@ -493,20 +493,20 @@ class _CircleDiscussionScreenState
   }
 
   Future<void> _send() async {
-    final user = ref.read(appUserProvider).asData?.value;
+    final member = ref.read(currentMembershipProvider).asData?.value;
     final repository = ref.read(faithEngagementRepositoryProvider);
-    if (user == null || repository == null || _controller.text.trim().isEmpty) {
+    if (member == null || repository == null || _controller.text.trim().isEmpty) {
       return;
     }
     setState(() => _sending = true);
     try {
       await repository.addResponse(
         circleId: widget.circle.id,
-        user: user,
+        member: member,
         message: _controller.text,
         notificationBody: context.t(
           'faith.circle_response_notification_body',
-          parameters: {'name': user.name},
+          parameters: {'name': member.displayName},
         ),
       );
       _controller.clear();

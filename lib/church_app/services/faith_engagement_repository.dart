@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/faith_engagement_models.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
@@ -19,8 +19,9 @@ class FaithEngagementRepository {
   CollectionReference<Map<String, dynamic>> get _engagement =>
       FirestorePaths.churchFaithEngagement(firestore, churchId);
 
-  Stream<List<YouthCircle>> watchCircles({required AppUser? user}) {
-    final groupIds = user?.churchGroupIds.toSet().take(30).toList() ?? const [];
+  Stream<List<YouthCircle>> watchCircles({required ChurchMembership? member}) {
+    final groupIds =
+        member?.churchGroupIds.toSet().take(30).toList() ?? const [];
     if (groupIds.isEmpty) return Stream.value(const []);
     return _circles
         .where('audienceGroupId', whereIn: groupIds)
@@ -57,16 +58,16 @@ class FaithEngagementRepository {
 
   Future<void> addResponse({
     required String circleId,
-    required AppUser user,
+    required ChurchMembership member,
     required String message,
     required String notificationBody,
   }) async {
     final normalized = message.trim();
     if (normalized.isEmpty) return;
     await _circles.doc(circleId).collection('responses').add({
-      'userId': user.uid,
-      'userName': user.name,
-      'userPhotoUrl': user.profilePhotoUrl,
+      'userId': member.docId,
+      'userName': member.displayName,
+      'userPhotoUrl': member.displayPhotoUrl,
       'message': normalized,
       'notificationBody': notificationBody.trim(),
       'createdAt': FieldValue.serverTimestamp(),

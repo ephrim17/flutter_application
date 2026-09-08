@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/community_upload_provider.dart';
@@ -291,7 +291,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = ref.watch(feedPostModalControllerProvider);
-    final currentUser = ref.watch(appUserProvider).asData?.value;
+    final currentUser = ref.watch(userIdentityProvider).asData?.value;
     final globalFeedEnabled =
         ref.watch(appConfigProvider).value?.globalFeedEnabled ?? false;
     if (!globalFeedEnabled && _isGlobal) {
@@ -352,7 +352,7 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
     ThemeData theme,
     bool globalFeedEnabled,
     bool isSubmitting,
-    AppUser? currentUser,
+    UserIdentity? currentUser,
   ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),

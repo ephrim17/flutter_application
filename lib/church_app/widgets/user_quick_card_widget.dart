@@ -3,16 +3,16 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:intl/intl.dart';
 
-Future<void> showUserQuickCard(BuildContext context, AppUser user) {
+Future<void> showUserQuickCard(BuildContext context, ChurchMembership user) {
   return showUserQuickCardWithChurch(context, user);
 }
 
 Future<void> showUserQuickCardWithChurch(
   BuildContext context,
-  AppUser user, {
+  ChurchMembership user, {
   String? churchName,
   String? churchPastorName,
   bool showCategory = true,
@@ -43,8 +43,8 @@ Future<void> showUserQuickCardWithChurch(
               Row(
                 children: [
                   AppProfileAvatar(
-                    name: user.name,
-                    imageUrl: user.profilePhotoUrl,
+                    name: user.displayName,
+                    imageUrl: user.displayPhotoUrl,
                     radius: 24,
                   ),
                   const SizedBox(width: 12),
@@ -53,7 +53,7 @@ Future<void> showUserQuickCardWithChurch(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _valueOrFallback(context, user.name),
+                          _valueOrFallback(context, user.displayName),
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
@@ -87,28 +87,28 @@ Future<void> showUserQuickCardWithChurch(
                 _UserDetailRow(
                   icon: Icons.location_on_outlined,
                   label: context.t('members.address_label'),
-                  value: _valueOrFallback(context, user.address),
+                  value: _valueOrFallback(context, user.displayAddress),
                 ),
               if (showDob)
                 _UserDetailRow(
                   icon: Icons.cake_outlined,
                   label: context.t('members.date_of_birth_label'),
-                  value: _formatDob(context, user.dob),
+                  value: _formatDob(context, user.displayDob),
                 ),
               if (showEmail)
                 _UserDetailRow(
                   icon: Icons.email_outlined,
                   label: context.t('members.email_label'),
-                  value: _valueOrFallback(context, user.email),
+                  value: _valueOrFallback(context, user.displayEmail),
                 ),
               if (showPhone)
                 _UserDetailRow(
                   icon: Icons.phone_outlined,
                   label: context.t('members.phone_label'),
-                  value: _valueOrFallback(context, user.phone),
-                  onActionTap: user.phone.trim().isEmpty
+                  value: _valueOrFallback(context, user.displayPhone),
+                  onActionTap: user.displayPhone.trim().isEmpty
                       ? null
-                      : () => launchPhoneCall(context, user.phone),
+                      : () => launchPhoneCall(context, user.displayPhone),
                 ),
             ],
           ),

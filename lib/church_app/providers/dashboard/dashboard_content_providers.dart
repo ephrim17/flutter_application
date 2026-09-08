@@ -1,5 +1,5 @@
 import 'package:flutter_application/church_app/models/app_config_model.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
@@ -72,10 +72,11 @@ final dashboardAppConfigProvider = FutureProvider<AppConfig>((ref) async {
   return repo.getAppConfigOnce();
 });
 
-final dashboardMembersProvider = FutureProvider<List<AppUser>>((ref) async {
+final dashboardMembersProvider =
+    FutureProvider<List<ChurchMembership>>((ref) async {
   final churchId = await ref.watch(currentChurchIdProvider.future);
   if (churchId == null || churchId.trim().isEmpty) {
-    return const <AppUser>[];
+    return const <ChurchMembership>[];
   }
 
   final repo = MembersRepository(
