@@ -1058,3 +1058,39 @@ only. Verified with a clean rebuild (`rm -rf lib lib-scripts`) that
 verification for a deploy-affecting change — checking the actual output
 file layout against what `package.json`/deployment expects would have
 caught this immediately instead of at first-deploy time.
+
+### Addendum (brief production impact during the first live deploy — 2026-09-09)
+
+The first deploy of the 7 migration-related functions
+(`leaveChurch`/`deleteChurch`/`deleteAccount`/`fanOutIdentityChanges` new,
+plus `rebuildChurchDashboardMemberMetrics`/`notifyChurchAdminsOnPrayerCreated`/
+`processQueuedChurchNotification` updated) used
+`FIRESTORE_DATABASE_ID=migrationv1` for all seven. The first three are new
+and had no production traffic, but the latter three are **pre-existing,
+already-live production functions** — deploying them with `database:
+migrationv1` redirected their Firestore triggers away from `(default)`,
+meaning for roughly the few minutes between that deploy and the fix
+below, any real production church-member write, prayer request, or queued
+notification would not have triggered dashboard-metrics rebuilds or
+prayer/notification delivery.
+
+Caught immediately after the first deploy completed (before any real
+production writes were confirmed to have been missed) and fixed by
+redeploying just those three back with `FIRESTORE_DATABASE_ID=(default)`
+explicitly set — omitting the variable entirely errors in non-interactive
+deploys once a function references the parameter in its trigger config
+("no value for FIRESTORE_DATABASE_ID"), so `functions/.env.flutterlearning
+-c9f6c` now keeps an explicit `FIRESTORE_DATABASE_ID=(default)` line
+rather than leaving it unset.
+
+**Verified after the fix:** `fanOutIdentityChanges` live-tested against
+`migrationv1` — updated an identity's `name`, confirmed the linked
+membership's `displayName` updated within ~8 seconds, reverted, confirmed
+it reverted too.
+
+**Lesson:** when a single "logical unit" of functions mixes brand-new
+(no-traffic) and pre-existing (live-traffic) functions, deploy them
+separately with different `FIRESTORE_DATABASE_ID` values rather than one
+combined `--only` deploy — the new ones can safely point at the test
+database while the existing ones stay pinned to `(default)` throughout,
+with no window where production is misdirected at all.
