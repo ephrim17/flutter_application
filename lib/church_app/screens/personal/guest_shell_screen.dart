@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
@@ -10,6 +13,7 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_library_screen.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -78,6 +82,13 @@ class _MyChurchesTab extends ConsumerWidget {
     ref.read(selectedChurchProvider.notifier).state = church;
     ref.read(forcePreflowThemeProvider.notifier).state = false;
     ref.invalidate(currentChurchIdProvider);
+    final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (uid != null) {
+      unawaited(
+        UserIdentityRepository(firestore: ref.read(firestoreProvider))
+            .setLastActiveChurchId(uid, church.id),
+      );
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AppEntry()),
       (route) => false,

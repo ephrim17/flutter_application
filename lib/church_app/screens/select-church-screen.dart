@@ -22,6 +22,7 @@ import 'package:flutter_application/church_app/screens/entry/request_church_acce
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
@@ -157,6 +158,12 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
         ref.read(forcePreflowThemeProvider.notifier).state = !approved;
         ref.invalidate(currentChurchIdProvider);
+        if (approved) {
+          unawaited(
+            UserIdentityRepository(firestore: ref.read(firestoreProvider))
+                .setLastActiveChurchId(firebaseUser.uid, selectedChurch.id),
+          );
+        }
         unawaited(
           syncNotificationTopicIfAuthorized(
             ProviderScope.containerOf(context, listen: false),

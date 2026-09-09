@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
@@ -14,6 +18,7 @@ import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
 import 'package:flutter_application/church_app/screens/personal/guest_shell_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_mode_screen.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,22 +58,65 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     });
   }
 
-  void _restoreSelectedChurchIfNeeded() {
+  /// Picks a church to enter when nothing is currently selected — the
+  /// common first-login-on-this-device case, where local storage has
+  /// nothing to restore. Order: local storage (this device's last pick) ->
+  /// `identity.lastActiveChurchId` (this person's last pick on any device)
+  /// -> the earliest-joined approved membership, so `hasApprovedMembership`
+  /// being true always actually lands on a real church instead of leaving
+  /// `selectedChurchProvider` null underneath `ChurchTabScreen` (every
+  /// section there depends on a resolved church id — left null, they all
+  /// hang loading forever rather than erroring).
+  void _restoreSelectedChurchIfNeeded(
+    UserIdentity identity,
+    List<ChurchMembership> approvedMemberships,
+  ) {
     final selectedChurch = ref.watch(selectedChurchProvider);
     if (selectedChurch != null) return;
+    if (approvedMemberships.isEmpty) return;
 
-    final churchId = ref.watch(currentChurchIdProvider).value;
-    if (churchId == null || churchId.trim().isEmpty) return;
+    final approvedChurchIds = approvedMemberships
+        .map((membership) => membership.churchId)
+        .toSet();
+    final localChurchId = ref.watch(currentChurchIdProvider).value;
+
+    String churchId;
+    if (localChurchId != null &&
+        approvedChurchIds.contains(localChurchId)) {
+      churchId = localChurchId;
+    } else if (identity.lastActiveChurchId != null &&
+        approvedChurchIds.contains(identity.lastActiveChurchId)) {
+      churchId = identity.lastActiveChurchId!;
+    } else {
+      final sorted = [...approvedMemberships]..sort((a, b) {
+        final aJoined = a.joinedAt;
+        final bJoined = b.joinedAt;
+        if (aJoined == null || bJoined == null) return 0;
+        return aJoined.compareTo(bJoined);
+      });
+      churchId = sorted.first.churchId;
+    }
 
     final churchAsync = ref.watch(churchByIdProvider(churchId));
     final church = churchAsync.value;
     if (church == null) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final uid = ref.watch(authStateProvider).value?.uid;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final notifier = ref.read(selectedChurchProvider.notifier);
-      if (notifier.state == null) {
-        notifier.state = church;
+      if (notifier.state != null) return;
+      notifier.state = church;
+      await ChurchLocalStorage().saveChurch(
+        id: church.id,
+        name: church.name,
+        logo: church.logo,
+      );
+      if (uid != null) {
+        unawaited(
+          UserIdentityRepository(firestore: ref.read(firestoreProvider))
+              .setLastActiveChurchId(uid, church.id),
+        );
       }
     });
   }
@@ -174,10 +222,10 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       );
     }
     final memberships = membershipsAsync.asData?.value ?? const [];
-    final hasApprovedMembership =
-        memberships.any((membership) => membership.approved);
+    final approvedMemberships =
+        memberships.where((membership) => membership.approved).toList();
 
-    if (!hasApprovedMembership) {
+    if (approvedMemberships.isEmpty) {
       _syncPreflowTheme(true);
       return const GuestShellScreen();
     }
@@ -188,7 +236,7 @@ class _AppEntryState extends ConsumerState<AppEntry> {
         normalizedEmail.isNotEmpty &&
         appConfig.isAdmin(normalizedEmail);
 
-    _restoreSelectedChurchIfNeeded();
+    _restoreSelectedChurchIfNeeded(identity, approvedMemberships);
     if (appConfig?.superAdminDisabled == true) {
       _syncPreflowTheme(true);
       return AdminModeScreen(

@@ -14,6 +14,7 @@ import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
@@ -158,6 +159,15 @@ class _RequestChurchAccessScreenState
     );
     ref.invalidate(currentChurchIdProvider);
     ref.read(forcePreflowThemeProvider.notifier).state = !approved;
+    if (approved) {
+      final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
+      if (uid != null) {
+        unawaited(
+          UserIdentityRepository(firestore: ref.read(firestoreProvider))
+              .setLastActiveChurchId(uid, widget.churchId),
+        );
+      }
+    }
     unawaited(
       syncNotificationTopicIfAuthorized(
         ProviderScope.containerOf(context, listen: false),

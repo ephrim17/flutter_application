@@ -1094,3 +1094,36 @@ separately with different `FIRESTORE_DATABASE_ID` values rather than one
 combined `--only` deploy — the new ones can safely point at the test
 database while the existing ones stay pinned to `(default)` throughout,
 with no window where production is misdirected at all.
+
+### Addendum (real entry-gate bug found during end-to-end testing)
+
+First-login-on-a-fresh-device (or after clearing app data) landed
+approved users on an infinitely-loading `ChurchTabScreen` — every section
+hung rather than erroring. Manually entering a church via Settings ->
+Switch church worked fine, isolating the bug to the *auto-enter* path
+specifically, not `ChurchTabScreen` itself.
+
+**Root cause:** `AppEntry._restoreSelectedChurchIfNeeded()` only ever
+checked local device storage (`ChurchLocalStorage`) for a previously
+selected church. On a genuinely fresh install — nothing in local storage
+yet — it silently did nothing, leaving `selectedChurchProvider` (and so
+`currentChurchIdProvider`) null underneath `ChurchTabScreen`, whose every
+section depends on a resolved church id. `UserIdentity.lastActiveChurchId`
+existed on the model specifically to cover this case (§5.1) but was never
+read by the entry gate, and `UserIdentityRepository.setLastActiveChurchId`
+was never called by anything — both sides of that field were dead code.
+
+**Fixed:** `_restoreSelectedChurchIfNeeded` now takes the resolved
+identity and the approved memberships list, and falls back through: local
+storage -> `identity.lastActiveChurchId` (if it's still one of the
+person's approved churches) -> the earliest-joined approved membership.
+Whichever church gets picked — here or through the three manual
+"enter/switch church" flows (`select-church-screen.dart`,
+`guest_shell_screen.dart`'s "Your churches" tap, `request_church_access
+_screen.dart`'s post-approval entry) — now also calls
+`setLastActiveChurchId`, so a person's choice follows them to their next
+device, not just this one.
+
+Reproduced against `migrationv1` with a real fresh install (`pm clear` on
+the emulator) before writing the fix; re-verification after the fix is
+pending the next test pass.
