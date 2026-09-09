@@ -16,6 +16,7 @@ import 'package:flutter_application/church_app/screens/entry/create_auth_account
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
 import 'package:flutter_application/church_app/screens/personal/guest_shell_screen.dart';
+import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_mode_screen.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
@@ -58,44 +59,45 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     });
   }
 
-  /// Picks a church to enter when nothing is currently selected — the
-  /// common first-login-on-this-device case, where local storage has
-  /// nothing to restore. Order: local storage (this device's last pick) ->
-  /// `identity.lastActiveChurchId` (this person's last pick on any device)
-  /// -> the earliest-joined approved membership, so `hasApprovedMembership`
-  /// being true always actually lands on a real church instead of leaving
-  /// `selectedChurchProvider` null underneath `ChurchTabScreen` (every
+  /// The church id this person would silently resume into — local storage
+  /// (this device's last pick) if it's still one of their approved
+  /// churches, else `identity.lastActiveChurchId` (their last pick on any
+  /// device). Null means there's genuinely nothing to resume: first-ever
+  /// entry on this account, or their last church is no longer approved —
+  /// callers should show a picker rather than guessing (§5.4 follow-up).
+  String? _resolvableChurchId(
+    UserIdentity identity,
+    List<ChurchMembership> approvedMemberships,
+  ) {
+    if (ref.watch(selectedChurchProvider) != null) {
+      return ref.watch(selectedChurchProvider)!.id;
+    }
+    final approvedChurchIds = approvedMemberships
+        .map((membership) => membership.churchId)
+        .toSet();
+    final localChurchId = ref.watch(currentChurchIdProvider).value;
+    if (localChurchId != null && approvedChurchIds.contains(localChurchId)) {
+      return localChurchId;
+    }
+    if (identity.lastActiveChurchId != null &&
+        approvedChurchIds.contains(identity.lastActiveChurchId)) {
+      return identity.lastActiveChurchId;
+    }
+    return null;
+  }
+
+  /// Restores `selectedChurchProvider` from whatever [_resolvableChurchId]
+  /// found — callers only reach this once that's non-null, so there's
+  /// always a real church to land on underneath `ChurchTabScreen` (every
   /// section there depends on a resolved church id — left null, they all
   /// hang loading forever rather than erroring).
   void _restoreSelectedChurchIfNeeded(
     UserIdentity identity,
     List<ChurchMembership> approvedMemberships,
   ) {
-    final selectedChurch = ref.watch(selectedChurchProvider);
-    if (selectedChurch != null) return;
-    if (approvedMemberships.isEmpty) return;
-
-    final approvedChurchIds = approvedMemberships
-        .map((membership) => membership.churchId)
-        .toSet();
-    final localChurchId = ref.watch(currentChurchIdProvider).value;
-
-    String churchId;
-    if (localChurchId != null &&
-        approvedChurchIds.contains(localChurchId)) {
-      churchId = localChurchId;
-    } else if (identity.lastActiveChurchId != null &&
-        approvedChurchIds.contains(identity.lastActiveChurchId)) {
-      churchId = identity.lastActiveChurchId!;
-    } else {
-      final sorted = [...approvedMemberships]..sort((a, b) {
-        final aJoined = a.joinedAt;
-        final bJoined = b.joinedAt;
-        if (aJoined == null || bJoined == null) return 0;
-        return aJoined.compareTo(bJoined);
-      });
-      churchId = sorted.first.churchId;
-    }
+    if (ref.watch(selectedChurchProvider) != null) return;
+    final churchId = _resolvableChurchId(identity, approvedMemberships);
+    if (churchId == null) return;
 
     final churchAsync = ref.watch(churchByIdProvider(churchId));
     final church = churchAsync.value;
@@ -228,6 +230,15 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     if (approvedMemberships.isEmpty) {
       _syncPreflowTheme(true);
       return const GuestShellScreen();
+    }
+
+    if (_resolvableChurchId(identity, approvedMemberships) == null) {
+      // First entry ever on this account (or their remembered church is no
+      // longer approved) — let them choose which of their churches to
+      // enter rather than silently guessing. Picking one sets
+      // lastActiveChurchId, so every later launch resumes it directly.
+      _syncPreflowTheme(true);
+      return const SelectChurchScreen();
     }
 
     final appConfig = ref.watch(appConfigProvider).value;

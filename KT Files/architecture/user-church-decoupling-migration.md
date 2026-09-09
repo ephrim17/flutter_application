@@ -1127,3 +1127,19 @@ device, not just this one.
 Reproduced against `migrationv1` with a real fresh install (`pm clear` on
 the emulator) before writing the fix; re-verification after the fix is
 pending the next test pass.
+
+**Revised on user feedback after seeing the fix live:** silently
+auto-picking the earliest-joined approved membership when nothing was
+resolvable was the wrong call for first-ever entry — it guesses on the
+user's behalf when there's more than one approved church. Replaced with:
+`AppEntry` now checks whether a church is resolvable at all
+(`_resolvableChurchId` — local storage or `lastActiveChurchId`, unchanged)
+and, if not, renders `SelectChurchScreen` (the existing "Your churches /
+Other churches" picker, previously only reachable via Settings > Switch
+church) instead of guessing. Picking an approved church there sets
+`lastActiveChurchId` (already wired per the fix above), so every later
+launch resumes it directly without the picker — the picker is a one-time
+thing per account, not a permanent hub. The "earliest-joined" auto-pick
+tier was removed from `_restoreSelectedChurchIfNeeded` entirely, since
+that helper is now only ever reached once a church is already known to be
+resolvable.

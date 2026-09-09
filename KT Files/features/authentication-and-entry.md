@@ -36,11 +36,19 @@ on top of it.
    every church relationship the person has, approved or not:
    - No approved membership anywhere → `GuestShellScreen` (tabs: Bible, My
      Churches).
-   - At least one approved membership → straight into `ChurchTabScreen` for
-     the locally-selected/last-active church. The app does **not** force a
-     picker screen for the common single-church case — see "Switching
-     churches" below for how a person with more than one goes back to a
-     chooser.
+   - At least one approved membership, and a church is resolvable (local
+     storage on this device, or `lastActiveChurchId` on the identity from a
+     previous pick on any device) → straight into `ChurchTabScreen` for
+     that church. No picker for a returning user, single-church or not.
+   - At least one approved membership, but nothing resolvable yet (the
+     very first time this account ever reaches an approved church, or
+     their remembered church stopped being approved) → `SelectChurchScreen`
+     ("Your churches" / "Other churches"), so they pick rather than the app
+     guessing. Picking an approved one sets `lastActiveChurchId`, so every
+     later launch — this device or a new one — resumes it directly; the
+     picker is a one-time thing per account, not a permanent hub. See
+     "Switching churches" below for how to reach the same picker
+     deliberately later.
 
 ### Requesting access to a church
 
@@ -155,6 +163,8 @@ continues to use the Firebase action-link email flow.
 | AUTH-05 | Signed in, identity but no approved membership anywhere | My Churches hub opens (Bible + My Churches tabs, no Learning tab). |
 | AUTH-06 | Pending membership | Shows under "Your requests" in the hub; church content is inaccessible. |
 | AUTH-07 | Approved in one church, pending in another | Hub shows both "Your churches" (tap enters) and "Your requests"; approved-anywhere still auto-enters on next cold start. |
+| AUTH-07a | First-ever approval, fresh install/new device (nothing resolvable yet) | `SelectChurchScreen` opens instead of guessing; picking an approved church enters it and every later launch resumes it directly, no picker. |
+| AUTH-07b | Approved in two churches, first-ever entry | Picker shows both under "Your churches"; picking either works and becomes the remembered church. |
 | AUTH-08 | Request access as an existing identity | No name/phone/dob/etc. fields shown; one tap submits; church admin sees a normal pending request. |
 | AUTH-09 | Request access twice (double tap, or a second device mid-request) | Second attempt does not overwrite the first row or reset an approved membership back to pending. |
 | AUTH-10 | Browse churches list | Already-requested/joined churches do not appear with a "Request access" button. |
