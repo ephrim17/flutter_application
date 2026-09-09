@@ -18,3 +18,7 @@ node_modules/
 *service-account*.json
 *adminsdk*.json
 *firebase-adminsdk*.json
+
+# Migration harness run reports/conflict CSVs — local artifacts, not
+# something to check in.
+/migration-reports/
