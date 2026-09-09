@@ -62,6 +62,51 @@ async function removeFromChurchGroups(
 }
 
 /**
+ * Removes a person's email from a church's admin allowlist, best-effort —
+ * leaving a church (or deleting the account) must not leave them able to
+ * pass `isChurchAdmin(churchId)` for a church they're no longer a member
+ * of (§9.1: role/allowlist membership is never re-derived from anything
+ * else, so it has to be cleaned up explicitly here). A no-op if they
+ * weren't in it, or if the config doc doesn't exist.
+ * @param {FirebaseFirestore.Firestore} firestore Firestore instance.
+ * @param {string} churchId Church whose admin list to update.
+ * @param {string} email The person's email, already lowercased.
+ * @return {Promise<void>} Resolves once the attempt completes.
+ */
+async function removeFromChurchAdmins(
+  firestore: FirebaseFirestore.Firestore,
+  churchId: string,
+  email: string,
+): Promise<void> {
+  if (!email) return;
+  const configRef = firestore
+    .collection("churches").doc(churchId).collection("config").doc("app");
+  try {
+    const configDoc = await configRef.get();
+    if (!configDoc.exists) return;
+    const admins = Array.isArray(configDoc.data()?.admins) ?
+      configDoc.data()?.admins as unknown[] :
+      [];
+    // arrayRemove needs the exact stored value, which may not be
+    // lowercased the same way `email` already is — find it by
+    // case-insensitive match rather than assuming the casing lines up.
+    const storedValue = admins.find(
+      (value) => readString(value).toLowerCase() === email,
+    );
+    if (storedValue === undefined) return;
+    await configRef.update({
+      admins: admin.firestore.FieldValue.arrayRemove(storedValue),
+    });
+  } catch (error) {
+    logger.warn("Best-effort admin-list removal failed.", {
+      churchId,
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
  * Deletes every Storage object under a prefix, best-effort — failures are
  * logged, not thrown, since a missing bucket/prefix is not fatal to the
  * surrounding lifecycle operation.
@@ -89,6 +134,7 @@ export const leaveChurch = onCall(
   async (request) => {
     const uid = readString(request.auth?.uid);
     if (!uid) throw new HttpsError("unauthenticated", "Sign-in required.");
+    const email = readString(request.auth?.token.email).toLowerCase();
     const churchId = readString(request.data?.churchId);
     if (!churchId) {
       throw new HttpsError("invalid-argument", "Missing churchId.");
@@ -101,6 +147,7 @@ export const leaveChurch = onCall(
 
     await deleteCollection(memberRef.collection("learning_progress"));
     await removeFromChurchGroups(firestore, churchId, uid);
+    await removeFromChurchAdmins(firestore, churchId, email);
     await memberRef.delete();
 
     logger.info("Member left church.", {uid, churchId});
@@ -174,6 +221,7 @@ export const deleteAccount = onCall(
       );
     }
 
+    const email = readString(request.auth?.token.email).toLowerCase();
     const firestore = firestoreDb();
     const membersSnapshot = await firestore
       .collectionGroup("members")
@@ -183,7 +231,10 @@ export const deleteAccount = onCall(
     for (const memberDoc of membersSnapshot.docs) {
       const churchId = memberDoc.ref.parent.parent?.id;
       await deleteCollection(memberDoc.ref.collection("learning_progress"));
-      if (churchId) await removeFromChurchGroups(firestore, churchId, uid);
+      if (churchId) {
+        await removeFromChurchGroups(firestore, churchId, uid);
+        await removeFromChurchAdmins(firestore, churchId, email);
+      }
       await memberDoc.ref.delete();
       if (churchId) {
         await deleteStoragePrefix(`churches/${churchId}/users/${uid}/profile/`);

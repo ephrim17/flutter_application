@@ -1179,3 +1179,40 @@ owner that this was their own deliberate cleanup of three empty test
 churches via the new super-admin Delete church button, not a bug (and a
 nice confirmation that `deleteChurch`'s `recursiveDelete` works correctly
 in the wild).
+
+### Addendum (three more real bugs found in end-to-end testing)
+
+**Access-control gap:** an unapproved membership could still land the
+person in `ChurchTabScreen` for that church, as long as they were
+approved somewhere else. `SelectChurchScreen._handleContinue` set
+`selectedChurchProvider` to whatever was tapped in "Your churches"
+regardless of approval — that list includes every membership, not just
+approved ones — and `AppEntry`'s resolver trusted `selectedChurchProvider`
+unconditionally. Fixed both ends: `_handleContinue` now shows a "still
+pending" message and returns without touching
+`selectedChurchProvider`/navigating when the tapped membership isn't
+approved; `AppEntry._resolvableChurchId` now checks every candidate —
+including the already-selected church — against the approved list rather
+than trusting it blindly, as defense in depth (§9.1: membership existing
+is never authorization on its own).
+
+**Stale UI after leaving:** `userChurchesProvider` (a `FutureProvider`)
+was never invalidated after `leaveChurch()` ran, so Settings > Switch
+church's "Your churches"/"Other churches" lists stayed stale until some
+unrelated rebuild happened to refetch it. Added the invalidation.
+
+**Admin allowlist not cleaned up on leave/delete:** found via a direct
+question from the repo owner, not a live repro — `leaveChurch` and
+`deleteAccount` deleted the membership row but never touched
+`churches/{cid}/config/app.admins`. Since `isChurchAdmin(churchId)` checks
+that allowlist directly (`myEmail() in .../config/app.data.admins`) with
+no dependency on an existing membership at all, someone who left a church
+while listed as one of its admins would keep passing `isChurchAdmin` for
+it indefinitely — exactly the kind of authority-not-re-derived-from-
+membership gap §9.1 warns about, just for the admin allowlist specifically
+rather than `role`. Fixed: both functions now best-effort remove the
+person's email from that church's admin list (case-insensitive match
+against whatever casing is actually stored, since `arrayRemove` needs an
+exact value match) whenever they leave or their account is deleted.
+`deleteChurch` needed no equivalent fix — it deletes `config/app` along
+with everything else in the subtree.
