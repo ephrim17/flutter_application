@@ -65,16 +65,26 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   /// device). Null means there's genuinely nothing to resume: first-ever
   /// entry on this account, or their last church is no longer approved —
   /// callers should show a picker rather than guessing (§5.4 follow-up).
+  ///
+  /// Every candidate is checked against [approvedMemberships] — including
+  /// `selectedChurchProvider` itself. A membership can be selected without
+  /// being approved (e.g. `SelectChurchScreen` lists every membership, not
+  /// just approved ones); trusting it unconditionally let an unapproved
+  /// member into `ChurchTabScreen` for that church whenever they were also
+  /// approved somewhere else (found in testing — a real access gap, not
+  /// just a UX one).
   String? _resolvableChurchId(
     UserIdentity identity,
     List<ChurchMembership> approvedMemberships,
   ) {
-    if (ref.watch(selectedChurchProvider) != null) {
-      return ref.watch(selectedChurchProvider)!.id;
-    }
     final approvedChurchIds = approvedMemberships
         .map((membership) => membership.churchId)
         .toSet();
+
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (selectedChurch != null && approvedChurchIds.contains(selectedChurch.id)) {
+      return selectedChurch.id;
+    }
     final localChurchId = ref.watch(currentChurchIdProvider).value;
     if (localChurchId != null && approvedChurchIds.contains(localChurchId)) {
       return localChurchId;

@@ -145,6 +145,24 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       if (memberDoc.exists) {
         final approved = memberDoc.data()?['approved'] == true;
 
+        // A membership existing here doesn't mean approved — this list
+        // includes every church the person has any relationship with.
+        // Never route into ChurchTabScreen for one that isn't (§9.1: role/
+        // membership existence is never authorization on its own).
+        if (!approved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.t(
+                  'church.request_still_pending',
+                  parameters: {'church': selectedChurch.name},
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+
         await ref.read(superAdminEntryModeProvider.notifier).setMode(
               SuperAdminEntryMode.normal,
             );
@@ -156,14 +174,12 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         );
         if (!context.mounted) return;
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
-        ref.read(forcePreflowThemeProvider.notifier).state = !approved;
+        ref.read(forcePreflowThemeProvider.notifier).state = false;
         ref.invalidate(currentChurchIdProvider);
-        if (approved) {
-          unawaited(
-            UserIdentityRepository(firestore: ref.read(firestoreProvider))
-                .setLastActiveChurchId(firebaseUser.uid, selectedChurch.id),
-          );
-        }
+        unawaited(
+          UserIdentityRepository(firestore: ref.read(firestoreProvider))
+              .setLastActiveChurchId(firebaseUser.uid, selectedChurch.id),
+        );
         unawaited(
           syncNotificationTopicIfAuthorized(
             ProviderScope.containerOf(context, listen: false),

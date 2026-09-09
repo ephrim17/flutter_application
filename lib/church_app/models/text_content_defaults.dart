@@ -176,6 +176,8 @@ const Map<String, String> preAuthDefaultTextContents = {
   'church.select_subtitle': 'Select your church to proceed further',
   'church.select_button': 'Select Church',
   'church.select_action': 'Select Church',
+  'church.request_still_pending':
+      'Your request to join {church} is still pending approval.',
   'church.error_loading': 'Error loading churches',
   'church.none_available': 'No churches available',
   'church.register_your_church': 'Register your church',

@@ -522,6 +522,7 @@ class _LeaveChurchSection extends ConsumerWidget {
       ref.read(selectedChurchProvider.notifier).state = null;
       ref.invalidate(currentChurchIdProvider);
       ref.invalidate(myMembershipsProvider);
+      ref.invalidate(userChurchesProvider);
       if (!context.mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
