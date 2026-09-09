@@ -1216,3 +1216,31 @@ against whatever casing is actually stored, since `arrayRemove` needs an
 exact value match) whenever they leave or their account is deleted.
 `deleteChurch` needed no equivalent fix — it deletes `config/app` along
 with everything else in the subtree.
+
+### Addendum (the same "unconditional selectedChurchProvider" bug found in a second, live place)
+
+Reported live: leaving a church, then re-requesting, showed `approved:
+false` in Firestore yet the app still behaved as if entered. Audited
+every call site that sets `selectedChurchProvider` in the codebase
+(`grep -rn "selectedChurchProvider.notifier).state ="`). Found the exact
+same class of bug as the earlier `SelectChurchScreen` fix, in
+`RequestChurchAccessScreen._enterChurch` — it unconditionally set
+`selectedChurchProvider`/local storage regardless of the `approved`
+parameter passed in, for both the "already requested" (existing doc) and
+the fresh-request paths.
+
+Fixed by making `_enterChurch()` take no parameter and only ever be
+called for an approved outcome; the pending case now shows a clear
+"request submitted, waiting on admin approval" message and re-enters the
+normal `AppEntry` gate via a new `_returnToEntryGate()` — which, thanks to
+the earlier `_resolvableChurchId` fix, correctly lands on the picker or
+guest shell rather than any specific church.
+
+The same pattern also exists in `login_request_screen.dart`'s
+self-signup (`!adminCreateMode`) branch, confirmed dead: audited every
+caller of `LoginRequestScreen` and all of them pass `adminCreateMode:
+true` (the admin-create-member path) except two screens
+(`login_entry_screen.dart`, `auth_options_screen.dart`) that nothing in
+the app navigates to anymore — leftover from before the Phase 3 entry-flow
+rewrite. Not fixed since it's unreachable, but flagged as a dead-code
+cleanup candidate for a future pass.

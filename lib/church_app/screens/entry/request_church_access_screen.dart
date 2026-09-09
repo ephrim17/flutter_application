@@ -71,11 +71,16 @@ class _RequestChurchAccessScreenState
       if (existingDoc.exists) {
         // Someone else already requested/joined between opening this screen
         // and tapping submit — never overwrite an existing row (§9.7).
+        final alreadyApproved = existingDoc.data()?['approved'] == true;
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.t('auth.already_requested'))),
         );
-        await _enterChurch(approved: existingDoc.data()?['approved'] == true);
+        if (alreadyApproved) {
+          await _enterChurch();
+        } else {
+          _returnToEntryGate();
+        }
         return;
       }
 
@@ -127,7 +132,14 @@ class _RequestChurchAccessScreenState
           );
 
       if (!mounted) return;
-      await _enterChurch(approved: shouldAutoApprove);
+      if (shouldAutoApprove) {
+        await _enterChurch();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.t('auth.request_submitted'))),
+        );
+        _returnToEntryGate();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,7 +150,14 @@ class _RequestChurchAccessScreenState
     }
   }
 
-  Future<void> _enterChurch({required bool approved}) async {
+  /// Only ever called for an approved membership. A pending one must never
+  /// touch `selectedChurchProvider`/local storage/`lastActiveChurchId` —
+  /// doing so unconditionally here previously let a still-pending request
+  /// resolve straight into `ChurchTabScreen` whenever the person also had
+  /// an approved membership elsewhere (found in testing; §9.1 — membership
+  /// existing is never authorization on its own). Use [_returnToEntryGate]
+  /// for the pending case instead.
+  Future<void> _enterChurch() async {
     await ChurchLocalStorage().saveChurch(
       id: widget.churchId,
       name: widget.churchName,
@@ -158,15 +177,13 @@ class _RequestChurchAccessScreenState
       registrationSource: 'super_admin',
     );
     ref.invalidate(currentChurchIdProvider);
-    ref.read(forcePreflowThemeProvider.notifier).state = !approved;
-    if (approved) {
-      final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
-      if (uid != null) {
-        unawaited(
-          UserIdentityRepository(firestore: ref.read(firestoreProvider))
-              .setLastActiveChurchId(uid, widget.churchId),
-        );
-      }
+    ref.read(forcePreflowThemeProvider.notifier).state = false;
+    final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (uid != null) {
+      unawaited(
+        UserIdentityRepository(firestore: ref.read(firestoreProvider))
+            .setLastActiveChurchId(uid, widget.churchId),
+      );
     }
     unawaited(
       syncNotificationTopicIfAuthorized(
@@ -174,6 +191,14 @@ class _RequestChurchAccessScreenState
       ),
     );
     if (!mounted) return;
+    _returnToEntryGate();
+  }
+
+  /// Re-enters the normal AppEntry gate without touching any church
+  /// selection state — used both after entering an approved church and
+  /// after a pending request, letting the gate decide (approved church,
+  /// picker, or guest shell) purely from the person's actual memberships.
+  void _returnToEntryGate() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AppEntry()),
       (route) => false,

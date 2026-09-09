@@ -331,6 +331,9 @@ const Map<String, String> defaultChurchTextContents = {
   'auth.request_access_explainer':
       "We'll send your profile to this church's admin for approval — no forms to fill in.",
   'auth.already_requested': "You've already requested access to this church.",
+  'auth.request_submitted':
+      'Your request has been sent. You will get access once an admin '
+          'approves it.',
 
   // Migrated UI defaults
   "ui.birthday_card.saved_to_gallery": "Saved to gallery \ud83c\udf89",
