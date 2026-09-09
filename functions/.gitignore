@@ -11,3 +11,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Service account keys (GOOGLE_APPLICATION_CREDENTIALS for local scripts) —
+# never commit these, wherever they land.
+*serviceAccount*.json
+*service-account*.json
+*adminsdk*.json
+*firebase-adminsdk*.json
