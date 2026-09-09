@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions";
+import {firestoreDatabaseIdParam, firestoreDb} from "./firestoreDb";
 
 /**
  * Reads a Firestore field as a trimmed string, or "" if absent/not a
@@ -55,6 +56,7 @@ async function batchedMerge(
 export const fanOutIdentityChanges = onDocumentWritten(
   {
     document: "users/{uid}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -74,7 +76,7 @@ export const fanOutIdentityChanges = onDocumentWritten(
     });
     if (before && changedFields.length === 0) return;
 
-    const firestore = admin.firestore();
+    const firestore = firestoreDb();
     const name = readString(after["name"]);
     const photoUrl = readString(after["profilePhotoUrl"]);
 

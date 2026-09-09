@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions";
+import {firestoreDb} from "./firestoreDb";
 
 /**
  * Reads a value as a trimmed string, or "" if it isn't one.
@@ -93,7 +94,7 @@ export const leaveChurch = onCall(
       throw new HttpsError("invalid-argument", "Missing churchId.");
     }
 
-    const firestore = admin.firestore();
+    const firestore = firestoreDb();
     const memberRef = firestore
       .collection("churches").doc(churchId)
       .collection("members").doc(uid);
@@ -122,7 +123,7 @@ export const deleteChurch = onCall(
       throw new HttpsError("invalid-argument", "Missing churchId.");
     }
 
-    const firestore = admin.firestore();
+    const firestore = firestoreDb();
     const superAdminSnapshot = await firestore
       .collection("superAdmins")
       .where("email", "==", email)
@@ -173,7 +174,7 @@ export const deleteAccount = onCall(
       );
     }
 
-    const firestore = admin.firestore();
+    const firestore = firestoreDb();
     const membersSnapshot = await firestore
       .collectionGroup("members")
       .where("uid", "==", uid)

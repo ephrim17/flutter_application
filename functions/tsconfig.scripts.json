@@ -5,13 +5,13 @@
     "moduleResolution": "nodenext",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "outDir": "lib",
+    "rootDir": "scripts",
+    "outDir": "lib-scripts",
     "sourceMap": true,
     "strict": true,
     "target": "es2017"
   },
-  "compileOnSave": true,
   "include": [
-    "src"
+    "scripts"
   ]
 }

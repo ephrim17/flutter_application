@@ -995,3 +995,66 @@ session. The UI is wired and will call the callable correctly once
 `npm --prefix functions run deploy` runs; until then, tapping these
 actions in a running app will fail with a "function not found" error —
 expected, not a bug.
+
+### Addendum (two real bugs found while attempting the first live deploy)
+
+**1. Cross-database Auth-deletion risk.** `fanOutIdentityChanges`,
+`leaveChurch`, `deleteChurch`, `deleteAccount`, and the Phase 3/5 edits to
+`rebuildChurchDashboardMemberMetrics`/`ensureFinanceGroupMember`/
+`sendFeedPostNotification`/`sendPrayerRequestAdminNotification` all called
+`admin.firestore()`, which always resolves to the `(default)` database —
+never `migrationv1`, regardless of which database the Flutter client is
+configured against. Firebase Auth is project-wide, not per-database, so
+testing `deleteAccount` from a client pointed at `migrationv1` would have
+looked up Firestore data in the wrong (production) database, found
+nothing there, and *still deleted the real, project-wide Auth account* at
+the end. Caught before any deploy happened.
+
+Fixed with `functions/src/firestoreDb.ts`: a `FIRESTORE_DATABASE_ID`
+functions parameter (`defineString`, default `(default)`) plus a
+`firestoreDb()` accessor, mirroring the Flutter client's own
+`FIRESTORE_DATABASE_ID` build-time override. Every Firestore-triggered
+function this migration touches now also carries `database:
+firestoreDatabaseIdParam` in its trigger options (`fanOutIdentityChanges`,
+`rebuildChurchDashboardMemberMetrics`, and — since they invoke the
+Phase 5 fan-out fix and are part of the test checklist —
+`notifyChurchAdminsOnPrayerCreated` and `processQueuedChurchNotification`
+too). Deliberately scoped to only these; unrelated existing triggers
+(recurring events, password reset, YouTube live, etc.) were left
+untouched to avoid widening the blast radius of this migration into
+already-stable code. Set `FIRESTORE_DATABASE_ID=migrationv1` in
+`functions/.env.flutterlearning-c9f6c` before deploying for this testing
+phase; remove it (or reset to `(default)`) before any production deploy —
+same flip-and-revert pattern as `firebase.json`'s array-form workaround.
+
+**2. `npm run build` was silently producing undeployable output since
+Phase 0.** Adding `scripts` alongside `src` to `tsconfig.json`'s `include`
+(to get the migration harness covered by the existing lint/build
+toolchain) changed TypeScript's inferred `rootDir` to the common parent of
+both (`functions/`), which shifted every compiled path down one level —
+`lib/index.js` became `lib/src/index.js`. `npm run build` kept reporting
+success all night because there were no type errors; only the *output
+location* was wrong, silently breaking `package.json`'s `"main":
+"lib/index.js"` — the Cloud Functions deploy entry point. The Phase 2
+backfill was unaffected (it was always invoked at the coincidentally-still
+-correct nested path, `lib/scripts/migrate/run.js`, directly), but every
+function added or edited since Phase 0 (`fanOutIdentityChanges`,
+`leaveChurch`, `deleteChurch`, `deleteAccount`, the `rebuildChurch
+DashboardMemberMetrics`/notification edits) was invisible to `firebase
+deploy` — it would have silently deployed only the pre-migration
+functions.
+
+Fixed by giving the migration scripts their own project:
+`tsconfig.scripts.json` (`rootDir`/`include`: `scripts`, `outDir:
+lib-scripts`), `package.json`'s `migrate` script now runs `tsc -p
+tsconfig.scripts.json` before invoking `lib-scripts/migrate/run.js`, and
+`.eslintrc.js`'s `parserOptions.project` lists both tsconfigs so lint
+still covers everything. `tsconfig.json` reverted to `include: ["src"]`
+only. Verified with a clean rebuild (`rm -rf lib lib-scripts`) that
+`lib/index.js` is flat again and exports all four new functions, and that
+`lib-scripts/migrate/*.js` builds independently.
+
+**Lesson for future phases:** "lint and build pass" was not sufficient
+verification for a deploy-affecting change — checking the actual output
+file layout against what `package.json`/deployment expects would have
+caught this immediately instead of at first-deploy time.

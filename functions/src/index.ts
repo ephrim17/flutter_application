@@ -29,6 +29,7 @@ export {
 export {setFeedPostGlobal} from "./feed_global";
 export {fanOutIdentityChanges} from "./identityFanout";
 export {deleteAccount, deleteChurch, leaveChurch} from "./lifecycle";
+import {firestoreDatabaseIdParam, firestoreDb} from "./firestoreDb";
 
 admin.initializeApp();
 
@@ -714,7 +715,7 @@ async function resolveDeviceTokensByUid(
   const chunkSize = 30; // Firestore "in" query limit.
   for (let index = 0; index < distinctUids.length; index += chunkSize) {
     const chunk = distinctUids.slice(index, index + chunkSize);
-    const snapshot = await admin.firestore()
+    const snapshot = await firestoreDb()
       .collectionGroup("devices")
       .where("uid", "in", chunk)
       .get();
@@ -736,7 +737,7 @@ async function resolveDeviceTokensByUid(
 async function sendFeedPostNotification(
   payload: FeedPostNotificationPayload,
 ): Promise<number> {
-  const membersSnapshot = await admin.firestore()
+  const membersSnapshot = await firestoreDb()
     .collection("churches")
     .doc(payload.churchId)
     .collection("members")
@@ -785,7 +786,7 @@ async function sendPrayerRequestAdminNotification(
   churchId: string,
   prayerId: string,
 ): Promise<{successCount: number; failureCount: number}> {
-  const firestore = admin.firestore();
+  const firestore = firestoreDb();
   const churchRef = firestore.collection("churches").doc(churchId);
   const [configSnapshot, membersSnapshot] = await Promise.all([
     churchRef.collection("config").doc("app").get(),
@@ -854,6 +855,7 @@ async function sendPrayerRequestAdminNotification(
 export const notifyChurchAdminsOnPrayerCreated = onDocumentCreated(
   {
     document: "churches/{churchId}/prayer_requests/{prayerId}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1059,6 +1061,7 @@ export const notifyChurchMembersWhenPrayerVisible = onDocumentWritten(
 export const processQueuedChurchNotification = onDocumentCreated(
   {
     document: "churches/{churchId}/notification_requests/{notificationId}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1144,6 +1147,7 @@ export const processQueuedChurchNotification = onDocumentCreated(
 export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
   {
     document: "churches/{churchId}/members/{uid}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1156,7 +1160,8 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     }
 
     try {
-      const membersSnapshot = await admin.firestore()
+      const firestore = firestoreDb();
+      const membersSnapshot = await firestore
         .collection("churches")
         .doc(churchId)
         .collection("members")
@@ -1171,8 +1176,8 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
       const streakByUid = new Map<string, number>();
       if (linkedUids.length > 0) {
         const identityRefs = linkedUids.map((uid) =>
-          admin.firestore().collection("users").doc(uid));
-        const identityDocs = await admin.firestore().getAll(...identityRefs);
+          firestore.collection("users").doc(uid));
+        const identityDocs = await firestore.getAll(...identityRefs);
         identityDocs.forEach((doc, index) => {
           if (doc.exists) {
             streakByUid.set(
@@ -1202,7 +1207,7 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
 
       const metrics = buildDashboardMemberMetrics(members);
 
-      await admin.firestore()
+      await firestore
         .collection("churches")
         .doc(churchId)
         .collection("dashboard_metrics")
