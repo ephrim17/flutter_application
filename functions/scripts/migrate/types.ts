@@ -46,6 +46,7 @@ export interface RunReport {
   databaseId: string;
   churchesProcessed: number;
   identitiesWritten: number;
+  avatarBlobsMigrated: number;
   churches: ChurchReport[];
   conflictCount: number;
 }

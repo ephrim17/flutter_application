@@ -1143,3 +1143,39 @@ thing per account, not a permanent hub. The "earliest-joined" auto-pick
 tier was removed from `_restoreSelectedChurchIfNeeded` entirely, since
 that helper is now only ever reached once a church is already known to be
 resolvable.
+
+### Addendum (both Phase 4 deferred items closed, plus a real bug found doing so)
+
+**Profile-completion UI:** `_EditProfileSheet` (Settings > Edit Profile)
+now has fields for maritalStatus (dropdown), weddingDay (date picker,
+shown only when married — matching `login_request_screen.dart`'s existing
+pattern), educationalQualification, and talentsAndGifts (comma-separated).
+No repository changes needed — `UserIdentityRepository.updateProfile`
+already accepted and wrote all four; only the UI was missing.
+
+**Avatar blob copy — and a real bug found while building it:**
+`identity.ts`'s cross-church merge never included `profilePhotoUrl` at
+all — `MergedIdentity` had no such field, so **every identity written by
+the Phase 2 backfill silently lost the person's avatar**, even though the
+old per-church rows had it. Fixed: `profilePhotoUrl` is now merged the
+same way as `name`/`phone` (newest wins, conflict-logged).
+
+Separately, added `functions/scripts/migrate/avatarBlob.ts`
+(`migrateAvatarBlob`) — for each identity with a `profilePhotoUrl` still
+pointing at the old `churches/{cid}/users/{uid}/profile/...` Storage path,
+copies the blob to `users/{uid}/profile/...`, sets a fresh download token,
+and rewrites the URL; a no-op for anything already on the new path, an
+external URL, or empty. Storage is project-wide (not per-database), so
+this runs against the one real bucket regardless of which Firestore
+database the run targets — verified against the one real avatar in the
+production bucket (found via a live `getFiles` scan), which correctly
+copied to the new path with a working rewritten URL after `--write`.
+
+Re-ran the full `--write` backfill once both fixes landed — safe and
+idempotent, since every write is fully recomputed from source each run,
+never incrementally merged. **Unrelated to either fix:** this re-run also
+showed the church count drop from 22 to 19 — confirmed with the repo
+owner that this was their own deliberate cleanup of three empty test
+churches via the new super-admin Delete church button, not a bug (and a
+nice confirmation that `deleteChurch`'s `recursiveDelete` works correctly
+in the wild).

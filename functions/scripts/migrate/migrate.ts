@@ -7,6 +7,7 @@ import {
   emptyChurchReport,
 } from "./types";
 import {MergedIdentity, OldMemberRow, mergeIdentity} from "./identity";
+import {migrateAvatarBlob} from "./avatarBlob";
 import {
   loadChurchModuleIndex,
   resolveModuleSource,
@@ -172,6 +173,10 @@ function timestampToDate(value: unknown): Date {
  * "(default)").
  * @param {admin.auth.Auth} auth Admin Auth instance, used only to resolve
  * which old row ids are real signed-in people (§9.3/§9.4).
+ * @param {admin.storage.Storage} storage Admin Storage instance — Storage
+ * is project-wide, not per-database, so the same bucket holds both old and
+ * new avatar paths regardless of which Firestore database this run
+ * targets.
  * @param {CliOptions} options Parsed CLI options.
  * @return {Promise<{report: RunReport, conflicts: ConflictRow[]}>} The run
  * report and the full conflicts list.
@@ -179,6 +184,7 @@ function timestampToDate(value: unknown): Date {
 export async function runMigration(
   firestore: Firestore,
   auth: admin.auth.Auth,
+  storage: admin.storage.Storage,
   options: CliOptions,
 ): Promise<{report: RunReport; conflicts: ConflictRow[]}> {
   const startedAt = new Date().toISOString();
@@ -369,12 +375,19 @@ export async function runMigration(
   // or not options.dryRun is set — only the actual Firestore mutations are
   // gated on it, so a dry run's report is a true preview, not a blank one.
   let identitiesWritten = 0;
+  let avatarBlobsMigrated = 0;
   for (const [uid, identity] of identitiesByUid) {
+    const avatarResult = await migrateAvatarBlob(
+      storage, uid, identity.profilePhotoUrl, options.dryRun,
+    );
+    if (avatarResult.copied) avatarBlobsMigrated += 1;
+
     if (!options.dryRun) {
       await firestore.collection("users").doc(uid).set({
         name: identity.name,
         email: identity.email,
         phone: identity.phone,
+        profilePhotoUrl: avatarResult.url,
         dob: identity.dob,
         gender: identity.gender,
         location: identity.location,
@@ -517,6 +530,7 @@ export async function runMigration(
     databaseId: options.databaseId,
     churchesProcessed: churchDocs.length,
     identitiesWritten,
+    avatarBlobsMigrated,
     churches: churchReports,
     conflictCount: conflicts.length,
   };

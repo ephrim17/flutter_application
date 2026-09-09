@@ -17,6 +17,7 @@ export interface MergedIdentity {
   name: string;
   email: string;
   phone: string;
+  profilePhotoUrl: string;
   dob: FirebaseFirestore.Timestamp | null;
   gender: string;
   location: string;
@@ -188,6 +189,9 @@ export function mergeIdentity(
     "email", (row) => asString(row.data["email"]).toLowerCase(),
   );
   const phone = pickString("phone", (row) => rowPhone(row.data));
+  const profilePhotoUrl = pickString(
+    "profilePhotoUrl", (row) => asString(row.data["profilePhotoUrl"]),
+  );
   const gender = pickString("gender", (row) => asString(row.data["gender"]));
   const location =
     pickString("location", (row) => asString(row.data["location"]));
@@ -244,6 +248,7 @@ export function mergeIdentity(
     name,
     email,
     phone,
+    profilePhotoUrl,
     dob,
     gender,
     location,

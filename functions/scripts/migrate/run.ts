@@ -16,9 +16,11 @@ async function main(): Promise<void> {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
     projectId: options.projectId,
+    storageBucket: `${options.projectId}.firebasestorage.app`,
   });
   const firestore = getFirestore(admin.app(), options.databaseId);
   const auth = admin.auth();
+  const storage = admin.storage();
 
   console.log(
     `Running migration: database=${options.databaseId} ` +
@@ -26,13 +28,18 @@ async function main(): Promise<void> {
     `churches=${options.churchIds?.join(",") ?? "ALL"}`,
   );
 
-  const {report, conflicts} = await runMigration(firestore, auth, options);
+  const {report, conflicts} =
+    await runMigration(firestore, auth, storage, options);
   const {reportPath, conflictsPath} =
     writeReport(options.outDir, report, conflicts);
 
   console.log(`\nChurches processed: ${report.churchesProcessed}`);
   console.log(`Identities ${report.dryRun ? "that would be " : ""}written: ` +
     `${report.identitiesWritten}`);
+  console.log(
+    `Avatar blobs ${report.dryRun ? "that would be " : ""}migrated: ` +
+    `${report.avatarBlobsMigrated}`,
+  );
   for (const church of report.churches) {
     console.log(
       `  - ${church.churchName} (${church.churchId}): ` +

@@ -1463,9 +1463,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   late final TextEditingController _phoneController;
   late final TextEditingController _locationController;
   late final TextEditingController _addressController;
+  late final TextEditingController _educationalQualificationController;
+  late final TextEditingController _talentsAndGiftsController;
   bool _isSaving = false;
   bool _isFetchingLocation = false;
   DateTime? _dob;
+  String _maritalStatus = '';
+  DateTime? _weddingDay;
   PickedImageData? _profilePhoto;
   bool _removeProfilePhoto = false;
 
@@ -1475,7 +1479,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _phoneController = TextEditingController(text: widget.user.phone);
     _locationController = TextEditingController(text: widget.user.location);
     _addressController = TextEditingController(text: widget.user.address);
+    _educationalQualificationController =
+        TextEditingController(text: widget.user.educationalQualification);
+    _talentsAndGiftsController =
+        TextEditingController(text: widget.user.talentsAndGifts.join(', '));
     _dob = widget.user.dob;
+    _maritalStatus = widget.user.maritalStatus;
+    _weddingDay = widget.user.weddingDay;
   }
 
   @override
@@ -1483,7 +1493,17 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _phoneController.dispose();
     _locationController.dispose();
     _addressController.dispose();
+    _educationalQualificationController.dispose();
+    _talentsAndGiftsController.dispose();
     super.dispose();
+  }
+
+  List<String> _parsedTalentsAndGifts() {
+    return _talentsAndGiftsController.text
+        .split(RegExp(r'[,\n]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   String _formatDob(DateTime? date) {
@@ -1613,6 +1633,16 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       );
       return;
     }
+    if (_maritalStatus == 'married' && _weddingDay == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t('members.member_wedding_day_required'),
+          ),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -1629,10 +1659,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         location: _locationController.text,
         address: _addressController.text,
         dob: _dob,
-        maritalStatus: widget.user.maritalStatus,
-        weddingDay: widget.user.weddingDay,
-        educationalQualification: widget.user.educationalQualification,
-        talentsAndGifts: widget.user.talentsAndGifts,
+        maritalStatus: _maritalStatus,
+        weddingDay: _maritalStatus == 'married' ? _weddingDay : null,
+        educationalQualification: _educationalQualificationController.text,
+        talentsAndGifts: _parsedTalentsAndGifts(),
         existingProfilePhotoUrl: widget.user.profilePhotoUrl,
         profilePhoto: _profilePhoto,
         removeProfilePhoto: _removeProfilePhoto,
@@ -1823,6 +1853,77 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: ref.t('auth.address_label'),
                 helperText: ref.t('auth.address_helper'),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppDropdownField<String>(
+              initialValue: _maritalStatus.isEmpty ? null : _maritalStatus,
+              labelText: ref.t('members.marital_status_label'),
+              items: [
+                DropdownMenuItem(
+                  value: 'individual',
+                  child: Text(ref.t('common.individual')),
+                ),
+                DropdownMenuItem(
+                  value: 'married',
+                  child: Text(ref.t('common.married')),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _maritalStatus = value ?? '';
+                  if (_maritalStatus != 'married') _weddingDay = null;
+                });
+              },
+            ),
+            if (_maritalStatus == 'married') ...[
+              const SizedBox(height: 16),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _weddingDay ?? DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (pickedDate == null) return;
+                  setState(() {
+                    _weddingDay = pickedDate;
+                  });
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: ref.t('members.wedding_day_label'),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  ),
+                  child: Text(
+                    _weddingDay == null
+                        ? ref.t('members.wedding_day_hint')
+                        : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                            '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                            '${_weddingDay!.year}',
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _educationalQualificationController,
+              decoration: InputDecoration(
+                labelText: ref.t('members.educational_qualification'),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _talentsAndGiftsController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: ref.t('members.talents_and_gifts'),
+                helperText: ref.t('members.talents_and_gifts_helper'),
                 border: const OutlineInputBorder(),
               ),
             ),
