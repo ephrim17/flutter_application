@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
@@ -32,11 +31,16 @@ class CreateChurchScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
+  static final _phonePattern = RegExp(r'^[6-9]\d{9}$');
+
   final _nameController = TextEditingController();
   final _pastorController = TextEditingController();
   final _addressController = TextEditingController();
   final _contactController = TextEditingController();
   final _emailController = TextEditingController();
+  final _facebookController = TextEditingController();
+  final _instagramController = TextEditingController();
+  final _youtubeController = TextEditingController();
   final _adminNameController = TextEditingController();
   final _adminEmailController = TextEditingController();
   final _adminPhoneController = TextEditingController();
@@ -73,6 +77,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
       _addressController.text = church.address;
       _contactController.text = church.contact;
       _emailController.text = church.email;
+      _facebookController.text = church.facebookLink;
+      _instagramController.text = church.instagramLink;
+      _youtubeController.text = church.youtubeLink;
       _enabled = church.enabled;
     }
 
@@ -92,6 +99,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     _addressController.dispose();
     _contactController.dispose();
     _emailController.dispose();
+    _facebookController.dispose();
+    _instagramController.dispose();
+    _youtubeController.dispose();
     _adminNameController.dispose();
     _adminEmailController.dispose();
     _adminPhoneController.dispose();
@@ -172,6 +182,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         if (contact.isEmpty) {
           return context.t('super_admin.contact_required');
         }
+        if (!_phonePattern.hasMatch(contact)) {
+          return context.t('auth.phone_invalid');
+        }
         if (email.isEmpty) {
           return context.t('super_admin.email_required');
         }
@@ -203,6 +216,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
         }
         if (adminPhone.isEmpty) {
           return context.t('super_admin.admin_phone_required');
+        }
+        if (!_phonePattern.hasMatch(adminPhone)) {
+          return context.t('auth.phone_invalid');
         }
         return null;
       default:
@@ -241,6 +257,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     if (contact.isEmpty) {
       return context.t('super_admin.contact_required');
     }
+    if (!_phonePattern.hasMatch(contact)) {
+      return context.t('auth.phone_invalid');
+    }
     if (email.isEmpty) {
       return context.t('super_admin.email_required');
     }
@@ -265,6 +284,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     }
     if (adminPhone.isEmpty) {
       return context.t('super_admin.admin_phone_required');
+    }
+    if (!_phonePattern.hasMatch(adminPhone)) {
+      return context.t('auth.phone_invalid');
     }
     return null;
   }
@@ -403,6 +425,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             logoImage: _logoImage,
             pastorPhotoImage: _pastorPhotoImage,
             features: _featureFlags,
+            facebookLink: _facebookController.text,
+            instagramLink: _instagramController.text,
+            youtubeLink: _youtubeController.text,
           ),
         );
 
@@ -461,6 +486,9 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           registeredByEmail:
               _isPublicRegistrationMode ? authenticatedEmail : null,
           features: _featureFlags,
+          facebookLink: _facebookController.text,
+          instagramLink: _instagramController.text,
+          youtubeLink: _youtubeController.text,
         ),
       );
 
@@ -616,9 +644,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           controller: _contactController,
           onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
           decoration: InputDecoration(
             labelText: context.t('super_admin.contact_label'),
+            counterText: '',
           ),
+          maxLength: 10,
         ),
         const SizedBox(height: 14),
         AppTextField(
@@ -627,6 +661,30 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             labelText: context.t('super_admin.email_label'),
+          ),
+        ),
+        const SizedBox(height: 14),
+        AppTextField(
+          controller: _facebookController,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            labelText: context.t('super_admin.facebook_link_label'),
+          ),
+        ),
+        const SizedBox(height: 14),
+        AppTextField(
+          controller: _instagramController,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            labelText: context.t('super_admin.instagram_link_label'),
+          ),
+        ),
+        const SizedBox(height: 14),
+        AppTextField(
+          controller: _youtubeController,
+          keyboardType: TextInputType.url,
+          decoration: InputDecoration(
+            labelText: context.t('super_admin.youtube_link_label'),
           ),
         ),
         const SizedBox(height: 20),
@@ -718,9 +776,15 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             controller: _adminPhoneController,
             onChanged: (_) => setState(() {}),
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
             decoration: InputDecoration(
               labelText: context.t('super_admin.admin_phone_label'),
+              counterText: '',
             ),
+            maxLength: 10,
           ),
           const SizedBox(height: 18),
         ] else ...[
@@ -903,12 +967,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
               _isEditMode
                   ? 'super_admin.edit_church_title'
                   : _isPublicRegistrationMode
-                      ? 'church.register_your_church'
+                      ? 'super_admin.register_action'
                       : 'super_admin.create_church_title',
               fallback: _isEditMode
                   ? 'Edit Church'
                   : _isPublicRegistrationMode
-                      ? 'Register your church'
+                      ? 'Register'
                       : 'Create Church',
             ),
           ),
@@ -920,7 +984,8 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
             if (_isEditMode && !_isSubmitting)
               IconButton(
                 tooltip: context.t('super_admin.delete_church_action'),
-                icon: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+                icon: const Icon(Icons.delete_forever_outlined,
+                    color: Colors.red),
                 onPressed: _confirmAndDeleteChurch,
               ),
           ],
@@ -1015,12 +1080,12 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
                                                         _isEditMode
                                                             ? 'super_admin.edit_action'
                                                             : _isPublicRegistrationMode
-                                                                ? 'church.register_your_church'
+                                                                ? 'super_admin.register_action'
                                                                 : 'super_admin.create_action',
                                                         fallback: _isEditMode
                                                             ? 'Update Church'
                                                             : _isPublicRegistrationMode
-                                                                ? 'Register your church'
+                                                                ? 'Register'
                                                                 : 'Create Church',
                                                       )
                                                     : 'Continue',

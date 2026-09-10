@@ -20,10 +20,6 @@ appId: com.example.flutter_application
 - waitForAnimationToEnd
 - takeScreenshot: nav_feeds
 
-- tapOn: "Go Further"
-- waitForAnimationToEnd
-- takeScreenshot: nav_go_further
-
 - tapOn: "Dashboard"
 - waitForAnimationToEnd
 - takeScreenshot: nav_dashboard

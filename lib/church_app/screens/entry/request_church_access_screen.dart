@@ -6,11 +6,11 @@ import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
+import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
@@ -73,13 +73,15 @@ class _RequestChurchAccessScreenState
         // and tapping submit — never overwrite an existing row (§9.7).
         final alreadyApproved = existingDoc.data()?['approved'] == true;
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.t('auth.already_requested'))),
-        );
         if (alreadyApproved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.t('auth.already_requested'))),
+          );
           await _enterChurch();
         } else {
-          _returnToEntryGate();
+          _goToPendingScreen(
+            notifying: existingDoc.data()?['notifyOnApproval'] == true,
+          );
         }
         return;
       }
@@ -94,22 +96,32 @@ class _RequestChurchAccessScreenState
       var shouldAutoApprove = false;
       final normalizedEmail = identity.email.trim().toLowerCase();
       if (normalizedEmail.isNotEmpty) {
-        final membersSnapshot = await FirestorePaths.churchMembers(
-          firestore,
-          widget.churchId,
-        ).limit(1).get();
-        final appConfigDoc = await FirestorePaths.churchAppConfig(
-          firestore,
-          widget.churchId,
-        ).get();
-        final admins =
-            List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
-                .map((item) => item.trim().toLowerCase())
-                .where((item) => item.isNotEmpty)
-                .toList(growable: false);
-        shouldAutoApprove = membersSnapshot.docs.isEmpty &&
-            admins.length == 1 &&
-            admins.first == normalizedEmail;
+        // Only the church's sole listed admin can actually read these (via
+        // isChurchAdmin's own internal, rules-unrestricted lookup) — for
+        // every other requester (the common case: someone joining a church
+        // they don't administer) this throws PERMISSION_DENIED, which must
+        // not abort the request-access submission itself. Falling back to
+        // "not auto-approved" is exactly correct for that caller anyway.
+        try {
+          final membersSnapshot = await FirestorePaths.churchMembers(
+            firestore,
+            widget.churchId,
+          ).limit(1).get();
+          final appConfigDoc = await FirestorePaths.churchAppConfig(
+            firestore,
+            widget.churchId,
+          ).get();
+          final admins =
+              List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
+                  .map((item) => item.trim().toLowerCase())
+                  .where((item) => item.isNotEmpty)
+                  .toList(growable: false);
+          shouldAutoApprove = membersSnapshot.docs.isEmpty &&
+              admins.length == 1 &&
+              admins.first == normalizedEmail;
+        } catch (_) {
+          shouldAutoApprove = false;
+        }
       }
 
       await ref.read(authRepositoryProvider).requestAccess(
@@ -135,10 +147,7 @@ class _RequestChurchAccessScreenState
       if (shouldAutoApprove) {
         await _enterChurch();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.t('auth.request_submitted'))),
-        );
-        _returnToEntryGate();
+        _goToPendingScreen(notifying: false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -177,7 +186,6 @@ class _RequestChurchAccessScreenState
       registrationSource: 'super_admin',
     );
     ref.invalidate(currentChurchIdProvider);
-    ref.read(forcePreflowThemeProvider.notifier).state = false;
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
     if (uid != null) {
       unawaited(
@@ -192,6 +200,19 @@ class _RequestChurchAccessScreenState
     );
     if (!mounted) return;
     _returnToEntryGate();
+  }
+
+  void _goToPendingScreen({required bool notifying}) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => RequestPendingScreen(
+          churchId: widget.churchId,
+          churchName: widget.churchName,
+          churchLogo: widget.churchLogo,
+          initiallyNotifying: notifying,
+        ),
+      ),
+    );
   }
 
   /// Re-enters the normal AppEntry gate without touching any church
@@ -310,8 +331,7 @@ class _RequestChurchAccessScreenState
                     SolidButton(
                       label: context.t('auth.request_access'),
                       isLoading: _submitting,
-                      onPressed:
-                          _submitting ? null : () => _submit(identity),
+                      onPressed: _submitting ? null : () => _submit(identity),
                     ),
                   ],
                 ),

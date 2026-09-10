@@ -260,6 +260,25 @@ class AuthRepository {
     });
   }
 
+  /// Signup email-OTP (§5.5 addendum) — sends a 6-digit code to the
+  /// caller's own Firebase Auth email. Callable, not onRequest like
+  /// password reset, since the caller is already signed in by this point.
+  Future<void> requestSignupEmailVerificationCode({
+    String churchName = '',
+  }) async {
+    await _functions
+        .httpsCallable('requestSignupEmailVerificationCode')
+        .call<void>({
+      if (churchName.trim().isNotEmpty) 'churchName': churchName.trim(),
+    });
+  }
+
+  Future<void> verifySignupEmailVerificationCode({required String code}) async {
+    await _functions
+        .httpsCallable('verifySignupEmailVerificationCode')
+        .call<void>({'code': code.trim()});
+  }
+
   Future<void> requestAccess(
       {required String name,
       required String phone,
@@ -352,6 +371,7 @@ class AuthRepository {
       'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
       'approved': approved,
+      'notifyOnApproval': false,
       'joinedAt': FieldValue.serverTimestamp(),
       'schemaVersion': 1,
       'displayName': name.trim(),
@@ -393,8 +413,7 @@ class AuthRepository {
             .toList(),
         'profileComplete': true,
         'schemaVersion': 1,
-        if (!identitySnapshot.exists)
-          'createdAt': FieldValue.serverTimestamp(),
+        if (!identitySnapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
@@ -421,6 +440,19 @@ class AuthRepository {
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
+  }
+
+  /// Opts a pending request into the approval push+email
+  /// (`notifyMemberOnApproval` in functions) — tapped from
+  /// `RequestPendingScreen`. A no-op field on any other membership row.
+  Future<void> setNotifyOnApproval({
+    required String churchId,
+    required String uid,
+    required bool value,
+  }) {
+    return FirestorePaths.churchMemberDoc(_firestore, churchId, uid).update({
+      'notifyOnApproval': value,
+    });
   }
 
   Future<List<String>> getFamilyIds(String churchId) async {

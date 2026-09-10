@@ -8,8 +8,16 @@ pending church that requires super-admin approval.
 
 ## User flows
 
-- **Your Churches** lists memberships found under each church's `users` data.
-- **Other Churches** lists discoverable churches the user has not joined.
+- **Your Churches** lists approved memberships only (`approved == true`).
+- **Pending Approval** lists churches the user has requested access to but
+  isn't approved for yet — tapping one reopens `RequestPendingScreen` for
+  that church instead of letting them submit a duplicate request.
+- **Other Churches** lists discoverable churches the user has not joined or
+  requested access to.
+- Both lists render each church with the same card design (pastor photo,
+  address, Facebook/Instagram/YouTube badges) that used to live on the
+  standalone Discover tab — Discover was removed once this screen covered
+  the same ground.
 - Selecting an existing approved membership enters that church.
 - Selecting another church starts request access and creates
   `churches/{churchId}/users/{uid}`.
@@ -28,11 +36,23 @@ pending church that requires super-admin approval.
 - A disabled church or `superAdminDisabled` config blocks normal access.
 - Selected church can be restored locally, but server membership/configuration
   remains authoritative.
+- `isAdminProvider`/`churchAdminProvider` (client) check ONLY the signed-in
+  email against that church's `config/app.admins` — deliberately NOT
+  super-admin-aware, unlike the backend's `isChurchStaff(churchId) =
+  isChurchAdmin(churchId) || isSuperAdmin()`. Being a super admin grants
+  backend read/write rights on every church (a platform-moderation
+  capability enforced in `firestore.rules`), but must never silently hand
+  out per-church admin UI (edit/approve members, extended info, church
+  groups) for a church the person isn't actually responsible for. Tried
+  making `isAdminProvider` super-admin-aware once; confirmed as a real
+  regression (a super admin got full admin actions on a church they were
+  never added to) and reverted.
 
 ## Technical map
 
 - Screens: `select-church-screen.dart`, `entry/login_request_screen.dart`,
   `entry/create_auth_account_screen.dart`, pending approval widget.
+- Card widget: `widgets/church_discovery_card.dart`.
 - Providers: `select_church_provider.dart`, `church_provider.dart`,
   `user_provider.dart`.
 - Services: `church_repository.dart`, `church_user_repository.dart`,
@@ -58,4 +78,8 @@ pending church that requires super-admin approval.
 | CHURCH-10 | Deleted/invalid cached church | App returns safely to selection. |
 | CHURCH-11 | Duplicate request or double-tap | One membership/registration is created. |
 | CHURCH-12 | Network interruption | No half-created visible church; recoverable error is shown. |
+| CHURCH-13 | Super admin (not listed in that church's `config/app.admins`) opens Members screen for that church | Plain member-level UI is shown — no edit/approve, extended info, or church groups sections, even though the backend would allow the writes. |
+| CHURCH-14 | Staff approves a self-registered (request-access) pending member | Approval succeeds; no `PERMISSION_DENIED` from the display-field-cache guard. |
+| CHURCH-15 | User has a pending request to church B while approved in church A | A shows under Your Churches; B shows under Pending Approval, not Your Churches or Other Churches. |
+| CHURCH-16 | Tap a church under Pending Approval | Opens `RequestPendingScreen` for that church; no duplicate request is submitted. |
 

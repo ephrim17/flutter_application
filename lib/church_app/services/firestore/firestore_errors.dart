@@ -1,7 +1,28 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 
 String mapFirebaseAuthError(Object e) {
+  if (e is FirebaseFunctionsException) {
+    // Callable errors surface their HttpsError code (invalid-argument,
+    // resource-exhausted, ...) in `e.code`, but the actual reason string
+    // we threw server-side (e.g. `HttpsError('invalid-argument',
+    // 'invalid-code')`) lands in `e.message` instead.
+    switch (e.message) {
+      case 'invalid-code':
+        return defaultChurchTextContents['auth.reset_code_invalid']!;
+      case 'expired-code':
+        return defaultChurchTextContents['auth.reset_code_expired']!;
+      case 'too-many-attempts':
+        return defaultChurchTextContents['auth.too_many_requests']!;
+      case 'no-email':
+        return defaultChurchTextContents['auth.email_verification_failed']!;
+      case 'verification-code-failed':
+        return defaultChurchTextContents['auth.reset_code_failed']!;
+      default:
+        return defaultChurchTextContents['auth.generic_error']!;
+    }
+  }
   if (e is FirebaseAuthException) {
     switch (e.code) {
       case 'invalid-email':

@@ -19,6 +19,16 @@ members can browse permitted directory/group views.
 - Married selection exposes Family ID. An individual may select an existing
   family ID but cannot create a new family through that path.
 - Birthday and anniversary sections derive from DOB/wedding date.
+- A non-admin viewer of the Members screen never reads the full
+  `members/{uid}` doc of anyone but themselves (`firestore.rules`:
+  `isSelf(docId) || isChurchStaff(churchId)`) — Firestore has no
+  field-level security, so a reduced mirror,
+  `churches/{churchId}/memberDirectory/{uid}` (name, photo, dob, gender,
+  marital status only — no phone/email/address/baptism/financial/notes),
+  is what they browse instead. It's kept in sync by the
+  `mirrorMemberDirectory` Cloud Function trigger (deletes the mirror when
+  a member is deleted or un-approved) and is readable by any approved
+  member of that church, not just staff.
 
 ## Church groups
 
@@ -39,9 +49,16 @@ email and map actions show a confirmation dialog before launching another app.
 
 - UI: `members_screen.dart`, `church_groups_screen.dart`,
   `dashboard_gender_members_screen.dart`, `user_quick_card_widget.dart`.
-- Providers/services: `members_provider.dart`, `members_repository.dart`,
-  `church_group_members_provider.dart`, `church_user_repository.dart`.
-- Model: `app_user_model.dart`, church group member model.
+- Providers/services: `members_provider.dart` (also `memberDirectoryProvider`
+  for non-admins), `members_repository.dart` (also
+  `getMemberDirectoryOnce()`), `church_group_members_provider.dart`,
+  `church_user_repository.dart`.
+- Model: `app_user_model.dart`, church group member model,
+  `church_member_directory_entry_model.dart`.
+- Backend: `mirrorMemberDirectory` (functions/src/index.ts) — Firestore
+  trigger on `churches/{churchId}/members/{memberId}`.
+- Data: `churches/{churchId}/memberDirectory/{uid}` (reduced, any-approved-
+  member-readable mirror of `members/{uid}`).
 
 ## Test flows
 
@@ -62,3 +79,5 @@ email and map actions show a confirmation dialog before launching another app.
 | MEMBER-13 | Non-admin mutation attempt | UI hides controls and backend rejects direct mutation. |
 | MEMBER-14 | Large directory/pagination/scroll | Smooth list, no clipped cards and no duplicate entries. |
 | MEMBER-15 | Open add-member options/member quick look | Sheet shows exactly one shared small grab handle and dismisses without a duplicate Close/Cancel control. |
+| MEMBER-16 | Non-admin opens Members screen | Sees the reduced directory roster (name/photo/dob/gender/marital status) for every approved member, including others — but a direct read of another member's full `members/{uid}` doc, and the full `members` collection query, are both still denied. |
+| MEMBER-17 | Member is deleted or un-approved | Their `memberDirectory` entry disappears (no stale roster row for a departed/pending person). |

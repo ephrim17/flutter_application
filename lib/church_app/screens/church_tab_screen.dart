@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
+import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
+import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
@@ -10,13 +14,16 @@ import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
 import 'package:flutter_application/church_app/screens/community/community_feed_screen.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
-import 'package:flutter_application/church_app/screens/go_further_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/church_quick_switcher_sheet.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/hideable_app_bar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -46,7 +53,10 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     return computeHideableAppBarVisibility(
       notification: notification,
       currentlyVisible: _appBarVisible,
-      onChanged: (visible) => setState(() => _appBarVisible = visible),
+      onChanged: (visible) {
+        if (!mounted) return;
+        setState(() => _appBarVisible = visible);
+      },
     );
   }
 
@@ -124,7 +134,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       0 => 'home_opened',
       1 => 'for_you_opened',
       2 => 'community_opened',
-      3 => 'discover_opened',
       _ => null,
     };
 
@@ -167,7 +176,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       HomeScreen(),
       ForYouScreen(),
       const CommunityFeedScreen(),
-      const GoFurtherScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
     final items = <AppBottomTabItem>[
@@ -186,11 +194,6 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         selectedIcon: Icons.play_circle_rounded,
         label: ref.t('church_tab.community'),
       ),
-      AppBottomTabItem(
-        icon: Icons.travel_explore_outlined,
-        selectedIcon: Icons.travel_explore_rounded,
-        label: ref.t('church_tab.discover'),
-      ),
       if (canSeeDashboard)
         AppBottomTabItem(
           icon: Icons.dashboard_customize_outlined,
@@ -205,42 +208,107 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
     final isCommunityTab = selectedIndex == communityIndex;
 
-    return Scaffold(
-      body: Column(
-        children: [
-          HideableAppBar(
-            visible: _appBarVisible && !isCommunityTab,
-            appBar: AppBar(
-              centerTitle: false,
-              toolbarHeight: 40,
-              title: ChurchAppBarBrandTitle(
-                text: ref.t('church_tab.app_title'),
-                logo: selectedChurch?.logo ?? '',
-                maxWidth: MediaQuery.of(context).size.width * 0.68,
+    // Once inside a church there is no "back" out of it — switching only
+    // ever happens by tapping the church name above, which navigates
+    // deliberately rather than relying on the system back gesture/button.
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Column(
+          children: [
+            HideableAppBar(
+              visible: _appBarVisible && !isCommunityTab,
+              appBar: AppBar(
+                centerTitle: false,
+                toolbarHeight: 40,
+                title: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _openChurchSwitcher,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ChurchAppBarBrandTitle(
+                        text: ref.t('church_tab.app_title'),
+                        logo: selectedChurch?.logo ?? '',
+                        maxWidth: MediaQuery.of(context).size.width * 0.6,
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _handleScrollNotification,
-              child: screens[selectedIndex],
-            ),
-          ),
-        ],
-      ),
-      drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-      bottomNavigationBar: AnimatedSize(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.bottomCenter,
-        child: (isCommunityTab && !_appBarVisible)
-            ? const SizedBox(width: double.infinity, height: 0)
-            : AppBottomTabBar(
-                currentIndex: selectedIndex,
-                items: items,
-                onTap: setActiveScreen,
+            Expanded(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _handleScrollNotification,
+                child: screens[selectedIndex],
               ),
+            ),
+          ],
+        ),
+        drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
+        bottomNavigationBar: AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.bottomCenter,
+          child: (isCommunityTab && !_appBarVisible)
+              ? const SizedBox(width: double.infinity, height: 0)
+              : AppBottomTabBar(
+                  currentIndex: selectedIndex,
+                  items: items,
+                  onTap: setActiveScreen,
+                ),
+        ),
       ),
+    );
+  }
+
+  Future<void> _openChurchSwitcher() async {
+    final picked = await showAppModalBottomSheet<Church>(
+      context: context,
+      heightFactor: 0.6,
+      builder: (_) => const ChurchQuickSwitcherSheet(),
+    );
+    if (picked == null || !mounted) return;
+    await _switchToChurch(picked);
+  }
+
+  Future<void> _switchToChurch(Church church) async {
+    final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
+    if (firebaseUser == null) return;
+
+    await ChurchLocalStorage().saveChurch(
+      id: church.id,
+      name: church.name,
+      logo: church.logo,
+    );
+    if (!mounted) return;
+    ref.read(selectedChurchProvider.notifier).state = church;
+    ref.invalidate(currentChurchIdProvider);
+    unawaited(
+      UserIdentityRepository(firestore: ref.read(firestoreProvider))
+          .setLastActiveChurchId(firebaseUser.uid, church.id),
+    );
+    unawaited(
+      syncNotificationTopicIfAuthorized(
+        ProviderScope.containerOf(context, listen: false),
+      ),
+    );
+    if (!mounted) return;
+    // Always clears the whole stack — this screen is the church's own
+    // root, so switching must never leave it (or the church being left)
+    // reachable via back.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AppEntry()),
+      (route) => false,
     );
   }
 

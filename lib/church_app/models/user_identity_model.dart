@@ -24,6 +24,7 @@ class UserIdentity {
     this.lastStreakRecordedAt,
     this.lastActiveChurchId,
     this.profileComplete = false,
+    this.emailVerified = true,
     this.schemaVersion = 1,
     this.createdAt,
     this.updatedAt,
@@ -52,6 +53,18 @@ class UserIdentity {
   /// Derived from the post-approval field set (§5.5) during signup/backfill;
   /// drives the non-blocking completion prompt.
   final bool profileComplete;
+
+  /// Set once the signup email-OTP challenge is verified — gates entry past
+  /// `CompleteProfileScreen` in `AppEntry`. Defaults to true (already
+  /// verified) everywhere except `UserIdentityRepository.createIdentity`,
+  /// which writes it false explicitly — that is the only place a brand-new
+  /// identity doc is created for a person who hasn't proven their email yet.
+  /// A doc with no `emailVerified` field at all (any identity written
+  /// before this feature existed, or seeded directly for an admin-created
+  /// member) is treated as already verified — someone who already has an
+  /// account is never sent back through a check that didn't exist when
+  /// their account was made.
+  final bool emailVerified;
 
   final int schemaVersion;
   final DateTime? createdAt;
@@ -106,7 +119,12 @@ class UserIdentity {
           ? null
           : _string(data['lastActiveChurchId']),
       profileComplete: _bool(data['profileComplete']),
-      schemaVersion: data['schemaVersion'] == null ? 1 : _int(data['schemaVersion']),
+      // Missing (not false) means the doc predates this field entirely —
+      // treated as already verified rather than defaulting to unverified.
+      emailVerified:
+          data['emailVerified'] == null ? true : _bool(data['emailVerified']),
+      schemaVersion:
+          data['schemaVersion'] == null ? 1 : _int(data['schemaVersion']),
       createdAt: _date(data['createdAt']),
       updatedAt: _date(data['updatedAt']),
     );
@@ -132,8 +150,11 @@ class UserIdentity {
           : null,
       'lastActiveChurchId': lastActiveChurchId,
       'profileComplete': profileComplete,
+      'emailVerified': emailVerified,
       'schemaVersion': schemaVersion,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -155,6 +176,7 @@ class UserIdentity {
     DateTime? lastStreakRecordedAt,
     String? lastActiveChurchId,
     bool? profileComplete,
+    bool? emailVerified,
   }) {
     return UserIdentity(
       uid: uid,
@@ -175,6 +197,7 @@ class UserIdentity {
       lastStreakRecordedAt: lastStreakRecordedAt ?? this.lastStreakRecordedAt,
       lastActiveChurchId: lastActiveChurchId ?? this.lastActiveChurchId,
       profileComplete: profileComplete ?? this.profileComplete,
+      emailVerified: emailVerified ?? this.emailVerified,
       schemaVersion: schemaVersion,
       createdAt: createdAt,
       updatedAt: updatedAt,

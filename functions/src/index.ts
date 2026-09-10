@@ -1,7 +1,7 @@
 /* eslint-disable indent, require-jsdoc, valid-jsdoc */
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions";
-import {onRequest} from "firebase-functions/v2/https";
+import {HttpsError, onCall, onRequest} from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentWritten,
@@ -47,6 +47,12 @@ const passwordResetResendCooldownMs = 60 * 1000;
 const passwordResetRequestWindowMs = 60 * 60 * 1000;
 const passwordResetMaxRequestsPerWindow = 5;
 const passwordResetMaxAttempts = 5;
+const emailVerificationChallengeCollection = "emailVerificationChallenges";
+const emailVerificationCodeLifetimeMs = 10 * 60 * 1000;
+const emailVerificationResendCooldownMs = 60 * 1000;
+const emailVerificationRequestWindowMs = 60 * 60 * 1000;
+const emailVerificationMaxRequestsPerWindow = 5;
+const emailVerificationMaxAttempts = 5;
 
 type MailJobData = {
   kind?: string;
@@ -663,6 +669,191 @@ export const completePasswordReset = onRequest(
   },
 );
 
+function emailVerificationChallengeId(uid: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(uid)
+    .digest("hex");
+}
+
+function emailVerificationCodeHash(challengeId: string, code: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(`${challengeId}:${code}`)
+    .digest("hex");
+}
+
+/**
+ * Signup email-OTP (§5.5 addendum) — sends a 6-digit code to the caller's
+ * own Firebase Auth email. Callable (not onRequest like password reset)
+ * because the caller is already signed in by this point: the profile-setup
+ * step has already created their `users/{uid}` doc, and this just gates
+ * entry past it, so `request.auth` is the source of truth for which email
+ * to use rather than trusting a client-supplied address.
+ */
+export const requestSignupEmailVerificationCode = onCall(
+  {region: "us-central1", secrets: [smtpUser, smtpPass]},
+  async (request) => {
+    const uid = readUnknownString(request.auth?.uid);
+    if (!uid) throw new HttpsError("unauthenticated", "Sign-in required.");
+
+    const authUser = await admin.auth().getUser(uid);
+    const email = normalizeEmail(authUser.email ?? "");
+    if (email.length === 0) {
+      throw new HttpsError("failed-precondition", "no-email");
+    }
+    const churchName = readUnknownString(request.data?.churchName) ||
+      "Church App";
+
+    const firestore = firestoreDb();
+    const now = Date.now();
+    const challengeId = emailVerificationChallengeId(uid);
+    const challengeRef = firestore
+      .collection(emailVerificationChallengeCollection)
+      .doc(challengeId);
+    const code = randomInt(0, 1000000).toString().padStart(6, "0");
+    const codeHash = emailVerificationCodeHash(challengeId, code);
+
+    const shouldSend = await firestore.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(challengeRef);
+      const current = snapshot.data();
+      const lastSentAt = timestampMillis(current?.lastSentAt);
+      const windowStartedAt = timestampMillis(current?.windowStartedAt);
+      const inCurrentWindow =
+        windowStartedAt > 0 && now - windowStartedAt <
+          emailVerificationRequestWindowMs;
+      const requestCount = inCurrentWindow ?
+        Number(current?.requestCount ?? 0) : 0;
+      const deliveryStatus = readUnknownString(current?.deliveryStatus);
+
+      if ((deliveryStatus === "active" || deliveryStatus === "pending") &&
+          lastSentAt > 0 &&
+          now - lastSentAt < emailVerificationResendCooldownMs) {
+        return false;
+      }
+      if (requestCount >= emailVerificationMaxRequestsPerWindow) {
+        return false;
+      }
+
+      transaction.set(challengeRef, {
+        uid,
+        email,
+        codeHash,
+        expiresAt: admin.firestore.Timestamp.fromMillis(
+          now + emailVerificationCodeLifetimeMs,
+        ),
+        attemptsRemaining: emailVerificationMaxAttempts,
+        requestCount: requestCount + 1,
+        windowStartedAt: admin.firestore.Timestamp.fromMillis(
+          inCurrentWindow ? windowStartedAt : now,
+        ),
+        lastSentAt: admin.firestore.Timestamp.fromMillis(now),
+        deliveryStatus: "pending",
+        verifiedAt: admin.firestore.FieldValue.delete(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+      return true;
+    });
+
+    if (!shouldSend) return {success: true};
+
+    try {
+      const text = [
+        "Hello,",
+        "",
+        `Your ${churchName} email verification code is: ${code}`,
+        "",
+        "This code expires in 10 minutes.",
+        "If you did not request this, you can safely ignore this email.",
+      ].join("\n");
+      await createTransporter().sendMail({
+        from: emailFrom.value(),
+        to: [email],
+        subject: `Your ${churchName} verification code`,
+        text,
+        html: textToHtml(text),
+      });
+      await challengeRef.update({
+        deliveryStatus: "active",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return {success: true};
+    } catch (error) {
+      logger.error("Failed to send signup email verification code.", {
+        uid,
+        error: String(error),
+      });
+      await challengeRef.update({deliveryStatus: "failed"}).catch(() => null);
+      throw new HttpsError("internal", "verification-code-failed");
+    }
+  },
+);
+
+/**
+ * Verifies a signup email-OTP code and marks `users/{uid}.emailVerified`.
+ * Callable so `request.auth.uid` — not a client-supplied uid — decides
+ * whose challenge/identity doc is touched.
+ */
+export const verifySignupEmailVerificationCode = onCall(
+  {region: "us-central1", secrets: [smtpPass]},
+  async (request) => {
+    const uid = readUnknownString(request.auth?.uid);
+    if (!uid) throw new HttpsError("unauthenticated", "Sign-in required.");
+    const code = readUnknownString(request.data?.code);
+    if (!/^\d{6}$/.test(code)) {
+      throw new HttpsError("invalid-argument", "invalid-code");
+    }
+
+    const firestore = firestoreDb();
+    const now = Date.now();
+    const challengeId = emailVerificationChallengeId(uid);
+    const challengeRef = firestore
+      .collection(emailVerificationChallengeCollection)
+      .doc(challengeId);
+    const userRef = firestore.collection("users").doc(uid);
+
+    const result = await firestore.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(challengeRef);
+      const data = snapshot.data();
+      if (!snapshot.exists || data?.deliveryStatus !== "active") {
+        return "invalid-code";
+      }
+      if (timestampMillis(data.expiresAt) <= now) return "expired-code";
+      const attemptsRemaining = Number(data.attemptsRemaining ?? 0);
+      if (attemptsRemaining <= 0) return "too-many-attempts";
+      const expectedHash = readUnknownString(data.codeHash);
+      const submittedHash = emailVerificationCodeHash(challengeId, code);
+      if (!secureStringEqual(expectedHash, submittedHash)) {
+        transaction.update(challengeRef, {
+          attemptsRemaining: attemptsRemaining - 1,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return attemptsRemaining - 1 <= 0 ?
+          "too-many-attempts" : "invalid-code";
+      }
+
+      transaction.update(challengeRef, {
+        codeHash: admin.firestore.FieldValue.delete(),
+        deliveryStatus: "verified",
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      transaction.set(userRef, {
+        emailVerified: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+      return "verified";
+    });
+
+    if (result !== "verified") {
+      throw new HttpsError(
+        result === "too-many-attempts" ? "resource-exhausted" :
+          "invalid-argument",
+        result,
+      );
+    }
+    return {success: true};
+  },
+);
+
 /**
  * Sends a topic notification through FCM.
  * @param payload Notification payload.
@@ -1224,6 +1415,151 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     } catch (error) {
       logger.error("Failed to rebuild church dashboard member metrics.", {
         churchId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+);
+
+/**
+ * Notifies a person by push + email once their own request is approved —
+ * only when they opted in via `notifyOnApproval` on `RequestPendingScreen`
+ * (client). Fires once, on the false->true edge, so re-saving an already
+ * approved membership (e.g. editing category) never re-sends it.
+ */
+export const notifyMemberOnApproval = onDocumentWritten(
+  {
+    document: "churches/{churchId}/members/{memberId}",
+    database: firestoreDatabaseIdParam,
+    region: "us-central1",
+  },
+  async (event) => {
+    const before = event.data?.before;
+    const after = event.data?.after;
+    if (!after?.exists) return;
+
+    const wasApproved = before?.exists && before.data()?.approved === true;
+    const isApproved = after.data()?.approved === true;
+    if (wasApproved || !isApproved) return;
+    if (after.data()?.notifyOnApproval !== true) return;
+
+    const churchId = readUnknownString(event.params.churchId);
+    const uid = readUnknownString(after.data()?.uid) ||
+      readUnknownString(event.params.memberId);
+    if (!churchId || !uid) return;
+
+    try {
+      const firestore = firestoreDb();
+      const [churchDoc, identityDoc] = await Promise.all([
+        firestore.collection("churches").doc(churchId).get(),
+        firestore.collection("users").doc(uid).get(),
+      ]);
+      const churchName =
+        readUnknownString(churchDoc.data()?.name) || "your church";
+      const email = readUnknownString(identityDoc.data()?.email) ||
+        readUnknownString(after.data()?.displayEmail);
+
+      const tokensByUid = await resolveDeviceTokensByUid([uid]);
+      const tokens = tokensByUid.get(uid) ?? [];
+      const title = "You're in!";
+      const body = `${churchName} approved your request. Welcome!`;
+
+      if (tokens.length > 0) {
+        const response = await admin.messaging().sendEach(
+          tokens.map((token) => ({
+            token,
+            notification: {title, body},
+            data: {kind: "membership_approved", churchId},
+          })),
+        );
+        logger.info("Sent membership-approved push.", {
+          churchId,
+          uid,
+          successCount: response.successCount,
+        });
+      }
+
+      if (email) {
+        const text = [
+          "Hello,",
+          "",
+          `Your request to join "${churchName}" has been approved.`,
+          "Open the app to get started.",
+          "",
+          "Warm regards,",
+          "The Church App Team",
+        ].join("\n");
+
+        await firestore.collection("mail").add({
+          kind: "membership_approved",
+          template: "membership_approved",
+          to: [email],
+          subject: `You're approved to join ${churchName}`,
+          text,
+          html: textToHtml(text),
+          data: {churchId, uid},
+          status: "queued",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to send membership-approved notification.", {
+        churchId,
+        uid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+);
+
+/**
+ * Mirrors a deliberately reduced subset of an approved member's fields —
+ * name, photo, dob, gender, marital status only — into
+ * `churches/{churchId}/memberDirectory/{memberId}`, which any approved
+ * member (not just staff) can read. Keeps phone/email/address/baptism/
+ * financial/notes staff-only on the real `members/{memberId}` doc, since
+ * Firestore has no field-level security and that doc's full read is
+ * `isSelf || isChurchStaff` only. Removes the mirror when the member is
+ * deleted or no longer approved, so the directory only ever shows current,
+ * approved members.
+ */
+export const mirrorMemberDirectory = onDocumentWritten(
+  {
+    document: "churches/{churchId}/members/{memberId}",
+    database: firestoreDatabaseIdParam,
+    region: "us-central1",
+  },
+  async (event) => {
+    const churchId = readUnknownString(event.params.churchId);
+    const memberId = readUnknownString(event.params.memberId);
+    if (!churchId || !memberId) return;
+
+    const directoryRef = firestoreDb()
+      .collection("churches").doc(churchId)
+      .collection("memberDirectory").doc(memberId);
+
+    const after = event.data?.after;
+    const isApproved = after?.exists && after.data()?.approved === true;
+    if (!isApproved) {
+      await directoryRef.delete().catch(() => null);
+      return;
+    }
+
+    const data = after.data() ?? {};
+    try {
+      await directoryRef.set({
+        uid: memberId,
+        displayName: readUnknownString(data.displayName),
+        displayPhotoUrl: readUnknownString(data.displayPhotoUrl),
+        displayDob: data.displayDob ?? null,
+        displayGender: readUnknownString(data.displayGender),
+        displayMaritalStatus: readUnknownString(data.displayMaritalStatus),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      logger.error("Failed to mirror member directory entry.", {
+        churchId,
+        memberId,
         error: error instanceof Error ? error.message : String(error),
       });
     }

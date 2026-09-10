@@ -20,6 +20,7 @@ class ChurchMembership {
     this.uid = '',
     this.linkedUid,
     this.approved = false,
+    this.notifyOnApproval = false,
     this.role = 'user',
     this.category = '',
     this.familyId = '',
@@ -67,6 +68,11 @@ class ChurchMembership {
   final String? linkedUid;
 
   final bool approved;
+
+  /// Set when the person taps "Notify me" on the pending-request screen —
+  /// gates the approval push+email in `notifyMemberOnApproval` (functions/
+  /// src/membershipApproval.ts) so nobody who didn't ask gets contacted.
+  final bool notifyOnApproval;
 
   /// Display/analytics only — NEVER an authority source (§9.1). Real
   /// authority is: approved (member), church admin email allowlist, or the
@@ -158,6 +164,7 @@ class ChurchMembership {
       uid: _string(data['uid']),
       linkedUid: linkedUidRaw == null ? null : _string(linkedUidRaw),
       approved: _bool(data['approved']),
+      notifyOnApproval: _bool(data['notifyOnApproval']),
       role: _string(data['role'], fallback: 'user'),
       category: _string(data['category']),
       familyId: _string(data['familyId']),
@@ -200,6 +207,7 @@ class ChurchMembership {
       'uid': uid,
       'linkedUid': linkedUid,
       'approved': approved,
+      'notifyOnApproval': notifyOnApproval,
       'role': role,
       'category': category,
       'familyId': familyId,

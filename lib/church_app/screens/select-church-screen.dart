@@ -1,6 +1,5 @@
 // ignore_for_file: file_names
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -13,12 +12,12 @@ import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
-import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -26,10 +25,13 @@ import 'package:flutter_application/church_app/services/user_identity_repository
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
-import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_logo_text.dart';
+import 'package:flutter_application/church_app/widgets/church_discovery_card.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
+import 'package:flutter_application/church_app/widgets/global_feed_list_view.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
@@ -56,7 +58,11 @@ final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
       .where('uid', isEqualTo: uid)
       .get();
 
+  // Your Churches is entered churches only — a pending (not yet approved)
+  // request belongs on RequestPendingScreen, not here (§9.1: membership
+  // existing is never authorization on its own).
   final userChurches = memberships.docs
+      .where((doc) => doc.data()['approved'] == true)
       .map((doc) => churchesById[doc.reference.parent.parent?.id])
       .whereType<Church>()
       .toList()
@@ -65,20 +71,59 @@ final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
   return userChurches;
 });
 
+/// Same discovery query as [userChurchesProvider], kept separate so a
+/// pending request can be surfaced to the person (§9.1: they should always
+/// be able to see they've already requested a church) without it slipping
+/// into Your Churches, which is entered-church-only.
+final pendingChurchesProvider = FutureProvider<List<Church>>((ref) async {
+  final firebaseUser = ref.watch(authStateProvider).value;
+  final uid = firebaseUser?.uid.trim() ?? '';
+  if (uid.isEmpty) return const <Church>[];
+
+  final churches = await ref.watch(churchesProvider.future);
+  if (churches.isEmpty) return const <Church>[];
+  final churchesById = {for (final church in churches) church.id: church};
+
+  final memberships = await ref
+      .read(firestoreProvider)
+      .collectionGroup(FirestorePaths.members)
+      .where('uid', isEqualTo: uid)
+      .get();
+
+  final pendingChurches = memberships.docs
+      .where((doc) => doc.data()['approved'] != true)
+      .map((doc) => churchesById[doc.reference.parent.parent?.id])
+      .whereType<Church>()
+      .toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+  return pendingChurches;
+});
+
+/// The primary landing screen once signed in with nothing resolvable to
+/// enter automatically — a two-tab shell, mirroring `ChurchTabScreen`'s own
+/// bottom-tab pattern: "Home" (`GlobalFeedListView`, the cross-church feed,
+/// "make the user feel engaged") and "Churches" (`ChurchPickerScreen`'s
+/// "Welcome Home"/Your churches/Other churches content, embedded as this
+/// tab's body rather than a separately pushed screen). Always root-level:
+/// no back button out of it in any of its entry points (entry gate, or
+/// Settings > Register for another church).
 class SelectChurchScreen extends ConsumerStatefulWidget {
-  const SelectChurchScreen({super.key});
+  const SelectChurchScreen({super.key, this.initialTabIndex = 0});
+
+  /// 0 = Home, 1 = Churches. Settings > Register for another church opens
+  /// straight on the Churches tab instead of the default Home landing.
+  final int initialTabIndex;
 
   @override
   ConsumerState<SelectChurchScreen> createState() => _SelectChurchScreenState();
 }
 
 class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
-  bool _showYourChurches = true;
-  bool _showOtherChurches = false;
+  late int _selectedIndex = widget.initialTabIndex;
 
-  Future<void> _handleLogout(BuildContext context) async {
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
     final navigator = Navigator.of(context);
-    ref.read(forcePreflowThemeProvider.notifier).state = true;
     await ChurchLocalStorage().clearChurch();
     await ChurchLocalStorage().clearSubscribedChurchTopic();
     await ref.read(favoritesProvider.notifier).clearAll();
@@ -93,13 +138,87 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       PageRouteBuilder(
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
-        pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
-          initialLoginMode: true,
-        ),
+        pageBuilder: (_, __, ___) => const AuthChoiceScreen(),
       ),
       (route) => false,
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final firebaseUser = ref.watch(authStateProvider).value;
+    final isSuperAdmin = ref.watch(isSuperAdminProvider).maybeWhen(
+          data: (value) => value && firebaseUser != null,
+          orElse: () => false,
+        );
+    final screens = const [
+      GlobalFeedListView(),
+      ChurchPickerScreen(),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: AppBarTitle(text: ''),
+        centerTitle: true,
+        actions: [
+          if (isSuperAdmin)
+            IconButton(
+              tooltip: context.t('super_admin.open_dashboard'),
+              onPressed: () async {
+                await ref.read(superAdminEntryModeProvider.notifier).setMode(
+                      SuperAdminEntryMode.superAdmin,
+                    );
+                if (!context.mounted) return;
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => const SuperAdminHomeScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+            ),
+          IconButton(
+            tooltip: context.t('drawer.logout'),
+            onPressed: () => _handleLogout(context, ref),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: screens[_selectedIndex],
+      bottomNavigationBar: AppBottomTabBar(
+        currentIndex: _selectedIndex,
+        items: [
+          AppBottomTabItem(
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
+            label: context.t('church_tab.home'),
+          ),
+          AppBottomTabItem(
+            icon: Icons.church_outlined,
+            selectedIcon: Icons.church,
+            label: context.t('select_church.churches_tab'),
+          ),
+        ],
+        onTap: (index) => setState(() => _selectedIndex = index),
+      ),
+    );
+  }
+}
+
+/// "Welcome Home" — Your churches / Other churches — `SelectChurchScreen`'s
+/// "Churches" tab body. No `Scaffold`/`AppBar` of its own; the outer tab
+/// shell provides both.
+class ChurchPickerScreen extends ConsumerStatefulWidget {
+  const ChurchPickerScreen({super.key});
+
+  @override
+  ConsumerState<ChurchPickerScreen> createState() => _ChurchPickerScreenState();
+}
+
+class _ChurchPickerScreenState extends ConsumerState<ChurchPickerScreen> {
+  bool _showYourChurches = true;
+  bool _showPendingChurches = false;
+  bool _showOtherChurches = false;
 
   Future<bool> _showRequestAccessPrompt(BuildContext context) async {
     return showAppConfirmDialog(
@@ -150,13 +269,14 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         // Never route into ChurchTabScreen for one that isn't (§9.1: role/
         // membership existence is never authorization on its own).
         if (!approved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.t(
-                  'church.request_still_pending',
-                  parameters: {'church': selectedChurch.name},
-                ),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => RequestPendingScreen(
+                churchId: selectedChurch.id,
+                churchName: selectedChurch.name,
+                churchLogo: selectedChurch.logo,
+                initiallyNotifying:
+                    memberDoc.data()?['notifyOnApproval'] == true,
               ),
             ),
           );
@@ -174,7 +294,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
         );
         if (!context.mounted) return;
         ref.read(selectedChurchProvider.notifier).state = selectedChurch;
-        ref.read(forcePreflowThemeProvider.notifier).state = false;
         ref.invalidate(currentChurchIdProvider);
         unawaited(
           UserIdentityRepository(firestore: ref.read(firestoreProvider))
@@ -186,10 +305,13 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           ),
         );
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const AppEntry(),
-          ),
+        // Always clear the whole stack, not just the immediately-preceding
+        // route — this screen sits on top of `SelectChurchScreen`, and
+        // leaving either of those underneath would reopen a back button
+        // into the pre-entry state once inside `ChurchTabScreen`.
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AppEntry()),
+          (route) => false,
         );
         return;
       }
@@ -225,184 +347,153 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
     final userChurchesAsync = ref.watch(userChurchesProvider);
+    final pendingChurchesAsync = ref.watch(pendingChurchesProvider);
     final firebaseUser = ref.watch(authStateProvider).value;
     final isSuperAdmin = ref.watch(isSuperAdminProvider).maybeWhen(
           data: (value) => value && firebaseUser != null,
           orElse: () => false,
         );
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: AppBarTitle(text: ''),
-        centerTitle: true,
-        actions: [
-          if (isSuperAdmin)
-            IconButton(
-              tooltip: context.t('super_admin.open_dashboard'),
-              onPressed: () async {
-                await ref.read(superAdminEntryModeProvider.notifier).setMode(
-                      SuperAdminEntryMode.superAdmin,
-                    );
-                if (!context.mounted) return;
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const SuperAdminHomeScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-            ),
-          IconButton(
-            tooltip: context.t('drawer.logout'),
-            onPressed: () => _handleLogout(context),
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      body: LinearScreenBackground(
-        solidBackground: true,
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 6),
-                        Center(
-                          child: Container(
-                            width: 96,
-                            height: 96,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x12000000),
-                                  blurRadius: 24,
-                                  offset: Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: SizedBox.expand(
-                                child: Image.asset(
-                                  AppAssets.churchTreeAppIcon,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const AppLogoText(loop: false),
-                        const SizedBox(height: 24),
-                        Container(
-                          decoration: carouselBoxDecoration(context),
-                          padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-                          child: Column(
-                            children: [
-                              Text(
-                                context.t('church.welcome_home'),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(fontWeight: FontWeight.w800),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                context.t('church.select_subtitle'),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                context.t('church.select_helper'),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(height: 1.45),
+    return LinearScreenBackground(
+      solidBackground: true,
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 6),
+                      Center(
+                        child: Container(
+                          width: 96,
+                          height: 96,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0x12000000),
+                                blurRadius: 24,
+                                offset: Offset(0, 10),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 22),
-                        _buildChurchSections(
-                          context,
-                          churchesAsync: churchesAsync,
-                          userChurchesAsync: userChurchesAsync,
-                        ),
-                        const Spacer(),
-                        const SizedBox(height: 16),
-                        if (!isSuperAdmin)
-                          Center(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(24),
-                              onTap: () async {
-                                final result =
-                                    await Navigator.of(context).push<String>(
-                                  MaterialPageRoute(
-                                    builder: (_) => const CreateChurchScreen(
-                                      publicRegistrationMode: true,
-                                    ),
-                                  ),
-                                );
-                                if (!context.mounted || result == null) return;
-                                if (result == 'registered_pending_approval') {
-                                  await showDialog<void>(
-                                    context: context,
-                                    builder: (dialogContext) => AlertDialog(
-                                      icon: const Icon(
-                                        Icons.mark_email_read_outlined,
-                                      ),
-                                      title: Text(
-                                        context.t(
-                                            'church.register_received_title'),
-                                      ),
-                                      content: Text(
-                                        context.t(
-                                            'church.register_success_pending'),
-                                      ),
-                                      actions: [
-                                        FilledButton(
-                                          onPressed: () =>
-                                              Navigator.of(dialogContext).pop(),
-                                          child: Text(
-                                            context.t('common.ok'),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                child: _RegisterChurchText(),
+                          child: ClipOval(
+                            child: SizedBox.expand(
+                              child: Image.asset(
+                                AppAssets.churchTreeAppIcon,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                      ),
+                      const AppLogoText(loop: false),
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: carouselBoxDecoration(context),
+                        padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+                        child: Column(
+                          children: [
+                            Text(
+                              context.t('church.welcome_home'),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              context.t('church.select_subtitle'),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.t('church.select_helper'),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(height: 1.45),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      _buildChurchSections(
+                        context,
+                        churchesAsync: churchesAsync,
+                        userChurchesAsync: userChurchesAsync,
+                        pendingChurchesAsync: pendingChurchesAsync,
+                      ),
+                      const Spacer(),
+                      const SizedBox(height: 16),
+                      if (!isSuperAdmin)
+                        Center(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () async {
+                              final result =
+                                  await Navigator.of(context).push<String>(
+                                MaterialPageRoute(
+                                  builder: (_) => const CreateChurchScreen(
+                                    publicRegistrationMode: true,
+                                  ),
+                                ),
+                              );
+                              if (!context.mounted || result == null) return;
+                              if (result == 'registered_pending_approval') {
+                                await showDialog<void>(
+                                  context: context,
+                                  builder: (dialogContext) => AlertDialog(
+                                    icon: const Icon(
+                                      Icons.mark_email_read_outlined,
+                                    ),
+                                    title: Text(
+                                      context
+                                          .t('church.register_received_title'),
+                                    ),
+                                    content: Text(
+                                      context
+                                          .t('church.register_success_pending'),
+                                    ),
+                                    actions: [
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext).pop(),
+                                        child: Text(
+                                          context.t('common.ok'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: _RegisterChurchText(),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -412,8 +503,11 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
     BuildContext context, {
     required AsyncValue<List<Church>> churchesAsync,
     required AsyncValue<List<Church>> userChurchesAsync,
+    required AsyncValue<List<Church>> pendingChurchesAsync,
   }) {
-    if (churchesAsync.isLoading || userChurchesAsync.isLoading) {
+    if (churchesAsync.isLoading ||
+        userChurchesAsync.isLoading ||
+        pendingChurchesAsync.isLoading) {
       return Container(
         decoration: carouselBoxDecoration(context),
         padding: const EdgeInsets.all(24),
@@ -421,7 +515,9 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
       );
     }
 
-    if (churchesAsync.hasError || userChurchesAsync.hasError) {
+    if (churchesAsync.hasError ||
+        userChurchesAsync.hasError ||
+        pendingChurchesAsync.hasError) {
       return Container(
         decoration: carouselBoxDecoration(context),
         padding: const EdgeInsets.all(22),
@@ -447,9 +543,14 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
     final allChurches = churchesAsync.asData?.value ?? const <Church>[];
     final userChurches = userChurchesAsync.asData?.value ?? const <Church>[];
+    final pendingChurches =
+        pendingChurchesAsync.asData?.value ?? const <Church>[];
     final memberChurchIds = userChurches.map((church) => church.id).toSet();
+    final pendingChurchIds = pendingChurches.map((church) => church.id).toSet();
     final otherChurches = allChurches
-        .where((church) => !memberChurchIds.contains(church.id))
+        .where((church) =>
+            !memberChurchIds.contains(church.id) &&
+            !pendingChurchIds.contains(church.id))
         .toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
@@ -490,6 +591,47 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           child: userChurches.isEmpty
               ? _EmptyChurchState(
                   message: context.t('church.your_churches_empty_state'),
+                )
+              : const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 14),
+        _ChurchSectionCard(
+          title: context.t('church.pending_churches_title'),
+          subtitle: pendingChurches.isEmpty
+              ? context.t('church.pending_churches_empty_subtitle')
+              : context.t('church.pending_churches_subtitle'),
+          count: pendingChurches.length,
+          isExpanded: _showPendingChurches,
+          onToggle: () {
+            setState(() {
+              _showPendingChurches = !_showPendingChurches;
+            });
+          },
+          onOpen: pendingChurches.isEmpty
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _ChurchDirectoryScreen(
+                        title: context.t('church.pending_churches_title'),
+                        churches: pendingChurches,
+                        emptyMessage:
+                            context.t('church.pending_churches_empty_state'),
+                        onChurchTap: (directoryContext, church) =>
+                            Navigator.of(directoryContext).push(
+                          MaterialPageRoute(
+                            builder: (_) => RequestPendingScreen(
+                              churchId: church.id,
+                              churchName: church.name,
+                              churchLogo: church.logo,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          child: pendingChurches.isEmpty
+              ? _EmptyChurchState(
+                  message: context.t('church.pending_churches_empty_state'),
                 )
               : const SizedBox.shrink(),
         ),
@@ -694,7 +836,7 @@ class _ChurchSectionCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$title ',
+                          title,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -894,7 +1036,7 @@ class _ChurchDirectoryScreenState extends State<_ChurchDirectoryScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final church = filteredChurches[index];
-                return _ChurchCoverCard(
+                return ChurchDiscoveryCard(
                   church: church,
                   onTap: () => widget.onChurchTap(context, church),
                 );
@@ -986,285 +1128,6 @@ class _ChurchDetailRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: onActionTap,
       child: row,
-    );
-  }
-}
-
-class _ChurchCoverCard extends StatelessWidget {
-  const _ChurchCoverCard({
-    required this.church,
-    required this.onTap,
-  });
-
-  final Church church;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(cornerRadius),
-      onTap: onTap,
-      child: Ink(
-        decoration: carouselBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(cornerRadius),
-              ),
-              child: _ChurchCoverImage(logoUrl: church.logo),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    church.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x18000000),
-                              blurRadius: 14,
-                              offset: Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: _PastorAvatar(
-                          imageUrl: church.pastorPhoto,
-                          size: 64,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                              _valueOrFallback(church.pastorName),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _ChurchPreviewLine(
-                    icon: Icons.email_outlined,
-                    text: _valueOrFallback(church.email),
-                  ),
-                  const SizedBox(height: 8),
-                  _ChurchPreviewLine(
-                    icon: Icons.phone_outlined,
-                    text: _valueOrFallback(church.contact),
-                  ),
-                  const SizedBox(height: 8),
-                  _ChurchPreviewLine(
-                    icon: Icons.location_on_outlined,
-                    text: _valueOrFallback(church.address),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PastorAvatar extends StatelessWidget {
-  const _PastorAvatar({
-    required this.imageUrl,
-    required this.size,
-  });
-
-  final String imageUrl;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final trimmedUrl = imageUrl.trim();
-
-    if (trimmedUrl.isEmpty) {
-      return _PastorAvatarFallback(size: size);
-    }
-
-    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-      final cacheDimension =
-          (size * MediaQuery.of(context).devicePixelRatio).round();
-      return ClipOval(
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: CachedNetworkImage(
-            imageUrl: trimmedUrl,
-            fit: BoxFit.cover,
-            memCacheWidth: cacheDimension,
-            errorWidget: (_, __, ___) => _PastorAvatarFallback(size: size),
-          ),
-        ),
-      );
-    }
-
-    return ClipOval(
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Image.asset(
-          trimmedUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _PastorAvatarFallback(size: size),
-        ),
-      ),
-    );
-  }
-}
-
-class _PastorAvatarFallback extends StatelessWidget {
-  const _PastorAvatarFallback({
-    required this.size,
-  });
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-      child: Icon(
-        Icons.person_rounded,
-        size: size * 0.42,
-        color: theme.colorScheme.primary,
-      ),
-    );
-  }
-}
-
-class _ChurchCoverImage extends StatelessWidget {
-  const _ChurchCoverImage({
-    required this.logoUrl,
-  });
-
-  final String logoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final trimmedLogo = logoUrl.trim();
-
-    if (trimmedLogo.isEmpty) {
-      return const _ChurchCoverFallback();
-    }
-
-    if (trimmedLogo.startsWith('http://') ||
-        trimmedLogo.startsWith('https://')) {
-      final dpr = MediaQuery.of(context).devicePixelRatio;
-      return SizedBox(
-        height: 156,
-        width: double.infinity,
-        child: CachedNetworkImage(
-          imageUrl: trimmedLogo,
-          fit: BoxFit.cover,
-          memCacheWidth: (MediaQuery.of(context).size.width * dpr).round(),
-          errorWidget: (_, __, ___) => const _ChurchCoverFallback(),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 156,
-      width: double.infinity,
-      child: Image.asset(
-        trimmedLogo,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const _ChurchCoverFallback(),
-      ),
-    );
-  }
-}
-
-class _ChurchCoverFallback extends StatelessWidget {
-  const _ChurchCoverFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Container(
-      height: 156,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.primary.withValues(alpha: 0.85),
-            colors.secondary.withValues(alpha: 0.72),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.church_rounded,
-          size: 42,
-          color: Colors.white.withValues(alpha: 0.88),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChurchPreviewLine extends StatelessWidget {
-  const _ChurchPreviewLine({
-    required this.icon,
-    required this.text,
-  });
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: theme.colorScheme.primary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ),
-      ],
     );
   }
 }

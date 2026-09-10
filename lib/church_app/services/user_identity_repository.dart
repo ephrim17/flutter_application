@@ -32,6 +32,7 @@ class UserIdentityRepository {
       'dob': dob != null ? Timestamp.fromDate(dob) : null,
       'gender': gender.trim(),
       'profileComplete': false,
+      'emailVerified': false,
       'schemaVersion': 1,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -98,7 +99,8 @@ class UserIdentityRepository {
         'address': address.trim(),
         'dob': dob != null ? Timestamp.fromDate(dob) : null,
         'maritalStatus': maritalStatus.trim(),
-        'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+        'weddingDay':
+            weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
         'educationalQualification': educationalQualification.trim(),
         'talentsAndGifts': talentsAndGifts,
         'profilePhotoUrl': profilePhotoUrl,
@@ -193,7 +195,8 @@ class UserIdentityRepository {
       }
 
       final nextStreak = lastRecorded != null &&
-              DateTime(lastRecorded.year, lastRecorded.month, lastRecorded.day) ==
+              DateTime(lastRecorded.year, lastRecorded.month,
+                      lastRecorded.day) ==
                   yesterday
           ? currentStreak + 1
           : 1;

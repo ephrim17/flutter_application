@@ -7,7 +7,14 @@ const financeChurchGroupId = 'finance';
 
 // §9.1: church admin authority is the signed-in email against
 // config/app.admins, checked against the live Firebase Auth email — never
-// against a stored profile field.
+// against a stored profile field. Deliberately does NOT fall back to super
+// admin: being a super admin grants backend read/write rights on every
+// church (isChurchStaff = isChurchAdmin || isSuperAdmin) as an emergency/
+// platform-moderation capability, but must not silently hand out per-church
+// admin UI (edit/approve members, extended info, church groups) for a
+// church the person isn't actually responsible for — confirmed as a real
+// regression when tried (a super admin got full admin actions on a church
+// they were never added to).
 final isAdminProvider = Provider<bool>((ref) {
   final email =
       ref.watch(firebaseAuthProvider).currentUser?.email?.trim() ?? '';

@@ -104,7 +104,6 @@ class FirestorePaths {
   static const notificationRequests = 'notification_requests';
   static const dashboardMetrics = 'dashboard_metrics';
   static const equipments = 'equipments';
-  static const financialTransactions = 'financial_transactions';
   static const youthCircles = 'youth_circles';
   static const faithReflections = 'faith_reflections';
   static const faithEngagement = 'faith_engagement';
@@ -136,6 +135,16 @@ class FirestorePaths {
     String docId,
   ) {
     return churchMembers(firestore, churchId).doc(docId);
+  }
+
+  static const memberDirectory = 'memberDirectory';
+
+  /// Reduced mirror of [churchMembers] (name/photo/dob/gender/marital
+  /// status only) — readable by any approved member, not just staff. See
+  /// `mirrorMemberDirectory` in functions/src/index.ts.
+  static CollectionReference<Map<String, dynamic>> churchMemberDirectory(
+      FirebaseFirestore firestore, String churchId) {
+    return churchDoc(firestore, churchId).collection(memberDirectory);
   }
 
   static const devices = 'devices';
@@ -248,13 +257,6 @@ class FirestorePaths {
     String churchId,
   ) {
     return churchDoc(firestore, churchId).collection(equipments);
-  }
-
-  static CollectionReference<Map<String, dynamic>> churchFinancialTransactions(
-    FirebaseFirestore firestore,
-    String churchId,
-  ) {
-    return churchDoc(firestore, churchId).collection(financialTransactions);
   }
 
   static CollectionReference<Map<String, dynamic>> churchYouthCircles(

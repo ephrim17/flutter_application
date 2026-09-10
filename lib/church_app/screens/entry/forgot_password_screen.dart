@@ -7,7 +7,6 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/password_reset_code_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
-import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
@@ -110,12 +109,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ChurchLogoAvatar(
-                logo: widget.churchLogo,
-                size: 84,
-              ),
               if (widget.churchName.trim().isNotEmpty) ...[
-                const SizedBox(height: 14),
                 Text(
                   widget.churchName,
                   textAlign: TextAlign.center,
@@ -123,8 +117,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                 ),
+                const SizedBox(height: 14),
               ],
-              const SizedBox(height: 24),
               AppTextField(
                 controller: _emailController,
                 decoration: InputDecoration(

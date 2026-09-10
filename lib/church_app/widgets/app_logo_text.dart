@@ -1,42 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/app_assets.dart';
-
-class AppSplashScreen extends StatelessWidget {
-  const AppSplashScreen({super.key, this.size = 240});
-
-  final double size;
-
-  static const assetPath = AppAssets.churchTreeSplash;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: context.t('ui.app_splash.church_tree_splash_screen'),
-      image: true,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth.isFinite
-              ? constraints.maxWidth
-              : MediaQuery.sizeOf(context).width;
-          final height = constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : MediaQuery.sizeOf(context).height;
-
-          return SizedBox(
-            width: width,
-            height: height,
-            child: Image.asset(
-              assetPath,
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
 
 class AppLogoText extends StatefulWidget {
   const AppLogoText({

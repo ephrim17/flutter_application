@@ -14,7 +14,6 @@ enum DrawerMenuItem {
   //events,
   studio,
   equipment,
-  // Financial dashboard is intentionally hidden until it is fine-tuned.
   churchGroups,
   prayerRequest,
   members,

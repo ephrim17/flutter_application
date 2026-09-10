@@ -10,7 +10,8 @@ import 'package:flutter_application/church_app/providers/authentication/admin_pr
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/community_upload_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
-import 'package:flutter_application/church_app/screens/feed_screen.dart' show FeedHashtagScreen;
+import 'package:flutter_application/church_app/screens/feed_screen.dart'
+    show FeedHashtagScreen;
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/community_upload_banner.dart';
@@ -67,20 +68,22 @@ class _CommunityFullScreenViewerState
                     child: IndexedStack(
                       index: _isGlobal ? 1 : 0,
                       children: [
-                        _CommunityViewerPageView(
+                        CommunityViewerPageView(
                           key: const PageStorageKey('viewer-church'),
                           churchId: widget.churchId,
                           isGlobal: false,
-                          initialPostId:
-                              !widget.initialIsGlobal ? widget.initialPostId : null,
+                          initialPostId: !widget.initialIsGlobal
+                              ? widget.initialPostId
+                              : null,
                         ),
                         if (globalFeedEnabled)
-                          _CommunityViewerPageView(
+                          CommunityViewerPageView(
                             key: const PageStorageKey('viewer-global'),
                             churchId: widget.churchId,
                             isGlobal: true,
-                            initialPostId:
-                                widget.initialIsGlobal ? widget.initialPostId : null,
+                            initialPostId: widget.initialIsGlobal
+                                ? widget.initialPostId
+                                : null,
                           ),
                       ],
                     ),
@@ -129,7 +132,8 @@ class _CommunityFullScreenViewerState
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
+            icon: const Icon(Icons.add_circle_outline_rounded,
+                color: Colors.white),
             tooltip: ref.t('feed.create_title'),
             onPressed: () => _openCreatePostModal(context),
           ),
@@ -181,7 +185,9 @@ class _ViewerSegmentTab extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: selected ? Colors.white : Colors.white.withValues(alpha: 0.65),
+              color: selected
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.65),
               fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
               fontSize: 17,
               shadows: const [
@@ -206,8 +212,8 @@ class _ViewerSegmentTab extends StatelessWidget {
   }
 }
 
-class _CommunityViewerPageView extends ConsumerStatefulWidget {
-  const _CommunityViewerPageView({
+class CommunityViewerPageView extends ConsumerStatefulWidget {
+  const CommunityViewerPageView({
     super.key,
     required this.churchId,
     required this.isGlobal,
@@ -219,12 +225,12 @@ class _CommunityViewerPageView extends ConsumerStatefulWidget {
   final String? initialPostId;
 
   @override
-  ConsumerState<_CommunityViewerPageView> createState() =>
-      _CommunityViewerPageViewState();
+  ConsumerState<CommunityViewerPageView> createState() =>
+      CommunityViewerPageViewState();
 }
 
-class _CommunityViewerPageViewState
-    extends ConsumerState<_CommunityViewerPageView> {
+class CommunityViewerPageViewState
+    extends ConsumerState<CommunityViewerPageView> {
   PageController? _pageController;
 
   FeedPaginationController _notifier() {
@@ -277,7 +283,8 @@ class _CommunityViewerPageViewState
           return DecoratedBox(
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
               children: [
@@ -286,7 +293,8 @@ class _CommunityViewerPageViewState
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    color: theme.colorScheme.onSurfaceVariant
+                        .withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -318,21 +326,22 @@ class _CommunityViewerPageViewState
                         if (post.title.trim().isNotEmpty) ...[
                           Text(
                             post.title,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700, height: 1.25),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700, height: 1.25),
                           ),
                           const SizedBox(height: 10),
                         ],
                         if (post.description.trim().isNotEmpty)
                           Text(
                             post.description,
-                            style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(height: 1.5),
                           ),
                         const SizedBox(height: 18),
                         Text(
                           humanFormatDate(post.createdAt),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),

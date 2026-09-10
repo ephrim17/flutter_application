@@ -26,6 +26,9 @@ class CreateChurchInput {
     this.registeredByUid,
     this.registeredByEmail,
     this.features = const <String, bool>{},
+    this.facebookLink = '',
+    this.instagramLink = '',
+    this.youtubeLink = '',
   });
 
   final String churchId;
@@ -46,6 +49,9 @@ class CreateChurchInput {
   final String? registeredByUid;
   final String? registeredByEmail;
   final Map<String, bool> features;
+  final String facebookLink;
+  final String instagramLink;
+  final String youtubeLink;
 }
 
 class UpdateChurchInput {
@@ -62,6 +68,9 @@ class UpdateChurchInput {
     this.logoImage,
     this.pastorPhotoImage,
     this.features = const <String, bool>{},
+    this.facebookLink = '',
+    this.instagramLink = '',
+    this.youtubeLink = '',
   });
 
   final String churchId;
@@ -76,6 +85,9 @@ class UpdateChurchInput {
   final PickedImageData? logoImage;
   final PickedImageData? pastorPhotoImage;
   final Map<String, bool> features;
+  final String facebookLink;
+  final String instagramLink;
+  final String youtubeLink;
 }
 
 class SuperAdminChurchService {
@@ -200,6 +212,9 @@ class SuperAdminChurchService {
       'email': normalizedChurchEmail,
       'logo': logoUrl,
       'enabled': input.enabled,
+      'facebookLink': input.facebookLink.trim(),
+      'instagramLink': input.instagramLink.trim(),
+      'youtubeLink': input.youtubeLink.trim(),
       'registrationSource': registrationSource,
       if (input.registeredByUid?.trim().isNotEmpty == true)
         'registeredByUid': input.registeredByUid!.trim(),
@@ -244,12 +259,6 @@ class SuperAdminChurchService {
         'onboarding': {
           'title': '',
           'subtitle': '',
-        },
-        'theme': {
-          'primaryColor': '#000000',
-          'secondaryColor': '#000000',
-          'backgroundColor': '#FFFFFF',
-          'cardBackgroundColor': '#FFFFFF',
         },
         'textContent': <String, String>{
           'church_tab.app_title': input.name.trim(),
@@ -507,6 +516,9 @@ class SuperAdminChurchService {
         'email': normalizedChurchEmail,
         'logo': logoUrl,
         'enabled': input.enabled,
+        'facebookLink': input.facebookLink.trim(),
+        'instagramLink': input.instagramLink.trim(),
+        'youtubeLink': input.youtubeLink.trim(),
         if (input.enabled && isPendingPublicRegistration)
           'approvalStatus': 'approved',
         if (input.enabled && isPendingPublicRegistration) 'approvedAt': now,

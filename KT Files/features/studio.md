@@ -6,11 +6,17 @@ Studio is the church-admin workspace for church identity, content, engagement
 and app configuration. Every read/write is scoped to the active church. The
 drawer shows Studio only to a church admin when `studioEnabled` is true.
 
+There is no per-church color theme here (or anywhere) — the app uses one
+brand color pair everywhere (`helpers/app_colors.dart`: `AppColors.primary`
+striking dark green, `AppColors.secondary` striking orange). The old Theme
+tool (`AppConfig.primaryColorHex`/etc, `config/app.theme` in Firestore) was
+removed as a feature, not just hidden — see the migration doc's addendum on
+this.
+
 ## Tool catalogue
 
 ### Brand and identity
 
-- Theme colours and preview.
 - About/church profile.
 - Pastor CRUD, photos and primary pastor.
 - Footer contact and social-item CRUD.
@@ -68,7 +74,6 @@ can manage it.
 |---|---|---|
 | STUDIO-01 | Member/non-admin opens route directly | Access denied; no data mutation. |
 | STUDIO-02 | Switch churches while Studio used | Tools rebind to new church; no old data write. |
-| STUDIO-03 | Theme save/invalid colour | Valid palette updates app; invalid input is blocked. |
 | STUDIO-04 | About/footer/pastor CRUD | Create/edit/delete streams update member UI; primary pastor syncs church fields. |
 | STUDIO-05 | Announcement image/expiry form | No overflow; image upload and expired status work. |
 | STUDIO-06 | Event recurring/non-recurring | Correct record fields and one recurrence advancement. |

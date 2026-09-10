@@ -4,43 +4,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/screens/entry/reset_password_screen.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class PasswordResetCodeScreen extends ConsumerStatefulWidget {
-  const PasswordResetCodeScreen({
-    super.key,
-    required this.email,
-    this.churchName = '',
-    this.churchLogo = '',
-  });
-
-  final String email;
-  final String churchName;
-  final String churchLogo;
+/// Signup email-OTP gate (§5.5 addendum) — shown by `AppEntry` once
+/// `users/{uid}` exists but `emailVerified` is still false. Sends the first
+/// code on mount (there is no earlier screen to trigger it, unlike the
+/// password-reset flow) and marks `emailVerified` server-side on success;
+/// `AppEntry`'s identity stream then moves past this screen on its own.
+class EmailOtpVerificationScreen extends ConsumerStatefulWidget {
+  const EmailOtpVerificationScreen({super.key});
 
   @override
-  ConsumerState<PasswordResetCodeScreen> createState() =>
-      _PasswordResetCodeScreenState();
+  ConsumerState<EmailOtpVerificationScreen> createState() =>
+      _EmailOtpVerificationScreenState();
 }
 
-class _PasswordResetCodeScreenState
-    extends ConsumerState<PasswordResetCodeScreen> {
+class _EmailOtpVerificationScreenState
+    extends ConsumerState<EmailOtpVerificationScreen> {
   final _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   Timer? _resendTimer;
   int _resendSeconds = 60;
   bool _isVerifying = false;
   bool _isResending = false;
+  bool _isSendingInitialCode = true;
 
   @override
   void initState() {
     super.initState();
-    _startResendCountdown();
+    _requestCode(isInitial: true);
   }
 
   @override
@@ -64,65 +62,84 @@ class _PasswordResetCodeScreenState
     });
   }
 
+  Future<void> _requestCode({bool isInitial = false}) async {
+    if (!isInitial && (_resendSeconds > 0 || _isResending)) return;
+    final repository = ref.read(authRepositoryProvider);
+    setState(() {
+      if (isInitial) {
+        _isSendingInitialCode = true;
+      } else {
+        _isResending = true;
+      }
+    });
+    try {
+      await repository.requestSignupEmailVerificationCode();
+      if (!mounted) return;
+      _startResendCountdown();
+      if (!isInitial) {
+        _codeController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.t('auth.code_resent'))),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingInitialCode = false;
+          _isResending = false;
+        });
+      }
+    }
+  }
+
+  /// Signs out and returns to the Sign In/Sign Up choice — this screen is
+  /// rendered inline by `AppEntry` (never pushed), so there is no previous
+  /// route to pop to; leaving mid-verification has to mean abandoning the
+  /// session, not "going back" a step. The account and identity doc already
+  /// exist and stay unverified — signing back in returns here.
+  Future<void> _signOutAndGoBack() async {
+    await ref.read(firebaseAuthProvider).signOut();
+    if (!mounted) return;
+    ref.invalidate(userIdentityProvider);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthChoiceScreen()),
+      (route) => false,
+    );
+  }
+
   Future<void> _verifyCode() async {
     if (!_formKey.currentState!.validate() || _isVerifying) return;
     final repository = ref.read(authRepositoryProvider);
     setState(() => _isVerifying = true);
     try {
-      final resetToken = await repository.verifyPasswordResetCode(
-        email: widget.email,
+      await repository.verifySignupEmailVerificationCode(
         code: _codeController.text,
       );
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ResetPasswordScreen(
-            email: widget.email,
-            churchName: widget.churchName,
-            resetToken: resetToken,
-          ),
-        ),
-      );
-    } catch (error) {
+      // No navigation here — AppEntry watches the identity stream and
+      // moves past this screen on its own once emailVerified flips true.
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFirebaseAuthError(error))),
+        SnackBar(content: Text(mapFirebaseAuthError(e))),
       );
     } finally {
       if (mounted) setState(() => _isVerifying = false);
     }
   }
 
-  Future<void> _resendCode() async {
-    if (_resendSeconds > 0 || _isResending) return;
-    final repository = ref.read(authRepositoryProvider);
-    setState(() => _isResending = true);
-    try {
-      await repository.requestPasswordResetCode(
-        email: widget.email,
-        churchName: widget.churchName,
-      );
-      if (!mounted) return;
-      _codeController.clear();
-      _startResendCountdown();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.t('auth.code_resent'))),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFirebaseAuthError(error))),
-      );
-    } finally {
-      if (mounted) setState(() => _isResending = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final email = ref.watch(firebaseAuthProvider).currentUser?.email ?? '';
+
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(text: context.t('auth.verify_code_title')),
+        leading: BackButton(onPressed: _signOutAndGoBack),
       ),
       body: SafeArea(
         child: Center(
@@ -136,6 +153,14 @@ class _PasswordResetCodeScreenState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Center(
+                      child: Icon(
+                        Icons.mark_email_read_outlined,
+                        size: 72,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
                     Text(
                       context.t('auth.verify_code_title'),
                       textAlign: TextAlign.center,
@@ -148,7 +173,7 @@ class _PasswordResetCodeScreenState
                     Text(
                       context.t(
                         'auth.verify_code_message',
-                        parameters: {'email': widget.email},
+                        parameters: {'email': email},
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -156,6 +181,7 @@ class _PasswordResetCodeScreenState
                     AppTextField(
                       controller: _codeController,
                       autofocus: true,
+                      enabled: !_isSendingInitialCode,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       inputFormatters: [
@@ -176,12 +202,14 @@ class _PasswordResetCodeScreenState
                     SolidButton(
                       label: context.t('auth.verify_code'),
                       isLoading: _isVerifying,
-                      onPressed: _verifyCode,
+                      onPressed: _isSendingInitialCode ? null : _verifyCode,
                     ),
                     const SizedBox(height: 10),
                     TextButton(
-                      onPressed: _resendSeconds == 0 && !_isResending
-                          ? _resendCode
+                      onPressed: _resendSeconds == 0 &&
+                              !_isResending &&
+                              !_isSendingInitialCode
+                          ? () => _requestCode()
                           : null,
                       child: Text(
                         _resendSeconds == 0

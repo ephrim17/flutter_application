@@ -16,16 +16,16 @@ import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
-    show selectedChurchProvider, churchesProvider;
+    show selectedChurchProvider, churchesProvider, churchByIdProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
-import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
@@ -33,6 +33,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_path
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
+import 'package:flutter_application/church_app/widgets/church_profile_editor_sheet.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -100,6 +101,7 @@ class SettingsScreen extends ConsumerWidget {
                 _FeedbackSection(),
               ],
             ),
+            const _ChurchProfileGroup(),
             const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.account_title'),
@@ -110,7 +112,7 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 _StorageSection(),
                 _LeaveChurchSection(),
-                _SwitchChurchSection(),
+                _RegisterAnotherChurchSection(),
                 _LogoutSection(),
                 _DeleteAccountSection(),
               ],
@@ -468,6 +470,63 @@ class _EditProfileSection extends ConsumerWidget {
   }
 }
 
+/// Church-admin-only section for editing the selected church's public
+/// profile (pastor, contact details, social links) — this used to live on
+/// the Discover tab (`_ChurchDiscoveryEditorSheet`) but moved here once
+/// that tab was removed, since only Settings is guaranteed to still be
+/// reachable for every church admin. Hidden entirely for non-admins or
+/// when no church is selected.
+class _ChurchProfileGroup extends ConsumerWidget {
+  const _ChurchProfileGroup();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAdmin = ref.watch(isAdminProvider);
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (!isAdmin || selectedChurch == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SettingsSectionLabel(
+          title: ref.t('settings.church_title'),
+          subtitle: ref.t('settings.church_subtitle'),
+        ),
+        const SizedBox(height: 10),
+        _SettingsGroupCard(
+          children: [
+            _SettingsTile(
+              icon: Icons.account_balance_outlined,
+              title: ref.t('settings.church_profile_title'),
+              subtitle: ref.t('settings.church_profile_subtitle'),
+              onTap: () => showAppModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => ChurchProfileEditorSheet(
+                  church: selectedChurch,
+                  onSaved: () async {
+                    ref.invalidate(churchByIdProvider(selectedChurch.id));
+                    ref.invalidate(churchesProvider);
+                    ref.invalidate(userChurchesProvider);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ref.t('settings.church_profile_updated'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 /// Leaves the currently selected church only (§6 Phase 7) — identity,
 /// favorites, reading plans, Church Tree progress and streak all survive,
 /// since they live on `users/{uid}`, never on the membership. Hidden when
@@ -565,53 +624,37 @@ class _LeaveChurchSection extends ConsumerWidget {
   }
 }
 
-/// Switches the locally selected church without signing out — for a user
-/// with more than one church relationship (approved or pending elsewhere).
-/// Hidden entirely when there is nothing to switch to.
-class _SwitchChurchSection extends ConsumerWidget {
-  const _SwitchChurchSection();
+/// Opens the full church directory (`SelectChurchScreen` — Your churches,
+/// Other churches, and the all-churches feed action) so someone can request
+/// access to a church they're not part of yet. `SelectChurchScreen` is
+/// always a root-level screen (same as its entry-gate use) — no back button
+/// out of it, only actually picking/entering a church — so this clears the
+/// whole stack rather than pushing on top of it. Quick switching between
+/// churches already joined is separate: tap the church name in
+/// `ChurchTabScreen`'s app bar for that (`ChurchQuickSwitcherSheet`).
+class _RegisterAnotherChurchSection extends StatelessWidget {
+  const _RegisterAnotherChurchSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userChurchesAsync = ref.watch(userChurchesProvider);
-    final hasOtherChurches =
-        (userChurchesAsync.asData?.value.length ?? 0) > 1;
-    if (!hasOtherChurches) return const SizedBox.shrink();
-
+  Widget build(BuildContext context) {
     return _SettingsTile(
-      icon: Icons.sync_alt_rounded,
-      title: ref.t('settings.switch_church_title'),
-      subtitle: ref.t('settings.switch_church_subtitle'),
-      onTap: () async {
-        final navigator = Navigator.of(context);
-        ref.read(logginAccessLoadingProvider.notifier).state = false;
-        ref.read(forcePreflowThemeProvider.notifier).state = true;
-        await ChurchLocalStorage().clearChurch();
-        await ChurchLocalStorage().clearSubscribedChurchTopic();
-        ref.read(selectedChurchProvider.notifier).state = null;
-        await ref.read(superAdminEntryModeProvider.notifier).setMode(
-              SuperAdminEntryMode.normal,
-            );
-        ref.invalidate(currentChurchIdProvider);
-        ref.invalidate(churchesProvider);
-        ref.invalidate(userChurchesProvider);
-        ref.invalidate(currentMembershipProvider);
-        navigator.pushAndRemoveUntil(
-          PageRouteBuilder(
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const SelectChurchScreen(),
-          ),
-          (route) => false,
-        );
-      },
+      icon: Icons.travel_explore_outlined,
+      title: context.t('settings.register_another_church_title'),
+      subtitle: context.t('settings.register_another_church_subtitle'),
+      onTap: () => Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const SelectChurchScreen(initialTabIndex: 1),
+        ),
+        (route) => false,
+      ),
     );
   }
 }
 
 /// Fully signs the person out of Firebase Auth — separate from switching
-/// church (`_SwitchChurchSection`), which keeps the session and just clears
-/// the locally selected church.
+/// church, which now happens by tapping the church name in `ChurchTabScreen`'s
+/// app bar (opens `ChurchQuickSwitcherSheet`) and keeps the session, just
+/// clearing the locally selected church.
 class _LogoutSection extends ConsumerWidget {
   const _LogoutSection();
 
@@ -625,7 +668,6 @@ class _LogoutSection extends ConsumerWidget {
       onTap: () async {
         final navigator = Navigator.of(context);
         ref.read(logginAccessLoadingProvider.notifier).state = false;
-        ref.read(forcePreflowThemeProvider.notifier).state = true;
         await ChurchLocalStorage().clearChurch();
         await ChurchLocalStorage().clearSubscribedChurchTopic();
         await ref.read(favoritesProvider.notifier).clearAll();
@@ -643,9 +685,7 @@ class _LogoutSection extends ConsumerWidget {
           PageRouteBuilder(
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const CreateAuthAccountScreen(
-              initialLoginMode: true,
-            ),
+            pageBuilder: (_, __, ___) => const AuthChoiceScreen(),
           ),
           (route) => false,
         );
@@ -722,7 +762,7 @@ class _DeleteAccountSection extends ConsumerWidget {
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => const CreateAuthAccountScreen(initialLoginMode: true),
+          builder: (_) => const AuthChoiceScreen(),
         ),
         (route) => false,
       );
@@ -1263,7 +1303,8 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: _isSending ? null : () => Navigator.of(context).pop(),
+                onPressed:
+                    _isSending ? null : () => Navigator.of(context).pop(),
                 child: Text(
                   ref.t('settings.not_now'),
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -1700,7 +1741,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
             const SizedBox(height: 16),
             Center(
               child: Column(

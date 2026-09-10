@@ -236,9 +236,6 @@ export const deleteAccount = onCall(
         await removeFromChurchAdmins(firestore, churchId, email);
       }
       await memberDoc.ref.delete();
-      if (churchId) {
-        await deleteStoragePrefix(`churches/${churchId}/users/${uid}/profile/`);
-      }
     }
 
     const userRef = firestore.collection("users").doc(uid);

@@ -94,27 +94,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 context.t('ui.studio.shape_the_look_and_core_church_profile'),
             items: [
               _StudioToolItem(
-                title: ref.t('studio.tab_theme'),
-                subtitle:
-                    context.t('ui.studio.update_colors_and_visual_branding'),
-                icon: Icons.palette_outlined,
-                status: _StudioToolStatus(
-                  label: context.t('ui.studio.theme'),
-                  tone: _StudioStatusTone.neutral,
-                ),
-                builder: (_) => _ThemeEditor(
-                  onSave: ({
-                    required primaryColor,
-                    required secondaryColor,
-                  }) {
-                    return repository.updateThemeColors(
-                      primaryColor: primaryColor,
-                      secondaryColor: secondaryColor,
-                    );
-                  },
-                ),
-              ),
-              _StudioToolItem(
                 title: ref.t('studio.tab_about'),
                 subtitle: context
                     .t('ui.studio.edit_church_name_mission_values_and_story'),
@@ -1154,437 +1133,6 @@ class _ConfigVerseEditor extends ConsumerWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _ThemeEditor extends ConsumerWidget {
-  const _ThemeEditor({
-    required this.onSave,
-  });
-
-  final Future<void> Function({
-    required String primaryColor,
-    required String secondaryColor,
-  }) onSave;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final configAsync = ref.watch(appConfigProvider);
-
-    return configAsync.when(
-      loading: () => const Center(child: AppLoadingIndicator()),
-      error: (error, _) => Center(
-        child: Text(
-          '${context.t('common.error_prefix')}: $error',
-        ),
-      ),
-      data: (config) => _ThemeEditorForm(
-        initialPrimaryColor: config.primaryColorHex,
-        initialSecondaryColor: config.secondaryColorHex,
-        onSave: onSave,
-      ),
-    );
-  }
-}
-
-class _ThemeEditorForm extends StatefulWidget {
-  const _ThemeEditorForm({
-    required this.initialPrimaryColor,
-    required this.initialSecondaryColor,
-    required this.onSave,
-  });
-
-  final String initialPrimaryColor;
-  final String initialSecondaryColor;
-  final Future<void> Function({
-    required String primaryColor,
-    required String secondaryColor,
-  }) onSave;
-
-  @override
-  State<_ThemeEditorForm> createState() => _ThemeEditorFormState();
-}
-
-class _ThemeEditorFormState extends State<_ThemeEditorForm> {
-  late final TextEditingController _primaryController;
-  late final TextEditingController _secondaryController;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _primaryController =
-        TextEditingController(text: widget.initialPrimaryColor);
-    _secondaryController =
-        TextEditingController(text: widget.initialSecondaryColor);
-  }
-
-  @override
-  void dispose() {
-    _primaryController.dispose();
-    _secondaryController.dispose();
-    super.dispose();
-  }
-
-  bool _isValidHex(String value) {
-    return RegExp(r'^#([A-Fa-f0-9]{6})$').hasMatch(value.trim());
-  }
-
-  String _normalizeHex(String value) => value.trim().toUpperCase();
-
-  String _colorToHex(Color color) {
-    final value = color.toARGB32() & 0x00FFFFFF;
-    return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
-  }
-
-  Color _safeColor(String value) {
-    final normalized = _normalizeHex(value);
-    if (_isValidHex(normalized)) {
-      return normalized.toColor();
-    }
-    return Colors.grey.shade400;
-  }
-
-  Future<void> _pickColor({
-    required TextEditingController controller,
-    required String label,
-  }) async {
-    final picked = await showDialog<Color>(
-      context: context,
-      builder: (dialogContext) => _ThemeColorPickerDialog(
-        title: label,
-        initialColor: _safeColor(controller.text),
-      ),
-    );
-
-    if (picked == null || !mounted) return;
-    setState(() {
-      controller.text = _colorToHex(picked);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Container(
-          decoration: carouselBoxDecoration(context),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t('studio.theme_hint'),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  context.t('studio.theme_palette_hint'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 16),
-                _ThemeColorField(
-                  label: context.t('studio.theme_primary_label'),
-                  controller: _primaryController,
-                  previewColor: _safeColor(_primaryController.text),
-                  onChanged: (_) => setState(() {}),
-                  onPickPressed: () => _pickColor(
-                    controller: _primaryController,
-                    label: context.t('studio.theme_primary_label'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _ThemeColorField(
-                  label: context.t('studio.theme_secondary_label'),
-                  controller: _secondaryController,
-                  previewColor: _safeColor(_secondaryController.text),
-                  onChanged: (_) => setState(() {}),
-                  onPickPressed: () => _pickColor(
-                    controller: _secondaryController,
-                    label: context.t('studio.theme_secondary_label'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () async {
-                            final primary =
-                                _normalizeHex(_primaryController.text);
-                            final secondary =
-                                _normalizeHex(_secondaryController.text);
-                            if (!_isValidHex(primary) ||
-                                !_isValidHex(secondary)) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t('studio.theme_invalid_hex'),
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            setState(() => _isSaving = true);
-                            try {
-                              await widget.onSave(
-                                primaryColor: primary,
-                                secondaryColor: secondary,
-                              );
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.t('studio.theme_updated'),
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (mounted) {
-                                setState(() => _isSaving = false);
-                              }
-                            }
-                          },
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(context.t('common.save')),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ThemeColorField extends StatelessWidget {
-  const _ThemeColorField({
-    required this.label,
-    required this.controller,
-    required this.previewColor,
-    required this.onChanged,
-    required this.onPickPressed,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final Color previewColor;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onPickPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: previewColor,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppTextField(
-                controller: controller,
-                onChanged: onChanged,
-                decoration: InputDecoration(
-                  labelText: label,
-                  helperText: '#RRGGBB',
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            onPressed: onPickPressed,
-            icon: const Icon(Icons.colorize_outlined),
-            label: Text(
-              context.t('studio.theme_pick_color'),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ThemeColorPickerDialog extends StatefulWidget {
-  const _ThemeColorPickerDialog({
-    required this.title,
-    required this.initialColor,
-  });
-
-  final String title;
-  final Color initialColor;
-
-  @override
-  State<_ThemeColorPickerDialog> createState() =>
-      _ThemeColorPickerDialogState();
-}
-
-class _ThemeColorPickerDialogState extends State<_ThemeColorPickerDialog> {
-  late HSVColor _selectedColor;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedColor = HSVColor.fromColor(widget.initialColor);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _selectedColor.toColor();
-
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 72,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _ColorSliderRow(
-              label: context.t('ui.studio.hue'),
-              value: _selectedColor.hue,
-              max: 360,
-              activeColor: color,
-              onChanged: (value) {
-                setState(() {
-                  _selectedColor = _selectedColor.withHue(value);
-                });
-              },
-            ),
-            _ColorSliderRow(
-              label: context.t('ui.studio.saturation'),
-              value: _selectedColor.saturation,
-              max: 1,
-              activeColor: color,
-              onChanged: (value) {
-                setState(() {
-                  _selectedColor = _selectedColor.withSaturation(value);
-                });
-              },
-            ),
-            _ColorSliderRow(
-              label: context.t('ui.studio.brightness'),
-              value: _selectedColor.value,
-              max: 1,
-              activeColor: color,
-              onChanged: (value) {
-                setState(() {
-                  _selectedColor = _selectedColor.withValue(value);
-                });
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.t('common.cancel')),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(color),
-          child: Text(context.t('common.apply')),
-        ),
-      ],
-    );
-  }
-}
-
-class _ColorSliderRow extends StatelessWidget {
-  const _ColorSliderRow({
-    required this.label,
-    required this.value,
-    required this.max,
-    required this.activeColor,
-    required this.onChanged,
-  });
-
-  final String label;
-  final double value;
-  final double max;
-  final Color activeColor;
-  final ValueChanged<double> onChanged;
-
-  String get _formattedValue {
-    if (max == 360) {
-      return '${value.round()} deg';
-    }
-    return '${(value * 100).round()}%';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            _formattedValue,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.72),
-                ),
-          ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: activeColor,
-              thumbColor: activeColor,
-            ),
-            child: Slider(
-              value: value.clamp(0, max),
-              max: max,
-              onChanged: onChanged,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -3036,133 +2584,134 @@ Future<void> _showAboutEditor(
               child: Form(
                 key: formKey,
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.t('studio.about_edit'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  if (saveError != null) ...[
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      saveError!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+                      context.t('studio.about_edit'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    if (saveError != null) ...[
+                      Text(
+                        saveError!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    AppTextField(
+                      controller: churchAppTitleController,
+                      decoration: InputDecoration(
+                        labelText: context.t('studio.about_church_name'),
+                      ),
+                      validator: (value) => value?.trim().isEmpty ?? true
+                          ? context.t('faith.field_required')
+                          : null,
                     ),
                     const SizedBox(height: 12),
+                    AppTextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        labelText: context.t('common.title'),
+                      ),
+                      validator: (value) => value?.trim().isEmpty ?? true
+                          ? context.t('faith.field_required')
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: taglineController,
+                      decoration: InputDecoration(
+                        labelText: context.t('studio.about_tagline'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: descriptionController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: context.t('common.description'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: missionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: context.t('studio.about_mission'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: communityController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: context.t('studio.about_community'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: valuesController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: context.t('studio.about_values'),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                setState(() => saveError = null);
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
+                                setState(() => isSaving = true);
+                                try {
+                                  await repository.updateAbout(
+                                    churchAppTitle:
+                                        churchAppTitleController.text.trim(),
+                                    title: titleController.text.trim(),
+                                    tagline: taglineController.text.trim(),
+                                    description:
+                                        descriptionController.text.trim(),
+                                    mission: missionController.text.trim(),
+                                    community: communityController.text.trim(),
+                                    values: valuesController.text.trim(),
+                                  );
+                                  if (!context.mounted) return;
+                                  final messenger =
+                                      ScaffoldMessenger.of(context);
+                                  final message =
+                                      context.t('studio.about_updated');
+                                  Navigator.of(context).pop();
+                                  messenger.showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                } catch (error) {
+                                  if (context.mounted) {
+                                    setState(() => saveError = '$error');
+                                  }
+                                } finally {
+                                  if (context.mounted) {
+                                    setState(() => isSaving = false);
+                                  }
+                                }
+                              },
+                        child: isSaving
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(context.t('common.save')),
+                      ),
+                    ),
                   ],
-                  AppTextField(
-                    controller: churchAppTitleController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.about_church_name'),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true
-                        ? context.t('faith.field_required')
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.title'),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true
-                        ? context.t('faith.field_required')
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: taglineController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.about_tagline'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: descriptionController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.description'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: missionController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.about_mission'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: communityController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.about_community'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: valuesController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.about_values'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              setState(() => saveError = null);
-                              if (!(formKey.currentState?.validate() ??
-                                  false)) {
-                                return;
-                              }
-                              setState(() => isSaving = true);
-                              try {
-                                await repository.updateAbout(
-                                  churchAppTitle:
-                                      churchAppTitleController.text.trim(),
-                                  title: titleController.text.trim(),
-                                  tagline: taglineController.text.trim(),
-                                  description:
-                                      descriptionController.text.trim(),
-                                  mission: missionController.text.trim(),
-                                  community: communityController.text.trim(),
-                                  values: valuesController.text.trim(),
-                                );
-                                if (!context.mounted) return;
-                                final messenger =
-                                    ScaffoldMessenger.of(context);
-                                final message =
-                                    context.t('studio.about_updated');
-                                Navigator.of(context).pop();
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text(message)),
-                                );
-                              } catch (error) {
-                                if (context.mounted) {
-                                  setState(() => saveError = '$error');
-                                }
-                              } finally {
-                                if (context.mounted) {
-                                  setState(() => isSaving = false);
-                                }
-                              }
-                            },
-                      child: isSaving
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(context.t('common.save')),
-                    ),
-                  ),
-                ],
                 ),
               ),
             ),
@@ -3206,190 +2755,195 @@ Future<void> _showPastorEditor(
             child: Form(
               key: formKey,
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t(
-                    doc == null ? 'studio.pastor_create' : 'studio.pastor_edit',
-                    fallback: doc == null ? 'Add Pastor' : 'Edit Pastor',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                if (saveError != null) ...[
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    saveError!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                AppTextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: context.t('common.title'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: contactController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.event_contact'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          final picker = ImagePicker();
-                          final picked = await picker.pickImage(
-                            source: ImageSource.gallery,
-                            imageQuality: 85,
-                          );
-                          if (picked == null) return;
-                          final imageData =
-                              await PickedImageData.fromXFile(picked);
-                          if (imageData == null) return;
-                          setState(() {
-                            selectedImage = imageData;
-                          });
-                        },
-                  icon: const Icon(Icons.image_outlined),
-                  label: Text(
-                    selectedImage == null
-                        ? (existingImageUrl.isEmpty
-                            ? context.t('super_admin.pastor_photo_pick')
-                            : context.t('super_admin.pastor_photo_replace'))
-                        : context.t('studio.announcement_change_image'),
-                  ),
-                ),
-                if (selectedImage != null) ...[
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxHeight: 220),
-                      color: Colors.black12,
-                      child: Image.memory(
-                        selectedImage!.bytes,
-                        width: double.infinity,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ] else if (existingImageUrl.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxHeight: 220),
-                      color: Colors.black12,
-                      child: Image.network(
-                        existingImageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: setAsMain,
-                  title: Text(
-                    context.t('ui.studio.set_as_main'),
-                  ),
-                  subtitle: Text(
                     context.t(
-                        'ui.studio.show_this_pastor_as_the_main_pastor_in_the_app'),
+                      doc == null
+                          ? 'studio.pastor_create'
+                          : 'studio.pastor_edit',
+                      fallback: doc == null ? 'Add Pastor' : 'Edit Pastor',
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  onChanged: isSaving
-                      ? null
-                      : (value) {
-                          setState(() {
-                            setAsMain = value;
-                          });
-                        },
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
+                  const SizedBox(height: 16),
+                  if (saveError != null) ...[
+                    Text(
+                      saveError!,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  AppTextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: context.t('common.title'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: contactController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.event_contact'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
                     onPressed: isSaving
                         ? null
                         : () async {
-                            setState(() => saveError = null);
-                            if (!(formKey.currentState?.validate() ??
-                                false)) {
-                              return;
-                            }
-                            final title = titleController.text.trim();
-                            final contact = contactController.text.trim();
-                            if (doc == null &&
-                                selectedImage == null &&
-                                existingImageUrl.isEmpty) {
-                              setState(() {
-                                saveError = context.t(
-                                    'ui.studio.please_add_pastor_photo_title_and_contact_b1fe');
-                              });
-                              return;
-                            }
-                            setState(() => isSaving = true);
-                            try {
-                              final payload = {
-                                'title': title,
-                                'contact': contact,
-                              };
-                              if (doc == null) {
-                                final createdId = await repository.createPastor(
-                                  data: payload,
-                                  imageFile: selectedImage!,
-                                );
-                                if (setAsMain) {
-                                  await repository.setPrimaryPastor(createdId);
-                                }
-                              } else {
-                                await repository.updatePastor(
-                                  id: doc.id,
-                                  data: payload,
-                                  imageFile: selectedImage,
-                                  existingImageUrl: existingImageUrl,
-                                );
-                                if (setAsMain) {
-                                  await repository.setPrimaryPastor(doc.id);
-                                }
-                              }
-                              if (!context.mounted) return;
-                              Navigator.of(context).pop();
-                            } catch (error) {
-                              if (context.mounted) {
-                                setState(() => saveError = '$error');
-                              }
-                            } finally {
-                              if (context.mounted) {
-                                setState(() => isSaving = false);
-                              }
-                            }
+                            final picker = ImagePicker();
+                            final picked = await picker.pickImage(
+                              source: ImageSource.gallery,
+                              imageQuality: 85,
+                            );
+                            if (picked == null) return;
+                            final imageData =
+                                await PickedImageData.fromXFile(picked);
+                            if (imageData == null) return;
+                            setState(() {
+                              selectedImage = imageData;
+                            });
                           },
-                    child: isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(context.t('common.save')),
+                    icon: const Icon(Icons.image_outlined),
+                    label: Text(
+                      selectedImage == null
+                          ? (existingImageUrl.isEmpty
+                              ? context.t('super_admin.pastor_photo_pick')
+                              : context.t('super_admin.pastor_photo_replace'))
+                          : context.t('studio.announcement_change_image'),
+                    ),
                   ),
-                ),
-              ],
+                  if (selectedImage != null) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        color: Colors.black12,
+                        child: Image.memory(
+                          selectedImage!.bytes,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ] else if (existingImageUrl.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        color: Colors.black12,
+                        child: Image.network(
+                          existingImageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: setAsMain,
+                    title: Text(
+                      context.t('ui.studio.set_as_main'),
+                    ),
+                    subtitle: Text(
+                      context.t(
+                          'ui.studio.show_this_pastor_as_the_main_pastor_in_the_app'),
+                    ),
+                    onChanged: isSaving
+                        ? null
+                        : (value) {
+                            setState(() {
+                              setAsMain = value;
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setState(() => saveError = null);
+                              if (!(formKey.currentState?.validate() ??
+                                  false)) {
+                                return;
+                              }
+                              final title = titleController.text.trim();
+                              final contact = contactController.text.trim();
+                              if (doc == null &&
+                                  selectedImage == null &&
+                                  existingImageUrl.isEmpty) {
+                                setState(() {
+                                  saveError = context.t(
+                                      'ui.studio.please_add_pastor_photo_title_and_contact_b1fe');
+                                });
+                                return;
+                              }
+                              setState(() => isSaving = true);
+                              try {
+                                final payload = {
+                                  'title': title,
+                                  'contact': contact,
+                                };
+                                if (doc == null) {
+                                  final createdId =
+                                      await repository.createPastor(
+                                    data: payload,
+                                    imageFile: selectedImage!,
+                                  );
+                                  if (setAsMain) {
+                                    await repository
+                                        .setPrimaryPastor(createdId);
+                                  }
+                                } else {
+                                  await repository.updatePastor(
+                                    id: doc.id,
+                                    data: payload,
+                                    imageFile: selectedImage,
+                                    existingImageUrl: existingImageUrl,
+                                  );
+                                  if (setAsMain) {
+                                    await repository.setPrimaryPastor(doc.id);
+                                  }
+                                }
+                                if (!context.mounted) return;
+                                Navigator.of(context).pop();
+                              } catch (error) {
+                                if (context.mounted) {
+                                  setState(() => saveError = '$error');
+                                }
+                              } finally {
+                                if (context.mounted) {
+                                  setState(() => isSaving = false);
+                                }
+                              }
+                            },
+                      child: isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(context.t('common.save')),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -3432,131 +2986,133 @@ Future<void> _showFooterContactEditor(
             child: Form(
               key: formKey,
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t(
-                    doc == null
-                        ? 'studio.footer_contact_create'
-                        : 'studio.footer_contact_edit',
-                    fallback:
-                        doc == null ? 'Add Contact Item' : 'Edit Contact Item',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                if (saveError != null) ...[
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    saveError!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    context.t(
+                      doc == null
+                          ? 'studio.footer_contact_create'
+                          : 'studio.footer_contact_edit',
+                      fallback: doc == null
+                          ? 'Add Contact Item'
+                          : 'Edit Contact Item',
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  if (saveError != null) ...[
+                    Text(
+                      saveError!,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  AppDropdownField<String>(
+                    initialValue: type,
+                    labelText: context.t('studio.footer_type_label'),
+                    items: [
+                      DropdownMenuItem(
+                          value: 'phone',
+                          child: Text(context.t('ui.studio.phone'))),
+                      DropdownMenuItem(
+                          value: 'email',
+                          child: Text(context.t('ui.studio.email'))),
+                      DropdownMenuItem(
+                          value: 'location',
+                          child: Text(context.t('ui.studio.location'))),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => type = value);
+                    },
                   ),
                   const SizedBox(height: 12),
+                  AppTextField(
+                    controller: labelController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_label_label'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: actionController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_action_label'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: orderController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_order_label'),
+                    ),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(context.t('common.active')),
+                    value: isActive,
+                    onChanged: (value) => setState(() => isActive = value),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setState(() => saveError = null);
+                              if (!(formKey.currentState?.validate() ??
+                                  false)) {
+                                return;
+                              }
+                              setState(() => isSaving = true);
+                              final payload = {
+                                'label': labelController.text.trim(),
+                                'type': type,
+                                'action': actionController.text.trim(),
+                                'order':
+                                    int.tryParse(orderController.text.trim()) ??
+                                        1,
+                                'isActive': isActive,
+                                'updatedAt': FieldValue.serverTimestamp(),
+                              };
+                              try {
+                                if (doc == null) {
+                                  await repository.createContactItem(payload);
+                                } else {
+                                  await repository.updateContactItem(
+                                      doc.id, payload);
+                                }
+                                if (!context.mounted) return;
+                                Navigator.of(context).pop();
+                              } catch (error) {
+                                if (context.mounted) {
+                                  setState(() => saveError = '$error');
+                                }
+                              } finally {
+                                if (context.mounted) {
+                                  setState(() => isSaving = false);
+                                }
+                              }
+                            },
+                      child: isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(context.t('common.save')),
+                    ),
+                  ),
                 ],
-                AppDropdownField<String>(
-                  initialValue: type,
-                  labelText: context.t('studio.footer_type_label'),
-                  items: [
-                    DropdownMenuItem(
-                        value: 'phone',
-                        child: Text(context.t('ui.studio.phone'))),
-                    DropdownMenuItem(
-                        value: 'email',
-                        child: Text(context.t('ui.studio.email'))),
-                    DropdownMenuItem(
-                        value: 'location',
-                        child: Text(context.t('ui.studio.location'))),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => type = value);
-                  },
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: labelController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_label_label'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: actionController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_action_label'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: orderController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_order_label'),
-                  ),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.t('common.active')),
-                  value: isActive,
-                  onChanged: (value) => setState(() => isActive = value),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            setState(() => saveError = null);
-                            if (!(formKey.currentState?.validate() ??
-                                false)) {
-                              return;
-                            }
-                            setState(() => isSaving = true);
-                            final payload = {
-                              'label': labelController.text.trim(),
-                              'type': type,
-                              'action': actionController.text.trim(),
-                              'order':
-                                  int.tryParse(orderController.text.trim()) ??
-                                      1,
-                              'isActive': isActive,
-                              'updatedAt': FieldValue.serverTimestamp(),
-                            };
-                            try {
-                              if (doc == null) {
-                                await repository.createContactItem(payload);
-                              } else {
-                                await repository.updateContactItem(
-                                    doc.id, payload);
-                              }
-                              if (!context.mounted) return;
-                              Navigator.of(context).pop();
-                            } catch (error) {
-                              if (context.mounted) {
-                                setState(() => saveError = '$error');
-                              }
-                            } finally {
-                              if (context.mounted) {
-                                setState(() => isSaving = false);
-                              }
-                            }
-                          },
-                    child: isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(context.t('common.save')),
-                  ),
-                ),
-              ],
               ),
             ),
           );
@@ -3599,134 +3155,135 @@ Future<void> _showFooterSocialEditor(
             child: Form(
               key: formKey,
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t(
-                    doc == null
-                        ? 'studio.footer_social_create'
-                        : 'studio.footer_social_edit',
-                    fallback:
-                        doc == null ? 'Add Social Item' : 'Edit Social Item',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                if (saveError != null) ...[
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    saveError!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    context.t(
+                      doc == null
+                          ? 'studio.footer_social_create'
+                          : 'studio.footer_social_edit',
+                      fallback:
+                          doc == null ? 'Add Social Item' : 'Edit Social Item',
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  if (saveError != null) ...[
+                    Text(
+                      saveError!,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  AppDropdownField<SocialPlatform>(
+                    labelText: context.t('studio.footer_icon_label'),
+                    initialValue: selectedIcon,
+                    items: SocialPlatform.values
+                        .map(
+                          (platform) => DropdownMenuItem<SocialPlatform>(
+                            value: platform,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(platform.icon, size: 20),
+                                const SizedBox(width: 10),
+                                Text(platform.label),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) => setState(
+                      () => selectedIcon = value ?? SocialPlatform.others,
+                    ),
                   ),
                   const SizedBox(height: 12),
+                  AppTextField(
+                    controller: platformController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_platform_label'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: urlController,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_url_label'),
+                    ),
+                    validator: (value) => value?.trim().isEmpty ?? true
+                        ? context.t('faith.field_required')
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: orderController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: context.t('studio.footer_order_label'),
+                    ),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(context.t('common.active')),
+                    value: isActive,
+                    onChanged: (value) => setState(() => isActive = value),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setState(() => saveError = null);
+                              if (!(formKey.currentState?.validate() ??
+                                  false)) {
+                                return;
+                              }
+                              setState(() => isSaving = true);
+                              final payload = {
+                                'icon': selectedIcon.storedValue,
+                                'platform': platformController.text.trim(),
+                                'url': urlController.text.trim(),
+                                'order':
+                                    int.tryParse(orderController.text.trim()) ??
+                                        1,
+                                'isActive': isActive,
+                                'updatedAt': FieldValue.serverTimestamp(),
+                              };
+                              try {
+                                if (doc == null) {
+                                  await repository.createSocialItem(payload);
+                                } else {
+                                  await repository.updateSocialItem(
+                                      doc.id, payload);
+                                }
+                                if (!context.mounted) return;
+                                Navigator.of(context).pop();
+                              } catch (error) {
+                                if (context.mounted) {
+                                  setState(() => saveError = '$error');
+                                }
+                              } finally {
+                                if (context.mounted) {
+                                  setState(() => isSaving = false);
+                                }
+                              }
+                            },
+                      child: isSaving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(context.t('common.save')),
+                    ),
+                  ),
                 ],
-                AppDropdownField<SocialPlatform>(
-                  labelText: context.t('studio.footer_icon_label'),
-                  initialValue: selectedIcon,
-                  items: SocialPlatform.values
-                      .map(
-                        (platform) => DropdownMenuItem<SocialPlatform>(
-                          value: platform,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(platform.icon, size: 20),
-                              const SizedBox(width: 10),
-                              Text(platform.label),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(
-                    () => selectedIcon = value ?? SocialPlatform.others,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: platformController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_platform_label'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: urlController,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_url_label'),
-                  ),
-                  validator: (value) => value?.trim().isEmpty ?? true
-                      ? context.t('faith.field_required')
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: orderController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.t('studio.footer_order_label'),
-                  ),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.t('common.active')),
-                  value: isActive,
-                  onChanged: (value) => setState(() => isActive = value),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            setState(() => saveError = null);
-                            if (!(formKey.currentState?.validate() ??
-                                false)) {
-                              return;
-                            }
-                            setState(() => isSaving = true);
-                            final payload = {
-                              'icon': selectedIcon.storedValue,
-                              'platform': platformController.text.trim(),
-                              'url': urlController.text.trim(),
-                              'order':
-                                  int.tryParse(orderController.text.trim()) ??
-                                      1,
-                              'isActive': isActive,
-                              'updatedAt': FieldValue.serverTimestamp(),
-                            };
-                            try {
-                              if (doc == null) {
-                                await repository.createSocialItem(payload);
-                              } else {
-                                await repository.updateSocialItem(
-                                    doc.id, payload);
-                              }
-                              if (!context.mounted) return;
-                              Navigator.of(context).pop();
-                            } catch (error) {
-                              if (context.mounted) {
-                                setState(() => saveError = '$error');
-                              }
-                            } finally {
-                              if (context.mounted) {
-                                setState(() => isSaving = false);
-                              }
-                            }
-                          },
-                    child: isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(context.t('common.save')),
-                  ),
-                ),
-              ],
               ),
             ),
           );
@@ -3795,234 +3352,249 @@ Future<void> _showEventEditor(
                     child: Form(
                       key: formKey,
                       child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                  if (saveError != null) ...[
-                    Text(
-                      saveError!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  AppTextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.title'),
-                    ),
-                    validator: (value) => value?.trim().isEmpty ?? true
-                        ? context.t('faith.field_required')
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: context.t('common.description'),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 12),
-                  AppDropdownField<String>(
-                    initialValue: type,
-                    labelText: context.t('studio.event_type'),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'family',
-                        child: Text(context.t('studio.event_type_family')),
-                      ),
-                      DropdownMenuItem(
-                        value: 'kids',
-                        child: Text(context.t('studio.event_type_kids')),
-                      ),
-                      DropdownMenuItem(
-                        value: 'youth',
-                        child: Text(context.t('studio.event_type_youth')),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => type = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: contactController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.event_contact'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: locationController,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.event_location'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    controller: timingController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: context.t('studio.event_timing'),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (timingController.text.trim().isNotEmpty)
-                            IconButton(
-                              onPressed: isSaving
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        timingController.clear();
-                                        startAt = null;
-                                      });
-                                    },
-                              icon: const Icon(Icons.clear),
-                            ),
-                          IconButton(
-                            onPressed: isSaving
-                                ? null
-                                : () async {
-                                    final now = DateTime.now();
-                                    final pickedDate = await showDatePicker(
-                                      context: context,
-                                      initialDate: startAt ?? now,
-                                      firstDate: DateTime(now.year - 1),
-                                      lastDate: DateTime(now.year + 10),
-                                    );
-                                    if (pickedDate == null ||
-                                        !context.mounted) {
-                                      return;
-                                    }
-
-                                    final pickedTime = await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.fromDateTime(
-                                        startAt ?? now,
-                                      ),
-                                    );
-
-                                    final resolved = DateTime(
-                                      pickedDate.year,
-                                      pickedDate.month,
-                                      pickedDate.day,
-                                      pickedTime?.hour ?? 9,
-                                      pickedTime?.minute ?? 0,
-                                    );
-                                    final formatted =
-                                        _formatOptionalDateTime(resolved);
-
-                                    if (!context.mounted) return;
-                                    setState(() {
-                                      startAt = resolved;
-                                      timingController.text = formatted;
-                                    });
-                                  },
-                            icon: const Icon(Icons.event_outlined),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.t('common.active')),
-                    value: isActive,
-                    onChanged: (value) => setState(() => isActive = value),
-                  ),
-                  if (doc == null) ...[
-                    const SizedBox(height: 8),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(context.t('ui.studio.repeat_weekly')),
-                      subtitle: Text(
-                        context.t(
-                            'ui.studio.cloud_functions_will_move_this_event_to_the_next_week_a'),
-                      ),
-                      value: repeatsWeekly,
-                      onChanged: (value) {
-                        setState(() {
-                          repeatsWeekly = value;
-                          if (value) {
-                            expiryAt = null;
-                            expiryController.clear();
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  if (!repeatsWeekly)
-                    AppTextField(
-                      controller: expiryController,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: context.t('studio.expiry_at_label'),
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (expiryController.text.trim().isNotEmpty)
-                              IconButton(
-                                onPressed: isSaving
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          expiryAt = null;
-                                          expiryController.clear();
-                                        });
-                                      },
-                                icon: const Icon(Icons.clear),
+                          if (saveError != null) ...[
+                            Text(
+                              saveError!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
                               ),
-                            IconButton(
-                              onPressed: isSaving
-                                  ? null
-                                  : () async {
-                                      final now = DateTime.now();
-                                      final pickedDate = await showDatePicker(
-                                        context: context,
-                                        initialDate: expiryAt ?? now,
-                                        firstDate: DateTime(now.year - 1),
-                                        lastDate: DateTime(now.year + 10),
-                                      );
-                                      if (pickedDate == null ||
-                                          !context.mounted) {
-                                        return;
-                                      }
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          AppTextField(
+                            controller: titleController,
+                            decoration: InputDecoration(
+                              labelText: context.t('common.title'),
+                            ),
+                            validator: (value) => value?.trim().isEmpty ?? true
+                                ? context.t('faith.field_required')
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          AppTextField(
+                            controller: descriptionController,
+                            decoration: InputDecoration(
+                              labelText: context.t('common.description'),
+                            ),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 12),
+                          AppDropdownField<String>(
+                            initialValue: type,
+                            labelText: context.t('studio.event_type'),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'family',
+                                child:
+                                    Text(context.t('studio.event_type_family')),
+                              ),
+                              DropdownMenuItem(
+                                value: 'kids',
+                                child:
+                                    Text(context.t('studio.event_type_kids')),
+                              ),
+                              DropdownMenuItem(
+                                value: 'youth',
+                                child:
+                                    Text(context.t('studio.event_type_youth')),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => type = value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          AppTextField(
+                            controller: contactController,
+                            decoration: InputDecoration(
+                              labelText: context.t('studio.event_contact'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          AppTextField(
+                            controller: locationController,
+                            decoration: InputDecoration(
+                              labelText: context.t('studio.event_location'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          AppTextField(
+                            controller: timingController,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: context.t('studio.event_timing'),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (timingController.text.trim().isNotEmpty)
+                                    IconButton(
+                                      onPressed: isSaving
+                                          ? null
+                                          : () {
+                                              setState(() {
+                                                timingController.clear();
+                                                startAt = null;
+                                              });
+                                            },
+                                      icon: const Icon(Icons.clear),
+                                    ),
+                                  IconButton(
+                                    onPressed: isSaving
+                                        ? null
+                                        : () async {
+                                            final now = DateTime.now();
+                                            final pickedDate =
+                                                await showDatePicker(
+                                              context: context,
+                                              initialDate: startAt ?? now,
+                                              firstDate: DateTime(now.year - 1),
+                                              lastDate: DateTime(now.year + 10),
+                                            );
+                                            if (pickedDate == null ||
+                                                !context.mounted) {
+                                              return;
+                                            }
 
-                                      final pickedTime = await showTimePicker(
-                                        context: context,
-                                        initialTime: expiryAt == null
-                                            ? TimeOfDay.fromDateTime(now)
-                                            : TimeOfDay.fromDateTime(expiryAt!),
-                                      );
+                                            final pickedTime =
+                                                await showTimePicker(
+                                              context: context,
+                                              initialTime:
+                                                  TimeOfDay.fromDateTime(
+                                                startAt ?? now,
+                                              ),
+                                            );
 
-                                      if (!context.mounted) return;
-                                      final resolved = DateTime(
-                                        pickedDate.year,
-                                        pickedDate.month,
-                                        pickedDate.day,
-                                        pickedTime?.hour ?? 23,
-                                        pickedTime?.minute ?? 59,
-                                      );
+                                            final resolved = DateTime(
+                                              pickedDate.year,
+                                              pickedDate.month,
+                                              pickedDate.day,
+                                              pickedTime?.hour ?? 9,
+                                              pickedTime?.minute ?? 0,
+                                            );
+                                            final formatted =
+                                                _formatOptionalDateTime(
+                                                    resolved);
 
-                                      setState(() {
-                                        expiryAt = resolved;
-                                        expiryController.text =
-                                            _formatOptionalDateTime(resolved);
-                                      });
-                                    },
-                              icon: const Icon(Icons.event_outlined),
+                                            if (!context.mounted) return;
+                                            setState(() {
+                                              startAt = resolved;
+                                              timingController.text = formatted;
+                                            });
+                                          },
+                                    icon: const Icon(Icons.event_outlined),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(context.t('common.active')),
+                            value: isActive,
+                            onChanged: (value) =>
+                                setState(() => isActive = value),
+                          ),
+                          if (doc == null) ...[
+                            const SizedBox(height: 8),
+                            SwitchListTile.adaptive(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(context.t('ui.studio.repeat_weekly')),
+                              subtitle: Text(
+                                context.t(
+                                    'ui.studio.cloud_functions_will_move_this_event_to_the_next_week_a'),
+                              ),
+                              value: repeatsWeekly,
+                              onChanged: (value) {
+                                setState(() {
+                                  repeatsWeekly = value;
+                                  if (value) {
+                                    expiryAt = null;
+                                    expiryController.clear();
+                                  }
+                                });
+                              },
                             ),
                           ],
-                        ),
+                          const SizedBox(height: 8),
+                          if (!repeatsWeekly)
+                            AppTextField(
+                              controller: expiryController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: context.t('studio.expiry_at_label'),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (expiryController.text.trim().isNotEmpty)
+                                      IconButton(
+                                        onPressed: isSaving
+                                            ? null
+                                            : () {
+                                                setState(() {
+                                                  expiryAt = null;
+                                                  expiryController.clear();
+                                                });
+                                              },
+                                        icon: const Icon(Icons.clear),
+                                      ),
+                                    IconButton(
+                                      onPressed: isSaving
+                                          ? null
+                                          : () async {
+                                              final now = DateTime.now();
+                                              final pickedDate =
+                                                  await showDatePicker(
+                                                context: context,
+                                                initialDate: expiryAt ?? now,
+                                                firstDate:
+                                                    DateTime(now.year - 1),
+                                                lastDate:
+                                                    DateTime(now.year + 10),
+                                              );
+                                              if (pickedDate == null ||
+                                                  !context.mounted) {
+                                                return;
+                                              }
+
+                                              final pickedTime =
+                                                  await showTimePicker(
+                                                context: context,
+                                                initialTime: expiryAt == null
+                                                    ? TimeOfDay.fromDateTime(
+                                                        now)
+                                                    : TimeOfDay.fromDateTime(
+                                                        expiryAt!),
+                                              );
+
+                                              if (!context.mounted) return;
+                                              final resolved = DateTime(
+                                                pickedDate.year,
+                                                pickedDate.month,
+                                                pickedDate.day,
+                                                pickedTime?.hour ?? 23,
+                                                pickedTime?.minute ?? 59,
+                                              );
+
+                                              setState(() {
+                                                expiryAt = resolved;
+                                                expiryController.text =
+                                                    _formatOptionalDateTime(
+                                                        resolved);
+                                              });
+                                            },
+                                      icon: const Icon(Icons.event_outlined),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                      ],
-                    ),
                     ),
                   ),
                 ),
@@ -4034,8 +3606,7 @@ Future<void> _showEventEditor(
                         ? null
                         : () async {
                             setState(() => saveError = null);
-                            if (!(formKey.currentState?.validate() ??
-                                false)) {
+                            if (!(formKey.currentState?.validate() ?? false)) {
                               return;
                             }
                             if (repeatsWeekly && startAt == null) {
@@ -4047,7 +3618,6 @@ Future<void> _showEventEditor(
                             }
                             setState(() => isSaving = true);
                             try {
-
                               final recurringExpiryAt =
                                   repeatsWeekly && startAt != null
                                       ? DateTime(
@@ -4508,10 +4078,9 @@ Future<void> _showArticleEditor(
                             decoration: InputDecoration(
                               labelText: context.t('common.title'),
                             ),
-                            validator: (value) =>
-                                value?.trim().isEmpty ?? true
-                                    ? context.t('faith.field_required')
-                                    : null,
+                            validator: (value) => value?.trim().isEmpty ?? true
+                                ? context.t('faith.field_required')
+                                : null,
                           ),
                           const SizedBox(height: 18),
                           AppTextField(
@@ -4521,10 +4090,9 @@ Future<void> _showArticleEditor(
                             ),
                             keyboardType: TextInputType.multiline,
                             maxLines: 3,
-                            validator: (value) =>
-                                value?.trim().isEmpty ?? true
-                                    ? context.t('faith.field_required')
-                                    : null,
+                            validator: (value) => value?.trim().isEmpty ?? true
+                                ? context.t('faith.field_required')
+                                : null,
                           ),
                           const SizedBox(height: 18),
                           AppTextField(
@@ -4534,10 +4102,9 @@ Future<void> _showArticleEditor(
                             ),
                             keyboardType: TextInputType.multiline,
                             maxLines: 8,
-                            validator: (value) =>
-                                value?.trim().isEmpty ?? true
-                                    ? context.t('faith.field_required')
-                                    : null,
+                            validator: (value) => value?.trim().isEmpty ?? true
+                                ? context.t('faith.field_required')
+                                : null,
                           ),
                         ],
                       ),
@@ -4552,8 +4119,7 @@ Future<void> _showArticleEditor(
                         ? null
                         : () async {
                             setState(() => saveError = null);
-                            if (!(formKey.currentState?.validate() ??
-                                false)) {
+                            if (!(formKey.currentState?.validate() ?? false)) {
                               return;
                             }
                             setState(() => isSaving = true);

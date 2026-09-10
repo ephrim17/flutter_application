@@ -12,7 +12,6 @@ import 'package:flutter_application/church_app/providers/app_config_provider.dar
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
@@ -263,16 +262,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               return;
                             }
 
-                            final approved =
-                                memberDoc.data()?['approved'] == true;
                             await ChurchLocalStorage().saveChurch(
                               id: widget.churchId,
                               name: widget.churchName,
                               logo: widget.churchLogo,
                             );
                             if (!context.mounted) return;
-                            ref.read(forcePreflowThemeProvider.notifier).state =
-                                !approved;
                             ref.read(selectedChurchProvider.notifier).state =
                                 Church(
                               id: widget.churchId,

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/models/church_group_member_model.dart';
+import 'package:flutter_application/church_app/models/church_member_directory_entry_model.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -30,6 +31,21 @@ class MembersRepository extends ChurchScopedRepository {
       ..sort((a, b) =>
           a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return members;
+  }
+
+  /// The reduced roster any approved member (not just staff) can read —
+  /// see `churches/{churchId}/memberDirectory` in firestore.rules and
+  /// `mirrorMemberDirectory` in functions/src/index.ts.
+  Future<List<ChurchMemberDirectoryEntry>> getMemberDirectoryOnce() async {
+    final snapshot =
+        await FirestorePaths.churchMemberDirectory(firestore, churchId).get();
+    final entries = snapshot.docs
+        .map((doc) =>
+            ChurchMemberDirectoryEntry.fromFirestore(doc.id, doc.data()))
+        .toList()
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+    return entries;
   }
 
   /// Server-side search/pagination — must stay pointed at the display*

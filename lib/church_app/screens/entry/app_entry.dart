@@ -7,30 +7,32 @@ import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/admin_mode_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/complete_profile_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/create_auth_account_screen.dart';
+import 'package:flutter_application/church_app/screens/entry/email_otp_verification_screen.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
-import 'package:flutter_application/church_app/screens/personal/guest_shell_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_mode_screen.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
-import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Entry state machine — KT Files/architecture/
 /// user-church-decoupling-migration.md §5.4:
 ///   onboarding incomplete           -> onboarding
-///   signed out                      -> auth
-///   signed in, no identity doc      -> complete profile   (NEW)
+///   signed out                      -> sign in / sign up choice
+///   signed in, no identity doc      -> complete profile (resume only —
+///                                      normal sign-up writes it before
+///                                      AppEntry ever sees the new user)
+///   signed in, email not verified   -> email OTP verification
 ///   super admin                     -> mode chooser
-///   signed in, no approved anywhere -> guest shell         (NEW)
+///   signed in, no approved anywhere -> SelectChurchScreen
 ///   approved                        -> ChurchTabScreen
 class AppEntry extends ConsumerStatefulWidget {
   const AppEntry({super.key});
@@ -46,16 +48,6 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(superAdminEntryModeProvider.notifier).syncForUser(uid);
-    });
-  }
-
-  void _syncPreflowTheme(bool enabled) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final notifier = ref.read(forcePreflowThemeProvider.notifier);
-      if (notifier.state != enabled) {
-        notifier.state = enabled;
-      }
     });
   }
 
@@ -77,12 +69,12 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     UserIdentity identity,
     List<ChurchMembership> approvedMemberships,
   ) {
-    final approvedChurchIds = approvedMemberships
-        .map((membership) => membership.churchId)
-        .toSet();
+    final approvedChurchIds =
+        approvedMemberships.map((membership) => membership.churchId).toSet();
 
     final selectedChurch = ref.watch(selectedChurchProvider);
-    if (selectedChurch != null && approvedChurchIds.contains(selectedChurch.id)) {
+    if (selectedChurch != null &&
+        approvedChurchIds.contains(selectedChurch.id)) {
       return selectedChurch.id;
     }
     final localChurchId = ref.watch(currentChurchIdProvider).value;
@@ -159,12 +151,11 @@ class _AppEntryState extends ConsumerState<AppEntry> {
     // Show loading while onboarding check is pending
     if (_showOnboarding == null) {
       return const Scaffold(
-        body: Center(child: AppSplashScreen()),
+        body: Center(child: AppLoadingIndicator()),
       );
     }
     // Show onboarding if not completed
     if (_showOnboarding!) {
-      _syncPreflowTheme(true);
       return OnboardingScreen(onComplete: _onOnboardingComplete);
     }
 
@@ -180,38 +171,35 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
     if (firebaseUser != null && isSuperAdminAsync.isLoading) {
       return const Scaffold(
-        body: Center(child: AppSplashScreen()),
+        body: Center(child: AppLoadingIndicator()),
       );
     }
 
     if (isSuperAdmin) {
       if (superAdminSession.isLoading) {
         return const Scaffold(
-          body: Center(child: AppSplashScreen()),
+          body: Center(child: AppLoadingIndicator()),
         );
       }
       if (superAdminSession.uid != firebaseUser.uid) {
         _syncSuperAdminSessionForUser(firebaseUser.uid);
         return const Scaffold(
-          body: Center(child: AppSplashScreen()),
+          body: Center(child: AppLoadingIndicator()),
         );
       }
       if (superAdminSession.mode == null) {
-        _syncPreflowTheme(true);
         return const SuperAdminModeScreen();
       }
       if (superAdminSession.mode == SuperAdminEntryMode.superAdmin) {
-        _syncPreflowTheme(true);
         return const SuperAdminHomeScreen();
       }
-      _syncPreflowTheme(true);
     }
 
     return identityAsync.when(
       loading: () => const Scaffold(
-        body: Center(child: AppSplashScreen()),
+        body: Center(child: AppLoadingIndicator()),
       ),
-      error: (_, __) => const CreateAuthAccountScreen(),
+      error: (_, __) => const AuthChoiceScreen(),
       data: _buildResolvedScreen,
     );
   }
@@ -219,18 +207,19 @@ class _AppEntryState extends ConsumerState<AppEntry> {
   Widget _buildResolvedScreen(UserIdentity? identity) {
     final firebaseUser = ref.watch(authStateProvider).value;
     if (firebaseUser == null) {
-      _syncPreflowTheme(true);
-      return const CreateAuthAccountScreen();
+      return const AuthChoiceScreen();
     }
     if (identity == null) {
-      _syncPreflowTheme(true);
       return const CompleteProfileScreen();
+    }
+    if (!identity.emailVerified) {
+      return const EmailOtpVerificationScreen();
     }
 
     final membershipsAsync = ref.watch(myMembershipsProvider);
     if (membershipsAsync.isLoading) {
       return const Scaffold(
-        body: Center(child: AppSplashScreen()),
+        body: Center(child: AppLoadingIndicator()),
       );
     }
     final memberships = membershipsAsync.asData?.value ?? const [];
@@ -238,8 +227,11 @@ class _AppEntryState extends ConsumerState<AppEntry> {
         memberships.where((membership) => membership.approved).toList();
 
     if (approvedMemberships.isEmpty) {
-      _syncPreflowTheme(true);
-      return const GuestShellScreen();
+      // No approved membership anywhere (never requested, pending,
+      // declined, or removed/left-only-church — §5.3) — go straight to
+      // the same Your churches/Other churches picker used for the
+      // first-ever-approval case below, rather than a separate guest hub.
+      return const SelectChurchScreen();
     }
 
     if (_resolvableChurchId(identity, approvedMemberships) == null) {
@@ -247,7 +239,6 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       // longer approved) — let them choose which of their churches to
       // enter rather than silently guessing. Picking one sets
       // lastActiveChurchId, so every later launch resumes it directly.
-      _syncPreflowTheme(true);
       return const SelectChurchScreen();
     }
 
@@ -259,16 +250,13 @@ class _AppEntryState extends ConsumerState<AppEntry> {
 
     _restoreSelectedChurchIfNeeded(identity, approvedMemberships);
     if (appConfig?.superAdminDisabled == true) {
-      _syncPreflowTheme(true);
       return AdminModeScreen(
         messageOverride: ref.t('super_admin.disabled_message'),
       );
     }
     if (appConfig?.adminMode.enabled == true && !isChurchAdmin) {
-      _syncPreflowTheme(true);
       return const AdminModeScreen();
     }
-    _syncPreflowTheme(false);
     return const ChurchTabScreen();
   }
 }

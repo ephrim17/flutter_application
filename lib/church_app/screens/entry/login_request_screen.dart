@@ -10,7 +10,6 @@ import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -588,17 +587,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 );
 
         if (existingDoc.exists) {
-          final existingApproved =
-              (existingDoc.data() as Map<String, dynamic>?)?['approved'] ==
-                  true;
           await ChurchLocalStorage().saveChurch(
             id: widget.churchId,
             name: widget.churchName,
             logo: widget.churchLogo,
           );
           if (!mounted) return;
-          ref.read(forcePreflowThemeProvider.notifier).state =
-              !existingApproved;
 
           ref.read(selectedChurchProvider.notifier).state = Church(
             id: widget.churchId,
@@ -631,6 +625,30 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         }
       }
 
+      if (widget.adminCreateMode && widget.targetUid != null) {
+        // requestAccess() always does a full, non-merge set() — calling it
+        // again against a targetUid that already has a member doc (a
+        // double-tap, or a retry after a dropped response to an already-
+        // successful write) hits the update rules instead of the create
+        // rule and is denied, since identitySyncedAt can never re-match a
+        // fresh serverTimestamp(). Guard it the same way the non-admin
+        // branch above already guards self-registration.
+        final existingDoc =
+            await ref.read(authRepositoryProvider).getChurchUserDoc(
+                  churchId: widget.churchId,
+                  uid: widget.targetUid!,
+                );
+        if (existingDoc.exists) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.t('members.member_already_exists')),
+            ),
+          );
+          return;
+        }
+      }
+
       final normalizedEmail = (widget.initialEmail ??
               firebaseUser?.email ??
               _emailController.text.trim())
@@ -639,23 +657,32 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       var shouldAutoApprove = widget.adminCreateMode;
 
       if (!widget.adminCreateMode && normalizedEmail.isNotEmpty) {
-        final membersSnapshot = await FirestorePaths.churchMembers(
-          ref.read(firestoreProvider),
-          widget.churchId,
-        ).limit(1).get();
-        final appConfigDoc = await FirestorePaths.churchAppConfig(
-          ref.read(firestoreProvider),
-          widget.churchId,
-        ).get();
-        final admins =
-            List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
-                .map((item) => item.trim().toLowerCase())
-                .where((item) => item.isNotEmpty)
-                .toList(growable: false);
+        // Only the church's sole listed admin can actually read these (via
+        // isChurchAdmin's own internal, rules-unrestricted lookup) — for
+        // every other requester this throws PERMISSION_DENIED, which must
+        // not abort the request submission itself. Falling back to
+        // "not auto-approved" is exactly correct for that caller anyway.
+        try {
+          final membersSnapshot = await FirestorePaths.churchMembers(
+            ref.read(firestoreProvider),
+            widget.churchId,
+          ).limit(1).get();
+          final appConfigDoc = await FirestorePaths.churchAppConfig(
+            ref.read(firestoreProvider),
+            widget.churchId,
+          ).get();
+          final admins =
+              List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
+                  .map((item) => item.trim().toLowerCase())
+                  .where((item) => item.isNotEmpty)
+                  .toList(growable: false);
 
-        shouldAutoApprove = membersSnapshot.docs.isEmpty &&
-            admins.length == 1 &&
-            admins.first == normalizedEmail;
+          shouldAutoApprove = membersSnapshot.docs.isEmpty &&
+              admins.length == 1 &&
+              admins.first == normalizedEmail;
+        } catch (_) {
+          shouldAutoApprove = false;
+        }
       }
 
       await ref.read(authRepositoryProvider).requestAccess(
@@ -743,7 +770,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         registrationSource: 'super_admin',
       );
       ref.invalidate(currentChurchIdProvider);
-      ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;
       if (!mounted) return;
       unawaited(
         syncNotificationTopicIfAuthorized(

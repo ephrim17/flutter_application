@@ -642,18 +642,6 @@ class StudioRepository {
     }, SetOptions(merge: true));
   }
 
-  Future<void> updateThemeColors({
-    required String primaryColor,
-    required String secondaryColor,
-  }) async {
-    await appConfigRef.set({
-      'theme': {
-        'primaryColor': primaryColor,
-        'secondaryColor': secondaryColor,
-      },
-    }, SetOptions(merge: true));
-  }
-
   Future<void> queueTopicNotification({
     required String title,
     required String body,

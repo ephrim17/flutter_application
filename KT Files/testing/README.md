@@ -1,5 +1,24 @@
 # Testing Strategy and Release Gates
 
+## Environment for the migration branch
+
+While `feat/user-church-decoupling-migration` is active (Phase 8 production
+cutover not yet done — see
+`KT Files/architecture/user-church-decoupling-migration.md`), production's
+`(default)` Firestore database still runs the **pre-migration** rules — no
+`members` collectionGroup rule. A debug build with no
+`--dart-define=FIRESTORE_DATABASE_ID=migrationv1` silently falls back to
+`(default)` (by design — see `firestore_provider.dart`), and any signed-in
+user with no membership anywhere then gets `PERMISSION_DENIED` on
+`myMembershipsProvider`'s collectionGroup query, which presents as a
+never-resolving splash/loading screen with no visible error — this hit new
+signups specifically, every time, until traced to this cause via a Maestro
+run + device logcat. Always build/run with
+`--dart-define=FIRESTORE_DATABASE_ID=migrationv1` when testing this branch;
+`DatabaseOverrideDebugBanner` shows an orange "migrationv1" corner ribbon on
+debug builds as a visible confirmation the flag took effect — its absence
+means you're on production data/rules.
+
 ## Test layers
 
 1. **Static checks**: formatting, analyzer, TypeScript lint/build, text policy,
@@ -86,7 +105,7 @@ flutter build web --release
 ## Cross-feature smoke suite
 
 1. Fresh install: onboarding, login and church selection.
-2. Member: Home, For You, Feed, Go Further and every enabled drawer item.
+2. Member: Home, For You, Community and every enabled drawer item.
 3. Admin: Dashboard, Studio mutation, member approval, equipment and one
    notification.
 4. Super admin: enter super-admin mode, open a church, change/revert one safe
