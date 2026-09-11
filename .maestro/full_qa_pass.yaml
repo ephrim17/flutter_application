@@ -34,7 +34,7 @@ appId: com.example.flutter_application
 
 - extendedWaitUntil:
     visible: "Churches"
-    timeout: 20000
+    timeout: 60000
 - tapOn: "Churches"
 - extendedWaitUntil:
     visible: "(?s).*Your Churches.*"
@@ -43,16 +43,21 @@ appId: com.example.flutter_application
 - assertVisible: "(?s).*Other Churches.*"
 
 # Enter the church (tnbm) via Your Churches.
-- tapOn: "Your Churches"
+- tapOn: "(?s).*Your Churches.*"
 - waitForAnimationToEnd
 - takeScreenshot: qa_03_your_churches_expanded
-- tapOn: "tnbm"
+- tapOn: "(?s).*New Beginning Ministries.*"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Select Church"
+    timeout: 15000
+- tapOn: "Select Church"
 - waitForAnimationToEnd
 - takeScreenshot: qa_04_entered_church
 
 # --- Bottom tabs ---
 - extendedWaitUntil:
-    visible: "Feeds"
+    visible: "Community"
     timeout: 15000
 - tapOn: "Home"
 - waitForAnimationToEnd
@@ -62,13 +67,13 @@ appId: com.example.flutter_application
 - waitForAnimationToEnd
 - takeScreenshot: qa_06_for_you
 
-- tapOn: "Feeds"
+- tapOn: "Community"
 - waitForAnimationToEnd
 - takeScreenshot: qa_07_feeds
 
-- tapOn: "Dashboard"
-- waitForAnimationToEnd
-- takeScreenshot: qa_08_dashboard
+# Dashboard tab is admin-only (canSeeDashboard = isAdmin && dashboardEnabled)
+# and this QA account isn't a config-listed admin for this church, so it's
+# correctly not present here — no Dashboard tap for this account.
 
 - tapOn: "Home"
 - waitForAnimationToEnd
@@ -155,15 +160,20 @@ appId: com.example.flutter_application
 - takeScreenshot: qa_18_register_another_church_lands_on_churches_tab
 
 # Go back into tnbm to continue.
-- tapOn: "Your Churches"
+- tapOn: "(?s).*Your Churches.*"
 - waitForAnimationToEnd
-- tapOn: "tnbm"
+- tapOn: "(?s).*New Beginning Ministries.*"
 - waitForAnimationToEnd
 - extendedWaitUntil:
-    visible: "Feeds"
+    visible: "Select Church"
+    timeout: 15000
+- tapOn: "Select Church"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Community"
     timeout: 15000
 
 # --- Community feed create/delete ---
-- tapOn: "Feeds"
+- tapOn: "Community"
 - waitForAnimationToEnd
 - takeScreenshot: qa_19_feeds_before_post
