@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
@@ -39,65 +40,62 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
-// One collectionGroup query instead of one read per church (§2.5/§5.2) —
-// the members rename made this possible (§9.9): before, "users" also
-// matched churches/{cid}/groups/{gid}/users, so this query would have
-// picked up group rows too.
-final userChurchesProvider = FutureProvider<List<Church>>((ref) async {
-  final firebaseUser = ref.watch(authStateProvider).value;
-  final uid = firebaseUser?.uid.trim() ?? '';
-  if (uid.isEmpty) return const <Church>[];
+// Derived from the already-live churchesProvider (StreamProvider) and
+// myMembershipsProvider (StreamProvider, collectionGroup('members') —
+// §2.5/§5.2/§9.9) rather than doing their own one-time .get(), so Your
+// Churches/Pending Approval/Other Churches all update the instant a
+// request is submitted, approved, or a church is left — no manual
+// ref.invalidate() needed anywhere. A plain Provider watching two
+// AsyncValues is still exposed as AsyncValue<List<Church>> to callers,
+// same shape a FutureProvider would give, so this is a drop-in swap.
+AsyncValue<List<Church>> _combineMembershipChurches(
+  Ref ref, {
+  required bool Function(ChurchMembership membership) where,
+}) {
+  final churchesAsync = ref.watch(churchesProvider);
+  final membershipsAsync = ref.watch(myMembershipsProvider);
 
-  final churches = await ref.watch(churchesProvider.future);
-  if (churches.isEmpty) return const <Church>[];
+  if (churchesAsync.isLoading || membershipsAsync.isLoading) {
+    return const AsyncValue.loading();
+  }
+  if (churchesAsync.hasError) {
+    return AsyncValue.error(
+        churchesAsync.error!, churchesAsync.stackTrace ?? StackTrace.empty);
+  }
+  if (membershipsAsync.hasError) {
+    return AsyncValue.error(membershipsAsync.error!,
+        membershipsAsync.stackTrace ?? StackTrace.empty);
+  }
+
+  final churches = churchesAsync.value ?? const <Church>[];
+  final memberships = membershipsAsync.value ?? const <ChurchMembership>[];
   final churchesById = {for (final church in churches) church.id: church};
 
-  final memberships = await ref
-      .read(firestoreProvider)
-      .collectionGroup(FirestorePaths.members)
-      .where('uid', isEqualTo: uid)
-      .get();
-
-  // Your Churches is entered churches only — a pending (not yet approved)
-  // request belongs on RequestPendingScreen, not here (§9.1: membership
-  // existing is never authorization on its own).
-  final userChurches = memberships.docs
-      .where((doc) => doc.data()['approved'] == true)
-      .map((doc) => churchesById[doc.reference.parent.parent?.id])
+  final result = memberships
+      .where(where)
+      .map((membership) => churchesById[membership.churchId])
       .whereType<Church>()
       .toList()
     ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
-  return userChurches;
+  return AsyncValue.data(result);
+}
+
+// Your Churches is entered churches only — a pending (not yet approved)
+// request belongs on RequestPendingScreen, not here (§9.1: membership
+// existing is never authorization on its own).
+final userChurchesProvider = Provider<AsyncValue<List<Church>>>((ref) {
+  return _combineMembershipChurches(ref,
+      where: (membership) => membership.approved);
 });
 
 /// Same discovery query as [userChurchesProvider], kept separate so a
 /// pending request can be surfaced to the person (§9.1: they should always
 /// be able to see they've already requested a church) without it slipping
 /// into Your Churches, which is entered-church-only.
-final pendingChurchesProvider = FutureProvider<List<Church>>((ref) async {
-  final firebaseUser = ref.watch(authStateProvider).value;
-  final uid = firebaseUser?.uid.trim() ?? '';
-  if (uid.isEmpty) return const <Church>[];
-
-  final churches = await ref.watch(churchesProvider.future);
-  if (churches.isEmpty) return const <Church>[];
-  final churchesById = {for (final church in churches) church.id: church};
-
-  final memberships = await ref
-      .read(firestoreProvider)
-      .collectionGroup(FirestorePaths.members)
-      .where('uid', isEqualTo: uid)
-      .get();
-
-  final pendingChurches = memberships.docs
-      .where((doc) => doc.data()['approved'] != true)
-      .map((doc) => churchesById[doc.reference.parent.parent?.id])
-      .whereType<Church>()
-      .toList()
-    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
-  return pendingChurches;
+final pendingChurchesProvider = Provider<AsyncValue<List<Church>>>((ref) {
+  return _combineMembershipChurches(ref,
+      where: (membership) => !membership.approved);
 });
 
 /// The primary landing screen once signed in with nothing resolvable to
