@@ -8,7 +8,6 @@ import 'package:flutter_application/church_app/screens/entry/reset_password_scre
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
-import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -137,13 +136,6 @@ class _PasswordResetCodeScreenState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: ChurchLogoAvatar(
-                        logo: widget.churchLogo,
-                        size: 84,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
                     Text(
                       context.t('auth.verify_code_title'),
                       textAlign: TextAlign.center,

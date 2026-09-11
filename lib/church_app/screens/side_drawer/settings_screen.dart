@@ -9,27 +9,31 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/helpers/prayer_notification_service.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
-    show selectedChurchProvider, churchesProvider;
+    show selectedChurchProvider, churchesProvider, churchByIdProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
+import 'package:flutter_application/church_app/widgets/church_profile_editor_sheet.dart';
 import 'package:flutter_application/church_app/widgets/copy_rights_widget.dart';
 import 'package:flutter_application/church_app/widgets/praisethelord_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -44,7 +48,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
     final selectedChurch = ref.watch(selectedChurchProvider);
 
     return Scaffold(
@@ -97,6 +101,7 @@ class SettingsScreen extends ConsumerWidget {
                 _FeedbackSection(),
               ],
             ),
+            const _ChurchProfileGroup(),
             const SizedBox(height: sectionSpacing),
             _SettingsSectionLabel(
               title: ref.t('settings.account_title'),
@@ -106,7 +111,10 @@ class SettingsScreen extends ConsumerWidget {
             const _SettingsGroupCard(
               children: [
                 _StorageSection(),
+                _LeaveChurchSection(),
+                _RegisterAnotherChurchSection(),
                 _LogoutSection(),
+                _DeleteAccountSection(),
               ],
             ),
             const SizedBox(height: sectionSpacing),
@@ -126,7 +134,7 @@ class _SettingsHeroCard extends StatelessWidget {
     required this.churchName,
   });
 
-  final AsyncValue<AppUser?> userAsync;
+  final AsyncValue<UserIdentity?> userAsync;
   final String churchName;
 
   @override
@@ -424,7 +432,7 @@ class _EditProfileSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
 
     return userAsync.when(
       loading: () => _SettingsTile(
@@ -462,6 +470,191 @@ class _EditProfileSection extends ConsumerWidget {
   }
 }
 
+/// Church-admin-only section for editing the selected church's public
+/// profile (pastor, contact details, social links) — this used to live on
+/// the Discover tab (`_ChurchDiscoveryEditorSheet`) but moved here once
+/// that tab was removed, since only Settings is guaranteed to still be
+/// reachable for every church admin. Hidden entirely for non-admins or
+/// when no church is selected.
+class _ChurchProfileGroup extends ConsumerWidget {
+  const _ChurchProfileGroup();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAdmin = ref.watch(isAdminProvider);
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (!isAdmin || selectedChurch == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SettingsSectionLabel(
+          title: ref.t('settings.church_title'),
+          subtitle: ref.t('settings.church_subtitle'),
+        ),
+        const SizedBox(height: 10),
+        _SettingsGroupCard(
+          children: [
+            _SettingsTile(
+              icon: Icons.account_balance_outlined,
+              title: ref.t('settings.church_profile_title'),
+              subtitle: ref.t('settings.church_profile_subtitle'),
+              onTap: () => showAppModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => ChurchProfileEditorSheet(
+                  church: selectedChurch,
+                  onSaved: () async {
+                    ref.invalidate(churchByIdProvider(selectedChurch.id));
+                    ref.invalidate(churchesProvider);
+                    ref.invalidate(userChurchesProvider);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ref.t('settings.church_profile_updated'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Leaves the currently selected church only (§6 Phase 7) — identity,
+/// favorites, reading plans, Church Tree progress and streak all survive,
+/// since they live on `users/{uid}`, never on the membership. Hidden when
+/// no church is selected (e.g. from the guest shell).
+class _LeaveChurchSection extends ConsumerWidget {
+  const _LeaveChurchSection();
+
+  Future<void> _confirmAndLeave(
+    BuildContext context,
+    WidgetRef ref,
+    String churchId,
+    String churchName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(ref.t('settings.leave_church_title')),
+        content: Text(
+          ref.t(
+            'settings.leave_church_message',
+            parameters: {'church': churchName},
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(ref.t('settings.cancel')),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(ref.t('settings.leave_church_confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).leaveChurch(churchId: churchId);
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      await ChurchLocalStorage().clearChurch();
+      await ChurchLocalStorage().clearSubscribedChurchTopic();
+      ref.read(selectedChurchProvider.notifier).state = null;
+      ref.invalidate(currentChurchIdProvider);
+      ref.invalidate(myMembershipsProvider);
+      ref.invalidate(userChurchesProvider);
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, __, ___) => const SelectChurchScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(error))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedChurch = ref.watch(selectedChurchProvider);
+    if (selectedChurch == null) return const SizedBox.shrink();
+
+    return _SettingsTile(
+      icon: Icons.exit_to_app_rounded,
+      iconColor: Colors.red,
+      title: ref.t('settings.leave_church_title'),
+      subtitle: ref.t(
+        'settings.leave_church_subtitle',
+        parameters: {'church': selectedChurch.name},
+      ),
+      onTap: () => _confirmAndLeave(
+        context,
+        ref,
+        selectedChurch.id,
+        selectedChurch.name,
+      ),
+    );
+  }
+}
+
+/// Opens the full church directory (`SelectChurchScreen` — Your churches,
+/// Other churches, and the all-churches feed action) so someone can request
+/// access to a church they're not part of yet. `SelectChurchScreen` is
+/// always a root-level screen (same as its entry-gate use) — no back button
+/// out of it, only actually picking/entering a church — so this clears the
+/// whole stack rather than pushing on top of it. Quick switching between
+/// churches already joined is separate: tap the church name in
+/// `ChurchTabScreen`'s app bar for that (`ChurchQuickSwitcherSheet`).
+class _RegisterAnotherChurchSection extends StatelessWidget {
+  const _RegisterAnotherChurchSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      icon: Icons.travel_explore_outlined,
+      title: context.t('settings.register_another_church_title'),
+      subtitle: context.t('settings.register_another_church_subtitle'),
+      onTap: () => Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const SelectChurchScreen(initialTabIndex: 1),
+        ),
+        (route) => false,
+      ),
+    );
+  }
+}
+
+/// Fully signs the person out of Firebase Auth — separate from switching
+/// church, which now happens by tapping the church name in `ChurchTabScreen`'s
+/// app bar (opens `ChurchQuickSwitcherSheet`) and keeps the session, just
+/// clearing the locally selected church.
 class _LogoutSection extends ConsumerWidget {
   const _LogoutSection();
 
@@ -475,7 +668,6 @@ class _LogoutSection extends ConsumerWidget {
       onTap: () async {
         final navigator = Navigator.of(context);
         ref.read(logginAccessLoadingProvider.notifier).state = false;
-        ref.read(forcePreflowThemeProvider.notifier).state = true;
         await ChurchLocalStorage().clearChurch();
         await ChurchLocalStorage().clearSubscribedChurchTopic();
         await ref.read(favoritesProvider.notifier).clearAll();
@@ -486,17 +678,111 @@ class _LogoutSection extends ConsumerWidget {
         ref.invalidate(currentChurchIdProvider);
         ref.invalidate(churchesProvider);
         ref.invalidate(userChurchesProvider);
-        ref.invalidate(appUserProvider);
-        ref.invalidate(getCurrentUserProvider);
+        ref.invalidate(userIdentityProvider);
+        ref.invalidate(currentMembershipProvider);
+        await FirebaseAuth.instance.signOut();
         navigator.pushAndRemoveUntil(
           PageRouteBuilder(
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
-            pageBuilder: (_, __, ___) => const SelectChurchScreen(),
+            pageBuilder: (_, __, ___) => const AuthChoiceScreen(),
           ),
           (route) => false,
         );
       },
+    );
+  }
+}
+
+/// Deletes the person's account entirely, across every church (§6 Phase 7)
+/// — the account-deletion UI referenced in
+/// `KT Files/testing/android-release-readiness-2026-08-13.md`'s known
+/// blockers list.
+class _DeleteAccountSection extends ConsumerWidget {
+  const _DeleteAccountSection();
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final password = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(ref.t('settings.delete_account_title')),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(ref.t('settings.delete_account_message')),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: ref.t('settings.delete_account_password_label'),
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? ref.t('settings.delete_account_password_required')
+                    : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(ref.t('settings.cancel')),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () {
+              if (formKey.currentState?.validate() != true) return;
+              Navigator.pop(dialogContext, passwordController.text);
+            },
+            child: Text(ref.t('settings.delete_account_confirm')),
+          ),
+        ],
+      ),
+    );
+    passwordController.dispose();
+    if (password == null || !context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount(password: password);
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const AuthChoiceScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mapFirebaseAuthError(error))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _SettingsTile(
+      icon: Icons.person_remove_outlined,
+      iconColor: Colors.red,
+      title: ref.t('settings.delete_account_title'),
+      subtitle: ref.t('settings.delete_account_subtitle'),
+      onTap: () => _confirmAndDelete(context, ref),
     );
   }
 }
@@ -867,7 +1153,8 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       final churchId = await ref.read(currentChurchIdProvider.future);
-      final user = ref.read(appUserProvider).asData?.value;
+      final identity = ref.read(userIdentityProvider).asData?.value;
+      final membership = ref.read(currentMembershipProvider).asData?.value;
       final selectedChurch = ref.read(selectedChurchProvider);
       final notificationSettings =
           await FirebaseMessaging.instance.getNotificationSettings();
@@ -877,17 +1164,19 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
         'source': 'settings',
         'churchId': churchId,
         'churchName': selectedChurch?.name,
-        'userId': firebaseUser?.uid ?? user?.uid,
-        'userName': user?.name,
-        'userEmail': firebaseUser?.email ?? user?.email,
-        'userPhone': user?.phone,
-        'userRole': user?.role,
-        'userApproved': user?.approved,
+        'userId': firebaseUser?.uid ?? identity?.uid,
+        'userName': identity?.name,
+        'userEmail': firebaseUser?.email ?? identity?.email,
+        'userPhone': identity?.phone,
+        'userRole': membership?.role,
+        'userApproved': membership?.approved,
         'submittedBy': _feedbackSubmittedBy(
           firebaseUser: firebaseUser,
-          user: user,
+          identity: identity,
+          membership: membership,
         ),
-        'userSnapshot': _feedbackUserSnapshot(user),
+        'identitySnapshot': _feedbackIdentitySnapshot(identity),
+        'membershipSnapshot': _feedbackMembershipSnapshot(membership),
         'firebaseAuthSnapshot': _feedbackAuthSnapshot(firebaseUser),
         'churchSnapshot': _feedbackChurchSnapshot(selectedChurch),
         'appSnapshot': {
@@ -1014,7 +1303,8 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: _isSending ? null : () => Navigator.of(context).pop(),
+                onPressed:
+                    _isSending ? null : () => Navigator.of(context).pop(),
                 child: Text(
                   ref.t('settings.not_now'),
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -1033,19 +1323,20 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
 
 Map<String, dynamic> _feedbackSubmittedBy({
   required User? firebaseUser,
-  required AppUser? user,
+  required UserIdentity? identity,
+  required ChurchMembership? membership,
 }) {
   return {
-    'uid': firebaseUser?.uid ?? user?.uid,
-    'name': user?.name,
-    'email': firebaseUser?.email ?? user?.email,
-    'phone': user?.phone,
-    'role': user?.role,
-    'approved': user?.approved,
+    'uid': firebaseUser?.uid ?? identity?.uid,
+    'name': identity?.name,
+    'email': firebaseUser?.email ?? identity?.email,
+    'phone': identity?.phone,
+    'role': membership?.role,
+    'approved': membership?.approved,
   };
 }
 
-Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
+Map<String, dynamic>? _feedbackIdentitySnapshot(UserIdentity? user) {
   if (user == null) return null;
 
   return {
@@ -1054,35 +1345,46 @@ Map<String, dynamic>? _feedbackUserSnapshot(AppUser? user) {
     'profilePhotoUrl': user.profilePhotoUrl,
     'email': user.email,
     'phone': user.phone,
-    'contact': user.contact,
     'location': user.location,
     'address': user.address,
     'gender': user.gender,
-    'category': user.category,
-    'familyId': user.familyId,
     'maritalStatus': user.maritalStatus,
     'weddingDay': _feedbackTimestamp(user.weddingDay),
-    'financialStabilityRating': user.financialStabilityRating,
-    'financialSupportRequired': user.financialSupportRequired,
     'educationalQualification': user.educationalQualification,
     'talentsAndGifts': user.talentsAndGifts,
-    'churchGroupIds': user.churchGroupIds,
-    'role': user.role,
     'dob': _feedbackTimestamp(user.dob),
     'createdAt': _feedbackTimestamp(user.createdAt),
     'dayStreak': user.dayStreak,
     'lastStreakRecordedAt': _feedbackTimestamp(user.lastStreakRecordedAt),
-    'approved': user.approved,
-    'solemnizedBaptism': user.solemnizedBaptism,
-    'baptismDate': _feedbackTimestamp(user.baptismDate),
-    'baptismCertificateNumber': user.baptismCertificateNumber,
-    'baptismChurchName': user.baptismChurchName,
-    'baptismPastorName': user.baptismPastorName,
-    'marriageSolemnizationChurchType': user.marriageSolemnizationChurchType,
-    'marriageSolemnizationChurchName': user.marriageSolemnizationChurchName,
-    'membershipCurrentStatus': user.membershipCurrentStatus,
-    'membershipNotes': user.membershipNotes,
-    'additionalNotes': user.additionalNotes,
+    'profileComplete': user.profileComplete,
+  };
+}
+
+Map<String, dynamic>? _feedbackMembershipSnapshot(ChurchMembership? member) {
+  if (member == null) return null;
+
+  return {
+    'docId': member.docId,
+    'churchId': member.churchId,
+    'linkedUid': member.linkedUid,
+    'category': member.category,
+    'familyId': member.familyId,
+    'financialStabilityRating': member.financialStabilityRating,
+    'financialSupportRequired': member.financialSupportRequired,
+    'churchGroupIds': member.churchGroupIds,
+    'role': member.role,
+    'joinedAt': _feedbackTimestamp(member.joinedAt),
+    'approved': member.approved,
+    'solemnizedBaptism': member.solemnizedBaptism,
+    'baptismDate': _feedbackTimestamp(member.baptismDate),
+    'baptismCertificateNumber': member.baptismCertificateNumber,
+    'baptismChurchName': member.baptismChurchName,
+    'baptismPastorName': member.baptismPastorName,
+    'marriageSolemnizationChurchType': member.marriageSolemnizationChurchType,
+    'marriageSolemnizationChurchName': member.marriageSolemnizationChurchName,
+    'membershipCurrentStatus': member.membershipCurrentStatus,
+    'membershipNotes': member.membershipNotes,
+    'additionalNotes': member.additionalNotes,
   };
 }
 
@@ -1193,7 +1495,7 @@ class _StorageSection extends ConsumerWidget {
 class _EditProfileSheet extends ConsumerStatefulWidget {
   const _EditProfileSheet({required this.user});
 
-  final AppUser user;
+  final UserIdentity user;
 
   @override
   ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -1203,9 +1505,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   late final TextEditingController _phoneController;
   late final TextEditingController _locationController;
   late final TextEditingController _addressController;
+  late final TextEditingController _educationalQualificationController;
+  late final TextEditingController _talentsAndGiftsController;
   bool _isSaving = false;
   bool _isFetchingLocation = false;
   DateTime? _dob;
+  String _maritalStatus = '';
+  DateTime? _weddingDay;
   PickedImageData? _profilePhoto;
   bool _removeProfilePhoto = false;
 
@@ -1215,7 +1521,13 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _phoneController = TextEditingController(text: widget.user.phone);
     _locationController = TextEditingController(text: widget.user.location);
     _addressController = TextEditingController(text: widget.user.address);
+    _educationalQualificationController =
+        TextEditingController(text: widget.user.educationalQualification);
+    _talentsAndGiftsController =
+        TextEditingController(text: widget.user.talentsAndGifts.join(', '));
     _dob = widget.user.dob;
+    _maritalStatus = widget.user.maritalStatus;
+    _weddingDay = widget.user.weddingDay;
   }
 
   @override
@@ -1223,7 +1535,17 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _phoneController.dispose();
     _locationController.dispose();
     _addressController.dispose();
+    _educationalQualificationController.dispose();
+    _talentsAndGiftsController.dispose();
     super.dispose();
+  }
+
+  List<String> _parsedTalentsAndGifts() {
+    return _talentsAndGiftsController.text
+        .split(RegExp(r'[,\n]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   String _formatDob(DateTime? date) {
@@ -1321,9 +1643,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     final firebaseUser = ref.read(firebaseAuthProvider).currentUser;
     if (firebaseUser == null) return;
 
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (!mounted || churchId == null) return;
-
     final phone = _phoneController.text.trim();
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1356,15 +1675,24 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       );
       return;
     }
+    if (_maritalStatus == 'married' && _weddingDay == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.t('members.member_wedding_day_required'),
+          ),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final repo = ChurchUsersRepository(
+      final repo = UserIdentityRepository(
         firestore: ref.read(firestoreProvider),
-        churchId: churchId,
       );
 
       final profilePhotoUrl = await repo.updateProfile(
@@ -1372,10 +1700,11 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         phone: phone,
         location: _locationController.text,
         address: _addressController.text,
-        category: widget.user.category,
-        familyId: widget.user.familyId,
-        churchGroupIds: widget.user.churchGroupIds,
         dob: _dob,
+        maritalStatus: _maritalStatus,
+        weddingDay: _maritalStatus == 'married' ? _weddingDay : null,
+        educationalQualification: _educationalQualificationController.text,
+        talentsAndGifts: _parsedTalentsAndGifts(),
         existingProfilePhotoUrl: widget.user.profilePhotoUrl,
         profilePhoto: _profilePhoto,
         removeProfilePhoto: _removeProfilePhoto,
@@ -1412,7 +1741,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
             const SizedBox(height: 16),
             Center(
               child: Column(
@@ -1485,10 +1813,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 _SettingsReviewRow(
                   ref.t('members.email_label'),
                   widget.user.email,
-                ),
-                _SettingsReviewRow(
-                  ref.t('members.category_label'),
-                  widget.user.category,
                 ),
               ],
             ),
@@ -1570,6 +1894,77 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: ref.t('auth.address_label'),
                 helperText: ref.t('auth.address_helper'),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppDropdownField<String>(
+              initialValue: _maritalStatus.isEmpty ? null : _maritalStatus,
+              labelText: ref.t('members.marital_status_label'),
+              items: [
+                DropdownMenuItem(
+                  value: 'individual',
+                  child: Text(ref.t('common.individual')),
+                ),
+                DropdownMenuItem(
+                  value: 'married',
+                  child: Text(ref.t('common.married')),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _maritalStatus = value ?? '';
+                  if (_maritalStatus != 'married') _weddingDay = null;
+                });
+              },
+            ),
+            if (_maritalStatus == 'married') ...[
+              const SizedBox(height: 16),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _weddingDay ?? DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (pickedDate == null) return;
+                  setState(() {
+                    _weddingDay = pickedDate;
+                  });
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: ref.t('members.wedding_day_label'),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  ),
+                  child: Text(
+                    _weddingDay == null
+                        ? ref.t('members.wedding_day_hint')
+                        : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                            '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                            '${_weddingDay!.year}',
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _educationalQualificationController,
+              decoration: InputDecoration(
+                labelText: ref.t('members.educational_qualification'),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _talentsAndGiftsController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: ref.t('members.talents_and_gifts'),
+                helperText: ref.t('members.talents_and_gifts_helper'),
                 border: const OutlineInputBorder(),
               ),
             ),

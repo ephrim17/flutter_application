@@ -84,6 +84,11 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Used only by test/firestore_provider_test.dart to fake Firebase Core's
+  # native init so firestoreProvider's database-selection logic is
+  # unit-testable without a real backend.
+  firebase_core_platform_interface: ^6.0.3
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

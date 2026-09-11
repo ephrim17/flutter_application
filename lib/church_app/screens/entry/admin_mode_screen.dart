@@ -6,7 +6,6 @@ import 'package:flutter_application/church_app/providers/authentication/super_ad
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
@@ -105,7 +104,6 @@ class AdminModeScreen extends ConsumerWidget {
   Future<void> _handleOkay(BuildContext context, WidgetRef ref) async {
     final navigator = Navigator.of(context);
     ref.read(logginAccessLoadingProvider.notifier).state = false;
-    ref.read(forcePreflowThemeProvider.notifier).state = true;
     await ChurchLocalStorage().clearChurch();
     await ChurchLocalStorage().clearSubscribedChurchTopic();
     await ref.read(favoritesProvider.notifier).clearAll();
@@ -114,8 +112,8 @@ class AdminModeScreen extends ConsumerWidget {
           SuperAdminEntryMode.normal,
         );
     ref.invalidate(currentChurchIdProvider);
-    ref.invalidate(appUserProvider);
-    ref.invalidate(getCurrentUserProvider);
+    ref.invalidate(userIdentityProvider);
+    ref.invalidate(currentMembershipProvider);
     navigator.pushAndRemoveUntil(
       PageRouteBuilder(
         transitionDuration: Duration.zero,

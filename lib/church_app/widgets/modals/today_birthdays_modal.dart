@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/feed_post_modal_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/bible_swipe_verse_provider.dart';
@@ -19,7 +19,7 @@ import 'package:image_picker/image_picker.dart';
 
 Future<void> showTodayBirthdaysModal(
   BuildContext context, {
-  required List<AppUser> members,
+  required List<ChurchMembership> members,
 }) {
   return showAppModalBottomSheet<void>(
     context: context,
@@ -34,7 +34,7 @@ Future<void> showTodayBirthdaysModal(
 class _TodayBirthdaysModal extends StatelessWidget {
   const _TodayBirthdaysModal({required this.members});
 
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
 
   @override
   Widget build(BuildContext context) {
@@ -70,12 +70,12 @@ class _TodayBirthdaysModal extends StatelessWidget {
                       return Card(
                         child: ListTile(
                           leading: AppProfileAvatar(
-                            name: member.name,
-                            imageUrl: member.profilePhotoUrl,
+                            name: member.displayName,
+                            imageUrl: member.displayPhotoUrl,
                           ),
-                          title: Text(member.name),
+                          title: Text(member.displayName),
                           subtitle:
-                              Text(_formatBirthdayMoment(context, member.dob)),
+                              Text(_formatBirthdayMoment(context, member.displayDob)),
                           trailing: FilledButton(
                             onPressed: () {
                               showAppModalBottomSheet<void>(
@@ -115,7 +115,7 @@ class BirthdayPostComposerModal extends ConsumerStatefulWidget {
     this.type = SpecialPostType.birthday,
   });
 
-  final AppUser member;
+  final ChurchMembership member;
   final SpecialPostType type;
 
   @override
@@ -157,13 +157,13 @@ class _BirthdayPostComposerModalState
     super.initState();
     _titleController.text = _isAnniversary
         ? buildAnniversaryPostTitle(
-            widget.member.name, widget.member.weddingDay)
-        : buildBirthdayPostTitle(widget.member.name, widget.member.dob);
+            widget.member.displayName, widget.member.displayWeddingDay)
+        : buildBirthdayPostTitle(widget.member.displayName, widget.member.displayDob);
     _descriptionController.text = _isAnniversary
         ? defaultChurchTextContents['anniversary.post_description']!
-            .replaceAll('{name}', widget.member.name)
+            .replaceAll('{name}', widget.member.displayName)
         : defaultChurchTextContents['birthday.post_description']!
-            .replaceAll('{name}', widget.member.name);
+            .replaceAll('{name}', widget.member.displayName);
   }
 
   @override
@@ -256,7 +256,7 @@ class _BirthdayPostComposerModalState
           _generatedImage = PickedImageData(
             bytes: bytes,
             name:
-                '${_isAnniversary ? 'anniversary' : 'birthday'}-${widget.member.uid}.png',
+                '${_isAnniversary ? 'anniversary' : 'birthday'}-${widget.member.docId}.png',
           );
         });
       }
@@ -420,7 +420,7 @@ class _BirthdayPostComposerModalState
                     RepaintBoundary(
                       key: _cardKey,
                       child: BirthdayBlessingCard(
-                        userName: widget.member.name,
+                        userName: widget.member.displayName,
                         verse: _selectedVerse!,
                         eyebrow: _cardEyebrow,
                         headline: _cardHeadline,

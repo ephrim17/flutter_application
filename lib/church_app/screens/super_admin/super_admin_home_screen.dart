@@ -8,7 +8,6 @@ import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/super_admin_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/learning_modules_admin_screen.dart';
@@ -133,7 +132,6 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
   }
 
   Future<void> _openNormalFlow(BuildContext context) async {
-    ref.read(forcePreflowThemeProvider.notifier).state = true;
     ref.read(selectedChurchProvider.notifier).state = null;
     ref.invalidate(currentChurchIdProvider);
     await ref.read(superAdminEntryModeProvider.notifier).setMode(
@@ -190,15 +188,25 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                           church.id.toLowerCase().contains(query) ||
                           church.pastorName.toLowerCase().contains(query);
                     }).toList(growable: false);
+                    // A disabled church that was already reviewed and
+                    // enabled at some point (then later turned off) is a
+                    // different state from a public registration nobody has
+                    // reviewed yet — conflating the two under one "Not
+                    // Approved" tab misled a super admin into thinking a
+                    // disabled church still needed review.
                     final pendingChurches = filteredChurches
-                        .where((church) => !church.enabled)
+                        .where((church) => church.isPendingFirstReview)
+                        .toList(growable: false);
+                    final disabledChurches = filteredChurches
+                        .where((church) =>
+                            !church.enabled && !church.isPendingFirstReview)
                         .toList(growable: false);
                     final approvedChurches = filteredChurches
                         .where((church) => church.enabled)
                         .toList(growable: false);
 
                     return DefaultTabController(
-                      length: 3,
+                      length: 4,
                       child: NestedScrollView(
                         headerSliverBuilder: (context, innerBoxIsScrolled) {
                           return [
@@ -394,7 +402,7 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                               child: FittedBox(
                                                 fit: BoxFit.scaleDown,
                                                 child: Text(
-                                                  'Not Approved (${pendingChurches.length})',
+                                                  'Pending review (${pendingChurches.length})',
                                                 ),
                                               ),
                                             ),
@@ -402,7 +410,15 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                                               child: FittedBox(
                                                 fit: BoxFit.scaleDown,
                                                 child: Text(
-                                                  'Approved (${approvedChurches.length})',
+                                                  'Disabled (${disabledChurches.length})',
+                                                ),
+                                              ),
+                                            ),
+                                            Tab(
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  'Enabled (${approvedChurches.length})',
                                                 ),
                                               ),
                                             ),
@@ -430,6 +446,11 @@ class _SuperAdminHomeScreenState extends ConsumerState<SuperAdminHomeScreen> {
                               churches: pendingChurches,
                               emptyMessage: context
                                   .t('super_admin.pending_section_empty'),
+                            ),
+                            _ChurchListTab(
+                              churches: disabledChurches,
+                              emptyMessage: context
+                                  .t('super_admin.disabled_section_empty'),
                             ),
                             _ChurchListTab(
                               churches: approvedChurches,
@@ -1177,8 +1198,7 @@ class _FeatureToggleChip extends ConsumerStatefulWidget {
   final bool enabled;
 
   @override
-  ConsumerState<_FeatureToggleChip> createState() =>
-      _FeatureToggleChipState();
+  ConsumerState<_FeatureToggleChip> createState() => _FeatureToggleChipState();
 }
 
 class _FeatureToggleChipState extends ConsumerState<_FeatureToggleChip> {
@@ -1258,8 +1278,7 @@ class _FeatureToggleChipState extends ConsumerState<_FeatureToggleChip> {
                       ? Icons.check_circle_rounded
                       : Icons.add_circle_outline_rounded,
                   size: 18,
-                  color:
-                      enabled ? item.color : Theme.of(context).disabledColor,
+                  color: enabled ? item.color : Theme.of(context).disabledColor,
                 ),
             ],
           ),

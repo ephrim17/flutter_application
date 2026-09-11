@@ -1,11 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show DocumentSnapshot;
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
+import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
 final feedRepositoryProvider = Provider(
-  (ref) => FeedRepository(FirebaseFirestore.instance),
+  (ref) => FeedRepository(ref.read(firestoreProvider)),
 );
 
 final feedPaginationControllerProvider = StateNotifierProvider.autoDispose

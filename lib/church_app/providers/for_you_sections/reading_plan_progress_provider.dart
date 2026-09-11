@@ -1,27 +1,19 @@
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/services/for_you_section/reading_plan_progress_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
+/// Person-owned (§5.1/Phase 4) — available whenever someone is signed in,
+/// including in the guest shell, with no church selected.
 final readingPlanProgressRepositoryProvider =
     Provider<ReadingPlanProgressRepository?>((ref) {
-  final churchIdAsync = ref.watch(currentChurchIdProvider);
   final auth = ref.watch(firebaseAuthProvider);
   final user = auth.currentUser;
+  if (user == null) return null;
 
-  return churchIdAsync.when(
-    data: (churchId) {
-      if (churchId == null || user == null) return null;
-
-      return ReadingPlanProgressRepository(
-        firestore: ref.read(firestoreProvider),
-        churchId: churchId,
-        uid: user.uid,
-      );
-    },
-    loading: () => null,
-    error: (_, __) => null,
+  return ReadingPlanProgressRepository(
+    firestore: ref.read(firestoreProvider),
+    uid: user.uid,
   );
 });
 

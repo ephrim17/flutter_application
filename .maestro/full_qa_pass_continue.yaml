@@ -1,0 +1,88 @@
+appId: com.example.flutter_application
+---
+# Cheap continuation of full_qa_pass.yaml — assumes the app is ALREADY
+# running, logged in as maestro.qa.runner@example.com, and inside tnbm
+# (The New Beginning Ministries). No clearState, no onboarding, no login —
+# just resumes and covers the remaining tabs/drawer/settings surface.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "Community"
+    timeout: 90000
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+- takeScreenshot: qc_01_home
+
+- tapOn: "For You"
+- waitForAnimationToEnd
+- takeScreenshot: qc_02_for_you
+
+- tapOn: "Community"
+- waitForAnimationToEnd
+- takeScreenshot: qc_03_community
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "About"
+- waitForAnimationToEnd
+- takeScreenshot: qc_04_about
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Members"
+- waitForAnimationToEnd
+- takeScreenshot: qc_05_members_directory
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Church Groups"
+- waitForAnimationToEnd
+- takeScreenshot: qc_06_church_groups
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Favorites"
+- waitForAnimationToEnd
+- takeScreenshot: qc_07_favorites
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Holy Bible"
+- waitForAnimationToEnd
+- takeScreenshot: qc_08_holy_bible
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Prayer Request"
+- waitForAnimationToEnd
+- takeScreenshot: qc_09_prayer_request
+- back
+- waitForAnimationToEnd
+
+# Equipment and Studio are admin-only drawer items (config.equipmentEnabled
+# + adminOnly: true, and the studio screen similarly) — this QA account is
+# a plain approved member, not a config-listed admin, so both are correctly
+# absent from the drawer. Confirmed via screenshot: the drawer for this
+# account shows exactly Church Groups, Prayer Request, Members, Favorites,
+# Holy Bible, About, Settings. Re-run as an admin account to cover those
+# two screens.
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- takeScreenshot: qc_12_settings

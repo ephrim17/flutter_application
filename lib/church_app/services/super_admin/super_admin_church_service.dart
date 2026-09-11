@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -25,6 +26,9 @@ class CreateChurchInput {
     this.registeredByUid,
     this.registeredByEmail,
     this.features = const <String, bool>{},
+    this.facebookLink = '',
+    this.instagramLink = '',
+    this.youtubeLink = '',
   });
 
   final String churchId;
@@ -45,6 +49,9 @@ class CreateChurchInput {
   final String? registeredByUid;
   final String? registeredByEmail;
   final Map<String, bool> features;
+  final String facebookLink;
+  final String instagramLink;
+  final String youtubeLink;
 }
 
 class UpdateChurchInput {
@@ -61,6 +68,9 @@ class UpdateChurchInput {
     this.logoImage,
     this.pastorPhotoImage,
     this.features = const <String, bool>{},
+    this.facebookLink = '',
+    this.instagramLink = '',
+    this.youtubeLink = '',
   });
 
   final String churchId;
@@ -75,6 +85,9 @@ class UpdateChurchInput {
   final PickedImageData? logoImage;
   final PickedImageData? pastorPhotoImage;
   final Map<String, bool> features;
+  final String facebookLink;
+  final String instagramLink;
+  final String youtubeLink;
 }
 
 class SuperAdminChurchService {
@@ -199,6 +212,9 @@ class SuperAdminChurchService {
       'email': normalizedChurchEmail,
       'logo': logoUrl,
       'enabled': input.enabled,
+      'facebookLink': input.facebookLink.trim(),
+      'instagramLink': input.instagramLink.trim(),
+      'youtubeLink': input.youtubeLink.trim(),
       'registrationSource': registrationSource,
       if (input.registeredByUid?.trim().isNotEmpty == true)
         'registeredByUid': input.registeredByUid!.trim(),
@@ -243,12 +259,6 @@ class SuperAdminChurchService {
         'onboarding': {
           'title': '',
           'subtitle': '',
-        },
-        'theme': {
-          'primaryColor': '#000000',
-          'secondaryColor': '#000000',
-          'backgroundColor': '#FFFFFF',
-          'cardBackgroundColor': '#FFFFFF',
         },
         'textContent': <String, String>{
           'church_tab.app_title': input.name.trim(),
@@ -326,35 +336,57 @@ class SuperAdminChurchService {
         input.adminName != null &&
         input.adminEmail != null &&
         input.adminPhone != null) {
+      final adminUid = input.adminUid!.trim();
       batch.set(
-        FirestorePaths.churchUserDoc(
-          _firestore,
-          churchId,
-          input.adminUid!.trim(),
-        ),
+        FirestorePaths.userDoc(_firestore, adminUid),
         {
-          'uid': input.adminUid!.trim(),
           'name': input.adminName!.trim(),
           'email': normalizedAdminEmail,
           'phone': input.adminPhone!.trim(),
-          'contact': input.adminPhone!.trim(),
           'location': '',
           'address': input.address.trim(),
           'gender': '',
-          'category': 'individual',
-          'familyId': '',
           'maritalStatus': '',
           'weddingDay': null,
-          'financialStabilityRating': 0,
-          'financialSupportRequired': false,
           'educationalQualification': '',
           'talentsAndGifts': const <String>[],
+          'dob': null,
+          'profileComplete': false,
+          'schemaVersion': 1,
+          'createdAt': now,
+          'updatedAt': now,
+        },
+        SetOptions(merge: true),
+      );
+      batch.set(
+        FirestorePaths.churchMemberDoc(
+          _firestore,
+          churchId,
+          adminUid,
+        ),
+        {
+          'uid': adminUid,
+          'linkedUid': adminUid,
+          'category': 'individual',
+          'familyId': '',
+          'financialStabilityRating': 0,
+          'financialSupportRequired': false,
           'churchGroupIds': adminGroupIds,
           'role': 'admin',
-          'authToken': '',
           'approved': true,
-          'dob': null,
-          'createdAt': now,
+          'joinedAt': now,
+          'schemaVersion': 1,
+          'displayName': input.adminName!.trim(),
+          'displayEmail': normalizedAdminEmail,
+          'displayPhone': input.adminPhone!.trim(),
+          'displayAddress': input.address.trim(),
+          'displayGender': '',
+          'displayMaritalStatus': '',
+          'displayWeddingDay': null,
+          'displayEducationalQualification': '',
+          'displayTalentsAndGifts': const <String>[],
+          'displayDob': null,
+          'identitySyncedAt': now,
         },
       );
     }
@@ -484,6 +516,9 @@ class SuperAdminChurchService {
         'email': normalizedChurchEmail,
         'logo': logoUrl,
         'enabled': input.enabled,
+        'facebookLink': input.facebookLink.trim(),
+        'instagramLink': input.instagramLink.trim(),
+        'youtubeLink': input.youtubeLink.trim(),
         if (input.enabled && isPendingPublicRegistration)
           'approvalStatus': 'approved',
         if (input.enabled && isPendingPublicRegistration) 'approvedAt': now,
@@ -873,6 +908,16 @@ class SuperAdminChurchService {
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('\n', '<br>');
+  }
+
+  /// Recursively deletes a church and everything under it (§6 Phase 7,
+  /// super admin only) — members, groups, feeds, learning content, all of
+  /// it. Users survive; nothing outside `churches/{churchId}` is touched.
+  /// Irreversible.
+  Future<void> deleteChurch(String churchId) async {
+    await FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable('deleteChurch')
+        .call<void>({'churchId': churchId});
   }
 }
 

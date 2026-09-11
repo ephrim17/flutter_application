@@ -152,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final sectionConfigsAsync = ref.watch(homeSectionConfigsProvider);
-    final userAsync = ref.watch(appUserProvider);
+    final userAsync = ref.watch(userIdentityProvider);
 
     return sectionConfigsAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),

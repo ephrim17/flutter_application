@@ -16,10 +16,6 @@ class AppConfig {
   final int bibleSwipeFetchVersion;
   final String onboardingTitle;
   final String onboardingSubtitle;
-  final String primaryColorHex;
-  final String secondaryColorHex;
-  final String backgroundColorHex;
-  final String cardColorHex;
   final DailyVerseRef dailyVerseRef;
   final PromiseVerseRef promiseVerseRef;
   final PromptSheetModel promptSheet;
@@ -41,10 +37,6 @@ class AppConfig {
       required this.globalFeedEnabled,
       required this.onboardingTitle,
       required this.onboardingSubtitle,
-      required this.primaryColorHex,
-      required this.secondaryColorHex,
-      required this.backgroundColorHex,
-      required this.cardColorHex,
       required this.dailyVerseRef,
       required this.promptSheet,
       required this.adminMode,
@@ -69,10 +61,6 @@ class AppConfig {
       globalFeedEnabled: false,
       onboardingTitle: '',
       onboardingSubtitle: '',
-      primaryColorHex: '#000000',
-      secondaryColorHex: '#000000',
-      backgroundColorHex: '#FFFFFF',
-      cardColorHex: '#FFFFFF',
       dailyVerseRef: DailyVerseRef.empty(),
       promptSheet: PromptSheetModel.empty(),
       adminMode: AdminModeModel.empty(),
@@ -89,7 +77,6 @@ class AppConfig {
   factory AppConfig.fromFirestore(Map<String, dynamic> data) {
     final features = _stringMap(data['features']);
     final onboarding = _stringMap(data['onboarding']);
-    final theme = _stringMap(data['theme']);
     return AppConfig(
       admins: (data['admins'] as Iterable? ?? const [])
           .map((value) => value.toString().trim().toLowerCase())
@@ -117,14 +104,8 @@ class AppConfig {
       onboardingTitle: _string(onboarding['title']),
       onboardingSubtitle: _string(onboarding['subtitle']),
       textContent: TextContent.fromMap(_stringMapOrNull(data['textContent'])),
-      primaryColorHex: _string(theme['primaryColor'], fallback: '#000000'),
-      secondaryColorHex: _string(theme['secondaryColor'], fallback: '#000000'),
-      backgroundColorHex:
-          _string(theme['backgroundColor'], fallback: '#FFFFFF'),
-      cardColorHex: _string(theme['cardBackgroundColor'], fallback: '#FFFFFF'),
       churchLogo: _string(data['churchLogo']),
       youtubeLink: _string(data['youtubeLink']),
-      //logoUrl: data['theme']?['logoUrl'] ?? '',
     );
   }
 

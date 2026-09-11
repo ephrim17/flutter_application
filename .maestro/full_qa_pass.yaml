@@ -1,0 +1,179 @@
+appId: com.example.flutter_application
+---
+# Full QA pass against the migrated (default) database (non-super-admin
+# features only). Uses the pre-provisioned maestro.qa.runner@example.com
+# account, already an approved member of tnbm, so it skips onboarding-only
+# concerns (OTP email delivery) and exercises the real post-login app.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Next"
+    timeout: 180000
+- repeat:
+    while:
+      notVisible: "Get Started"
+    commands:
+      - tapOn: "Next"
+- tapOn: "Get Started"
+
+- extendedWaitUntil:
+    visible: "Login"
+    timeout: 20000
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "Email Address"
+    timeout: 10000
+- takeScreenshot: qa_01_signin_screen
+- tapOn: "Email Address"
+- inputText: "maestro.qa.runner@example.com"
+- tapOn: "Password"
+- inputText: "MaestroQa123"
+- hideKeyboard
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "Churches"
+    timeout: 60000
+- tapOn: "Churches"
+- extendedWaitUntil:
+    visible: "(?s).*Your Churches.*"
+    timeout: 20000
+- takeScreenshot: qa_02_churches_screen
+- assertVisible: "(?s).*Other Churches.*"
+
+# Enter the church (tnbm) via Your Churches.
+- tapOn: "(?s).*Your Churches.*"
+- waitForAnimationToEnd
+- takeScreenshot: qa_03_your_churches_expanded
+- tapOn: "(?s).*New Beginning Ministries.*"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Select Church"
+    timeout: 15000
+- tapOn: "Select Church"
+- waitForAnimationToEnd
+- takeScreenshot: qa_04_entered_church
+
+# --- Bottom tabs ---
+- extendedWaitUntil:
+    visible: "Community"
+    timeout: 15000
+- tapOn: "Home"
+- waitForAnimationToEnd
+- takeScreenshot: qa_05_home
+
+- tapOn: "For You"
+- waitForAnimationToEnd
+- takeScreenshot: qa_06_for_you
+
+- tapOn: "Community"
+- waitForAnimationToEnd
+- takeScreenshot: qa_07_feeds
+
+# Dashboard tab is admin-only (canSeeDashboard = isAdmin && dashboardEnabled)
+# and this QA account isn't a config-listed admin for this church, so it's
+# correctly not present here — no Dashboard tap for this account.
+
+- tapOn: "Home"
+- waitForAnimationToEnd
+
+# --- Side drawer items (non-admin views) ---
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "About"
+- waitForAnimationToEnd
+- takeScreenshot: qa_09_about
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Members"
+- waitForAnimationToEnd
+- takeScreenshot: qa_10_members_directory
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Church Groups"
+- waitForAnimationToEnd
+- takeScreenshot: qa_11_church_groups
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Favorites"
+- waitForAnimationToEnd
+- takeScreenshot: qa_12_favorites
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Holy Bible"
+- waitForAnimationToEnd
+- takeScreenshot: qa_13_holy_bible
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Prayer Request"
+- waitForAnimationToEnd
+- takeScreenshot: qa_14_prayer_request
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Equipment"
+- waitForAnimationToEnd
+- takeScreenshot: qa_15_equipment
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Studio"
+- waitForAnimationToEnd
+- takeScreenshot: qa_16_studio
+- back
+- waitForAnimationToEnd
+
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- takeScreenshot: qa_17_settings
+
+# --- Register for another church should land on Churches tab ---
+- scrollUntilVisible:
+    element: "Register for another church"
+    direction: DOWN
+- tapOn: "Register for another church"
+- extendedWaitUntil:
+    visible: "(?s).*Other Churches.*"
+    timeout: 15000
+- takeScreenshot: qa_18_register_another_church_lands_on_churches_tab
+
+# Go back into tnbm to continue.
+- tapOn: "(?s).*Your Churches.*"
+- waitForAnimationToEnd
+- tapOn: "(?s).*New Beginning Ministries.*"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Select Church"
+    timeout: 15000
+- tapOn: "Select Church"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Community"
+    timeout: 15000
+
+# --- Community feed create/delete ---
+- tapOn: "Community"
+- waitForAnimationToEnd
+- takeScreenshot: qa_19_feeds_before_post

@@ -1,7 +1,7 @@
 /* eslint-disable indent, require-jsdoc, valid-jsdoc */
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions";
-import {onRequest} from "firebase-functions/v2/https";
+import {HttpsError, onCall, onRequest} from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentWritten,
@@ -27,6 +27,9 @@ export {
   youtubeLiveWebhook,
 } from "./youtube_live";
 export {setFeedPostGlobal} from "./feed_global";
+export {fanOutIdentityChanges} from "./identityFanout";
+export {deleteAccount, deleteChurch, leaveChurch} from "./lifecycle";
+import {firestoreDatabaseIdParam, firestoreDb} from "./firestoreDb";
 
 admin.initializeApp();
 
@@ -44,6 +47,12 @@ const passwordResetResendCooldownMs = 60 * 1000;
 const passwordResetRequestWindowMs = 60 * 60 * 1000;
 const passwordResetMaxRequestsPerWindow = 5;
 const passwordResetMaxAttempts = 5;
+const emailVerificationChallengeCollection = "emailVerificationChallenges";
+const emailVerificationCodeLifetimeMs = 10 * 60 * 1000;
+const emailVerificationResendCooldownMs = 60 * 1000;
+const emailVerificationRequestWindowMs = 60 * 60 * 1000;
+const emailVerificationMaxRequestsPerWindow = 5;
+const emailVerificationMaxAttempts = 5;
 
 type MailJobData = {
   kind?: string;
@@ -660,6 +669,191 @@ export const completePasswordReset = onRequest(
   },
 );
 
+function emailVerificationChallengeId(uid: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(uid)
+    .digest("hex");
+}
+
+function emailVerificationCodeHash(challengeId: string, code: string): string {
+  return createHmac("sha256", smtpPass.value())
+    .update(`${challengeId}:${code}`)
+    .digest("hex");
+}
+
+/**
+ * Signup email-OTP (§5.5 addendum) — sends a 6-digit code to the caller's
+ * own Firebase Auth email. Callable (not onRequest like password reset)
+ * because the caller is already signed in by this point: the profile-setup
+ * step has already created their `users/{uid}` doc, and this just gates
+ * entry past it, so `request.auth` is the source of truth for which email
+ * to use rather than trusting a client-supplied address.
+ */
+export const requestSignupEmailVerificationCode = onCall(
+  {region: "us-central1", secrets: [smtpUser, smtpPass]},
+  async (request) => {
+    const uid = readUnknownString(request.auth?.uid);
+    if (!uid) throw new HttpsError("unauthenticated", "Sign-in required.");
+
+    const authUser = await admin.auth().getUser(uid);
+    const email = normalizeEmail(authUser.email ?? "");
+    if (email.length === 0) {
+      throw new HttpsError("failed-precondition", "no-email");
+    }
+    const churchName = readUnknownString(request.data?.churchName) ||
+      "Church App";
+
+    const firestore = firestoreDb();
+    const now = Date.now();
+    const challengeId = emailVerificationChallengeId(uid);
+    const challengeRef = firestore
+      .collection(emailVerificationChallengeCollection)
+      .doc(challengeId);
+    const code = randomInt(0, 1000000).toString().padStart(6, "0");
+    const codeHash = emailVerificationCodeHash(challengeId, code);
+
+    const shouldSend = await firestore.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(challengeRef);
+      const current = snapshot.data();
+      const lastSentAt = timestampMillis(current?.lastSentAt);
+      const windowStartedAt = timestampMillis(current?.windowStartedAt);
+      const inCurrentWindow =
+        windowStartedAt > 0 && now - windowStartedAt <
+          emailVerificationRequestWindowMs;
+      const requestCount = inCurrentWindow ?
+        Number(current?.requestCount ?? 0) : 0;
+      const deliveryStatus = readUnknownString(current?.deliveryStatus);
+
+      if ((deliveryStatus === "active" || deliveryStatus === "pending") &&
+          lastSentAt > 0 &&
+          now - lastSentAt < emailVerificationResendCooldownMs) {
+        return false;
+      }
+      if (requestCount >= emailVerificationMaxRequestsPerWindow) {
+        return false;
+      }
+
+      transaction.set(challengeRef, {
+        uid,
+        email,
+        codeHash,
+        expiresAt: admin.firestore.Timestamp.fromMillis(
+          now + emailVerificationCodeLifetimeMs,
+        ),
+        attemptsRemaining: emailVerificationMaxAttempts,
+        requestCount: requestCount + 1,
+        windowStartedAt: admin.firestore.Timestamp.fromMillis(
+          inCurrentWindow ? windowStartedAt : now,
+        ),
+        lastSentAt: admin.firestore.Timestamp.fromMillis(now),
+        deliveryStatus: "pending",
+        verifiedAt: admin.firestore.FieldValue.delete(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+      return true;
+    });
+
+    if (!shouldSend) return {success: true};
+
+    try {
+      const text = [
+        "Hello,",
+        "",
+        `Your ${churchName} email verification code is: ${code}`,
+        "",
+        "This code expires in 10 minutes.",
+        "If you did not request this, you can safely ignore this email.",
+      ].join("\n");
+      await createTransporter().sendMail({
+        from: emailFrom.value(),
+        to: [email],
+        subject: `Your ${churchName} verification code`,
+        text,
+        html: textToHtml(text),
+      });
+      await challengeRef.update({
+        deliveryStatus: "active",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return {success: true};
+    } catch (error) {
+      logger.error("Failed to send signup email verification code.", {
+        uid,
+        error: String(error),
+      });
+      await challengeRef.update({deliveryStatus: "failed"}).catch(() => null);
+      throw new HttpsError("internal", "verification-code-failed");
+    }
+  },
+);
+
+/**
+ * Verifies a signup email-OTP code and marks `users/{uid}.emailVerified`.
+ * Callable so `request.auth.uid` — not a client-supplied uid — decides
+ * whose challenge/identity doc is touched.
+ */
+export const verifySignupEmailVerificationCode = onCall(
+  {region: "us-central1", secrets: [smtpPass]},
+  async (request) => {
+    const uid = readUnknownString(request.auth?.uid);
+    if (!uid) throw new HttpsError("unauthenticated", "Sign-in required.");
+    const code = readUnknownString(request.data?.code);
+    if (!/^\d{6}$/.test(code)) {
+      throw new HttpsError("invalid-argument", "invalid-code");
+    }
+
+    const firestore = firestoreDb();
+    const now = Date.now();
+    const challengeId = emailVerificationChallengeId(uid);
+    const challengeRef = firestore
+      .collection(emailVerificationChallengeCollection)
+      .doc(challengeId);
+    const userRef = firestore.collection("users").doc(uid);
+
+    const result = await firestore.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(challengeRef);
+      const data = snapshot.data();
+      if (!snapshot.exists || data?.deliveryStatus !== "active") {
+        return "invalid-code";
+      }
+      if (timestampMillis(data.expiresAt) <= now) return "expired-code";
+      const attemptsRemaining = Number(data.attemptsRemaining ?? 0);
+      if (attemptsRemaining <= 0) return "too-many-attempts";
+      const expectedHash = readUnknownString(data.codeHash);
+      const submittedHash = emailVerificationCodeHash(challengeId, code);
+      if (!secureStringEqual(expectedHash, submittedHash)) {
+        transaction.update(challengeRef, {
+          attemptsRemaining: attemptsRemaining - 1,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return attemptsRemaining - 1 <= 0 ?
+          "too-many-attempts" : "invalid-code";
+      }
+
+      transaction.update(challengeRef, {
+        codeHash: admin.firestore.FieldValue.delete(),
+        deliveryStatus: "verified",
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      transaction.set(userRef, {
+        emailVerified: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+      return "verified";
+    });
+
+    if (result !== "verified") {
+      throw new HttpsError(
+        result === "too-many-attempts" ? "resource-exhausted" :
+          "invalid-argument",
+        result,
+      );
+    }
+    return {success: true};
+  },
+);
+
 /**
  * Sends a topic notification through FCM.
  * @param payload Notification payload.
@@ -692,38 +886,82 @@ function churchUserTopic(churchId: string, uid: string): string {
     notificationTopicSegment(uid);
 }
 
+/**
+ * Resolves every FCM token registered across every device
+ * (`users/{uid}/devices/{installationId}`) for a set of person uids.
+ * One person can have several devices, and their token set doesn't depend
+ * on which church happens to be selected on any of them (§2.6/Phase 5) — a
+ * post in church A must still reach a device currently sitting in church B.
+ * @param uids The linked person uids to resolve devices for.
+ * @return Map of uid -> that person's distinct fcm tokens.
+ */
+async function resolveDeviceTokensByUid(
+  uids: string[],
+): Promise<Map<string, string[]>> {
+  const tokensByUid = new Map<string, string[]>();
+  const distinctUids = Array.from(new Set(uids))
+    .filter((uid) => uid.length > 0);
+  if (distinctUids.length === 0) return tokensByUid;
+
+  const chunkSize = 30; // Firestore "in" query limit.
+  for (let index = 0; index < distinctUids.length; index += chunkSize) {
+    const chunk = distinctUids.slice(index, index + chunkSize);
+    const snapshot = await firestoreDb()
+      .collectionGroup("devices")
+      .where("uid", "in", chunk)
+      .get();
+
+    snapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const uid = readUnknownString(data["uid"]);
+      const token = readUnknownString(data["fcmToken"]);
+      if (!uid || !token) return;
+      const existing = tokensByUid.get(uid) ?? [];
+      if (!existing.includes(token)) existing.push(token);
+      tokensByUid.set(uid, existing);
+    });
+  }
+
+  return tokensByUid;
+}
+
 async function sendFeedPostNotification(
   payload: FeedPostNotificationPayload,
 ): Promise<number> {
-  const usersSnapshot = await admin.firestore()
+  const membersSnapshot = await firestoreDb()
     .collection("churches")
     .doc(payload.churchId)
-    .collection("users")
+    .collection("members")
     .get();
+
+  const linkedUids = membersSnapshot.docs
+    .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+    .filter((uid) => uid.length > 0);
+  const tokensByUid = await resolveDeviceTokensByUid(linkedUids);
 
   const messages: admin.messaging.Message[] = [];
   const seenTokens = new Set<string>();
 
-  usersSnapshot.docs.forEach((doc) => {
-    const token = readUnknownString(doc.data().authToken);
-    if (!token || seenTokens.has(token)) return;
-    seenTokens.add(token);
-
-    const isAuthor = doc.id == payload.authorId;
-    messages.push({
-      token,
-      notification: {
-        title: isAuthor ? payload.authorTitle : payload.memberTitle,
-        body: isAuthor ? payload.authorBody : payload.memberBody,
-      },
-      data: {
-        kind: "feed_post_created",
-        churchId: payload.churchId,
-        feedId: payload.feedId,
-        authorId: payload.authorId,
-      },
-    });
-  });
+  for (const uid of tokensByUid.keys()) {
+    const isAuthor = uid === payload.authorId;
+    for (const token of tokensByUid.get(uid) ?? []) {
+      if (seenTokens.has(token)) continue;
+      seenTokens.add(token);
+      messages.push({
+        token,
+        notification: {
+          title: isAuthor ? payload.authorTitle : payload.memberTitle,
+          body: isAuthor ? payload.authorBody : payload.memberBody,
+        },
+        data: {
+          kind: "feed_post_created",
+          churchId: payload.churchId,
+          feedId: payload.feedId,
+          authorId: payload.authorId,
+        },
+      });
+    }
+  }
 
   let successCount = 0;
   for (let index = 0; index < messages.length; index += 500) {
@@ -739,11 +977,11 @@ async function sendPrayerRequestAdminNotification(
   churchId: string,
   prayerId: string,
 ): Promise<{successCount: number; failureCount: number}> {
-  const firestore = admin.firestore();
+  const firestore = firestoreDb();
   const churchRef = firestore.collection("churches").doc(churchId);
-  const [configSnapshot, usersSnapshot] = await Promise.all([
+  const [configSnapshot, membersSnapshot] = await Promise.all([
     churchRef.collection("config").doc("app").get(),
-    churchRef.collection("users").get(),
+    churchRef.collection("members").get(),
   ]);
 
   const rawAdmins = configSnapshot.data()?.admins;
@@ -761,29 +999,36 @@ async function sendPrayerRequestAdminNotification(
     return {successCount: 0, failureCount: 0};
   }
 
+  const adminLinkedUids = membersSnapshot.docs
+    .filter((doc) => {
+      const email = readUnknownString(doc.data()["displayEmail"]);
+      return adminEmails.has(email.toLowerCase());
+    })
+    .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+    .filter((uid) => uid.length > 0);
+  const tokensByUid = await resolveDeviceTokensByUid(adminLinkedUids);
+
   const messages: admin.messaging.Message[] = [];
   const seenTokens = new Set<string>();
 
-  usersSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    const email = readUnknownString(data.email).toLowerCase();
-    const token = readUnknownString(data.authToken);
-    if (!adminEmails.has(email) || !token || seenTokens.has(token)) return;
-
-    seenTokens.add(token);
-    messages.push({
-      token,
-      notification: {
-        title: "New prayer request",
-        body: "A new prayer request was added to your church.",
-      },
-      data: {
-        kind: "prayer_request_created",
-        churchId,
-        prayerId,
-      },
-    });
-  });
+  for (const tokens of tokensByUid.values()) {
+    for (const token of tokens) {
+      if (seenTokens.has(token)) continue;
+      seenTokens.add(token);
+      messages.push({
+        token,
+        notification: {
+          title: "New prayer request",
+          body: "A new prayer request was added to your church.",
+        },
+        data: {
+          kind: "prayer_request_created",
+          churchId,
+          prayerId,
+        },
+      });
+    }
+  }
 
   let successCount = 0;
   let failureCount = 0;
@@ -801,6 +1046,7 @@ async function sendPrayerRequestAdminNotification(
 export const notifyChurchAdminsOnPrayerCreated = onDocumentCreated(
   {
     document: "churches/{churchId}/prayer_requests/{prayerId}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1006,6 +1252,7 @@ export const notifyChurchMembersWhenPrayerVisible = onDocumentWritten(
 export const processQueuedChurchNotification = onDocumentCreated(
   {
     document: "churches/{churchId}/notification_requests/{notificationId}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1090,7 +1337,8 @@ export const processQueuedChurchNotification = onDocumentCreated(
 
 export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
   {
-    document: "churches/{churchId}/users/{uid}",
+    document: "churches/{churchId}/members/{uid}",
+    database: firestoreDatabaseIdParam,
     region: "us-central1",
   },
   async (event) => {
@@ -1103,20 +1351,54 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     }
 
     try {
-      const usersSnapshot = await admin.firestore()
+      const firestore = firestoreDb();
+      const membersSnapshot = await firestore
         .collection("churches")
         .doc(churchId)
-        .collection("users")
+        .collection("members")
         .get();
 
-      const members = usersSnapshot.docs.map((doc) => ({
-        uid: doc.id,
-        ...doc.data(),
-      }));
+      // dayStreak moved off the membership doc onto the person's identity
+      // (users/{uid}) — one global streak per person (D4). Batch-fetch it
+      // for every linked member so the per-church leaderboard still works.
+      const linkedUids = membersSnapshot.docs
+        .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+        .filter((uid): uid is string => uid.length > 0);
+      const streakByUid = new Map<string, number>();
+      if (linkedUids.length > 0) {
+        const identityRefs = linkedUids.map((uid) =>
+          firestore.collection("users").doc(uid));
+        const identityDocs = await firestore.getAll(...identityRefs);
+        identityDocs.forEach((doc, index) => {
+          if (doc.exists) {
+            streakByUid.set(
+              linkedUids[index],
+              readUnknownInteger(doc.data()?.["dayStreak"]),
+            );
+          }
+        });
+      }
+
+      // Adapt the new members/{uid} shape (displayName, displayDob,
+      // joinedAt, no dayStreak) back onto the field names
+      // normalizeDashboardMember/buildDashboardMemberMetrics already expect
+      // — those stay unchanged; only this trigger's input shape moved.
+      const members = membersSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const linkedUid = readUnknownString(data["linkedUid"]);
+        return {
+          ...data,
+          uid: doc.id,
+          name: data["displayName"],
+          dob: data["displayDob"],
+          createdAt: data["joinedAt"],
+          dayStreak: linkedUid ? streakByUid.get(linkedUid) ?? 0 : 0,
+        };
+      });
 
       const metrics = buildDashboardMemberMetrics(members);
 
-      await admin.firestore()
+      await firestore
         .collection("churches")
         .doc(churchId)
         .collection("dashboard_metrics")
@@ -1133,6 +1415,151 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
     } catch (error) {
       logger.error("Failed to rebuild church dashboard member metrics.", {
         churchId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+);
+
+/**
+ * Notifies a person by push + email once their own request is approved —
+ * only when they opted in via `notifyOnApproval` on `RequestPendingScreen`
+ * (client). Fires once, on the false->true edge, so re-saving an already
+ * approved membership (e.g. editing category) never re-sends it.
+ */
+export const notifyMemberOnApproval = onDocumentWritten(
+  {
+    document: "churches/{churchId}/members/{memberId}",
+    database: firestoreDatabaseIdParam,
+    region: "us-central1",
+  },
+  async (event) => {
+    const before = event.data?.before;
+    const after = event.data?.after;
+    if (!after?.exists) return;
+
+    const wasApproved = before?.exists && before.data()?.approved === true;
+    const isApproved = after.data()?.approved === true;
+    if (wasApproved || !isApproved) return;
+    if (after.data()?.notifyOnApproval !== true) return;
+
+    const churchId = readUnknownString(event.params.churchId);
+    const uid = readUnknownString(after.data()?.uid) ||
+      readUnknownString(event.params.memberId);
+    if (!churchId || !uid) return;
+
+    try {
+      const firestore = firestoreDb();
+      const [churchDoc, identityDoc] = await Promise.all([
+        firestore.collection("churches").doc(churchId).get(),
+        firestore.collection("users").doc(uid).get(),
+      ]);
+      const churchName =
+        readUnknownString(churchDoc.data()?.name) || "your church";
+      const email = readUnknownString(identityDoc.data()?.email) ||
+        readUnknownString(after.data()?.displayEmail);
+
+      const tokensByUid = await resolveDeviceTokensByUid([uid]);
+      const tokens = tokensByUid.get(uid) ?? [];
+      const title = "You're in!";
+      const body = `${churchName} approved your request. Welcome!`;
+
+      if (tokens.length > 0) {
+        const response = await admin.messaging().sendEach(
+          tokens.map((token) => ({
+            token,
+            notification: {title, body},
+            data: {kind: "membership_approved", churchId},
+          })),
+        );
+        logger.info("Sent membership-approved push.", {
+          churchId,
+          uid,
+          successCount: response.successCount,
+        });
+      }
+
+      if (email) {
+        const text = [
+          "Hello,",
+          "",
+          `Your request to join "${churchName}" has been approved.`,
+          "Open the app to get started.",
+          "",
+          "Warm regards,",
+          "The Church App Team",
+        ].join("\n");
+
+        await firestore.collection("mail").add({
+          kind: "membership_approved",
+          template: "membership_approved",
+          to: [email],
+          subject: `You're approved to join ${churchName}`,
+          text,
+          html: textToHtml(text),
+          data: {churchId, uid},
+          status: "queued",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to send membership-approved notification.", {
+        churchId,
+        uid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+);
+
+/**
+ * Mirrors a deliberately reduced subset of an approved member's fields —
+ * name, photo, dob, gender, marital status only — into
+ * `churches/{churchId}/memberDirectory/{memberId}`, which any approved
+ * member (not just staff) can read. Keeps phone/email/address/baptism/
+ * financial/notes staff-only on the real `members/{memberId}` doc, since
+ * Firestore has no field-level security and that doc's full read is
+ * `isSelf || isChurchStaff` only. Removes the mirror when the member is
+ * deleted or no longer approved, so the directory only ever shows current,
+ * approved members.
+ */
+export const mirrorMemberDirectory = onDocumentWritten(
+  {
+    document: "churches/{churchId}/members/{memberId}",
+    database: firestoreDatabaseIdParam,
+    region: "us-central1",
+  },
+  async (event) => {
+    const churchId = readUnknownString(event.params.churchId);
+    const memberId = readUnknownString(event.params.memberId);
+    if (!churchId || !memberId) return;
+
+    const directoryRef = firestoreDb()
+      .collection("churches").doc(churchId)
+      .collection("memberDirectory").doc(memberId);
+
+    const after = event.data?.after;
+    const isApproved = after?.exists && after.data()?.approved === true;
+    if (!isApproved) {
+      await directoryRef.delete().catch(() => null);
+      return;
+    }
+
+    const data = after.data() ?? {};
+    try {
+      await directoryRef.set({
+        uid: memberId,
+        displayName: readUnknownString(data.displayName),
+        displayPhotoUrl: readUnknownString(data.displayPhotoUrl),
+        displayDob: data.displayDob ?? null,
+        displayGender: readUnknownString(data.displayGender),
+        displayMaritalStatus: readUnknownString(data.displayMaritalStatus),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      logger.error("Failed to mirror member directory entry.", {
+        churchId,
+        memberId,
         error: error instanceof Error ? error.message : String(error),
       });
     }

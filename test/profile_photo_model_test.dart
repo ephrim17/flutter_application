@@ -1,13 +1,13 @@
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_group_member_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Profile photo models', () {
-    test('AppUser reads, trims, and persists the profile photo URL', () {
-      final user = AppUser.fromJson({
-        'uid': 'user-id',
+    test('UserIdentity reads, trims, and persists the profile photo URL', () {
+      final user = UserIdentity.fromFirestore('user-id', {
         'name': 'Alex Morgan',
+        'email': 'alex@example.com',
         'profilePhotoUrl': ' https://example.com/avatar.jpg ',
       });
 
@@ -29,7 +29,10 @@ void main() {
     });
 
     test('older records without a profile photo keep an empty fallback', () {
-      final user = AppUser.fromJson({'uid': 'user-id', 'name': 'Alex Morgan'});
+      final user = UserIdentity.fromFirestore('user-id', {
+        'name': 'Alex Morgan',
+        'email': 'alex@example.com',
+      });
       final member =
           ChurchGroupMember.fromMap({'uid': 'user-id', 'name': 'Alex Morgan'});
 

@@ -7,7 +7,7 @@ class _DashboardMemberInsightsSection extends ConsumerWidget {
   });
 
   final DashboardViewState state;
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -557,15 +557,15 @@ class _DashboardSelectedGroupDetailsState
                                   (member) => Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
                                     child: _DashboardStatRow(
-                                      label: member.name.trim().isEmpty
+                                      label: member.displayName.trim().isEmpty
                                           ? context.t(
                                               'dashboard.member_fallback',
                                             )
-                                          : member.name,
-                                      value: member.maritalStatus.trim().isEmpty
+                                          : member.displayName,
+                                      value: member.displayMaritalStatus.trim().isEmpty
                                           ? context.t('common.not_provided')
                                           : formatDashboardCategory(
-                                              member.maritalStatus,
+                                              member.displayMaritalStatus,
                                             ),
                                     ),
                                   ),

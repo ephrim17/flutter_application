@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 
 void main() {
   testWidgets('user quick card has one actionable phone icon', (tester) async {
-    final user = AppUser.fromJson({
+    final user = ChurchMembership.fromFirestore('admin-1', 'church-1', {
       'uid': 'admin-1',
-      'name': 'Admin User',
-      'phone': '8754249990',
+      'displayName': 'Admin User',
+      'displayPhone': '8754249990',
       'role': 'admin',
       'approved': true,
     });

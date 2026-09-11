@@ -15,6 +15,14 @@ bool learningQuizPasses({
 
 enum LearningResourceType { pdf, image, youtube, externalLink }
 
+/// Which collection a [LearningModule] was loaded from — global
+/// `learning_modules` or a specific church's `learning_modules` (§5.6, D9).
+/// Set by the repository at load time from the collection it queried, not
+/// stored on the document itself; a church's own customization of a global
+/// module (`sourceModuleId` set) is still [church] — it lives under that
+/// church's collection and is that church's own record.
+enum ModuleSource { global, church }
+
 class LearningResource {
   const LearningResource({
     required this.name,
@@ -269,6 +277,7 @@ class LearningModule {
     required this.sections,
     required this.order,
     required this.enabled,
+    required this.source,
     this.sourceModuleId = '',
     this.finalExamQuestions = const [],
     this.passingPercentage = 70,
@@ -280,6 +289,7 @@ class LearningModule {
   final List<LearningSection> sections;
   final int order;
   final bool enabled;
+  final ModuleSource source;
   final String sourceModuleId;
   final List<LearningQuizQuestion> finalExamQuestions;
   final int passingPercentage;
@@ -300,8 +310,9 @@ class LearningModule {
       effectiveFinalExamQuestions.every((question) => question.isValid);
 
   factory LearningModule.fromDoc(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+    DocumentSnapshot<Map<String, dynamic>> doc, {
+    required ModuleSource source,
+  }) {
     final data = doc.data() ?? const <String, dynamic>{};
     final sections = data['sections'] is Iterable
         ? (data['sections'] as Iterable)
@@ -319,6 +330,7 @@ class LearningModule {
       sections: sections,
       order: _learningInt(data['order'], 100),
       enabled: data['enabled'] != false,
+      source: source,
       sourceModuleId: _learningText(data['sourceModuleId']),
       finalExamQuestions: data['finalExamQuestions'] is Iterable
           ? (data['finalExamQuestions'] as Iterable)
@@ -520,6 +532,28 @@ class LearningProgress {
           : const {},
     );
   }
+}
+
+/// Combines a person's global-track and church-track progress into the
+/// single view a church's module list needs (§5.6, D9) — global and church
+/// modules are shown together there, so their progress must be too.
+/// Section/module ids never collide across the two collections (each
+/// belongs to exactly one), so a plain union is safe.
+LearningProgress mergeLearningProgress(
+  LearningProgress global,
+  LearningProgress church,
+) {
+  return LearningProgress(
+    completedSectionIds: {
+      ...global.completedSectionIds,
+      ...church.completedSectionIds,
+    },
+    completedModuleIds: {
+      ...global.completedModuleIds,
+      ...church.completedModuleIds,
+    },
+    attempts: {...global.attempts, ...church.attempts},
+  );
 }
 
 class LearningQuizResult {

@@ -1,19 +1,15 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/widgets/app_splash_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_system_ui_overlay.dart';
-import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/helpers/preflow_colors.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
-import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/helpers/app_colors.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_routes.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart';
-import 'package:flutter_application/church_app/services/church_user_repository.dart';
+import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -37,9 +33,11 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         first.day == second.day;
   }
 
-  Future<void> _syncDailyStreakIfNeeded(AppUser user) async {
-    final churchId = await ref.read(currentChurchIdProvider.future);
-    if (churchId == null || !mounted) return;
+  // Global — one streak per person, not per membership (D4), so this no
+  // longer needs a selected church at all (fixes §2.6-adjacent: a church-less
+  // guest still ticks the streak).
+  Future<void> _syncDailyStreakIfNeeded(UserIdentity user) async {
+    if (!mounted) return;
 
     final today = DateTime.now();
     if (user.lastStreakRecordedAt != null &&
@@ -47,21 +45,16 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       return;
     }
 
-    final syncKey =
-        '$churchId:${user.uid}:${today.year}-${today.month}-${today.day}';
+    final syncKey = '${user.uid}:${today.year}-${today.month}-${today.day}';
     if (_lastDailyStreakSyncKey == syncKey) return;
 
     _lastDailyStreakSyncKey = syncKey;
-    final repository = ChurchUsersRepository(
+    final repository = UserIdentityRepository(
       firestore: ref.read(firestoreProvider),
-      churchId: churchId,
     );
 
     try {
-      await repository.updateDailyStreak(uid: user.uid);
-      if (!mounted) return;
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
+      await repository.updateDailyStreak(user.uid);
     } catch (_) {
       _lastDailyStreakSyncKey = null;
     }
@@ -77,15 +70,6 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       });
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final user = await ref.read(getCurrentUserProvider.future);
-      if (!mounted) return;
-      if (user != null) {
-        await _syncDailyStreakIfNeeded(user);
-      }
-    });
-
     ref.listenManual(currentChurchIdProvider, (previous, next) {
       next.whenData((churchId) async {
         await FirebaseAnalytics.instance.setUserProperty(
@@ -95,7 +79,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
       });
     }, fireImmediately: true);
 
-    ref.listenManual(appUserProvider, (previous, next) async {
+    ref.listenManual(userIdentityProvider, (previous, next) async {
       final user = next.asData?.value;
       if (user == null) return;
       await _syncDailyStreakIfNeeded(user);
@@ -107,138 +91,36 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     final analyticsObserver = FirebaseAnalyticsObserver(
       analytics: FirebaseAnalytics.instance,
     );
-    final configAsync = ref.watch(appConfigProvider);
-    final forcePreflowTheme = ref.watch(forcePreflowThemeProvider);
     final themeMode = ref.watch(themeProvider);
 
-    if (!_minimumSplashElapsed) {
-      return MaterialApp(
-        builder: buildAppSystemUiOverlay,
-        navigatorObservers: [analyticsObserver],
-        onGenerateRoute: generateChurchAppRoute,
-        themeMode: themeMode,
-        theme: _buildTheme(
-          context: context,
-          brightness: Brightness.light,
-          bgColor: PreflowColors.background,
-          cardColor: PreflowColors.card,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        darkTheme: _buildTheme(
-          context: context,
-          brightness: Brightness.dark,
-          bgColor: PreflowColors.darkBackground,
-          cardColor: PreflowColors.darkCard,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        home: const Scaffold(
-          body: Center(child: AppSplashScreen()),
-        ),
-      );
-    }
-
-    return configAsync.when(
-      loading: () => MaterialApp(
-        builder: buildAppSystemUiOverlay,
-        navigatorObservers: [analyticsObserver],
-        onGenerateRoute: generateChurchAppRoute,
-        themeMode: themeMode,
-        theme: _buildTheme(
-          context: context,
-          brightness: Brightness.light,
-          bgColor: PreflowColors.background,
-          cardColor: PreflowColors.card,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        darkTheme: _buildTheme(
-          context: context,
-          brightness: Brightness.dark,
-          bgColor: PreflowColors.darkBackground,
-          cardColor: PreflowColors.darkCard,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        home: const Scaffold(
-          body: Center(child: AppSplashScreen()),
-        ),
+    // One brand theme everywhere — no per-church color customization, so
+    // there's nothing here to wait on before picking a theme.
+    return MaterialApp(
+      builder: buildAppSystemUiOverlay,
+      navigatorObservers: [analyticsObserver],
+      onGenerateRoute: generateChurchAppRoute,
+      themeMode: themeMode,
+      theme: _buildTheme(
+        context: context,
+        brightness: Brightness.light,
+        bgColor: AppColors.background,
+        cardColor: AppColors.card,
+        primaryColor: AppColors.primary,
+        secondaryColor: AppColors.secondary,
       ),
-      error: (_, __) => MaterialApp(
-        builder: buildAppSystemUiOverlay,
-        navigatorObservers: [analyticsObserver],
-        onGenerateRoute: generateChurchAppRoute,
-        themeMode: themeMode,
-        theme: _buildTheme(
-          context: context,
-          brightness: Brightness.light,
-          bgColor: PreflowColors.background,
-          cardColor: PreflowColors.card,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        darkTheme: _buildTheme(
-          context: context,
-          brightness: Brightness.dark,
-          bgColor: PreflowColors.darkBackground,
-          cardColor: PreflowColors.darkCard,
-          primaryColor: PreflowColors.accent,
-          secondaryColor: PreflowColors.accent,
-        ),
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => Center(
-              child: Text(
-                context.t('app.bootstrap_failed'),
-              ),
+      darkTheme: _buildTheme(
+        context: context,
+        brightness: Brightness.dark,
+        bgColor: AppColors.darkBackground,
+        cardColor: AppColors.darkCard,
+        primaryColor: AppColors.primary,
+        secondaryColor: AppColors.secondary,
+      ),
+      home: _minimumSplashElapsed
+          ? const AppEntry()
+          : const Scaffold(
+              body: Center(child: AppLoadingIndicator()),
             ),
-          ),
-        ),
-      ),
-      data: (config) {
-        final useChurchTheme = !forcePreflowTheme;
-
-        final bgColor = useChurchTheme
-            ? config.backgroundColorHex.toColor()
-            : PreflowColors.background;
-        final cardColor =
-            useChurchTheme ? config.cardColorHex.toColor() : PreflowColors.card;
-        final darkBgColor =
-            useChurchTheme ? Colors.black : PreflowColors.darkBackground;
-        final darkCardColor =
-            useChurchTheme ? const Color(0xFF1E1E1E) : PreflowColors.darkCard;
-        final primaryColor = useChurchTheme
-            ? config.primaryColorHex.toColor()
-            : PreflowColors.accent;
-        final secondaryColor = useChurchTheme
-            ? config.secondaryColorHex.toColor()
-            : PreflowColors.accent;
-
-        return MaterialApp(
-          builder: buildAppSystemUiOverlay,
-          navigatorObservers: [analyticsObserver],
-          onGenerateRoute: generateChurchAppRoute,
-          themeMode: themeMode,
-          theme: _buildTheme(
-            context: context,
-            brightness: Brightness.light,
-            bgColor: bgColor,
-            cardColor: cardColor,
-            primaryColor: primaryColor,
-            secondaryColor: secondaryColor,
-          ),
-          darkTheme: _buildTheme(
-            context: context,
-            brightness: Brightness.dark,
-            bgColor: darkBgColor,
-            cardColor: darkCardColor,
-            primaryColor: primaryColor,
-            secondaryColor: secondaryColor,
-          ),
-          home: const AppEntry(),
-        );
-      },
     );
   }
 }
@@ -254,13 +136,11 @@ ThemeData _buildTheme({
   final usesDarkSurface = bgColor.computeLuminance() < 0.2;
   final buttonForegroundColor =
       primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-  final textColor =
-      usesDarkSurface ? PreflowColors.darkText : PreflowColors.lightText;
-  final mutedTextColor = usesDarkSurface
-      ? PreflowColors.darkMutedText
-      : PreflowColors.lightMutedText;
+  final textColor = usesDarkSurface ? AppColors.darkText : AppColors.lightText;
+  final mutedTextColor =
+      usesDarkSurface ? AppColors.darkMutedText : AppColors.lightMutedText;
   final inputColor =
-      usesDarkSurface ? PreflowColors.darkInput : PreflowColors.lightInput;
+      usesDarkSurface ? AppColors.darkInput : AppColors.lightInput;
   final errorColor =
       usesDarkSurface ? const Color(0xFFFFB4AB) : const Color(0xFFBA1A1A);
   final interTextTheme = _reduceTextThemeFontSizes(

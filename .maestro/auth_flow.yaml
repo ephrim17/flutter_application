@@ -1,0 +1,140 @@
+appId: com.example.flutter_application
+---
+# Email-first auth flow end-to-end (KT Files/features/authentication-and-entry.md
+# §Signup and entry gate). Uses a disposable QA test account
+# (qa.maestro.auth+<random>@example.com) created fresh each run so this is
+# repeatable without any manual cleanup.
+#
+# Scenario A: fresh install, brand-new email -> create-password step (default
+#   guess) -> Tell us about you -> lands on Your churches/Other churches.
+# Scenario B: log out -> re-enter the same email -> guessed correctly as
+#   sign-in (initialLoginMode: true after logout) -> back on the churches
+#   screen without redoing the profile step.
+# Scenario C: fresh relaunch (state wiped, but the Firebase account still
+#   exists server-side) -> same email, guessed wrong as create-account ->
+#   self-corrects to sign-in with an explanatory message -> signs in.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Next"
+    timeout: 45000
+
+- repeat:
+    while:
+      notVisible: "Get Started"
+    commands:
+      - tapOn: "Next"
+- tapOn: "Get Started"
+
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 20000
+- tapOn: "Email Address"
+- inputText: "qa.maestro.auth2@example.com"
+- hideKeyboard
+- tapOn: "Continue"
+
+- extendedWaitUntil:
+    visible: "Confirm Password"
+    timeout: 10000
+- takeScreenshot: auth_01_create_password_step
+- tapOn: "Password"
+- inputText: "QaMaestro123"
+- tapOn: "Confirm Password"
+- inputText: "QaMaestro123"
+- hideKeyboard
+- tapOn: "Register"
+
+- extendedWaitUntil:
+    visible: "Tell us about you"
+    timeout: 20000
+- takeScreenshot: auth_02_complete_profile_step
+- tapOn: "Full name"
+- inputText: "QA Maestro"
+- tapOn: "Phone number"
+- inputText: "9876543210"
+- hideKeyboard
+- tapOn: "Date of birth"
+- tapOn: "OK"
+- tapOn: "Male"
+- tapOn: "Continue"
+
+- extendedWaitUntil:
+    visible: "(?s).*Your Churches.*"
+    timeout: 20000
+- assertVisible: "(?s).*Other Churches.*"
+- takeScreenshot: auth_03_churches_screen_new_user
+
+# Scenario B — log out, sign back in with the same account.
+- tapOn: "Logout"
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 20000
+- tapOn: "Email Address"
+- inputText: "qa.maestro.auth2@example.com"
+- hideKeyboard
+- tapOn: "Continue"
+
+- extendedWaitUntil:
+    visible: "Welcome back"
+    timeout: 10000
+- takeScreenshot: auth_04_signin_step_guessed_correctly
+- tapOn: "Password"
+- inputText: "QaMaestro123"
+- hideKeyboard
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "(?s).*Your Churches.*"
+    timeout: 20000
+- assertVisible: "(?s).*Other Churches.*"
+- takeScreenshot: auth_05_churches_screen_after_signin
+
+# Scenario C — fresh relaunch (local state wiped, account still exists
+# server-side); default guess is "create account" and should self-correct.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Next"
+    timeout: 45000
+- repeat:
+    while:
+      notVisible: "Get Started"
+    commands:
+      - tapOn: "Next"
+- tapOn: "Get Started"
+
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 20000
+- tapOn: "Email Address"
+- inputText: "qa.maestro.auth2@example.com"
+- hideKeyboard
+- tapOn: "Continue"
+
+- extendedWaitUntil:
+    visible: "Confirm Password"
+    timeout: 10000
+- takeScreenshot: auth_06_wrong_guess_create_step
+- tapOn: "Password"
+- inputText: "SomeOtherPass1"
+- tapOn: "Confirm Password"
+- inputText: "SomeOtherPass1"
+- hideKeyboard
+- tapOn: "Register"
+
+- extendedWaitUntil:
+    visible: "(?s).*already exists.*"
+    timeout: 10000
+- takeScreenshot: auth_07_self_corrected_to_signin
+- assertVisible: "Welcome back"
+- tapOn: "Password"
+- inputText: "QaMaestro123"
+- hideKeyboard
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "(?s).*Your Churches.*"
+    timeout: 20000
+- assertVisible: "(?s).*Other Churches.*"
+- takeScreenshot: auth_08_churches_screen_after_self_correction

@@ -6,7 +6,8 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_member_directory_entry_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -43,36 +44,47 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   // triggered by unrelated state (admin flag, selected church, etc). These
   // caches skip re-scanning/re-sorting the whole roster when neither the
   // member list nor the search query actually changed.
-  List<AppUser>? _specialDaysSourceMembers;
-  (List<AppUser>, List<AppUser>)? _specialDaysCache;
+  List<ChurchMembership>? _specialDaysSourceMembers;
+  (List<ChurchMembership>, List<ChurchMembership>)? _specialDaysCache;
 
-  List<AppUser>? _filteredSourceMembers;
+  List<ChurchMembership>? _filteredSourceMembers;
   String? _filteredSourceQuery;
-  (List<AppUser>, List<AppUser>, List<AppUser>,
-      List<MapEntry<String, List<AppUser>>>)? _filteredCache;
+  (
+    List<ChurchMembership>,
+    List<ChurchMembership>,
+    List<ChurchMembership>,
+    List<MapEntry<String, List<ChurchMembership>>>
+  )? _filteredCache;
 
-  (List<AppUser>, List<AppUser>) _computeSpecialDays(List<AppUser> allMembers) {
+  (List<ChurchMembership>, List<ChurchMembership>) _computeSpecialDays(
+      List<ChurchMembership> allMembers) {
     if (identical(allMembers, _specialDaysSourceMembers) &&
         _specialDaysCache != null) {
       return _specialDaysCache!;
     }
     final todayBirthdays = allMembers
-        .where((member) => _isBirthdayToday(member.dob))
+        .where((member) => _isBirthdayToday(member.displayDob))
         .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     final todayAnniversaries = allMembers
-        .where((member) => _isAnniversaryToday(member.weddingDay))
+        .where((member) => _isAnniversaryToday(member.displayWeddingDay))
         .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
 
     _specialDaysSourceMembers = allMembers;
     _specialDaysCache = (todayBirthdays, todayAnniversaries);
     return _specialDaysCache!;
   }
 
-  (List<AppUser>, List<AppUser>, List<AppUser>,
-      List<MapEntry<String, List<AppUser>>>) _computeFilteredMembers(
-    List<AppUser> members,
+  (
+    List<ChurchMembership>,
+    List<ChurchMembership>,
+    List<ChurchMembership>,
+    List<MapEntry<String, List<ChurchMembership>>>
+  ) _computeFilteredMembers(
+    List<ChurchMembership> members,
     String query,
   ) {
     if (identical(members, _filteredSourceMembers) &&
@@ -81,8 +93,8 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
       return _filteredCache!;
     }
 
-    final sortedMembers = [...members]..sort(
-        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final sortedMembers = [...members]..sort((a, b) =>
+        a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     final filteredMembers = _filterMembers(sortedMembers, query);
     final familyMembers = filteredMembers
         .where((member) => member.category.toLowerCase() == 'family')
@@ -120,8 +132,17 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final membersAsync = ref.watch(membersProvider);
     final isAdmin = ref.watch(isAdminProvider);
+    // A non-admin can never read the full members/{uid} docs of anyone but
+    // themselves (firestore.rules: isSelf || isChurchStaff), so this
+    // screen falls back entirely to the reduced memberDirectory roster
+    // for them, instead of attempting membersProvider (which would just
+    // throw PERMISSION_DENIED for the whole list).
+    if (!isAdmin) {
+      return _buildDirectoryOnlyView(context, theme);
+    }
+
+    final membersAsync = ref.watch(membersProvider);
     final currentUid = ref.watch(firebaseAuthProvider).currentUser?.uid;
     final currentChurchIdAsync = ref.watch(currentChurchIdProvider);
     final selectedChurch = ref.watch(selectedChurchProvider);
@@ -135,7 +156,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                   (church) => church?.id == currentChurchId,
                   orElse: () => null,
                 ));
-    final allMembers = membersAsync.asData?.value ?? const <AppUser>[];
+    final allMembers = membersAsync.asData?.value ?? const <ChurchMembership>[];
     final (todayBirthdays, todayAnniversaries) =
         _computeSpecialDays(allMembers);
     final specialDayCount = todayBirthdays.length + todayAnniversaries.length;
@@ -286,8 +307,12 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               );
             }
 
-            final (filteredMembers, familyMembers, individualMembers,
-                groupedFamilies) = _computeFilteredMembers(members, _query);
+            final (
+              filteredMembers,
+              familyMembers,
+              individualMembers,
+              groupedFamilies
+            ) = _computeFilteredMembers(members, _query);
 
             return RefreshIndicator(
               onRefresh: () => ref.refresh(membersProvider.future),
@@ -385,15 +410,14 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     Navigator.of(context).pop();
                     rootNavigator
                         .push(
-                          MaterialPageRoute(
-                            builder: (_) => CreateAuthAccountScreen(
-                              adminCreateMode: true,
-                              churchId: selectedChurch.id,
-                              churchName: selectedChurch.name,
-                              churchLogo: selectedChurch.logo,
-                            ),
-                          ),
-                        )
+                      MaterialPageRoute(
+                        builder: (_) => CreateAuthAccountScreen(
+                          churchId: selectedChurch.id,
+                          churchName: selectedChurch.name,
+                          churchLogo: selectedChurch.logo,
+                        ),
+                      ),
+                    )
                         .then((_) {
                       if (mounted) ref.invalidate(membersProvider);
                     });
@@ -420,19 +444,218 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     Navigator.of(context).pop();
                     rootNavigator
                         .push(
-                          MaterialPageRoute(
-                            builder: (_) => LoginRequestScreen(
-                              churchId: selectedChurch.id,
-                              churchName: selectedChurch.name,
-                              churchLogo: selectedChurch.logo,
-                              adminCreateMode: true,
-                            ),
-                          ),
-                        )
+                      MaterialPageRoute(
+                        builder: (_) => LoginRequestScreen(
+                          churchId: selectedChurch.id,
+                          churchName: selectedChurch.name,
+                          churchLogo: selectedChurch.logo,
+                          adminCreateMode: true,
+                        ),
+                      ),
+                    )
                         .then((_) {
                       if (mounted) ref.invalidate(membersProvider);
                     });
                   },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDirectoryOnlyView(BuildContext context, ThemeData theme) {
+    final directoryAsync = ref.watch(memberDirectoryProvider);
+    final entries =
+        directoryAsync.asData?.value ?? const <ChurchMemberDirectoryEntry>[];
+    final filtered = _query.isEmpty
+        ? entries
+        : entries
+            .where((entry) => entry.displayName.toLowerCase().contains(_query))
+            .toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        elevation: 0,
+        title: AppBarTitle(text: context.t('members.title')),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(cornerRadius),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x12000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: AppTextField(
+                variant: AppTextFieldVariant.search,
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _query = value.trim().toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: context.t('members.search_hint'),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 10, right: 6),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _query = '';
+                            });
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(cornerRadius),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(cornerRadius),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(cornerRadius),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                      width: 1.2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.transparent,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: directoryAsync.when(
+        loading: () => const Center(child: AppLoadingIndicator()),
+        error: (_, __) => Center(
+          child: Text(context.t('members.error_loading')),
+        ),
+        data: (_) {
+          if (filtered.isEmpty) {
+            return Center(child: Text(context.t('members.none')));
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: filtered.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final entry = filtered[index];
+              return ListTile(
+                leading: AppProfileAvatar(
+                  name: entry.displayName,
+                  imageUrl: entry.displayPhotoUrl,
+                ),
+                title: Text(entry.displayName),
+                onTap: () => _showDirectoryEntrySheet(context, entry),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDirectoryEntrySheet(
+    BuildContext context,
+    ChurchMemberDirectoryEntry entry,
+  ) {
+    showAppModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              20 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AppProfileAvatar(
+                      name: entry.displayName,
+                      imageUrl: entry.displayPhotoUrl,
+                      radius: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _valueOrFallback(context, entry.displayName),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _MemberDetailSection(
+                  title: context.t('members.basic_details_title'),
+                  initiallyExpanded: true,
+                  child: Column(
+                    children: [
+                      _MemberDetailRow(
+                        icon: Icons.person_outline,
+                        label: context.t('members.gender_label'),
+                        value: _valueOrFallback(
+                          context,
+                          _formatCategory(context, entry.displayGender),
+                        ),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.cake_outlined,
+                        label: context.t('members.date_of_birth_label'),
+                        value: _formatDob(context, entry.displayDob),
+                      ),
+                      _MemberDetailRow(
+                        icon: Icons.favorite_border,
+                        label: context.t('members.marital_status_label'),
+                        value: _valueOrFallback(
+                          context,
+                          _formatCategory(context, entry.displayMaritalStatus),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -450,7 +673,7 @@ class _MembersListView extends StatelessWidget {
     required this.currentUid,
   });
 
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
   final bool isAdmin;
   final String? currentUid;
 
@@ -485,8 +708,8 @@ class _SpecialDaysView extends StatelessWidget {
     required this.currentUid,
   });
 
-  final List<AppUser> birthdays;
-  final List<AppUser> anniversaries;
+  final List<ChurchMembership> birthdays;
+  final List<ChurchMembership> anniversaries;
   final bool isAdmin;
   final String? currentUid;
 
@@ -536,7 +759,7 @@ class _SpecialDaySection extends StatelessWidget {
 
   final String title;
   final String emptyMessage;
-  final List<AppUser> members;
+  final List<ChurchMembership> members;
   final bool isAdmin;
   final String? currentUid;
   final SpecialPostType postType;
@@ -648,7 +871,7 @@ class _FamilyGroupsView extends StatelessWidget {
     required this.currentUid,
   });
 
-  final List<MapEntry<String, List<AppUser>>> groups;
+  final List<MapEntry<String, List<ChurchMembership>>> groups;
   final bool isAdmin;
   final String? currentUid;
 
@@ -707,7 +930,7 @@ class _MemberTile extends ConsumerStatefulWidget {
     this.specialPostType,
   });
 
-  final AppUser member;
+  final ChurchMembership member;
   final bool isAdmin;
   final String? currentUid;
   final SpecialPostType? specialPostType;
@@ -749,7 +972,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
               context.t('common.send'),
             ),
           )
-        : (widget.isAdmin && widget.member.uid != widget.currentUid)
+        : (widget.isAdmin && widget.member.docId != widget.currentUid)
             ? Switch(
                 value: _approvedOverride ?? widget.member.approved,
                 onChanged: _isUpdatingApproval
@@ -762,7 +985,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
 
                         final success = await _updateMemberApproval(
                           context,
-                          userId: widget.member.uid,
+                          userId: widget.member.docId,
                           value: val,
                         );
 
@@ -786,10 +1009,10 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
         currentUid: widget.currentUid,
       ),
       leading: AppProfileAvatar(
-        name: widget.member.name,
-        imageUrl: widget.member.profilePhotoUrl,
+        name: widget.member.displayName,
+        imageUrl: widget.member.displayPhotoUrl,
       ),
-      title: Text(widget.member.name),
+      title: Text(widget.member.displayName),
       trailing: trailing,
     );
   }
@@ -798,7 +1021,7 @@ class _MemberTileState extends ConsumerState<_MemberTile> {
 Future<void> _showMemberDetailsSheet(
   BuildContext context,
   WidgetRef ref,
-  AppUser member, {
+  ChurchMembership member, {
   required bool isAdmin,
   required String? currentUid,
 }) {
@@ -808,13 +1031,13 @@ Future<void> _showMemberDetailsSheet(
     container,
     name: 'member_profile_opened',
     parameters: {
-      'member_id': member.uid,
+      'member_id': member.docId,
     },
   );
   final theme = Theme.of(context);
-  final canDelete = isAdmin && member.uid != currentUid;
+  final canDelete = isAdmin && member.docId != currentUid;
   final canEditMember = isAdmin;
-  final canApproveMember = isAdmin && member.uid != currentUid;
+  final canApproveMember = isAdmin && member.docId != currentUid;
 
   return showAppModalBottomSheet<void>(
     context: context,
@@ -832,8 +1055,8 @@ Future<void> _showMemberDetailsSheet(
       var isDeletingMember = false;
       return FractionallySizedBox(
         heightFactor: 0.9,
-        child: StreamBuilder<AppUser?>(
-          stream: repo?.watchMemberById(member.uid),
+        child: StreamBuilder<ChurchMembership?>(
+          stream: repo?.watchMemberById(member.docId),
           initialData: member,
           builder: (context, snapshot) {
             final currentMember = snapshot.data ?? member;
@@ -857,8 +1080,8 @@ Future<void> _showMemberDetailsSheet(
                         Row(
                           children: [
                             AppProfileAvatar(
-                              name: currentMember.name,
-                              imageUrl: currentMember.profilePhotoUrl,
+                              name: currentMember.displayName,
+                              imageUrl: currentMember.displayPhotoUrl,
                               radius: 24,
                             ),
                             const SizedBox(width: 12),
@@ -868,7 +1091,7 @@ Future<void> _showMemberDetailsSheet(
                                 children: [
                                   Text(
                                     _valueOrFallback(
-                                        context, currentMember.name),
+                                        context, currentMember.displayName),
                                     style: theme.textTheme.titleMedium,
                                   ),
                                   const SizedBox(height: 4),
@@ -881,8 +1104,7 @@ Future<void> _showMemberDetailsSheet(
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  MemberSinceChip(
-                                      date: currentMember.createdAt),
+                                  MemberSinceChip(date: currentMember.joinedAt),
                                 ],
                               ),
                             ),
@@ -916,7 +1138,7 @@ Future<void> _showMemberDetailsSheet(
 
                                     final success = await _updateMemberApproval(
                                       context,
-                                      userId: member.uid,
+                                      userId: member.docId,
                                       value: val,
                                     );
 
@@ -939,25 +1161,26 @@ Future<void> _showMemberDetailsSheet(
                                 icon: Icons.badge_outlined,
                                 label: context.t('members.name_label'),
                                 value: _valueOrFallback(
-                                    context, currentMember.name),
+                                    context, currentMember.displayName),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.phone_outlined,
                                 label: context.t('members.phone_label'),
                                 value: _valueOrFallback(
-                                    context, currentMember.phone),
-                                onActionTap: currentMember.phone.trim().isEmpty
-                                    ? null
-                                    : () => launchPhoneCall(
-                                          context,
-                                          currentMember.phone,
-                                        ),
+                                    context, currentMember.displayPhone),
+                                onActionTap:
+                                    currentMember.displayPhone.trim().isEmpty
+                                        ? null
+                                        : () => launchPhoneCall(
+                                              context,
+                                              currentMember.displayPhone,
+                                            ),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.contact_phone_outlined,
                                 label: context.t('members.contact_label'),
                                 value: _valueOrFallback(
-                                    context, currentMember.contact),
+                                    context, currentMember.displayPhone),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.person_outline,
@@ -965,19 +1188,20 @@ Future<void> _showMemberDetailsSheet(
                                 value: _valueOrFallback(
                                   context,
                                   _formatCategory(
-                                      context, currentMember.gender),
+                                      context, currentMember.displayGender),
                                 ),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.email_outlined,
                                 label: context.t('members.email_label'),
                                 value: _valueOrFallback(
-                                    context, currentMember.email),
+                                    context, currentMember.displayEmail),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.cake_outlined,
                                 label: context.t('members.date_of_birth_label'),
-                                value: _formatDob(context, currentMember.dob),
+                                value: _formatDob(
+                                    context, currentMember.displayDob),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.category_outlined,
@@ -996,7 +1220,7 @@ Future<void> _showMemberDetailsSheet(
                                   context,
                                   _formatCategory(
                                     context,
-                                    currentMember.maritalStatus,
+                                    currentMember.displayMaritalStatus,
                                   ),
                                 ),
                               ),
@@ -1004,7 +1228,7 @@ Future<void> _showMemberDetailsSheet(
                                 icon: Icons.celebration_outlined,
                                 label: context.t('members.wedding_day_label'),
                                 value: _formatDob(
-                                    context, currentMember.weddingDay),
+                                    context, currentMember.displayWeddingDay),
                               ),
                               _MemberDetailRow(
                                 icon: Icons.family_restroom_outlined,
@@ -1016,7 +1240,7 @@ Future<void> _showMemberDetailsSheet(
                                 icon: Icons.location_on_outlined,
                                 label: context.t('members.address_label'),
                                 value: _valueOrFallback(
-                                    context, currentMember.address),
+                                    context, currentMember.displayAddress),
                               ),
                             ],
                           ),
@@ -1051,15 +1275,17 @@ Future<void> _showMemberDetailsSheet(
                                       .t('members.educational_qualification'),
                                   value: _valueOrFallback(
                                     context,
-                                    currentMember.educationalQualification,
+                                    currentMember
+                                        .displayEducationalQualification,
                                   ),
                                 ),
                                 _MemberDetailRow(
                                   icon: Icons.auto_awesome_outlined,
                                   label: context.t('members.talents_and_gifts'),
-                                  value: currentMember.talentsAndGifts.isEmpty
+                                  value: currentMember
+                                          .displayTalentsAndGifts.isEmpty
                                       ? context.t('common.not_provided')
-                                      : currentMember.talentsAndGifts
+                                      : currentMember.displayTalentsAndGifts
                                           .join(', '),
                                 ),
                                 _MemberDetailRow(
@@ -1147,7 +1373,9 @@ Future<void> _showMemberDetailsSheet(
                                   ),
                                 ),
                               ],
-                              if (member.maritalStatus.trim().toLowerCase() ==
+                              if (member.displayMaritalStatus
+                                      .trim()
+                                      .toLowerCase() ==
                                   'married') ...[
                                 _MemberDetailRow(
                                   icon: Icons.favorite_outline,
@@ -1245,7 +1473,8 @@ Future<void> _showMemberDetailsSheet(
                                 if (currentChurch == null || !context.mounted) {
                                   return;
                                 }
-                                final shouldCreateLoginFirst = member.email
+                                final shouldCreateLoginFirst = member
+                                        .displayEmail
                                         .trim()
                                         .isEmpty
                                     ? await showDialog<bool>(
@@ -1289,7 +1518,7 @@ Future<void> _showMemberDetailsSheet(
                                     container,
                                     name: 'member_edit_started',
                                     parameters: {
-                                      'member_id': member.uid,
+                                      'member_id': member.docId,
                                       'with_auth_setup': true,
                                     },
                                   );
@@ -1299,7 +1528,6 @@ Future<void> _showMemberDetailsSheet(
                                         MaterialPageRoute(
                                           builder: (_) =>
                                               CreateAuthAccountScreen(
-                                            adminCreateMode: true,
                                             churchId: currentChurch.id,
                                             churchName: currentChurch.name,
                                             churchLogo: currentChurch.logo,
@@ -1318,7 +1546,7 @@ Future<void> _showMemberDetailsSheet(
                                   container,
                                   name: 'member_edit_started',
                                   parameters: {
-                                    'member_id': member.uid,
+                                    'member_id': member.docId,
                                     'with_auth_setup': false,
                                   },
                                 );
@@ -1360,8 +1588,8 @@ Future<void> _showMemberDetailsSheet(
                                         context: context,
                                         title:
                                             context.t('members.delete_title'),
-                                        message: context
-                                            .t('members.delete_message'),
+                                        message:
+                                            context.t('members.delete_message'),
                                         cancelLabel:
                                             context.t('settings.cancel'),
                                         isDestructive: true,
@@ -1374,8 +1602,8 @@ Future<void> _showMemberDetailsSheet(
                                         () => isDeletingMember = true,
                                       );
 
-                                      final churchId = await container.read(
-                                          currentChurchIdProvider.future);
+                                      final churchId = await container
+                                          .read(currentChurchIdProvider.future);
                                       if (churchId == null ||
                                           !rootNavigator.mounted) {
                                         setModalState(
@@ -1390,21 +1618,21 @@ Future<void> _showMemberDetailsSheet(
                                         churchId: churchId,
                                       );
 
-                                      await repo.deleteMember(member.uid);
+                                      await repo.deleteMember(member.docId);
                                       container.invalidate(membersProvider);
                                       await logChurchAnalyticsEventFromContainer(
                                         container,
                                         name: 'member_deleted',
                                         parameters: {
-                                          'member_id': member.uid,
+                                          'member_id': member.docId,
                                         },
                                       );
 
                                       if (!context.mounted) return;
                                       final messenger =
                                           ScaffoldMessenger.of(context);
-                                      final message = context
-                                          .t('members.delete_success');
+                                      final message =
+                                          context.t('members.delete_success');
                                       Navigator.of(context).pop();
                                       messenger.showSnackBar(
                                         SnackBar(content: Text(message)),
@@ -1458,20 +1686,21 @@ class _CountChip extends StatelessWidget {
   }
 }
 
-List<AppUser> _filterMembers(List<AppUser> members, String query) {
+List<ChurchMembership> _filterMembers(
+    List<ChurchMembership> members, String query) {
   if (query.isEmpty) return members;
 
   return members.where((member) {
     final haystacks = [
-      member.name,
-      member.email,
-      member.phone,
-      member.contact,
+      member.displayName,
+      member.displayEmail,
+      member.displayPhone,
+      member.displayPhone,
       member.familyId,
       member.category,
-      member.maritalStatus,
-      member.educationalQualification,
-      member.talentsAndGifts.join(' '),
+      member.displayMaritalStatus,
+      member.displayEducationalQualification,
+      member.displayTalentsAndGifts.join(' '),
       member.churchGroupIds.map(churchGroupLabel).join(' '),
     ].map((value) => value.toLowerCase());
 
@@ -1479,8 +1708,9 @@ List<AppUser> _filterMembers(List<AppUser> members, String query) {
   }).toList();
 }
 
-List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
-  final grouped = <String, List<AppUser>>{};
+List<MapEntry<String, List<ChurchMembership>>> _groupFamilies(
+    List<ChurchMembership> members) {
+  final grouped = <String, List<ChurchMembership>>{};
 
   for (final member in members) {
     final familyId = member.familyId.trim().isEmpty
@@ -1493,8 +1723,8 @@ List<MapEntry<String, List<AppUser>>> _groupFamilies(List<AppUser> members) {
     ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()));
 
   for (final entry in entries) {
-    entry.value
-        .sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    entry.value.sort((a, b) =>
+        a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
   }
 
   return entries;

@@ -39,21 +39,35 @@ class HideableAppBar extends StatelessWidget {
 /// Shared scroll-direction-to-visibility logic for [HideableAppBar]: call
 /// from a `NotificationListener<ScrollNotification>.onNotification` and feed
 /// the result into a `setState`-backed `bool` visibility flag.
+///
+/// [onChanged] always runs in a post-frame callback, never synchronously —
+/// a `ScrollEndNotification` can be dispatched from inside
+/// `RenderViewport.performLayout` itself (a drag getting cancelled as
+/// content dimensions change mid-layout), and calling `setState()`
+/// synchronously from there schedules a new build while the current frame
+/// is still being built, which throws ("Build scheduled during frame").
+/// Because it's deferred, [onChanged] MUST guard with `if (mounted)` before
+/// calling `setState` — the widget can be disposed before the post-frame
+/// callback runs.
 bool computeHideableAppBarVisibility({
   required ScrollNotification notification,
   required bool currentlyVisible,
   required ValueChanged<bool> onChanged,
 }) {
+  void schedule(bool visible) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => onChanged(visible));
+  }
+
   if (notification is UserScrollNotification) {
     if (notification.direction == ScrollDirection.reverse) {
-      if (currentlyVisible) onChanged(false);
+      if (currentlyVisible) schedule(false);
     } else if (notification.direction == ScrollDirection.forward) {
-      if (!currentlyVisible) onChanged(true);
+      if (!currentlyVisible) schedule(true);
     }
   } else if (notification is ScrollUpdateNotification ||
       notification is ScrollEndNotification) {
     if (notification.metrics.pixels <= 0 && !currentlyVisible) {
-      onChanged(true);
+      schedule(true);
     }
   }
   return false;

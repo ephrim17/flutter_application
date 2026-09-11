@@ -22,16 +22,6 @@ class FirestorePaths {
   ) =>
       firestore.collection(learningModules);
 
-  static CollectionReference<Map<String, dynamic>> churchUserLearningProgress(
-    FirebaseFirestore firestore,
-    String churchId,
-    String userId,
-  ) =>
-      churchDoc(firestore, churchId)
-          .collection(users)
-          .doc(userId)
-          .collection(learningProgress);
-
   static CollectionReference<Map<String, dynamic>> churchLearningResults(
     FirebaseFirestore firestore,
     String churchId,
@@ -114,7 +104,6 @@ class FirestorePaths {
   static const notificationRequests = 'notification_requests';
   static const dashboardMetrics = 'dashboard_metrics';
   static const equipments = 'equipments';
-  static const financialTransactions = 'financial_transactions';
   static const youthCircles = 'youth_circles';
   static const faithReflections = 'faith_reflections';
   static const faithEngagement = 'faith_engagement';
@@ -130,10 +119,75 @@ class FirestorePaths {
     return firestore.collection(churches).doc(churchId);
   }
 
-  /// Users subcollection under church
-  static CollectionReference churchUsers(
+  static const members = 'members';
+
+  /// Membership-only subcollection under church (D1 rename of `users`).
+  /// Identity fields live on [userDoc] — see
+  /// KT Files/architecture/user-church-decoupling-migration.md §5.1.
+  static CollectionReference<Map<String, dynamic>> churchMembers(
       FirebaseFirestore firestore, String churchId) {
-    return churchDoc(firestore, churchId).collection(users);
+    return churchDoc(firestore, churchId).collection(members);
+  }
+
+  static DocumentReference<Map<String, dynamic>> churchMemberDoc(
+    FirebaseFirestore firestore,
+    String churchId,
+    String docId,
+  ) {
+    return churchMembers(firestore, churchId).doc(docId);
+  }
+
+  static const memberDirectory = 'memberDirectory';
+
+  /// Reduced mirror of [churchMembers] (name/photo/dob/gender/marital
+  /// status only) — readable by any approved member, not just staff. See
+  /// `mirrorMemberDirectory` in functions/src/index.ts.
+  static CollectionReference<Map<String, dynamic>> churchMemberDirectory(
+      FirebaseFirestore firestore, String churchId) {
+    return churchDoc(firestore, churchId).collection(memberDirectory);
+  }
+
+  static const devices = 'devices';
+
+  /// `users/{uid}/devices/{installationId}` — fcmToken, platform, topics.
+  /// Written every launch regardless of selected church (§5.4/Phase 5).
+  static CollectionReference<Map<String, dynamic>> userDevices(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(devices);
+  }
+
+  static const favorites = 'favorites';
+
+  /// `users/{uid}/favorites/{verseKey}` — replaces the SharedPreferences
+  /// `all_highlights` store (Phase 4).
+  static CollectionReference<Map<String, dynamic>> userFavorites(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(favorites);
+  }
+
+  /// `users/{uid}/learning_progress/{docId}` — Church Tree (global) modules
+  /// only; church modules keep their progress under the membership doc
+  /// (§5.6, D9).
+  static CollectionReference<Map<String, dynamic>> userLearningProgress(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return userDoc(firestore, uid).collection(learningProgress);
+  }
+
+  /// `churches/{cid}/members/{docId}/learning_progress/{docId}` — church
+  /// modules only (§5.6, D9).
+  static CollectionReference<Map<String, dynamic>> churchMemberLearningProgress(
+    FirebaseFirestore firestore,
+    String churchId,
+    String memberDocId,
+  ) {
+    return churchMemberDoc(firestore, churchId, memberDocId)
+        .collection(learningProgress);
   }
 
   /// announcements subcollection under church
@@ -173,12 +227,17 @@ class FirestorePaths {
     return churchGroups(firestore, churchId).doc(groupId);
   }
 
+  static const groupMembers = 'groupMembers';
+
+  /// Renamed from `groups/{gid}/users` (D1) — a group's own member roster,
+  /// keyed by uid. Distinct from the church-wide `members` collection.
   static CollectionReference<Map<String, dynamic>> churchGroupMembers(
     FirebaseFirestore firestore,
     String churchId,
     String groupId,
   ) {
-    return churchGroupDoc(firestore, churchId, groupId).collection(users);
+    return churchGroupDoc(firestore, churchId, groupId)
+        .collection(groupMembers);
   }
 
   static CollectionReference<Map<String, dynamic>> churchNotificationRequests(
@@ -198,13 +257,6 @@ class FirestorePaths {
     String churchId,
   ) {
     return churchDoc(firestore, churchId).collection(equipments);
-  }
-
-  static CollectionReference<Map<String, dynamic>> churchFinancialTransactions(
-    FirebaseFirestore firestore,
-    String churchId,
-  ) {
-    return churchDoc(firestore, churchId).collection(financialTransactions);
   }
 
   static CollectionReference<Map<String, dynamic>> churchYouthCircles(
@@ -298,32 +350,22 @@ class FirestorePaths {
         .collection(FirestorePaths.socialItemsCollection);
   }
 
-  static CollectionReference<Map<String, dynamic>> churchUserReadingPlans(
-    FirebaseFirestore firestore,
-    String churchId,
-    String uid,
-  ) {
-    return firestore
-        .collection('churches')
-        .doc(churchId)
-        .collection(users)
-        .doc(uid)
-        .collection(readingPlans);
-  }
-
-  // User readingPlans subcollection
+  // User readingPlans subcollection — person-owned (§5.1/Phase 4), follows
+  // the person everywhere, not scoped to any church.
   static const readingPlans = 'readingPlans';
-  static CollectionReference userReadingPlans(
+  static CollectionReference<Map<String, dynamic>> userReadingPlans(
       FirebaseFirestore firestore, String uid) {
     return userDoc(firestore, uid).collection(readingPlans);
   }
 
-  static CollectionReference usersCollection(FirebaseFirestore firestore) {
+  static CollectionReference<Map<String, dynamic>> usersCollection(
+      FirebaseFirestore firestore) {
     return firestore.collection(users);
   }
 
   /// Single user document
-  static DocumentReference userDoc(FirebaseFirestore firestore, String uid) {
+  static DocumentReference<Map<String, dynamic>> userDoc(
+      FirebaseFirestore firestore, String uid) {
     return usersCollection(firestore).doc(uid);
   }
 
@@ -341,14 +383,6 @@ class FirestorePaths {
         .doc(swipeVersesDoc);
   }
 
-  /// Single user document under church
-  static DocumentReference churchUserDoc(
-    FirebaseFirestore firestore,
-    String churchId,
-    String uid,
-  ) {
-    return churchUsers(firestore, churchId).doc(uid);
-  }
 
   /// feeds under church
   static CollectionReference feedCollection(

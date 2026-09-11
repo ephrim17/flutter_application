@@ -20,7 +20,7 @@ final youthCirclesProvider =
   final repository = ref.watch(faithEngagementRepositoryProvider);
   if (repository == null) return Stream.value(const []);
   return repository.watchCircles(
-    user: ref.watch(appUserProvider).asData?.value,
+    member: ref.watch(currentMembershipProvider).asData?.value,
   );
 });
 

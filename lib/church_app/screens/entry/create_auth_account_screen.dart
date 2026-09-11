@@ -1,31 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
-import 'package:flutter_application/church_app/providers/select_church_provider.dart'
-    show selectedChurchProvider;
-import 'package:flutter_application/church_app/providers/user_provider.dart';
-import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
-import 'package:flutter_application/church_app/screens/entry/forgot_password_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/login_request_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
+import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 
+/// Admin-create-member path only (§9.3 of the migration doc): an
+/// admin-created member has no identity doc of their own yet, so the admin
+/// supplies just an email here, a temporary password is generated and
+/// emailed to them, and `LoginRequestScreen` collects the rest. The
+/// self-service sign-in/sign-up path this screen used to also handle
+/// (email-first, guessing login vs. register) moved to
+/// `AuthChoiceScreen`/`SignInScreen`/`CompleteProfileScreen`/
+/// `CreateAccountScreen` — this is now the only remaining caller shape.
 class CreateAuthAccountScreen extends ConsumerStatefulWidget {
   const CreateAuthAccountScreen({
     super.key,
-    this.initialLoginMode = false,
-    this.adminCreateMode = false,
     this.churchId,
     this.churchName,
     this.churchLogo = '',
@@ -33,12 +31,10 @@ class CreateAuthAccountScreen extends ConsumerStatefulWidget {
     this.continueToEditAfterCreate = false,
   });
 
-  final bool initialLoginMode;
-  final bool adminCreateMode;
   final String? churchId;
   final String? churchName;
   final String churchLogo;
-  final AppUser? existingMember;
+  final ChurchMembership? existingMember;
   final bool continueToEditAfterCreate;
 
   @override
@@ -49,21 +45,13 @@ class CreateAuthAccountScreen extends ConsumerStatefulWidget {
 class _CreateAuthAccountScreenState
     extends ConsumerState<CreateAuthAccountScreen> {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  late bool _isLoginMode;
-  bool _hidePassword = true;
-  bool _hideConfirmPassword = true;
 
   @override
   void initState() {
     super.initState();
-    _isLoginMode = widget.initialLoginMode;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(logginAccessLoadingProvider.notifier).state = false;
-        ref.read(forcePreflowThemeProvider.notifier).state =
-            !widget.adminCreateMode;
       }
     });
   }
@@ -71,47 +59,17 @@ class _CreateAuthAccountScreenState
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  String? _validate() {
+  String? _validateEmail() {
     final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-
     if (email.isEmpty) {
       return context.t('auth.email_required');
     }
-
     if (!InputValidators.isValidEmail(email)) {
       return context.t('auth.email_address_invalid');
     }
-
-    if (widget.adminCreateMode) {
-      return null;
-    }
-
-    if (password.isEmpty) {
-      return context.t('auth.password_required');
-    }
-
-    if (!_isLoginMode) {
-      if (password.length < 8) {
-        return context.t('auth.password_min_length');
-      }
-      if (!RegExp(r'[A-Z]').hasMatch(password)) {
-        return context.t('auth.password_uppercase_required');
-      }
-      if (!RegExp(r'\d').hasMatch(password)) {
-        return context.t('auth.password_number_required');
-      }
-      if (confirmPassword != password) {
-        return context.t('auth.passwords_mismatch');
-      }
-    }
-
     return null;
   }
 
@@ -120,38 +78,42 @@ class _CreateAuthAccountScreenState
     return 'TempA1!${seed.substring(seed.length - 8)}';
   }
 
-  AppUser _updatedExistingMember({
+  ChurchMembership _updatedExistingMember({
     required String uid,
     required String email,
   }) {
     final existingMember = widget.existingMember!;
-    return AppUser(
+    return ChurchMembership(
+      docId: uid,
+      churchId: existingMember.churchId,
       uid: uid,
-      name: existingMember.name,
-      email: email,
-      role: existingMember.role,
+      linkedUid: uid,
       approved: existingMember.approved,
-      phone: existingMember.phone,
-      contact: existingMember.contact,
-      location: existingMember.location,
-      address: existingMember.address,
-      gender: existingMember.gender,
+      role: existingMember.role,
       category: existingMember.category,
       familyId: existingMember.familyId,
-      maritalStatus: existingMember.maritalStatus,
-      weddingDay: existingMember.weddingDay,
+      churchGroupIds: existingMember.churchGroupIds,
+      membershipCurrentStatus: existingMember.membershipCurrentStatus,
       financialStabilityRating: existingMember.financialStabilityRating,
       financialSupportRequired: existingMember.financialSupportRequired,
-      educationalQualification: existingMember.educationalQualification,
-      talentsAndGifts: existingMember.talentsAndGifts,
-      churchGroupIds: existingMember.churchGroupIds,
-      authToken: existingMember.authToken,
-      dob: existingMember.dob,
+      displayName: existingMember.displayName,
+      displayEmail: email,
+      displayPhone: existingMember.displayPhone,
+      displayPhotoUrl: existingMember.displayPhotoUrl,
+      displayDob: existingMember.displayDob,
+      displayGender: existingMember.displayGender,
+      displayWeddingDay: existingMember.displayWeddingDay,
+      displayMaritalStatus: existingMember.displayMaritalStatus,
+      displayEducationalQualification:
+          existingMember.displayEducationalQualification,
+      displayTalentsAndGifts: existingMember.displayTalentsAndGifts,
+      displayLocation: existingMember.displayLocation,
+      displayAddress: existingMember.displayAddress,
     );
   }
 
   Future<void> _submit() async {
-    final validationError = _validate();
+    final validationError = _validateEmail();
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(validationError)),
@@ -162,108 +124,79 @@ class _CreateAuthAccountScreenState
     final loadingNotifier = ref.read(logginAccessLoadingProvider.notifier);
     loadingNotifier.state = true;
     try {
-      if (widget.adminCreateMode) {
-        final temporaryPassword = _generateTemporaryPassword();
-        final passwordEmailSentMessage =
-            context.t('members.create_member_password_email_sent');
-        final passwordEmailFailedMessage =
-            context.t('members.create_member_password_email_failed');
-        final createdAccount = await ref
-            .read(authRepositoryProvider)
-            .createFirebaseAccountForAdmin(
-              email: _emailController.text.trim(),
-              password: temporaryPassword,
-            );
-        String passwordEmailFeedback = '';
-        try {
-          await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
-                email: createdAccount.email,
-                churchName: widget.churchName ?? '',
+      final temporaryPassword = _generateTemporaryPassword();
+      final passwordEmailSentMessage =
+          context.t('members.create_member_password_email_sent');
+      final passwordEmailFailedMessage =
+          context.t('members.create_member_password_email_failed');
+      final createdAccount =
+          await ref.read(authRepositoryProvider).createFirebaseAccountForAdmin(
+                email: _emailController.text.trim(),
+                password: temporaryPassword,
               );
-          passwordEmailFeedback = passwordEmailSentMessage;
-        } catch (_) {
-          passwordEmailFeedback = passwordEmailFailedMessage;
-        }
-
-        if (widget.existingMember != null) {
-          final repo = MembersRepository(
-            firestore: ref.read(firestoreProvider),
-            churchId: widget.churchId!,
-          );
-          await repo.attachFirebaseAuthToMember(
-            widget.existingMember!.uid,
-            newUid: createdAccount.uid,
-            email: createdAccount.email,
-          );
-
-          if (!mounted) return;
-          if (widget.continueToEditAfterCreate) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => LoginRequestScreen(
-                  churchId: widget.churchId!,
-                  churchName: widget.churchName!,
-                  churchLogo: widget.churchLogo,
-                  adminCreateMode: true,
-                  existingMember: _updatedExistingMember(
-                    uid: createdAccount.uid,
-                    email: createdAccount.email,
-                  ),
-                ),
-              ),
+      String passwordEmailFeedback = '';
+      try {
+        await ref.read(authRepositoryProvider).sendPasswordSetupEmail(
+              email: createdAccount.email,
+              churchName: widget.churchName ?? '',
             );
-            return;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${context.t('members.create_member_login_success')}$passwordEmailFeedback',
+        passwordEmailFeedback = passwordEmailSentMessage;
+      } catch (_) {
+        passwordEmailFeedback = passwordEmailFailedMessage;
+      }
+
+      if (widget.existingMember != null) {
+        final repo = MembersRepository(
+          firestore: ref.read(firestoreProvider),
+          churchId: widget.churchId!,
+        );
+        await repo.attachFirebaseAuthToMember(
+          widget.existingMember!.uid,
+          newUid: createdAccount.uid,
+          email: createdAccount.email,
+        );
+
+        if (!mounted) return;
+        if (widget.continueToEditAfterCreate) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => LoginRequestScreen(
+                churchId: widget.churchId!,
+                churchName: widget.churchName!,
+                churchLogo: widget.churchLogo,
+                adminCreateMode: true,
+                existingMember: _updatedExistingMember(
+                  uid: createdAccount.uid,
+                  email: createdAccount.email,
+                ),
               ),
             ),
           );
-          Navigator.of(context).pop();
           return;
         }
-
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => LoginRequestScreen(
-              churchId: widget.churchId!,
-              churchName: widget.churchName!,
-              churchLogo: widget.churchLogo,
-              adminCreateMode: true,
-              targetUid: createdAccount.uid,
-              initialEmail: createdAccount.email,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${context.t('members.create_member_login_success')}$passwordEmailFeedback',
             ),
           ),
         );
+        Navigator.of(context).pop();
         return;
       }
 
-      if (_isLoginMode) {
-        await ref.read(authRepositoryProvider).signIn(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            );
-      } else {
-        await ref.read(authRepositoryProvider).createFirebaseAccount(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            );
-      }
-
-      await ChurchLocalStorage().clearChurch();
-      await ChurchLocalStorage().clearSubscribedChurchTopic();
       if (!mounted) return;
-      ref.read(selectedChurchProvider.notifier).state = null;
-      ref.invalidate(currentChurchIdProvider);
-      ref.invalidate(appUserProvider);
-      ref.invalidate(getCurrentUserProvider);
-
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AppEntry()),
-        (route) => false,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => LoginRequestScreen(
+            churchId: widget.churchId!,
+            churchName: widget.churchName!,
+            churchLogo: widget.churchLogo,
+            adminCreateMode: true,
+            targetUid: createdAccount.uid,
+            initialEmail: createdAccount.email,
+          ),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -278,18 +211,15 @@ class _CreateAuthAccountScreenState
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(logginAccessLoadingProvider);
+    final hasExistingMember = widget.existingMember != null;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: AppBarTitle(
-          text: widget.adminCreateMode
-              ? widget.existingMember != null
-                  ? context.t('members.create_member_login_title')
-                  : context.t('members.create_member')
-              : _isLoginMode
-                  ? context.t('auth.login')
-                  : context.t('auth.register'),
+          text: hasExistingMember
+              ? context.t('members.create_member_login_title')
+              : context.t('members.create_member'),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -311,26 +241,18 @@ class _CreateAuthAccountScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.existingMember != null
+                        hasExistingMember
                             ? context.t('members.create_member_login_heading')
-                            : widget.adminCreateMode
-                                ? context
-                                    .t('members.create_member_account_heading')
-                                : _isLoginMode
-                                    ? context.t('auth.welcome_back_heading')
-                                    : context.t('auth.create_account_heading'),
+                            : context
+                                .t('members.create_member_account_heading'),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        widget.existingMember != null
+                        hasExistingMember
                             ? context.t('members.create_member_login_subtitle')
-                            : widget.adminCreateMode
-                                ? context
-                                    .t('members.create_member_account_subtitle')
-                                : _isLoginMode
-                                    ? context.t('auth.login_subtitle')
-                                    : context.t('auth.register_subtitle'),
+                            : context
+                                .t('members.create_member_account_subtitle'),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
@@ -339,117 +261,28 @@ class _CreateAuthAccountScreenState
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: context.t('auth.email_address_label'),
-                          helperText: widget.adminCreateMode
-                              ? context.t('members.create_member_email_helper')
-                              : null,
+                          helperText:
+                              context.t('members.create_member_email_helper'),
                         ),
                       ),
-                      if (!widget.adminCreateMode) ...[
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _passwordController,
-                          obscureText: _hidePassword,
-                          decoration: InputDecoration(
-                            labelText: context.t('auth.password_label'),
-                            helperText: _isLoginMode
-                                ? null
-                                : context.t('auth.password_helper'),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _hidePassword = !_hidePassword;
-                                });
-                              },
-                              icon: Icon(
-                                _hidePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (_isLoginMode) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => ForgotPasswordScreen(
-                                            initialEmail:
-                                                _emailController.text.trim(),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                              child: Text(
-                                context.t('auth.forgot_password_title'),
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        if (!_isLoginMode) ...[
-                          AppTextField(
-                            controller: _confirmPasswordController,
-                            obscureText: _hideConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText:
-                                  context.t('auth.confirm_password_label'),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _hideConfirmPassword =
-                                        !_hideConfirmPassword;
-                                  });
-                                },
-                                icon: Icon(
-                                  _hideConfirmPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 SolidButton(
-                  label: widget.adminCreateMode
-                      ? widget.existingMember != null
-                          ? context.t('members.create_member_login_action')
-                          : context.t('members.create_member_account_action')
-                      : _isLoginMode
-                          ? context.t('auth.login')
-                          : context.t('auth.register'),
+                  label: hasExistingMember
+                      ? context.t('members.create_member_login_action')
+                      : context.t('members.create_member_account_action'),
                   isLoading: isLoading,
                   onPressed: isLoading ? null : _submit,
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: widget.adminCreateMode
-                      ? null
-                      : isLoading
-                          ? null
-                          : () {
-                              setState(() {
-                                _isLoginMode = !_isLoginMode;
-                              });
-                            },
+                  onPressed: null,
                   child: Text(
-                    widget.adminCreateMode
-                        ? widget.existingMember != null
-                            ? context.t('members.create_member_login_footer')
-                            : context.t('members.create_member_account_footer')
-                        : _isLoginMode
-                            ? context.t('auth.login_toggle_register')
-                            : context.t('auth.register_toggle_login'),
+                    hasExistingMember
+                        ? context.t('members.create_member_login_footer')
+                        : context.t('members.create_member_account_footer'),
                   ),
                 ),
               ],

@@ -34,14 +34,13 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
   }) async {
     final churchAsync = _ref.read(currentChurchIdProvider);
     final churchId = churchAsync.value;
-    final userAsync = _ref.read(getCurrentUserProvider);
+    final identity = _ref.read(userIdentityProvider).value;
+    final membership = _ref.read(currentMembershipProvider).value;
 
     final firebaseUser = _ref.watch(firebaseAuthProvider).currentUser;
     final currentUid = firebaseUser?.uid;
 
-    final user = userAsync.value;
-
-    if (user == null) return null;
+    if (identity == null) return null;
     if (currentUid == null) return null;
 
     state = const AsyncLoading();
@@ -62,16 +61,16 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
       createdPost = await _repository.createPost(
         churchId: churchId,
         userId: currentUid,
-        userName: user.name,
-        userPhoto: user.profilePhotoUrl,
+        userName: identity.name,
+        userPhoto: identity.profilePhotoUrl,
         churchName: church?.name,
         churchPastorName: church?.pastorName,
         sharePersonalDetails: isGlobal && sharePersonalDetails,
-        userCategory: user.category,
-        userAddress: user.address,
-        userEmail: user.email,
-        userPhone: user.phone,
-        userDob: user.dob,
+        userCategory: membership?.category ?? '',
+        userAddress: identity.address,
+        userEmail: identity.email,
+        userPhone: identity.phone,
+        userDob: identity.dob,
         title: title,
         description: description,
         imageFiles: imageFiles,
@@ -103,7 +102,8 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      final user = _ref.read(getCurrentUserProvider).value;
+      final identity = _ref.read(userIdentityProvider).value;
+      final membership = _ref.read(currentMembershipProvider).value;
       await _repository.updatePost(
         churchId: churchId,
         postId: postId,
@@ -112,11 +112,11 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
         imageFile: imageFile,
         existingImageUrl: existingImageUrl,
         sharePersonalDetails: isGlobal ? (sharePersonalDetails ?? false) : null,
-        userCategory: user?.category,
-        userAddress: user?.address,
-        userEmail: user?.email,
-        userPhone: user?.phone,
-        userDob: user?.dob,
+        userCategory: membership?.category,
+        userAddress: identity?.address,
+        userEmail: identity?.email,
+        userPhone: identity?.phone,
+        userDob: identity?.dob,
         isGlobal: isGlobal,
       );
     });

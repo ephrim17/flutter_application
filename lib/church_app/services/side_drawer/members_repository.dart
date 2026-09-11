@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/church_app/helpers/church_scoped.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
 import 'package:flutter_application/church_app/models/church_group_member_model.dart';
+import 'package:flutter_application/church_app/models/church_member_directory_entry_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
+import 'package:flutter_application/church_app/models/user_identity_model.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 
 class MembersRepository extends ChurchScopedRepository {
@@ -11,37 +13,58 @@ class MembersRepository extends ChurchScopedRepository {
     required super.churchId,
   });
 
-  CollectionReference<AppUser> collectionRef() {
-    return FirestorePaths.churchUsers(firestore, churchId)
-        .withConverter<AppUser>(
-      fromFirestore: (snap, _) => AppUser.fromFirestore(
-        snap.id, // 👈 document ID
+  CollectionReference<ChurchMembership> collectionRef() {
+    return FirestorePaths.churchMembers(firestore, churchId)
+        .withConverter<ChurchMembership>(
+      fromFirestore: (snap, _) => ChurchMembership.fromFirestore(
+        snap.id,
+        churchId,
         snap.data()!,
       ),
-      toFirestore: (user, _) => user.toMap(),
+      toFirestore: (member, _) => member.toMap(),
     );
   }
 
-  Future<List<AppUser>> getMembersOnce() async {
+  Future<List<ChurchMembership>> getMembersOnce() async {
     final snapshot = await collectionRef().get();
     final members = snapshot.docs.map((doc) => doc.data()).toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return members;
   }
 
+  /// The reduced roster any approved member (not just staff) can read —
+  /// see `churches/{churchId}/memberDirectory` in firestore.rules and
+  /// `mirrorMemberDirectory` in functions/src/index.ts.
+  Future<List<ChurchMemberDirectoryEntry>> getMemberDirectoryOnce() async {
+    final snapshot =
+        await FirestorePaths.churchMemberDirectory(firestore, churchId).get();
+    final entries = snapshot.docs
+        .map((doc) =>
+            ChurchMemberDirectoryEntry.fromFirestore(doc.id, doc.data()))
+        .toList()
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+    return entries;
+  }
+
+  /// Server-side search/pagination — must stay pointed at the display*
+  /// cache, not identity fields: ordering, prefix matching and cursor
+  /// pagination can't join across documents (§9.2).
   Future<MemberSearchPage> fetchMembersPage({
     String query = '',
     int limit = 25,
-    DocumentSnapshot<AppUser>? startAfter,
+    DocumentSnapshot<ChurchMembership>? startAfter,
   }) async {
     final normalizedQuery = query.trim();
     final searchField = _searchFieldForQuery(normalizedQuery);
 
-    Query<AppUser> queryRef = collectionRef().orderBy(searchField).limit(limit);
+    Query<ChurchMembership> queryRef =
+        collectionRef().orderBy(searchField).limit(limit);
 
     if (normalizedQuery.isNotEmpty) {
       queryRef =
-          queryRef.startAt([normalizedQuery]).endAt(['$normalizedQuery\uf8ff']);
+          queryRef.startAt([normalizedQuery]).endAt(['$normalizedQuery']);
     }
 
     if (startAfter != null) {
@@ -56,18 +79,19 @@ class MembersRepository extends ChurchScopedRepository {
     );
   }
 
-  Future<AppUser?> getMemberById(String userId) async {
-    final snapshot = await collectionRef().doc(userId).get();
+  Future<ChurchMembership?> getMemberById(String docId) async {
+    final snapshot = await collectionRef().doc(docId).get();
     return snapshot.data();
   }
 
-  Stream<AppUser?> watchMemberById(String userId) {
-    return collectionRef().doc(userId).snapshots().map((snapshot) {
+  Stream<ChurchMembership?> watchMemberById(String docId) {
+    return collectionRef().doc(docId).snapshots().map((snapshot) {
       return snapshot.data();
     });
   }
 
-  Future<List<AppUser>> getMembersByFamilyIds(List<String> familyIds) async {
+  Future<List<ChurchMembership>> getMembersByFamilyIds(
+      List<String> familyIds) async {
     final normalizedIds = familyIds
         .map((item) => item.trim())
         .where((item) => item.isNotEmpty)
@@ -75,7 +99,7 @@ class MembersRepository extends ChurchScopedRepository {
         .toList(growable: false);
 
     if (normalizedIds.isEmpty) {
-      return const <AppUser>[];
+      return const <ChurchMembership>[];
     }
 
     if (normalizedIds.length == 1) {
@@ -84,11 +108,13 @@ class MembersRepository extends ChurchScopedRepository {
           .get();
 
       final members = snapshot.docs.map((doc) => doc.data()).toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        ..sort((a, b) => a.displayName
+            .toLowerCase()
+            .compareTo(b.displayName.toLowerCase()));
       return members;
     }
 
-    final docs = <QueryDocumentSnapshot<AppUser>>[];
+    final docs = <QueryDocumentSnapshot<ChurchMembership>>[];
     for (var i = 0; i < normalizedIds.length; i += 10) {
       final chunk = normalizedIds.skip(i).take(10).toList(growable: false);
       final chunkSnapshot =
@@ -97,7 +123,8 @@ class MembersRepository extends ChurchScopedRepository {
     }
 
     final members = docs.map((doc) => doc.data()).toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      ..sort((a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return members;
   }
 
@@ -112,19 +139,19 @@ class MembersRepository extends ChurchScopedRepository {
         );
   }
 
-  Future<void> approveMember(String userId, bool value) {
-    return collectionRef().doc(userId).update({
+  Future<void> approveMember(String docId, bool value) {
+    return collectionRef().doc(docId).update({
       'approved': value,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> updateMemberCategory(
-    String userId, {
+    String docId, {
     required String category,
     required String familyId,
   }) {
-    return collectionRef().doc(userId).update({
+    return collectionRef().doc(docId).update({
       'category': category.trim().toLowerCase(),
       'familyId': familyId.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -132,7 +159,7 @@ class MembersRepository extends ChurchScopedRepository {
   }
 
   Future<void> updateMemberChurchGroups(
-    String userId, {
+    String docId, {
     required List<String> churchGroupIds,
   }) async {
     final normalizedGroupIds = churchGroupIds
@@ -141,32 +168,39 @@ class MembersRepository extends ChurchScopedRepository {
         .toSet()
         .toList();
 
-    await collectionRef().doc(userId).update({
+    await collectionRef().doc(docId).update({
       'churchGroupIds': normalizedGroupIds,
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    final member = (await collectionRef().doc(userId).get()).data();
+    final member = (await collectionRef().doc(docId).get()).data();
     if (member == null) {
       throw StateError('Member not found.');
     }
 
     await _syncChurchGroupMemberships(
-      userId: userId,
-      name: member.name.trim(),
-      email: member.email.trim().toLowerCase(),
-      phone: member.phone.trim(),
+      docId: docId,
+      name: member.displayName.trim(),
+      email: member.displayEmail.trim().toLowerCase(),
+      phone: member.displayPhone.trim(),
       category: member.category.trim(),
       churchGroupIds: normalizedGroupIds,
-      profilePhotoUrl: member.profilePhotoUrl,
+      profilePhotoUrl: member.displayPhotoUrl,
     );
   }
 
+  /// Admin edit form. Identity-shaped fields (name, phone, location,
+  /// address, gender, dob, maritalStatus, weddingDay,
+  /// educationalQualification, talentsAndGifts) only actually persist for an
+  /// **unlinked** member — that's this row's own authoritative profile
+  /// (§9.2/§9.3). For a linked member they're read-only display of what the
+  /// person set themselves; rules reject a client attempt to change them
+  /// there (the Phase 6 fan-out is the only writer once linked), so passing
+  /// the member's own current values through here is always safe.
   Future<void> updateMemberDetails(
-    String userId, {
+    String docId, {
     required String name,
     required String phone,
-    required String contact,
     required String location,
     required String address,
     required String gender,
@@ -192,22 +226,20 @@ class MembersRepository extends ChurchScopedRepository {
     required String additionalNotes,
     String? familyLabel,
   }) async {
-    await collectionRef().doc(userId).update({
-      'name': name.trim(),
-      'phone': phone.trim(),
-      'contact': contact.trim(),
-      'location': location.trim(),
-      'address': address.trim(),
-      'gender': gender.trim(),
+    await collectionRef().doc(docId).update({
+      'displayName': name.trim(),
+      'displayPhone': phone.trim(),
+      'displayGender': gender.trim(),
       'category': category.trim(),
       'familyId': familyId.trim(),
-      'dob': Timestamp.fromDate(dob),
-      'maritalStatus': maritalStatus.trim(),
-      'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'displayDob': Timestamp.fromDate(dob),
+      'displayMaritalStatus': maritalStatus.trim(),
+      'displayWeddingDay':
+          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
       'financialStabilityRating': financialStabilityRating,
       'financialSupportRequired': financialSupportRequired,
-      'educationalQualification': educationalQualification.trim(),
-      'talentsAndGifts': talentsAndGifts
+      'displayEducationalQualification': educationalQualification.trim(),
+      'displayTalentsAndGifts': talentsAndGifts
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty)
           .toList(),
@@ -234,18 +266,20 @@ class MembersRepository extends ChurchScopedRepository {
       'membershipCurrentStatus': membershipCurrentStatus.trim(),
       'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
+      'displayLocation': location.trim(),
+      'displayAddress': address.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    final updatedMember = (await collectionRef().doc(userId).get()).data();
+    final updatedMember = (await collectionRef().doc(docId).get()).data();
     await _syncChurchGroupMemberships(
-      userId: userId,
+      docId: docId,
       name: name.trim(),
-      email: updatedMember?.email ?? '',
+      email: updatedMember?.displayEmail ?? '',
       phone: phone.trim(),
       category: category.trim(),
       churchGroupIds: churchGroupIds,
-      profilePhotoUrl: updatedMember?.profilePhotoUrl ?? '',
+      profilePhotoUrl: updatedMember?.displayPhotoUrl ?? '',
     );
 
     if (category.trim() == 'family') {
@@ -254,7 +288,7 @@ class MembersRepository extends ChurchScopedRepository {
           .set({
         'familyId': familyId.trim(),
         'familyHead': name.trim(),
-        'familyHeadUid': userId,
+        'familyHeadUid': docId,
         'category': category.trim(),
         'churchId': churchId,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -262,26 +296,52 @@ class MembersRepository extends ChurchScopedRepository {
     }
   }
 
+  /// Links an admin-created (no-auth, random-id) member to a real account —
+  /// re-keys the membership doc to the new uid and, if no identity doc
+  /// exists yet, creates one seeded from the membership's own (previously
+  /// authoritative) display* fields (§9.3, §9.7).
   Future<void> attachFirebaseAuthToMember(
-    String existingUserId, {
+    String existingDocId, {
     required String newUid,
     required String email,
   }) async {
     final existingDoc =
-        await FirestorePaths.churchUserDoc(firestore, churchId, existingUserId)
+        await FirestorePaths.churchMemberDoc(firestore, churchId, existingDocId)
             .get();
     if (!existingDoc.exists) {
       throw StateError('Member not found.');
     }
 
-    final existingData = existingDoc.data() as Map<String, dynamic>;
-    final newDoc = FirestorePaths.churchUserDoc(firestore, churchId, newUid);
+    final existingData = existingDoc.data()!;
+    final newDoc = FirestorePaths.churchMemberDoc(firestore, churchId, newUid);
     final batch = firestore.batch();
+
+    final displayName = (existingData['displayName'] ?? '').toString();
+    final displayPhone = (existingData['displayPhone'] ?? '').toString();
+    final displayPhotoUrl = (existingData['displayPhotoUrl'] ?? '').toString();
+    final displayGender = (existingData['displayGender'] ?? '').toString();
+    final displayDob = existingData['displayDob'];
+
+    final identityDoc = FirestorePaths.userDoc(firestore, newUid);
+    final identitySnapshot = await identityDoc.get();
+    if (!identitySnapshot.exists) {
+      batch.set(identityDoc, UserIdentity(
+        uid: newUid,
+        name: displayName,
+        email: email.trim().toLowerCase(),
+        phone: displayPhone,
+        profilePhotoUrl: displayPhotoUrl,
+        gender: displayGender,
+        dob: displayDob is Timestamp ? displayDob.toDate() : null,
+      ).toMap());
+    }
 
     batch.set(newDoc, {
       ...existingData,
       'uid': newUid,
-      'email': email.trim().toLowerCase(),
+      'linkedUid': newUid,
+      'displayEmail': email.trim().toLowerCase(),
+      'identitySyncedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
@@ -290,24 +350,9 @@ class MembersRepository extends ChurchScopedRepository {
             .map((item) => item.toString())
             .where((item) => item.trim().isNotEmpty)
             .toList();
-    final name = (existingData['name'] ?? '').toString();
-    final phone = (existingData['phone'] ?? '').toString();
     final category = (existingData['category'] ?? '').toString();
 
-    if (existingUserId != newUid) {
-      final readingPlans = await FirestorePaths.churchUserReadingPlans(
-              firestore, churchId, existingUserId)
-          .get();
-
-      for (final doc in readingPlans.docs) {
-        batch.set(
-          FirestorePaths.churchUserReadingPlans(firestore, churchId, newUid)
-              .doc(doc.id),
-          doc.data(),
-        );
-        batch.delete(doc.reference);
-      }
-
+    if (existingDocId != newUid) {
       batch.delete(existingDoc.reference);
     }
 
@@ -325,7 +370,7 @@ class MembersRepository extends ChurchScopedRepository {
 
       final oldGroupMemberDoc =
           FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
-              .doc(existingUserId);
+              .doc(existingDocId);
       final newGroupMemberDoc =
           FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
               .doc(newUid);
@@ -336,22 +381,21 @@ class MembersRepository extends ChurchScopedRepository {
             {
               'uid': newUid,
               'email': email.trim().toLowerCase(),
-              'name': name,
-              'phone': phone,
+              'name': displayName,
+              'phone': displayPhone,
               'category': category,
               'groupId': group.id,
               'groupLabel': group.label,
-              'profilePhotoUrl':
-                  (existingData['profilePhotoUrl'] ?? '').toString(),
+              'profilePhotoUrl': displayPhotoUrl,
               'updatedAt': FieldValue.serverTimestamp(),
             },
             SetOptions(merge: true));
-        if (existingUserId != newUid) {
+        if (existingDocId != newUid) {
           batch.delete(oldGroupMemberDoc);
         }
       } else {
         batch.delete(newGroupMemberDoc);
-        if (existingUserId != newUid) {
+        if (existingDocId != newUid) {
           batch.delete(oldGroupMemberDoc);
         }
       }
@@ -360,15 +404,15 @@ class MembersRepository extends ChurchScopedRepository {
     await batch.commit();
   }
 
-  Future<void> deleteMember(String userId) {
-    return _deleteChurchUserData(userId);
+  Future<void> deleteMember(String docId) {
+    return _deleteChurchMemberData(docId);
   }
 
-  Future<void> _deleteChurchUserData(String userId) async {
-    final userDoc =
-        await FirestorePaths.churchUserDoc(firestore, churchId, userId).get();
-    final userData = userDoc.data() as Map<String, dynamic>?;
-    final familyId = (userData?['familyId'] ?? '').toString().trim();
+  Future<void> _deleteChurchMemberData(String docId) async {
+    final memberDoc =
+        await FirestorePaths.churchMemberDoc(firestore, churchId, docId).get();
+    final memberData = memberDoc.data();
+    final familyId = (memberData?['familyId'] ?? '').toString().trim();
 
     if (familyId.isNotEmpty) {
       final familyDoc = await FirestorePaths.churchFamilies(firestore, churchId)
@@ -376,15 +420,16 @@ class MembersRepository extends ChurchScopedRepository {
           .get();
       final familyHeadUid =
           (familyDoc.data()?['familyHeadUid'] ?? '').toString().trim();
-      if (familyHeadUid == userId) {
+      if (familyHeadUid == docId) {
         final familyMembers =
             await collectionRef().where('familyId', isEqualTo: familyId).get();
         final remainingMembers = familyMembers.docs
             .map((doc) => doc.data())
-            .where((member) => member.uid != userId)
+            .where((member) => member.docId != docId)
             .toList()
-          ..sort(
-              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          ..sort((a, b) => a.displayName
+              .toLowerCase()
+              .compareTo(b.displayName.toLowerCase()));
 
         if (remainingMembers.isEmpty) {
           await familyDoc.reference.delete().catchError((_) {});
@@ -392,8 +437,8 @@ class MembersRepository extends ChurchScopedRepository {
           final newFamilyHead = remainingMembers.first;
           await familyDoc.reference.set({
             'familyId': familyId,
-            'familyHead': newFamilyHead.name.trim(),
-            'familyHeadUid': newFamilyHead.uid,
+            'familyHead': newFamilyHead.displayName.trim(),
+            'familyHeadUid': newFamilyHead.docId,
             'category': newFamilyHead.category.trim(),
             'churchId': churchId,
             'updatedAt': FieldValue.serverTimestamp(),
@@ -404,18 +449,15 @@ class MembersRepository extends ChurchScopedRepository {
 
     for (final group in churchGroupDefinitions) {
       await FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
-          .doc(userId)
+          .doc(docId)
           .delete()
           .catchError((_) {});
     }
-    await _deleteCollection(
-      FirestorePaths.churchUserReadingPlans(firestore, churchId, userId),
-    );
-    await FirestorePaths.churchUserDoc(firestore, churchId, userId).delete();
+    await FirestorePaths.churchMemberDoc(firestore, churchId, docId).delete();
   }
 
   Future<void> _syncChurchGroupMemberships({
-    required String userId,
+    required String docId,
     required String name,
     required String email,
     required String phone,
@@ -430,7 +472,7 @@ class MembersRepository extends ChurchScopedRepository {
           FirestorePaths.churchGroupDoc(firestore, churchId, group.id);
       final memberDoc =
           FirestorePaths.churchGroupMembers(firestore, churchId, group.id)
-              .doc(userId);
+              .doc(docId);
 
       batch.set(
           groupDoc,
@@ -445,7 +487,7 @@ class MembersRepository extends ChurchScopedRepository {
         batch.set(
             memberDoc,
             {
-              'uid': userId,
+              'uid': docId,
               'email': email.trim().toLowerCase(),
               'name': name,
               'phone': phone,
@@ -464,25 +506,12 @@ class MembersRepository extends ChurchScopedRepository {
     await batch.commit();
   }
 
-  Future<void> _deleteCollection(CollectionReference collectionRef) async {
-    while (true) {
-      final snapshot = await collectionRef.limit(50).get();
-      if (snapshot.docs.isEmpty) {
-        break;
-      }
-
-      for (final doc in snapshot.docs) {
-        await doc.reference.delete();
-      }
-    }
-  }
-
   String _searchFieldForQuery(String query) {
-    if (query.contains('@')) return 'email';
+    if (query.contains('@')) return 'displayEmail';
     if (RegExp(r'^[\d+\-\s()]+$').hasMatch(query) && query.length >= 3) {
-      return 'phone';
+      return 'displayPhone';
     }
-    return 'name';
+    return 'displayName';
   }
 }
 
@@ -493,7 +522,7 @@ class MemberSearchPage {
     required this.hasMore,
   });
 
-  final List<AppUser> members;
-  final DocumentSnapshot<AppUser>? lastDocument;
+  final List<ChurchMembership> members;
+  final DocumentSnapshot<ChurchMembership>? lastDocument;
   final bool hasMore;
 }

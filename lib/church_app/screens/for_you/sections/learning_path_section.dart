@@ -708,6 +708,7 @@ class _LearningSectionScreenState
             churchId: churchId,
             userId: userId,
             sectionId: widget.section.id,
+            source: widget.module.source,
           );
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -1242,7 +1243,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
     );
     final churchId = ref.read(currentChurchIdProvider).asData?.value;
     final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
-    final appUser = ref.read(appUserProvider).asData?.value;
+    final appUser = ref.read(userIdentityProvider).asData?.value;
     if (churchId == null || userId == null) return;
     setState(() => _submitting = true);
     try {
@@ -1257,6 +1258,7 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
             score: score,
             total: questions.length,
             passed: passed,
+            source: widget.module.source,
           );
       if (!mounted) return;
       setState(() {

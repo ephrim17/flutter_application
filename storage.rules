@@ -29,14 +29,39 @@ service firebase.storage {
       return isChurchAdmin(churchId) || isSuperAdmin();
     }
 
+    // Mirrors firestore.rules' hasVerifiedEmail() — `.get(key, default)`,
+    // not dot-access, since a doc that predates the field would otherwise
+    // throw and fail the whole rule closed (see the migration doc's
+    // real-bug addendum on the Firestore-side version of this mistake).
+    function hasVerifiedEmail() {
+      return isSignedIn() &&
+        (!firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) ||
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid))
+           .data.get('emailVerified', true) != false);
+    }
+
+    // A churchId with no Firestore doc yet is still being registered —
+    // `SuperAdminChurchService.createChurch` uploads the logo/pastor photo
+    // *before* writing any Firestore doc for it (super-admin and public
+    // self-registration both), so at upload time `isChurchStaff(churchId)`
+    // can never be true yet for a public registrant (there is no
+    // config/app.admins to be listed in, and they are not the super admin).
+    // Once the church doc exists, this always reads false and
+    // `isChurchStaff` alone governs further writes.
+    function isUnclaimedChurch(churchId) {
+      return !firestore.exists(/databases/(default)/documents/churches/$(churchId));
+    }
+
     match /bible/{allPaths=**} {
       allow read: if true;
       allow write: if false;
     }
 
-    match /churches/{churchId}/users/{uid}/profile/{allPaths=**} {
+    // Avatar blob for the person, not the membership — church-independent
+    // (§4.1, §5.1).
+    match /users/{uid}/profile/{allPaths=**} {
       allow read: if isSignedIn();
-      allow write: if isSelf(uid) || isChurchStaff(churchId);
+      allow write: if isSelf(uid);
     }
 
     match /churches/{churchId}/feed/{allPaths=**} {
@@ -59,12 +84,14 @@ service firebase.storage {
 
     match /churches/{churchId}/pastorPhotos/{fileName} {
       allow read: if isSignedIn();
-      allow write: if isChurchStaff(churchId);
+      allow write: if isChurchStaff(churchId) ||
+        (hasVerifiedEmail() && isUnclaimedChurch(churchId));
     }
 
     match /churches/{churchId}/logo {
       allow read: if true;
-      allow write: if isChurchStaff(churchId);
+      allow write: if isChurchStaff(churchId) ||
+        (hasVerifiedEmail() && isUnclaimedChurch(churchId));
     }
 
     match /churches/{churchId}/equipments/{allPaths=**} {

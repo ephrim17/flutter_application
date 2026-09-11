@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
 import 'package:flutter_application/church_app/models/faith_engagement_models.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
@@ -65,17 +65,17 @@ class DashboardScreen extends ConsumerWidget {
       );
     }
     final dashboardMembers =
-        dashboardMembersAsync.asData?.value ?? const <AppUser>[];
+        dashboardMembersAsync.asData?.value ?? const <ChurchMembership>[];
     final birthdayMembers =
-        dashboardMembers.where((member) => isBirthdayToday(member.dob)).toList()
+        dashboardMembers.where((member) => isBirthdayToday(member.displayDob)).toList()
           ..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
           );
     final anniversaryMembers = dashboardMembers
-        .where((member) => isAnniversaryToday(member.weddingDay))
+        .where((member) => isAnniversaryToday(member.displayWeddingDay))
         .toList()
       ..sort(
-        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
       );
     bool homeSectionDisabled(String id) => !(homeSectionConfigs
             .where((config) => config.id == id)

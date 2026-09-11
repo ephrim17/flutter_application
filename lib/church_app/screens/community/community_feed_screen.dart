@@ -37,7 +37,10 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
     return computeHideableAppBarVisibility(
       notification: notification,
       currentlyVisible: _appBarVisible,
-      onChanged: (visible) => setState(() => _appBarVisible = visible),
+      onChanged: (visible) {
+        if (!mounted) return;
+        setState(() => _appBarVisible = visible);
+      },
     );
   }
 

@@ -2,12 +2,16 @@
 
 ## Scope
 
-The authenticated shell provides Home, For You and Discover tabs, plus an
-admin-only Dashboard when enabled. Feeds is no longer a standalone bottom tab
-— it lives inside For You as the "Community" segment (see
-[For You content](for-you-content.md)). The drawer exposes permitted features
-and compact counts. Settings owns profile, appearance, notifications, prayer
-reminders, feedback, local-data clearing and logout.
+The authenticated shell provides Home, For You and Community tabs, plus an
+admin-only Dashboard when enabled. The standalone Discover tab was removed —
+browsing other churches now happens from the "Your churches"/"Other
+churches" lists on the church-selection screen (see
+[Churches and Membership](churches-and-membership.md)), which reuses the same
+church card design Discover used to show. The drawer exposes permitted
+features and compact counts. Settings owns profile, appearance, notifications,
+prayer reminders, feedback, local-data clearing, logout, and — for a church's
+own admin — that church's public profile (pastor, contact details, social
+links).
 
 ## Behaviour
 
@@ -36,6 +40,7 @@ reminders, feedback, local-data clearing and logout.
 - Shell: `church_tab_screen.dart`, `widgets/app_bottom_tab_bar.dart`.
 - Drawer: `church_side_drawer.dart`, `helpers/drawer_constants.dart`.
 - Settings: `screens/side_drawer/settings_screen.dart`.
+- Church profile editor (admin-only): `widgets/church_profile_editor_sheet.dart`.
 - Avatar: `widgets/app_profile_avatar.dart`.
 - Notification setup: `services/notification_service.dart`.
 - Feedback: `globalFeedback` through the settings/super-admin providers.
@@ -47,7 +52,7 @@ reminders, feedback, local-data clearing and logout.
 | NAV-01 | Tap each bottom tab repeatedly | Correct screen opens once; no state/index crash. |
 | NAV-02 | Member vs admin shell | Member cannot see Dashboard/Studio/Equipment; eligible admin can. |
 | NAV-03 | Disable a feature remotely | Matching tab/drawer item disappears safely. |
-| NAV-08 | Switch between Highlights/Community inside For You, then back to Home/Discover and return | Segment selection and each segment's scroll/pagination state survive the round trip. |
+| NAV-08 | Switch between Highlights/Community inside For You, then back to Home/Community tab and return | Segment selection and each segment's scroll/pagination state survive the round trip. |
 | NAV-04 | Badge data loading/error/success | No misleading zero while loading; final compact number is correct. |
 | SETTINGS-01 | Add/change/remove profile photo | Avatar updates across drawer, feeds, articles, circles and quick cards. |
 | SETTINGS-02 | Save valid/invalid profile | Valid values persist; validation prevents malformed phone/location/date. |
@@ -57,6 +62,7 @@ reminders, feedback, local-data clearing and logout.
 | SETTINGS-06 | Submit feedback | One feedback record appears for super admin; double-submit is prevented. |
 | SETTINGS-07 | Clear local data | Confirmation appears; server profile/content remains intact. |
 | SETTINGS-08 | Logout and sign in again | No previous-church content flashes before re-resolution. |
+| SETTINGS-09 | Church admin edits church profile (pastor, contact, social links) from Settings | Section is hidden for non-admins and when no church is selected; save updates `churches/{churchId}` and refreshes Your/Other Churches and the church directory. |
 | NAV-05 | Large text/small phone | Labels, membership dates, badges and settings sheets render cleanly without stray text or overflow. |
 | NAV-06 | Open screens with initial or paginated loading states | Progress indicator renders without animation/runtime exceptions. |
 | NAV-07 | Open light and dark screens on Android | Status/navigation icons contrast with the app surface. |

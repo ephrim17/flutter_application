@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_gender_members_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,23 +7,23 @@ void main() {
   testWidgets('gender member page shows all matching members and searches',
       (tester) async {
     final members = [
-      AppUser.fromJson({
+      ChurchMembership.fromFirestore('male-1', 'church-1', {
         'uid': 'male-1',
-        'name': 'Arul',
-        'email': 'arul@example.com',
-        'gender': 'male',
+        'displayName': 'Arul',
+        'displayEmail': 'arul@example.com',
+        'displayGender': 'male',
       }),
-      AppUser.fromJson({
+      ChurchMembership.fromFirestore('female-1', 'church-1', {
         'uid': 'female-1',
-        'name': 'Beth',
-        'email': 'beth@example.com',
-        'gender': 'female',
+        'displayName': 'Beth',
+        'displayEmail': 'beth@example.com',
+        'displayGender': 'female',
       }),
-      AppUser.fromJson({
+      ChurchMembership.fromFirestore('male-2', 'church-1', {
         'uid': 'male-2',
-        'name': 'Daniel',
-        'email': 'daniel@example.com',
-        'gender': 'Male',
+        'displayName': 'Daniel',
+        'displayEmail': 'daniel@example.com',
+        'displayGender': 'Male',
       }),
     ];
 

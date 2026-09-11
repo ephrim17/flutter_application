@@ -20,7 +20,7 @@ import 'package:flutter_application/church_app/services/firestore/firestore_path
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
 import 'package:flutter_application/church_app/widgets/linkified_text_widget.dart';
@@ -647,29 +647,12 @@ class _FeedCardState extends ConsumerState<FeedCard> {
 
     if (!isGlobal) {
       final user = await _loadAuthorFromChurch(ref, postChurchId) ??
-          AppUser(
-            uid: post.userId,
-            name: post.userName,
-            profilePhotoUrl: post.userPhoto ?? '',
-            email: '',
-            role: 'user',
+          ChurchMembership(
+            docId: post.userId,
+            churchId: postChurchId,
             approved: true,
-            phone: '',
-            contact: '',
-            location: '',
-            address: '',
-            gender: '',
-            category: '',
-            familyId: '',
-            maritalStatus: '',
-            weddingDay: null,
-            financialStabilityRating: 0,
-            financialSupportRequired: false,
-            educationalQualification: '',
-            talentsAndGifts: const [],
-            churchGroupIds: const [],
-            authToken: '',
-            dob: null,
+            displayName: post.userName,
+            displayPhotoUrl: post.userPhoto ?? '',
           );
 
       if (!context.mounted) return;
@@ -686,29 +669,12 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     if (!post.sharePersonalDetails) {
       await showUserQuickCardWithChurch(
         context,
-        AppUser(
-          uid: post.userId,
-          name: post.userName,
-          profilePhotoUrl: post.userPhoto ?? '',
-          email: '',
-          role: 'user',
+        ChurchMembership(
+          docId: post.userId,
+          churchId: postChurchId,
           approved: true,
-          phone: '',
-          contact: '',
-          location: '',
-          address: '',
-          gender: '',
-          category: '',
-          familyId: '',
-          maritalStatus: '',
-          weddingDay: null,
-          financialStabilityRating: 0,
-          financialSupportRequired: false,
-          educationalQualification: '',
-          talentsAndGifts: const [],
-          churchGroupIds: const [],
-          authToken: '',
-          dob: null,
+          displayName: post.userName,
+          displayPhotoUrl: post.userPhoto ?? '',
         ),
         churchName: churchName,
         churchPastorName: churchPastorName,
@@ -729,29 +695,17 @@ class _FeedCardState extends ConsumerState<FeedCard> {
             post.userDob != null;
 
     final user = postHasStoredPersonalDetails
-        ? AppUser(
-            uid: post.userId,
-            name: post.userName,
-            profilePhotoUrl: post.userPhoto ?? '',
-            email: post.userEmail ?? '',
-            role: 'user',
+        ? ChurchMembership(
+            docId: post.userId,
+            churchId: postChurchId,
             approved: true,
-            phone: post.userPhone ?? '',
-            contact: '',
-            location: '',
-            address: post.userAddress ?? '',
-            gender: '',
             category: post.userCategory ?? '',
-            familyId: '',
-            maritalStatus: '',
-            weddingDay: null,
-            financialStabilityRating: 0,
-            financialSupportRequired: false,
-            educationalQualification: '',
-            talentsAndGifts: const [],
-            churchGroupIds: const [],
-            authToken: '',
-            dob: post.userDob,
+            displayName: post.userName,
+            displayPhotoUrl: post.userPhoto ?? '',
+            displayEmail: post.userEmail ?? '',
+            displayPhone: post.userPhone ?? '',
+            displayAddress: post.userAddress ?? '',
+            displayDob: post.userDob,
           )
         : await _loadAuthorFromChurch(ref, postChurchId);
 
@@ -764,15 +718,16 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     );
   }
 
-  Future<AppUser?> _loadAuthorFromChurch(WidgetRef ref, String churchId) async {
-    final doc = await FirestorePaths.churchUserDoc(
+  Future<ChurchMembership?> _loadAuthorFromChurch(
+      WidgetRef ref, String churchId) async {
+    final doc = await FirestorePaths.churchMemberDoc(
       ref.read(firestoreProvider),
       churchId,
       post.userId,
     ).get();
 
     if (!doc.exists) return null;
-    return AppUser.fromJson(doc.data() as Map<String, dynamic>);
+    return ChurchMembership.fromFirestore(doc.id, churchId, doc.data()!);
   }
 }
 

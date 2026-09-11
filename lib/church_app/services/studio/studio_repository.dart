@@ -337,8 +337,8 @@ class StudioRepository {
     }
 
     final userSnapshot =
-        await FirestorePaths.churchUserDoc(firestore, churchId, user.uid).get();
-    final userData = userSnapshot.data() as Map<String, dynamic>?;
+        await FirestorePaths.userDoc(firestore, user.uid).get();
+    final userData = userSnapshot.data();
     final name =
         (userData?['name'] ?? user.displayName ?? '').toString().trim();
     final email = (userData?['email'] ?? user.email ?? '').toString().trim();
@@ -638,18 +638,6 @@ class StudioRepository {
     await appConfigRef.set({
       'adminMode': {
         'enabled': enabled,
-      },
-    }, SetOptions(merge: true));
-  }
-
-  Future<void> updateThemeColors({
-    required String primaryColor,
-    required String secondaryColor,
-  }) async {
-    await appConfigRef.set({
-      'theme': {
-        'primaryColor': primaryColor,
-        'secondaryColor': secondaryColor,
       },
     }, SetOptions(merge: true));
   }

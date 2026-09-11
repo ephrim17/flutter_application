@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart'
     show favoritesProvider, toggleGlobalHighlight;
 import 'package:flutter_application/church_app/services/side_drawer/bible_book_repository.dart';
@@ -349,6 +350,11 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                                 widget.book.key,
                                 actualChapterIndex + 1,
                                 int.parse(verse['verse'].toString()),
+                                firestore: ref.read(firestoreProvider),
+                                uid: ref
+                                    .read(firebaseAuthProvider)
+                                    .currentUser
+                                    ?.uid,
                               );
                               ref.invalidate(favoritesProvider);
                             },

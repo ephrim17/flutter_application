@@ -67,8 +67,6 @@ class _PastorList extends StatelessWidget {
               spacing: 12,
               itemBuilder: (_, i) => _PastorCard(
                 pastor: state.pastors[i],
-                primaryColor: state.primaryColor,
-                secondaryColor: state.secondaryColor,
               ),
             )),
       ],
@@ -79,13 +77,9 @@ class _PastorList extends StatelessWidget {
 class _PastorCard extends StatelessWidget {
   const _PastorCard({
     required this.pastor,
-    required this.primaryColor,
-    required this.secondaryColor,
   });
 
   final Pastor pastor;
-  final Color primaryColor;
-  final Color secondaryColor;
 
   @override
   Widget build(BuildContext context) {
@@ -100,8 +94,6 @@ class _PastorCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: welcomeBackCardDecoration(
           context,
-          primaryColor: primaryColor,
-          secondaryColor: secondaryColor,
           radius: cornerRadius + 4,
         ),
         child: Row(

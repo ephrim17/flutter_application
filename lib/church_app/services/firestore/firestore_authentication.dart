@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
@@ -21,6 +22,8 @@ class CreatedAuthAccount {
 class AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(region: 'us-central1');
 
   AuthRepository(this._auth, this._firestore);
 
@@ -212,10 +215,14 @@ class AuthRepository {
     );
   }
 
-  Future<void> deleteAccount({
-    required String churchId,
-    required String password,
-  }) async {
+  /// Deletes the signed-in person's account entirely (§6 Phase 7): every
+  /// membership across every church (and that membership's own progress
+  /// and group rows), the identity doc and its subcollections, Storage
+  /// blobs, then the Auth user — done server-side by the `deleteAccount`
+  /// callable, since a client can't safely enumerate every membership
+  /// across churches it isn't itself scoped to, nor delete its own Auth
+  /// user's cross-church footprint atomically.
+  Future<void> deleteAccount({required String password}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
@@ -237,39 +244,39 @@ class AuthRepository {
       password: password,
     );
 
+    // Refreshes the ID token's auth_time — the callable checks it's recent
+    // before doing anything irreversible.
     await user.reauthenticateWithCredential(credential);
 
-    final userId = user.uid;
-    await _deleteFirestoreUserData(
-      churchId: churchId,
-      uid: userId,
-    );
-
-    await user.delete();
+    await _functions.httpsCallable('deleteAccount').call<void>();
   }
 
-  Future<void> _deleteFirestoreUserData({
-    required String churchId,
-    required String uid,
+  /// Leaves one church (§6 Phase 7): deletes the membership and group rows
+  /// there only. Identity, favorites, reading plans, Church Tree progress
+  /// and streak all live on `users/{uid}` and are untouched.
+  Future<void> leaveChurch({required String churchId}) async {
+    await _functions.httpsCallable('leaveChurch').call<void>({
+      'churchId': churchId,
+    });
+  }
+
+  /// Signup email-OTP (§5.5 addendum) — sends a 6-digit code to the
+  /// caller's own Firebase Auth email. Callable, not onRequest like
+  /// password reset, since the caller is already signed in by this point.
+  Future<void> requestSignupEmailVerificationCode({
+    String churchName = '',
   }) async {
-    final batch = _firestore.batch();
+    await _functions
+        .httpsCallable('requestSignupEmailVerificationCode')
+        .call<void>({
+      if (churchName.trim().isNotEmpty) 'churchName': churchName.trim(),
+    });
+  }
 
-    final readingPlans =
-        await FirestorePaths.churchUserReadingPlans(_firestore, churchId, uid)
-            .get();
-
-    for (final doc in readingPlans.docs) {
-      batch.delete(doc.reference);
-    }
-
-    batch.delete(FirestorePaths.churchUserDoc(_firestore, churchId, uid));
-
-    final globalUserDoc = await FirestorePaths.userDoc(_firestore, uid).get();
-    if (globalUserDoc.exists) {
-      batch.delete(globalUserDoc.reference);
-    }
-
-    await batch.commit();
+  Future<void> verifySignupEmailVerificationCode({required String code}) async {
+    await _functions
+        .httpsCallable('verifySignupEmailVerificationCode')
+        .call<void>({'code': code.trim()});
   }
 
   Future<void> requestAccess(
@@ -317,40 +324,33 @@ class AuthRepository {
       );
     }
 
-    final usersRef = FirestorePaths.churchUsers(_firestore, churchId);
+    final membersRef = FirestorePaths.churchMembers(_firestore, churchId);
     final generatedDocId =
-        createChurchMemberWithoutAuth ? usersRef.doc().id : null;
+        createChurchMemberWithoutAuth ? membersRef.doc().id : null;
     final uid = targetUid ?? generatedDocId ?? currentUser!.uid;
     final email = createChurchMemberWithoutAuth
         ? (targetEmail ?? '').trim().toLowerCase()
         : (targetEmail ?? currentUser?.email ?? '').trim().toLowerCase();
-    final docRef = usersRef.doc(uid);
+    final docRef = membersRef.doc(uid);
+    // Unlinked (admin-created, no auth) members have no identity doc — the
+    // fields below are THEIR authoritative profile, stored as display* on
+    // the membership itself (§9.2/§9.3). A linked signup gets a real
+    // identity doc too, since this screen still doubles as first-time
+    // signup until the dedicated profile step exists (KT Files/
+    // architecture/user-church-decoupling-migration.md §5.5).
+    final linkedUid = createChurchMemberWithoutAuth ? null : uid;
 
     await docRef.set({
-      'uid': uid,
-      'name': name.trim(),
-      'email': email,
-      'phone': phone.trim(),
-      'contact': contact.trim(),
-      'location': location.trim(),
-      'address': address.trim(),
-      'gender': gender.trim(),
+      'uid': linkedUid ?? '',
+      'linkedUid': linkedUid,
       'category': category.trim(),
       'familyId': familyId.trim(),
-      'dob': Timestamp.fromDate(dob),
-      'maritalStatus': maritalStatus.trim(),
-      'weddingDay': weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
-      'financialStabilityRating': financialStabilityRating,
-      'financialSupportRequired': financialSupportRequired,
-      'educationalQualification': educationalQualification.trim(),
-      'talentsAndGifts': talentsAndGifts
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toList(),
       'churchGroupIds': churchGroupIds
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty)
           .toList(),
+      'financialStabilityRating': financialStabilityRating,
+      'financialSupportRequired': financialSupportRequired,
       'solemnizedBaptism': solemnizedBaptism,
       'baptismDate': solemnizedBaptism && baptismDate != null
           ? Timestamp.fromDate(baptismDate)
@@ -371,9 +371,52 @@ class AuthRepository {
       'membershipNotes': membershipNotes.trim(),
       'additionalNotes': additionalNotes.trim(),
       'approved': approved,
-      'authToken': authToken,
-      'createdAt': FieldValue.serverTimestamp(),
+      'notifyOnApproval': false,
+      'joinedAt': FieldValue.serverTimestamp(),
+      'schemaVersion': 1,
+      'displayName': name.trim(),
+      'displayEmail': email,
+      'displayPhone': phone.trim(),
+      'displayDob': Timestamp.fromDate(dob),
+      'displayGender': gender.trim(),
+      'displayWeddingDay':
+          weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+      'displayMaritalStatus': maritalStatus.trim(),
+      'displayEducationalQualification': educationalQualification.trim(),
+      'displayTalentsAndGifts': talentsAndGifts
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+      'displayLocation': location.trim(),
+      'displayAddress': address.trim(),
+      'identitySyncedAt': FieldValue.serverTimestamp(),
     });
+
+    if (linkedUid != null) {
+      final identityDocRef = FirestorePaths.userDoc(_firestore, linkedUid);
+      final identitySnapshot = await identityDocRef.get();
+      await identityDocRef.set({
+        'name': name.trim(),
+        'email': email,
+        'phone': phone.trim(),
+        'dob': Timestamp.fromDate(dob),
+        'gender': gender.trim(),
+        'location': location.trim(),
+        'address': address.trim(),
+        'maritalStatus': maritalStatus.trim(),
+        'weddingDay':
+            weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
+        'educationalQualification': educationalQualification.trim(),
+        'talentsAndGifts': talentsAndGifts
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList(),
+        'profileComplete': true,
+        'schemaVersion': 1,
+        if (!identitySnapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
 
     await _syncChurchGroupMemberships(
       churchId: churchId,
@@ -399,6 +442,19 @@ class AuthRepository {
     }
   }
 
+  /// Opts a pending request into the approval push+email
+  /// (`notifyMemberOnApproval` in functions) — tapped from
+  /// `RequestPendingScreen`. A no-op field on any other membership row.
+  Future<void> setNotifyOnApproval({
+    required String churchId,
+    required String uid,
+    required bool value,
+  }) {
+    return FirestorePaths.churchMemberDoc(_firestore, churchId, uid).update({
+      'notifyOnApproval': value,
+    });
+  }
+
   Future<List<String>> getFamilyIds(String churchId) async {
     final snapshot = await FirestorePaths.churchFamilies(_firestore, churchId)
         .orderBy('familyId')
@@ -414,7 +470,7 @@ class AuthRepository {
     required String churchId,
     required String uid,
   }) {
-    return FirestorePaths.churchUserDoc(_firestore, churchId, uid).get();
+    return FirestorePaths.churchMemberDoc(_firestore, churchId, uid).get();
   }
 
   Future<void> _syncChurchGroupMemberships({

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/input_validators.dart';
+import 'package:flutter_application/church_app/helpers/self_signup_membership_helper.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
-import 'package:flutter_application/church_app/models/app_user_model.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/loading_access_provider.dart';
-import 'package:flutter_application/church_app/providers/preflow_theme_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
     show selectedChurchProvider;
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
@@ -35,7 +35,7 @@ class LoginRequestScreen extends ConsumerStatefulWidget {
   final bool adminCreateMode;
   final String? targetUid;
   final String? initialEmail;
-  final AppUser? existingMember;
+  final ChurchMembership? existingMember;
 
   const LoginRequestScreen({
     super.key,
@@ -99,23 +99,23 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ref.read(authRepositoryProvider).getFamilyIds(widget.churchId);
     final existingMember = widget.existingMember;
     if (existingMember != null) {
-      _nameController.text = existingMember.name;
-      _phoneController.text = existingMember.phone;
-      _contactController.text = existingMember.contact;
-      _emailController.text = existingMember.email;
-      _locationController.text = existingMember.location;
-      _addressController.text = existingMember.address;
-      _dob = existingMember.dob;
-      _weddingDay = existingMember.weddingDay;
-      _gender = existingMember.gender.trim().toLowerCase();
+      _nameController.text = existingMember.displayName;
+      _phoneController.text = existingMember.displayPhone;
+      _contactController.text = existingMember.displayPhone;
+      _emailController.text = existingMember.displayEmail;
+      _locationController.text = existingMember.displayLocation;
+      _addressController.text = existingMember.displayAddress;
+      _dob = existingMember.displayDob;
+      _weddingDay = existingMember.displayWeddingDay;
+      _gender = existingMember.displayGender.trim().toLowerCase();
       _category = existingMember.category.trim().toLowerCase();
-      _maritalStatus = existingMember.maritalStatus.trim().toLowerCase();
+      _maritalStatus = existingMember.displayMaritalStatus.trim().toLowerCase();
       _financialStabilityRating = existingMember.financialStabilityRating;
       _financialSupportRequired = existingMember.financialSupportRequired;
       _educationalQualificationController.text =
-          existingMember.educationalQualification;
+          existingMember.displayEducationalQualification;
       _talentsAndGiftsController.text =
-          existingMember.talentsAndGifts.join(', ');
+          existingMember.displayTalentsAndGifts.join(', ');
       _additionalNotesController.text = existingMember.additionalNotes;
       _membershipNotesController.text = existingMember.membershipNotes;
       _solemnizedBaptism = existingMember.solemnizedBaptism;
@@ -179,11 +179,11 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
 
   String _resolveFamilyId() {
     if (!_showAdminSections) {
-      final seed = _nameController.text.trim();
-      if (seed.isEmpty) return '';
-      final normalizedSeed = _normalizeCategorySeed(seed);
-      if (normalizedSeed.isEmpty) return '';
-      return '${_category.toLowerCase()}_${normalizedSeed}_${widget.churchId}';
+      return resolveSelfSignupFamilyId(
+        category: _category,
+        name: _nameController.text.trim(),
+        churchId: widget.churchId,
+      );
     }
 
     if (_useExistingFamilyId &&
@@ -204,21 +204,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   }
 
   String _normalizeCategorySeed(String value) {
-    final churchSuffix = widget.churchId.toLowerCase();
-    var normalized = value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-
-    normalized = normalized
-        .replaceFirst(RegExp(r'^(family|individual)_+'), '')
-        .replaceFirst(RegExp('_$churchSuffix\$'), '')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-
-    return normalized;
+    return normalizeMembershipSeed(value, widget.churchId);
   }
 
   String _formatFamilyOptionLabel(String familyId) {
@@ -248,7 +234,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
   }
 
   void _syncCategoryWithMaritalStatus() {
-    _category = _maritalStatus == 'married' ? 'family' : 'individual';
+    _category = deriveSelfSignupCategory(_maritalStatus);
     if (_category == 'individual') {
       _familyNameController.clear();
       _useExistingFamilyId = _selectedExistingFamilyId != null;
@@ -537,12 +523,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           churchId: widget.churchId,
         );
         await repo.updateMemberDetails(
-          widget.existingMember!.uid,
+          widget.existingMember!.docId,
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
-          contact: _showAdminSections
-              ? _phoneController.text.trim()
-              : _contactController.text.trim(),
           location: _locationController.text.trim(),
           address: _addressController.text.trim(),
           gender: _gender,
@@ -588,7 +571,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           name: 'member_updated',
           parameters: {
             'church_id': widget.churchId,
-            'member_id': widget.existingMember?.uid ?? widget.targetUid,
+            'member_id': widget.existingMember?.docId ?? widget.targetUid,
           },
         );
         if (!mounted) return;
@@ -604,18 +587,12 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                 );
 
         if (existingDoc.exists) {
-          final appUser = AppUser.fromFirestore(
-            existingDoc.id,
-            existingDoc.data() as Map<String, dynamic>,
-          );
           await ChurchLocalStorage().saveChurch(
             id: widget.churchId,
             name: widget.churchName,
             logo: widget.churchLogo,
           );
           if (!mounted) return;
-          ref.read(forcePreflowThemeProvider.notifier).state =
-              !appUser.approved;
 
           ref.read(selectedChurchProvider.notifier).state = Church(
             id: widget.churchId,
@@ -640,9 +617,33 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (_) => AppEntry(initialUser: appUser),
+              builder: (_) => const AppEntry(),
             ),
             (route) => false,
+          );
+          return;
+        }
+      }
+
+      if (widget.adminCreateMode && widget.targetUid != null) {
+        // requestAccess() always does a full, non-merge set() — calling it
+        // again against a targetUid that already has a member doc (a
+        // double-tap, or a retry after a dropped response to an already-
+        // successful write) hits the update rules instead of the create
+        // rule and is denied, since identitySyncedAt can never re-match a
+        // fresh serverTimestamp(). Guard it the same way the non-admin
+        // branch above already guards self-registration.
+        final existingDoc =
+            await ref.read(authRepositoryProvider).getChurchUserDoc(
+                  churchId: widget.churchId,
+                  uid: widget.targetUid!,
+                );
+        if (existingDoc.exists) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.t('members.member_already_exists')),
+            ),
           );
           return;
         }
@@ -656,23 +657,32 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
       var shouldAutoApprove = widget.adminCreateMode;
 
       if (!widget.adminCreateMode && normalizedEmail.isNotEmpty) {
-        final usersSnapshot = await FirestorePaths.churchUsers(
-          ref.read(firestoreProvider),
-          widget.churchId,
-        ).limit(1).get();
-        final appConfigDoc = await FirestorePaths.churchAppConfig(
-          ref.read(firestoreProvider),
-          widget.churchId,
-        ).get();
-        final admins =
-            List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
-                .map((item) => item.trim().toLowerCase())
-                .where((item) => item.isNotEmpty)
-                .toList(growable: false);
+        // Only the church's sole listed admin can actually read these (via
+        // isChurchAdmin's own internal, rules-unrestricted lookup) — for
+        // every other requester this throws PERMISSION_DENIED, which must
+        // not abort the request submission itself. Falling back to
+        // "not auto-approved" is exactly correct for that caller anyway.
+        try {
+          final membersSnapshot = await FirestorePaths.churchMembers(
+            ref.read(firestoreProvider),
+            widget.churchId,
+          ).limit(1).get();
+          final appConfigDoc = await FirestorePaths.churchAppConfig(
+            ref.read(firestoreProvider),
+            widget.churchId,
+          ).get();
+          final admins =
+              List<String>.from(appConfigDoc.data()?['admins'] ?? const [])
+                  .map((item) => item.trim().toLowerCase())
+                  .where((item) => item.isNotEmpty)
+                  .toList(growable: false);
 
-        shouldAutoApprove = usersSnapshot.docs.isEmpty &&
-            admins.length == 1 &&
-            admins.first == normalizedEmail;
+          shouldAutoApprove = membersSnapshot.docs.isEmpty &&
+              admins.length == 1 &&
+              admins.first == normalizedEmail;
+        } catch (_) {
+          shouldAutoApprove = false;
+        }
       }
 
       await ref.read(authRepositoryProvider).requestAccess(
@@ -760,7 +770,6 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         registrationSource: 'super_admin',
       );
       ref.invalidate(currentChurchIdProvider);
-      ref.read(forcePreflowThemeProvider.notifier).state = !shouldAutoApprove;
       if (!mounted) return;
       unawaited(
         syncNotificationTopicIfAuthorized(
@@ -768,49 +777,9 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         ),
       );
 
-      final createdUser = AppUser(
-        uid: firebaseUser!.uid,
-        name: _nameController.text.trim(),
-        email: normalizedEmail,
-        role: 'user',
-        approved: shouldAutoApprove,
-        phone: _phoneController.text.trim(),
-        contact: _showAdminSections
-            ? _phoneController.text.trim()
-            : _contactController.text.trim(),
-        location: _locationController.text.trim(),
-        address: _addressController.text.trim(),
-        gender: _gender,
-        category: _category,
-        familyId: familyId,
-        maritalStatus: _maritalStatus,
-        weddingDay: _weddingDay,
-        financialStabilityRating: _financialStabilityRating,
-        financialSupportRequired: _financialSupportRequired,
-        educationalQualification:
-            _educationalQualificationController.text.trim(),
-        talentsAndGifts: _parsedTalentsAndGifts(),
-        churchGroupIds: _selectedChurchGroupIds.toList(),
-        authToken: authToken,
-        dob: _dob!,
-        solemnizedBaptism: _solemnizedBaptism,
-        baptismDate: _baptismDate,
-        baptismCertificateNumber:
-            _baptismCertificateNumberController.text.trim(),
-        baptismChurchName: _baptismChurchNameController.text.trim(),
-        baptismPastorName: _baptismPastorNameController.text.trim(),
-        marriageSolemnizationChurchType: _marriageSolemnizationChurchType,
-        marriageSolemnizationChurchName:
-            _marriageSolemnizationChurchType == 'current_church'
-                ? widget.churchName
-                : _marriageOtherChurchNameController.text.trim(),
-        membershipCurrentStatus: _membershipCurrentStatus,
-        membershipNotes: _membershipNotesController.text.trim(),
-        additionalNotes: _additionalNotesController.text.trim(),
-      );
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => AppEntry(initialUser: createdUser),
+          builder: (_) => const AppEntry(),
         ),
         (route) => false,
       );
@@ -915,7 +884,7 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                                   Text(
                                                     _formatMemberSince(
                                                       widget.existingMember
-                                                          ?.createdAt,
+                                                          ?.joinedAt,
                                                     ),
                                                     style: Theme.of(context)
                                                         .textTheme

@@ -159,11 +159,20 @@ const Map<String, String> preAuthDefaultTextContents = {
   'auth.login_fetch_user_failed': 'Unable to fetch logged in user',
   'auth.welcome_back_heading': 'Welcome back',
   'auth.create_account_heading': 'Create your Church Tree account',
+  'auth.email_step_heading': 'Welcome',
+  'auth.email_step_subtitle': 'Enter your email to get started.',
+  'auth.continue_action': 'Continue',
+  'auth.change_email': 'Change email',
+  'auth.no_account_switch_to_register':
+      "We couldn't find an account for that email — set a password to create one.",
+  'auth.account_exists_switch_to_login':
+      'An account with this email already exists — enter your password to sign in.',
   'auth.login_subtitle': 'Sign in with your Church Tree account to continue.',
   'auth.register_subtitle':
       'Create your Church Tree first, then request access to your church.',
-  'auth.login_toggle_register': 'Need a new Church Tree account? Register',
-  'auth.register_toggle_login': 'Already have a Church Tree account? Login',
+  'auth.choice_subtitle': 'Sign in to your account, or create a new one.',
+  'auth.no_account_switch_to_signup':
+      "We couldn't find an account for that email. Let's create one.",
 
   // Onboarding / bootstrap
   'onboarding.get_started': 'Get Started',
@@ -176,6 +185,18 @@ const Map<String, String> preAuthDefaultTextContents = {
   'church.select_subtitle': 'Select your church to proceed further',
   'church.select_button': 'Select Church',
   'church.select_action': 'Select Church',
+  'church.request_still_pending':
+      'Your request to join {church} is still pending approval.',
+  'church.request_pending_title': 'Request pending',
+  'church.request_pending_subtitle':
+      'A church admin needs to approve your request before you can enter.',
+  'church.request_pending_notify_hint':
+      "We won't notify you automatically — turn this on to get a "
+          'notification and email once you\'re approved.',
+  'church.request_pending_will_notify':
+      "We'll send you a notification and email once you're approved.",
+  'church.request_pending_notify_action': 'Notify me when approved',
+  'church.request_pending_back_action': 'Back to my churches',
   'church.error_loading': 'Error loading churches',
   'church.none_available': 'No churches available',
   'church.register_your_church': 'Register your church',
@@ -198,12 +219,21 @@ const Map<String, String> preAuthDefaultTextContents = {
   'church.register_received_title': 'Registration received',
   'church.directory_title': 'Churches',
   'church.directory_load_error': 'We could not load the church list right now.',
+  'church.switcher_title': 'Switch church',
+  'church.switcher_empty': "You're not an approved member of any church yet.",
   'church.your_churches_title': 'Your Churches',
   'church.your_churches_subtitle': "Churches you follow and you're part of.",
   'church.your_churches_empty_subtitle':
       "Churches you follow and you're part of will show here.",
   'church.your_churches_empty_state':
       'You are not part of any church yet. Use the section below to explore other churches.',
+  'church.pending_churches_title': 'Pending Approval',
+  'church.pending_churches_subtitle':
+      "Requests you've sent that are still waiting on admin approval.",
+  'church.pending_churches_empty_subtitle':
+      "Requests you've sent will show here until an admin approves them.",
+  'church.pending_churches_empty_state':
+      "You don't have any pending church requests right now.",
   'church.other_churches_title': 'Other Churches',
   'church.other_churches_subtitle':
       'Explore other churches. Tapping one lets you submit a request form, and once an admin approves it, enrollment will be smoother.',
@@ -254,7 +284,10 @@ const Map<String, String> preAuthDefaultTextContents = {
   'super_admin.admin_section_title': 'Initial Admin',
   'super_admin.address_label': 'Address',
   'super_admin.contact_label': 'Contact',
-  'super_admin.email_label': 'Email',
+  'super_admin.email_label': 'Church email',
+  'super_admin.facebook_link_label': 'Facebook link (optional)',
+  'super_admin.instagram_link_label': 'Instagram link (optional)',
+  'super_admin.youtube_link_label': 'YouTube link (optional)',
   'super_admin.logo_label': 'Church Logo',
   'super_admin.logo_pick': 'Pick Logo',
   'super_admin.logo_replace': 'Replace Logo',
@@ -265,6 +298,7 @@ const Map<String, String> preAuthDefaultTextContents = {
   'super_admin.pastor_photo_required': 'Please pick a pastor photo',
   'super_admin.enabled_label': 'Enabled',
   'super_admin.create_action': 'Create Church',
+  'super_admin.register_action': 'Register',
   'super_admin.create_loading': 'Creating church...',
   'super_admin.create_success':
       'Church created successfully. Password setup email sent to the admin.',
@@ -299,6 +333,40 @@ const Map<String, String> preAuthDefaultTextContents = {
 };
 
 const Map<String, String> defaultChurchTextContents = {
+  // Profile step (D5 signup) and guest shell (§5.3) — both shown before any
+  // church is selected, so per §9.10 these live here, not in
+  // preAuthDefaultTextContents, so a church's own text content can never
+  // override them (fromMap(null) merges both maps when no church is
+  // selected either way, but only this map is safe from that override).
+  'profile_step.title': 'Tell us about you',
+  'profile_step.subtitle':
+      "A few essentials before you pick a church — you'll only do this once.",
+  'profile_step.validation_required': 'Please fill in every field.',
+  'profile_step.name_label': 'Full name',
+  'profile_step.phone_label': 'Phone number',
+  'profile_step.dob_label': 'Date of birth',
+  'profile_step.gender_male': 'Male',
+  'profile_step.gender_female': 'Female',
+  'profile_step.gender_other': 'Other',
+  'profile_step.continue_action': 'Continue',
+
+  'guest_shell.title': 'Church Tree',
+  'guest_shell.tab_bible': 'Bible',
+  'guest_shell.tab_my_churches': 'My Churches',
+  'guest_shell.your_churches_section_title': 'Your churches',
+  'guest_shell.approved_status': 'Tap to open',
+  'guest_shell.pending_section_title': 'Your requests',
+  'guest_shell.pending_status': 'Pending approval',
+  'guest_shell.browse_section_title': 'Browse churches',
+  'guest_shell.churches_error': "Couldn't load churches.",
+  'guest_shell.request_access_action': 'Request access',
+  'auth.request_access_explainer':
+      "We'll send your profile to this church's admin for approval — no forms to fill in.",
+  'auth.already_requested': "You've already requested access to this church.",
+  'auth.request_submitted':
+      'Your request has been sent. You will get access once an admin '
+          'approves it.',
+
   // Migrated UI defaults
   "ui.birthday_card.saved_to_gallery": "Saved to gallery \ud83c\udf89",
   "ui.announcement_card.okay": "OKAY",
@@ -514,6 +582,8 @@ const Map<String, String> defaultChurchTextContents = {
   'members.marriage_solemnization_required':
       'Please choose the marriage solemnization church',
   'members.marriage_solemnization_title': 'Marriage Solemnization',
+  'members.member_already_exists':
+      'This member has already been created. Please refresh and edit them instead.',
   'members.member_since_label': 'Member Since',
   'members.membership_current_status_label': 'Membership Current Status',
   'members.membership_notes_helper':
@@ -543,14 +613,46 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.feedback_tile_title': 'Write Feedback',
   'settings.feedback_title': 'Feedback',
   'settings.loading_profile_subtitle': 'Fetching your current profile details.',
-  'settings.logout_subtitle': 'Sign out of the current church session.',
+  'settings.logout_subtitle': 'Sign out of your account.',
+  'settings.register_another_church_title': 'Register for another church',
+  'settings.register_another_church_subtitle':
+      'Browse and request access to a church you have not joined yet.',
+  'settings.delete_account_title': 'Delete account',
+  'settings.delete_account_subtitle':
+      'Permanently delete your account and leave every church.',
+  'settings.delete_account_message':
+      'This permanently deletes your account, removes you from every '
+          'church you belong to, and cannot be undone. Enter your password '
+          'to confirm.',
+  'settings.delete_account_password_label': 'Password',
+  'settings.delete_account_password_required': 'Password is required.',
+  'settings.delete_account_confirm': 'Delete my account',
+  'settings.leave_church_title': 'Leave church',
+  'settings.leave_church_subtitle': 'Leave {church}.',
+  'settings.leave_church_message':
+      'You will lose your membership and any group assignments in '
+          '{church}. Your profile, favorites, reading plans and streak are '
+          'not affected.',
+  'settings.leave_church_confirm': 'Leave church',
+  'settings.church_title': 'Church',
+  'settings.church_subtitle': 'Manage your church\'s public profile.',
+  'settings.church_profile_title': 'Edit church profile',
+  'settings.church_profile_subtitle':
+      'Pastor, contact details and social links.',
+  'settings.church_profile_updated': 'Church profile updated.',
+  'super_admin.delete_church_action': 'Delete church',
+  'super_admin.delete_church_title': 'Delete church permanently',
+  'super_admin.delete_church_message':
+      'This permanently deletes {church} and everything in it — members, '
+          'groups, feeds, prayer requests, learning content, all of it. '
+          'This cannot be undone. Members keep their own accounts.',
+  'super_admin.delete_church_type_to_confirm': 'Type "{church}" to confirm',
   'settings.not_now': 'Not now',
   'settings.preferences_subtitle': 'Appearance, notifications, and reminders.',
   'settings.preferences_title': 'Preferences',
   'settings.profile_subtitle': 'Your identity and personal details.',
   'settings.profile_title': 'Profile',
   'studio.expiry_at_label': 'Expiry date & time',
-  'studio.theme_pick_color': 'Pick color',
   'super_admin.admin_section_setup_hint':
       'This admin will be invited to finish account setup.',
   'super_admin.admin_section_deferred_hint':
@@ -559,6 +661,7 @@ const Map<String, String> defaultChurchTextContents = {
       'No approved churches match your search yet.',
   'super_admin.create_success_no_account':
       'Church created successfully without account setup.',
+  'super_admin.disabled_section_empty': 'No disabled churches right now.',
   'super_admin.edit_church': 'Edit Church',
   'super_admin.edit_success': 'Church updated successfully',
   'super_admin.pending_section_empty':
@@ -666,12 +769,6 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.profile_photo_choose': 'Choose photo',
   'settings.profile_photo_remove': 'Remove',
   'settings.profile_photo_too_large': 'Choose an image smaller than 5 MB.',
-  'settings.delete_account': 'Delete Account',
-  'settings.delete_account_subtitle':
-      'Remove your profile from the selected church',
-  'settings.delete_account_message':
-      'This removes your profile from the currently selected church and takes you back to church selection.',
-  'settings.delete_account_no_church': 'No church selected.',
   'settings.push_notifications': 'Push Notifications',
   'settings.push_enabled': 'Enabled and synced for church updates',
   'settings.push_provisional': 'Enabled with provisional permission',
@@ -727,7 +824,7 @@ const Map<String, String> defaultChurchTextContents = {
       'This will create login access and send a password setup email.',
   'members.create_member_account_footer':
       'Member account will be created with this email and Church Account will send a password setup email.',
-  'members.search_hint': 'Search members, family ID, email or phone',
+  'members.search_hint': 'Search members',
   'members.all_tab': 'All',
   'members.families_tab': 'Families',
   'members.individuals_tab': 'Individuals',
@@ -1234,7 +1331,6 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.title': 'Studio',
   'studio.admin_only': 'Studio is available only for admins.',
   'studio.no_church_selected': 'No church selected.',
-  'studio.tab_theme': 'Theme',
   'studio.tab_about': 'About',
   'studio.tab_pastor': 'Pastor',
   'studio.tab_bible_swipe': 'Bible Swipe',
@@ -1257,14 +1353,6 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.no_announcements': 'No announcements yet.',
   'studio.add_article': 'Add article',
   'studio.no_articles': 'No articles yet.',
-  'studio.theme_hint':
-      'Update the church primary and secondary brand colors using hex values like #1E88E5.',
-  'studio.theme_palette_hint':
-      'Tap a color from the palette or enter a custom hex value.',
-  'studio.theme_primary_label': 'Primary Color',
-  'studio.theme_secondary_label': 'Secondary Color',
-  'studio.theme_invalid_hex': 'Use valid hex colors like #1E88E5.',
-  'studio.theme_updated': 'Theme colors updated',
   'studio.about_hint': 'Update the main about section shown for this church.',
   'studio.about_edit': 'Edit About',
   'studio.about_updated': 'About updated',
@@ -1412,6 +1500,7 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.feed.global_churches": "Global Churches",
   "ui.feed.all_churches": "All Churches",
   "ui.feed.no_global_posts": "No global posts yet",
+  "ui.feed.load_more": "Load more",
   "ui.feed.posting": "Posting…",
   "ui.feed.posted": "Posted",
   "ui.feed.post_failed": "Couldn't post. Try again.",
@@ -1432,9 +1521,6 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.studio.brand_identity": "Brand & Identity",
   "ui.studio.shape_the_look_and_core_church_profile":
       "Shape the look and core church profile.",
-  "ui.studio.update_colors_and_visual_branding":
-      "Update colors and visual branding.",
-  "ui.studio.theme": "Theme",
   "ui.studio.edit_church_name_mission_values_and_story":
       "Edit church name, mission, values, and story.",
   "ui.studio.profile": "Profile",
@@ -1482,9 +1568,6 @@ const Map<String, String> defaultChurchTextContents = {
       "Update the list of admin email addresses.",
   "ui.studio.manage_branding_content_engagement_and_admin_control":
       "Manage branding, content, engagement, and admin controls without hunting through long tabs.",
-  "ui.studio.hue": "Hue",
-  "ui.studio.saturation": "Saturation",
-  "ui.studio.brightness": "Brightness",
   "ui.church_groups.search_members": "Search members",
   "ui.church_groups.search_groups": "Search groups",
   "ui.financial_dashboard.total_income": "Total Income",
@@ -1727,6 +1810,7 @@ const Map<String, String> defaultChurchTextContents = {
   'feed.no_hashtag_posts': 'No posts found for #{tag}',
   'select_church.count_singular': '{count} church',
   'select_church.count_plural': '{count} churches',
+  'select_church.churches_tab': 'Churches',
   'home.current_streak': 'Your current streak {count} days',
   'reading_plan.month_plan': '{month} Plan',
   'reading_plan.day': 'Day {day}',

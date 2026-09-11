@@ -40,6 +40,7 @@ void main() {
     sections: [firstSection, secondSection],
     order: 10,
     enabled: true,
+    source: ModuleSource.global,
     finalExamQuestions: [question],
     passingPercentage: 70,
   );
@@ -161,6 +162,7 @@ void main() {
       sections: [firstSection],
       order: 20,
       enabled: true,
+      source: ModuleSource.global,
     );
 
     test('disabling learning hides the entire catalogue for one church', () {
@@ -203,6 +205,7 @@ void main() {
         sections: [firstSection],
         order: 10,
         enabled: true,
+        source: ModuleSource.church,
         sourceModuleId: 'module-1',
       );
       final resolved = resolveChurchLearningModules(
@@ -224,6 +227,7 @@ void main() {
         sections: [firstSection],
         order: 100,
         enabled: true,
+        source: ModuleSource.church,
       );
       final resolved = resolveChurchLearningModules(
         config: const ChurchLearningConfig(
@@ -240,6 +244,43 @@ void main() {
         resolved.map((item) => item.id),
         ['church-module', 'module-2', 'module-1'],
       );
+    });
+  });
+
+  group('learning progress split (§5.6, D9)', () {
+    test('merges global and church progress without either overwriting the other', () {
+      const global = LearningProgress(
+        completedSectionIds: {'global-section'},
+        completedModuleIds: {'module-1'},
+        attempts: {
+          'global-section': LearningSectionAttempt(
+            score: 4,
+            total: 4,
+            answers: [0, 1, 2, 3],
+            completedAt: null,
+          ),
+        },
+      );
+      const church = LearningProgress(
+        completedSectionIds: {'church-section'},
+        completedModuleIds: {'church-module'},
+        attempts: {
+          'church-section': LearningSectionAttempt(
+            score: 2,
+            total: 4,
+            answers: [0, 0, 0, 0],
+            completedAt: null,
+          ),
+        },
+      );
+
+      final merged = mergeLearningProgress(global, church);
+
+      expect(merged.completedSectionIds, {'global-section', 'church-section'});
+      expect(merged.completedModuleIds, {'module-1', 'church-module'});
+      expect(merged.attempts.keys, {'global-section', 'church-section'});
+      expect(merged.isSectionComplete('global-section'), isTrue);
+      expect(merged.isSectionComplete('church-section'), isTrue);
     });
   });
 }

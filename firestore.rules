@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // Authority model (see CLAUDE.local.md):
-//   - member    : approved == true on churches/{churchId}/users/{uid}
+//   - member    : approved == true on churches/{churchId}/members/{uid}
 //   - church admin : caller's email is in churches/{churchId}/config/app.admins
 //   - super admin  : a superAdmins/{email} doc exists with enabled == true
 //
@@ -24,25 +24,93 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    function isChurchAdmin(churchId) {
+    // Signup email-OTP gate (see authentication-and-entry.md "Signup email
+    // verification"): `users/{uid}.emailVerified` is false only for a
+    // brand-new identity doc mid-verification (UserIdentityRepository.
+    // createIdentity writes it explicitly); missing entirely (no doc yet,
+    // or a doc predating this field) reads as verified. Deliberately NOT
+    // folded into isSignedIn() itself — the users/{uid} read/write rules
+    // below must stay reachable regardless, or the app could never read its
+    // own emailVerified flag to know when to stop showing the OTP screen.
+    // Everything that gates actual content/actions (feeds, church data,
+    // membership, admin/super-admin status) goes through this instead.
+    //
+    // `.data.get('emailVerified', true)` — NOT `.data.emailVerified` — is
+    // load-bearing: dot-accessing a map key that doesn't exist throws an
+    // evaluation error in rules (denying access outright), so a doc that
+    // exists but predates this field would otherwise fail closed instead
+    // of reading as verified. `.get(key, default)` is the safe form.
+    function hasVerifiedEmail() {
       return isSignedIn() &&
+        (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid))
+           .data.get('emailVerified', true) != false);
+    }
+
+    function isChurchAdmin(churchId) {
+      return hasVerifiedEmail() &&
         myEmail() in get(/databases/$(database)/documents/churches/$(churchId)/config/app).data.admins;
     }
 
     function isSuperAdmin() {
-      return isSignedIn() &&
+      return hasVerifiedEmail() &&
         exists(/databases/$(database)/documents/superAdmins/$(myEmail())) &&
         get(/databases/$(database)/documents/superAdmins/$(myEmail())).data.enabled == true;
     }
 
+    // NOTE: was `churches/{churchId}/users/{uid}` until this fix — that
+    // collection was renamed to `members` during the user/church
+    // decoupling migration's D1 rename (see the migration doc §5 and the
+    // `members/{docId}` block below); this check silently never matched
+    // any real approved member's actual doc location until now.
     function isApprovedMember(churchId) {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/churches/$(churchId)/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/churches/$(churchId)/users/$(request.auth.uid)).data.approved == true;
+      return hasVerifiedEmail() &&
+        exists(/databases/$(database)/documents/churches/$(churchId)/members/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/churches/$(churchId)/members/$(request.auth.uid)).data.approved == true;
     }
 
     function isChurchStaff(churchId) {
       return isChurchAdmin(churchId) || isSuperAdmin();
+    }
+
+    // Bootstrap window for SuperAdminChurchService.createChurch(): the top-
+    // level churches/{churchId} doc, its config/about/pastor/footerSupport/
+    // bibleRandomSwipeVerses docs, its seeded groups (+ the admin's own
+    // groupMembers row), and its home/for-you sections are all written in
+    // ONE atomic batch — including by a public self-registrant, who is
+    // never isChurchStaff(churchId) at evaluation time even for their OWN
+    // new church, because every write in a batch is checked against the
+    // database state *before* the batch applies: config/app (which
+    // isChurchAdmin reads to decide staff status) doesn't exist yet at that
+    // point, regardless of what the same batch is about to write to it.
+    // isUnclaimedChurch(churchId) is true only up to the instant the
+    // church doc first exists, so this window closes permanently once any
+    // create (this one or a super admin's) actually commits.
+    function isUnclaimedChurch(churchId) {
+      return !exists(/databases/$(database)/documents/churches/$(churchId));
+    }
+
+    function canBootstrapChurch(churchId) {
+      return hasVerifiedEmail() && isUnclaimedChurch(churchId);
+    }
+
+    // A member doc's display* fields are a cache of users/{uid} when linked
+    // (§9.2) — used by both the client-write guard on /members/{docId} and
+    // to gate who may touch them for an unlinked (authoritative) row.
+    function displayFieldsUnchanged() {
+      return request.resource.data.get('displayName', null) == resource.data.get('displayName', null) &&
+        request.resource.data.get('displayEmail', null) == resource.data.get('displayEmail', null) &&
+        request.resource.data.get('displayPhone', null) == resource.data.get('displayPhone', null) &&
+        request.resource.data.get('displayPhotoUrl', null) == resource.data.get('displayPhotoUrl', null) &&
+        request.resource.data.get('displayDob', null) == resource.data.get('displayDob', null) &&
+        request.resource.data.get('displayGender', null) == resource.data.get('displayGender', null) &&
+        request.resource.data.get('displayWeddingDay', null) == resource.data.get('displayWeddingDay', null) &&
+        request.resource.data.get('displayMaritalStatus', null) == resource.data.get('displayMaritalStatus', null) &&
+        request.resource.data.get('displayEducationalQualification', null) == resource.data.get('displayEducationalQualification', null) &&
+        request.resource.data.get('displayTalentsAndGifts', null) == resource.data.get('displayTalentsAndGifts', null) &&
+        request.resource.data.get('displayLocation', null) == resource.data.get('displayLocation', null) &&
+        request.resource.data.get('displayAddress', null) == resource.data.get('displayAddress', null) &&
+        request.resource.data.get('identitySyncedAt', null) == resource.data.get('identitySyncedAt', null);
     }
 
     function isPrayerSourceOwner(sourceChurchId, sourcePrayerId) {
@@ -54,16 +122,23 @@ service cloud.firestore {
     match /churches/{churchId} {
       // Public directory read (church picker browses all churches).
       allow read: if true;
-      allow create, delete: if isSuperAdmin();
+      // A verified user may self-register exactly one new church for
+      // themselves — never already-enabled, never attributed to anyone
+      // else — everything else (super-admin-created churches, and any
+      // subsequent change to a self-registered one) still requires real
+      // staff/super-admin status.
+      allow create: if isSuperAdmin() ||
+        (hasVerifiedEmail() &&
+         request.resource.data.registrationSource == 'public' &&
+         request.resource.data.registeredByUid == request.auth.uid &&
+         request.resource.data.enabled == false);
+      allow delete: if isSuperAdmin();
       allow update: if isChurchStaff(churchId);
 
       // Admin/staff-only operational data.
       match /config/{configId} {
         allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
-        allow write: if isChurchStaff(churchId);
-      }
-      match /financial_transactions/{docId} {
-        allow read, write: if isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
       match /dashboard_metrics/{docId} {
         allow read, write: if isChurchStaff(churchId);
@@ -82,57 +157,57 @@ service cloud.firestore {
         allow write: if isChurchStaff(churchId);
       }
       match /events/{docId} {
-        allow read: if isSignedIn();
+        allow read: if hasVerifiedEmail();
         allow write: if isChurchStaff(churchId);
       }
       match /pastor/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
       match /about/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
       match /articles/{docId} {
-        allow read: if isSignedIn();
+        allow read: if hasVerifiedEmail();
         allow write: if isChurchStaff(churchId);
       }
       match /home_sections/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
       match /for_you_section/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
       match /live_church/{docId} {
-        allow read: if isSignedIn();
+        allow read: if hasVerifiedEmail();
         allow write: if isChurchStaff(churchId);
       }
       match /footerSupport/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
 
         match /contactItems/{itemId} {
-          allow read: if isSignedIn();
-          allow write: if isChurchStaff(churchId);
+          allow read: if hasVerifiedEmail();
+          allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
         }
         match /socialItems/{itemId} {
-          allow read: if isSignedIn();
-          allow write: if isChurchStaff(churchId);
+          allow read: if hasVerifiedEmail();
+          allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
         }
       }
       match /learning_config/{docId} {
-        allow read: if isSignedIn();
+        allow read: if hasVerifiedEmail();
         allow write: if isChurchStaff(churchId);
       }
       match /learning_modules/{docId} {
-        allow read: if isSignedIn();
+        allow read: if hasVerifiedEmail();
         allow write: if isChurchStaff(churchId);
       }
       match /bibleRandomSwipeVerses/{docId} {
-        allow read: if isSignedIn();
-        allow write: if isChurchStaff(churchId);
+        allow read: if hasVerifiedEmail();
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
       }
 
       // Member-visible, admin-managed.
@@ -142,11 +217,14 @@ service cloud.firestore {
       }
       match /groups/{groupId} {
         allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
-        allow write: if isChurchStaff(churchId);
+        allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
 
-        match /users/{uid} {
+        // Renamed from /users (D1) — a group's own member roster, keyed by
+        // uid, distinct from the group document itself and from the
+        // church-wide `members` collection.
+        match /groupMembers/{uid} {
           allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
-          allow write: if isChurchStaff(churchId);
+          allow write: if isChurchStaff(churchId) || canBootstrapChurch(churchId);
         }
       }
       match /youth_circles/{docId} {
@@ -211,46 +289,96 @@ service cloud.firestore {
         allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
       }
 
-      // Church membership doc.
-      match /users/{uid} {
-        allow read: if isSelf(uid) || isChurchStaff(churchId);
-        // A user can only ever create their own membership doc as
-        // unapproved; a super admin may seed an approved owner doc when
-        // standing up a new church.
-        allow create: if (isSelf(uid) && request.resource.data.approved == false) ||
-          isSuperAdmin();
-        // Self can edit their own profile fields but can never flip
-        // `approved` themselves — only staff can approve/demote.
-        allow update: if isChurchStaff(churchId) ||
-          (isSelf(uid) && request.resource.data.approved == resource.data.approved);
-        allow delete: if isSelf(uid) || isChurchStaff(churchId);
+      // Membership only (D1 rename of the old `churches/{cid}/users` —
+      // fully retired as of Phase 4; every former nested reader/writer
+      // (readingPlans, learning_progress) now targets users/{uid} or this
+      // members/{docId} block instead). Identity fields live on the
+      // top-level `users/{uid}` doc, never here. `docId` is the auth
+      // uid for a linked member, or a random id for an admin-created member
+      // with no account (§9.3/§9.4/§9.7) — isSelf(docId) degrades safely to
+      // false for the latter, since it never matches a real caller.
+      match /members/{docId} {
+        allow read: if isSelf(docId) || isChurchStaff(churchId);
+        allow create: if (isSelf(docId) && hasVerifiedEmail() &&
+          request.resource.data.approved == false) ||
+          isChurchStaff(churchId);
+        // The display* cache is written only by the Phase 6 fan-out (Admin
+        // SDK, bypasses rules) for a LINKED member — a client write here
+        // would go stale silently (§9.2). Staff may still edit display*
+        // directly for an UNLINKED member (no identity doc exists, so it's
+        // their authoritative profile, not a cache — §9.2/§9.3). Self can
+        // edit their own non-display fields but can never flip `approved`.
+        allow update: if
+          (isChurchStaff(churchId) &&
+           (resource.data.linkedUid == null || displayFieldsUnchanged())) ||
+          (isSelf(docId) &&
+           request.resource.data.approved == resource.data.approved &&
+           displayFieldsUnchanged());
+        allow delete: if isSelf(docId) || isChurchStaff(churchId);
 
-        match /readingPlans/{planId} {
-          allow read: if isSelf(uid) || isChurchStaff(churchId);
-          allow write: if isSelf(uid);
-        }
+        // Church modules only — Church Tree (global) progress lives on
+        // users/{uid}/learning_progress instead (§5.6, D9).
         match /learning_progress/{docId} {
-          allow read: if isSelf(uid) || isChurchStaff(churchId);
-          allow write: if isSelf(uid);
+          allow read: if isSelf(docId) || isChurchStaff(churchId);
+          allow write: if isSelf(docId);
         }
       }
+
+      // A deliberately reduced mirror of an approved member's `members/
+      // {docId}` doc — name, photo, dob, gender, marital status only. Lets
+      // any approved member browse a basic roster of their fellow members
+      // without exposing phone/email/address/baptism/financial/notes,
+      // which stay staff-only on the real doc. Written exclusively by
+      // `mirrorMemberDirectory` (Admin SDK, bypasses rules) — never by a
+      // client — so `allow write: if false` here is not a placeholder.
+      match /memberDirectory/{docId} {
+        allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+        allow write: if false;
+      }
+    }
+
+    // Self-discovery only — "which churches am I a member of" (§5.2). The
+    // nested /members/{docId} block above governs everything else (admin
+    // lists, single-doc reads); this is purely for the collectionGroup
+    // query, which Firestore evaluates against this recursive-wildcard
+    // rule, not the nested one. Must test resource.data.uid, not the doc id,
+    // or the collectionGroup query is rejected outright (§9.9).
+    match /{path=**}/members/{memberId} {
+      allow read: if resource.data.uid == request.auth.uid;
     }
 
     // ---------- top-level ----------
 
-    // Vestigial global profile doc — owner-only until/unless this becomes
-    // the real cross-church identity record.
+    // The canonical, church-independent person record (§5.1). Owner-only —
+    // there is no "guest" role, these are fully authenticated users, and
+    // nothing here is admin-writable (admins only ever touch membership
+    // docs under churches/{cid}/members).
     match /users/{uid} {
-      allow read, write: if isSelf(uid);
+      allow read: if isSelf(uid);
+      allow create, update: if isSelf(uid) &&
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        (!('dayStreak' in request.resource.data) ||
+         request.resource.data.dayStreak is int);
+      allow delete: if isSelf(uid);
 
       match /readingPlans/{planId} {
+        allow read, write: if isSelf(uid);
+      }
+      match /devices/{installationId} {
+        allow read, write: if isSelf(uid);
+      }
+      match /favorites/{verseKey} {
+        allow read, write: if isSelf(uid);
+      }
+      match /learning_progress/{docId} {
         allow read, write: if isSelf(uid);
       }
     }
 
     match /globalFeeds/{postId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if hasVerifiedEmail();
+      allow create: if hasVerifiedEmail() && request.resource.data.userId == request.auth.uid;
       allow update: if isSuperAdmin() ||
         (resource.data.userId == request.auth.uid &&
          request.resource.data.userId == resource.data.userId) ||
@@ -264,7 +392,7 @@ service cloud.firestore {
     }
 
     match /globalPrayerRequests/{prayerId} {
-      allow read: if isSignedIn();
+      allow read: if hasVerifiedEmail();
       allow create: if isSuperAdmin() ||
         (request.resource.data.sourceChurchId is string &&
          isChurchAdmin(request.resource.data.sourceChurchId));
@@ -281,12 +409,12 @@ service cloud.firestore {
     }
 
     match /globalFeedback/{docId} {
-      allow create: if isSignedIn();
+      allow create: if hasVerifiedEmail();
       allow read, update, delete: if isSuperAdmin();
     }
 
     match /learning_modules/{docId} {
-      allow read: if isSignedIn();
+      allow read: if hasVerifiedEmail();
       allow write: if isSuperAdmin();
     }
 
@@ -297,7 +425,7 @@ service cloud.firestore {
 
     // Super-admin roster — console/functions managed only.
     match /superAdmins/{docId} {
-      allow read: if isSignedIn() && resource.data.email == myEmail();
+      allow read: if hasVerifiedEmail() && resource.data.email == myEmail();
       allow write: if false;
     }
 

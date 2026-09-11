@@ -11,6 +11,14 @@ hashtags, multiple images, author details, optional shared profile information,
 pinning, promotion to global scope, search and fast movement between latest and
 older content.
 
+The global scope is also the whole of `SelectChurchScreen`'s body (see
+[Authentication and Entry](authentication-and-entry.md)) — `GlobalFeedListView`
+shows the same feed inline, and tapping a post opens
+`GlobalFeedFullScreenViewer`, which reuses `CommunityViewerPageView`
+(extracted from `CommunityFullScreenViewer`), global-only and with no
+create-post action — someone still choosing a church sees the same
+cross-church activity before they've joined anything.
+
 ## Roles and actions
 
 - Approved members can read and create church posts.

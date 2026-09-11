@@ -35,8 +35,29 @@ admins do not author modules.
 
 ## Progress and results
 
-- Progress: `churches/{churchId}/users/{uid}/learning_progress/progress`.
-- Final-exam attempts: `churches/{churchId}/learning_results/{resultId}`.
+Two tracks that never mix (§5.6/D9 of
+`KT Files/architecture/user-church-decoupling-migration.md`), keyed by which
+collection the module came from — not by where the learner happens to be
+standing when they take it:
+
+- **Global (Church Tree) modules** — progress at
+  `users/{uid}/learning_progress/progress`. Files **no** result row. Follows
+  the person everywhere: completing one inside Church A shows as complete
+  inside Church B, and even with no approved church at all. Leaving every
+  church does not reset it.
+- **Church modules** — progress at `churches/{churchId}/members/{uid}/
+  learning_progress/progress` (unchanged shape/behaviour from before the
+  split). Final-exam/section-quiz attempts:
+  `churches/{churchId}/learning_results/{resultId}`, tagged
+  `source: 'church'`. Leaving the church loses the progress doc; the
+  `learning_results` rows survive as that church's record.
+- The member UI shows both tracks merged into one list
+  (`resolveChurchLearningModules`) and one progress view
+  (`LearningModuleRepository.watchProgress` merges `watchGlobalProgress` +
+  `watchChurchMemberProgress` — section/module ids never collide across the
+  two collections, so a plain union is correct). `submitSectionQuiz`/
+  `completeSection`/`submitModuleExam` all take the module's `ModuleSource`
+  and route accordingly.
 - Every pass/fail attempt stores user footprint, answers, score, total, pass
   status, attempt number and timestamp.
 - Super admin can review results grouped under each church.
@@ -79,4 +100,7 @@ admins do not author modules.
 | LEARN-14 | Customize then change/delete global | Church copy and files remain unchanged. |
 | LEARN-15 | Delete module/resource | Only owned records/files are removed; progress/result handling is deliberate. |
 | LEARN-16 | Poor network/large media | Loading indicators terminate into content or actionable error; scrolling remains smooth. |
+| LEARN-17 | Complete a global module inside Church A, then open Church B | Same module shows complete in Church B too; no result row was filed in either church's `learning_results`. |
+| LEARN-18 | Complete a global module, then leave every church | Progress still shows complete on next entry (`users/{uid}/learning_progress` survives church membership). |
+| LEARN-19 | Complete a church-only module, then leave that church | Progress resets (church membership's `learning_progress` is gone); the `learning_results` rows for it remain in the church's records. |
 

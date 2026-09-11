@@ -163,12 +163,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(
-                          Icons.lock_reset_rounded,
-                          size: 72,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(height: 20),
                         Text(
                           context.t('auth.choose_new_password'),
                           textAlign: TextAlign.center,
