@@ -30,17 +30,28 @@ documents.
   readable.
 - Tapping the Daily Verse share icon (and Favorite Verses' share action —
   see [Bible and Favorites](bible-and-favorites.md)) opens a choice sheet:
-  "Generate with AI" or "Create manually". Manual is the pre-existing full
-  editor unchanged. AI calls `generateVerseBackgroundImage` (Cloud
-  Function) with the verse's own text/reference, gets back up to 3
-  candidate background images, and lets the person pick one before opening
-  the same editor with it pre-applied — every other control (layout, style,
-  footer, download) is identical either way. AI generation is capped per
-  user per day (`AI_IMAGE_DAILY_CAP`, default 5 "generate" actions, each
-  worth up to 3 images) and fails gracefully with a friendly message on
-  quota or generation errors. Every share card — AI or manual — always
-  shows a branding pill (church logo, title, contact number) so a
-  downloaded/shared image is self-identifying.
+  "Generate with AI" or "Create manually".
+  - **Create manually** is the pre-existing full editor, unchanged —
+    background color/photo/template, layout, style, footer, download.
+    Every manual card always shows a branding pill (church logo, title,
+    contact number) so a downloaded/shared image is self-identifying.
+  - **Generate with AI** calls `generateVerseBackgroundImage` (Cloud
+    Function) with the verse's own text/reference plus the church name and
+    today's date. Gemini renders a *complete* devotional card itself —
+    background, the verse text (in its original script), and a church
+    name/date caption at the bottom — not just a background for the app to
+    composite. The callable returns up to 3 candidates; picking one opens
+    a simple full-screen preview with a Download button directly (no
+    editor step, since the image is already final).
+  - AI generation is capped per user per day (`AI_IMAGE_DAILY_CAP`,
+    default 5 "generate" actions, each worth up to 3 images) and fails
+    gracefully with a friendly message on quota or generation errors.
+  - Known quality tradeoff (accepted product decision): letting Gemini
+    render the verse text itself is unreliable for non-Latin scripts —
+    confirmed live with Tamil content, where the verse body rendered
+    correctly but a mixed-script reference (e.g. "Psalms 5:3" inside a
+    Tamil-script card) came out garbled. No app-side fallback exists for
+    this; manual creation remains available as the reliable alternative.
 - Featured For You is the consolidated featured/plans presentation.
 - Articles are admin-authored, record `createdBy`/`updatedBy` footprints and
   show author details like feed cards. Tapping the author opens the common user
@@ -85,7 +96,7 @@ documents.
 | FORYOU-11 | Notification opens article | App lands on For You/article list from all lifecycle states. |
 | FORYOU-12 | Section error | Other sections remain usable when one provider fails. |
 | FORYOU-14 | Tap Daily Verse share icon | Choice sheet opens with "Generate with AI" / "Create manually"; each opens the correct flow. |
-| FORYOU-15 | Generate with AI, pick a candidate | Up to 3 background images appear; picking one opens the editor with it already applied as the Image background. |
+| FORYOU-15 | Generate with AI, pick a candidate | Up to 3 complete verse-card candidates appear (verse text, church name, date baked in); picking one opens a full-screen preview with Download, no editor step. |
 | FORYOU-16 | Exhaust the daily AI quota, then generate again | Friendly "reached today's limit" message appears; no raw error, no partial state. |
-| FORYOU-17 | Any share card (AI or manual), any background | Branding pill (logo, church title, contact number) renders without overflow and survives download/share. |
+| FORYOU-17 | Create manually, any background | Branding pill (logo, church title, contact number) renders without overflow and survives download/share. |
 

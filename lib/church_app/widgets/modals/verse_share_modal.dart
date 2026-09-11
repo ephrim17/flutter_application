@@ -49,7 +49,6 @@ Future<void> showVerseShareModal(
   BuildContext context, {
   required String text,
   required String reference,
-  PickedImageData? initialBackgroundImage,
 }) {
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -57,7 +56,6 @@ Future<void> showVerseShareModal(
       builder: (_) => VerseShareModal(
         text: text,
         reference: reference,
-        initialBackgroundImage: initialBackgroundImage,
       ),
     ),
   );
@@ -181,8 +179,10 @@ class _VerseShareChoiceTile extends StatelessWidget {
   }
 }
 
-/// Calls the backend for 3 AI-generated background candidates, lets the
-/// user pick one, then opens the full editor with it pre-applied.
+/// Calls the backend for 3 complete AI-generated verse-card candidates
+/// (verse text, church name and date all rendered into the image by
+/// Gemini itself), lets the user pick one, then shows it for download —
+/// no further app-side editing, since the picked image is already final.
 Future<void> _startAiVerseShareFlow(
   BuildContext context, {
   required String text,
@@ -204,15 +204,15 @@ Future<void> _startAiVerseShareFlow(
   );
   if (selected == null || !context.mounted) return;
 
-  await showVerseShareModal(
-    context,
-    text: text,
-    reference: reference,
-    initialBackgroundImage: selected,
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => _AiVerseSharePreviewScreen(image: selected),
+    ),
   );
 }
 
-class _AiVerseImageGenerationDialog extends StatefulWidget {
+class _AiVerseImageGenerationDialog extends ConsumerStatefulWidget {
   const _AiVerseImageGenerationDialog({
     required this.text,
     required this.reference,
@@ -222,12 +222,12 @@ class _AiVerseImageGenerationDialog extends StatefulWidget {
   final String reference;
 
   @override
-  State<_AiVerseImageGenerationDialog> createState() =>
+  ConsumerState<_AiVerseImageGenerationDialog> createState() =>
       _AiVerseImageGenerationDialogState();
 }
 
 class _AiVerseImageGenerationDialogState
-    extends State<_AiVerseImageGenerationDialog> {
+    extends ConsumerState<_AiVerseImageGenerationDialog> {
   @override
   void initState() {
     super.initState();
@@ -236,11 +236,15 @@ class _AiVerseImageGenerationDialogState
 
   Future<void> _generate() async {
     try {
+      final churchName = ref.t('church_tab.app_title');
+      final dateLabel = DateFormat('dd/MM/yyyy').format(DateTime.now());
       final result = await FirebaseFunctions.instanceFor(
         region: 'us-central1',
       ).httpsCallable('generateVerseBackgroundImage').call<Map<String, dynamic>>({
         'verseText': widget.text,
         'reference': widget.reference,
+        'churchName': churchName,
+        'dateLabel': dateLabel,
       });
       final rawImages = (result.data['images'] as List?) ?? const [];
       final images = rawImages
@@ -356,21 +360,107 @@ class _AiVerseImagePickerSheet extends StatelessWidget {
   }
 }
 
+/// Shows one already-complete AI-generated verse card (verse text, church
+/// name and date all baked into the image by Gemini) and lets the user
+/// download it — no further compositing needed, so this just saves the
+/// picked candidate's raw bytes directly.
+class _AiVerseSharePreviewScreen extends StatefulWidget {
+  const _AiVerseSharePreviewScreen({required this.image});
+
+  final PickedImageData image;
+
+  @override
+  State<_AiVerseSharePreviewScreen> createState() =>
+      _AiVerseSharePreviewScreenState();
+}
+
+class _AiVerseSharePreviewScreenState
+    extends State<_AiVerseSharePreviewScreen> {
+  bool _isDownloading = false;
+
+  Future<void> _download() async {
+    if (_isDownloading) return;
+    setState(() => _isDownloading = true);
+    try {
+      final filename = 'verse-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      if (kIsWeb) {
+        downloadBytes(
+          bytes: widget.image.bytes,
+          fileName: filename,
+          mimeType: 'image/jpeg',
+        );
+      } else {
+        await Gal.putImageBytes(widget.image.bytes, name: filename);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('ui.verse_share.image_saved')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      debugPrint('AI verse image download error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('ui.verse_share.download_failed')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          tooltip: context.t('common.close'),
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ),
+      body: Center(
+        child: Image.memory(widget.image.bytes, fit: BoxFit.contain),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isDownloading ? null : _download,
+              icon: _isDownloading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download_rounded),
+              label: Text(context.t('common.download')),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class VerseShareModal extends StatefulWidget {
   const VerseShareModal({
     super.key,
     required this.text,
     required this.reference,
-    this.initialBackgroundImage,
   });
 
   final String text;
   final String reference;
-
-  /// Pre-selects this as the background (Image mode) instead of the default
-  /// solid color — used by the "Generate with AI" flow, which picks one of
-  /// several AI-generated candidates before opening this editor.
-  final PickedImageData? initialBackgroundImage;
 
   @override
   State<VerseShareModal> createState() => _VerseShareModalState();
@@ -385,7 +475,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   final TextEditingController _storyCaptionController = TextEditingController();
 
   ShareFormat format = ShareFormat.square;
-  late BackgroundType backgroundType;
+  BackgroundType backgroundType = BackgroundType.color;
   VerseLayoutKind layout = VerseLayoutKind.centered;
 
   Color backgroundColor = const Color(0xFFD6E3E7);
@@ -419,10 +509,6 @@ class _VerseShareModalState extends State<VerseShareModal> {
     super.initState();
     _verseController = TextEditingController(text: widget.text);
     _referenceController = TextEditingController(text: widget.reference);
-    selectedImage = widget.initialBackgroundImage;
-    backgroundType = widget.initialBackgroundImage != null
-        ? BackgroundType.image
-        : BackgroundType.color;
   }
 
   @override
