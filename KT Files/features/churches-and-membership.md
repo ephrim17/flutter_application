@@ -25,10 +25,18 @@ pending church that requires super-admin approval.
   `StreamProvider`s (`churchesProvider`, `myMembershipsProvider`), so a new
   request, an approval, or leaving a church updates all three sections
   immediately with no manual refresh.
-- The church-picker app bar shows an account icon next to the logout action.
+- The church-picker app bar shows a settings icon next to the logout action.
   A red badge appears while the signed-in user's global `profileComplete`
-  flag is `false`; tapping the icon opens the Edit Profile sheet directly
-  (same sheet as Settings → Profile → Edit Profile).
+  flag is `false`; tapping it opens `GuestSettingsScreen` — a pared-down
+  Settings screen with no church to scope leave-church/register-another-
+  church/church-profile-editor sections to, so it shows only Profile (Edit
+  Profile), Preferences (appearance/notifications/prayer reminders),
+  Feedback, and Account (clear local data, logout, delete account — no
+  leave-church or register-another-church, since this screen already is
+  that), followed by the Praise the Lord card. Its hero card and the
+  screen omit any specific church name (no `CopyrightWidget`, which reads
+  `selectedChurchProvider` unconditionally and would otherwise leak the
+  last-active church's name onto this church-agnostic screen).
 - Church registration requires the admin email to match the currently signed-in
   email. Church and admin recipients receive a welcome/pending-review email;
   super-admin email addresses are not displayed in the registration UI.
@@ -91,5 +99,6 @@ pending church that requires super-admin approval.
 | CHURCH-15 | User has a pending request to church B while approved in church A | A shows under Your Churches; B shows under Pending Approval, not Your Churches or Other Churches. |
 | CHURCH-16 | Tap a church under Pending Approval | Opens `RequestPendingScreen` for that church; no duplicate request is submitted. |
 | CHURCH-17 | Request/approve/leave a church while the picker screen is open | Your Churches/Pending Approval/Other Churches reorder live with no manual refresh or re-entry to the screen. |
-| CHURCH-18 | Sign in with `profileComplete: false` / `true` | Account icon in the church-picker app bar shows/hides the red badge to match; tapping it opens Edit Profile. |
+| CHURCH-18 | Sign in with `profileComplete: false` / `true` | Settings icon in the church-picker app bar shows/hides the red badge to match; tapping it opens `GuestSettingsScreen`. |
+| CHURCH-19 | Open `GuestSettingsScreen` from the church-picker app bar | Shows only Profile/Preferences/Feedback/Account (no leave-church, register-another-church, or church-profile-editor sections); hero card shows no church chip; no church name appears anywhere on the screen (including no copyright line). |
 

@@ -36,7 +36,10 @@ links).
 - Edit Profile is reachable from Settings → Profile, from a "Setup Profile"
   prompt on Home when the user's profile is incomplete, and from an account
   icon on the church-picker screen (see [Home](home.md) and
-  [Churches and Membership](churches-and-membership.md)).
+  [Churches and Membership](churches-and-membership.md)). The church-picker
+  entry point opens `GuestSettingsScreen` instead of the full `SettingsScreen`
+  — same file, same private section widgets, but only the church-agnostic
+  sections (see Churches and Membership for the exact list).
 - `users/{uid}.profileComplete` is derived, not a free-standing flag: every
   write path (Edit Profile save, and the self-signup/request-access identity
   sync) recomputes it as `location`, `address` and `maritalStatus` all

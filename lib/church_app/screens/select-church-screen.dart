@@ -19,7 +19,7 @@ import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
-    show showEditProfileSheet;
+    show GuestSettingsScreen;
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -178,15 +178,17 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
             ),
           if (userIdentity != null)
             IconButton(
-              tooltip: userIdentity.profileComplete
-                  ? context.t('settings.edit_profile_title')
-                  : context.t('home.setup_profile_action'),
-              onPressed: () => showEditProfileSheet(context, userIdentity),
+              tooltip: context.t('settings.title'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const GuestSettingsScreen(),
+                ),
+              ),
               icon: Badge(
                 isLabelVisible: !userIdentity.profileComplete,
                 smallSize: 10,
                 backgroundColor: Theme.of(context).colorScheme.error,
-                child: const Icon(Icons.account_circle_outlined),
+                child: const Icon(Icons.settings_outlined),
               ),
             ),
           IconButton(

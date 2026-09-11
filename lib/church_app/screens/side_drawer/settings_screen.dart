@@ -130,6 +130,85 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
+/// A pared-down Settings screen for someone who hasn't entered a church yet
+/// (`SelectChurchScreen`'s account icon) — no church to scope
+/// leave-church/register-another-church/church-profile-editor sections to,
+/// so only the person-level sections are shown: edit profile, preferences,
+/// feedback, and account (clear local data, logout, delete account).
+class GuestSettingsScreen extends ConsumerWidget {
+  const GuestSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userIdentityProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: AppBarTitle(text: ref.t('settings.title')),
+      ),
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            _SettingsHeroCard(userAsync: userAsync, churchName: ''),
+            const SizedBox(height: sectionSpacing),
+            _SettingsSectionLabel(
+              title: ref.t('settings.profile_title'),
+              subtitle: ref.t('settings.profile_subtitle'),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _EditProfileSection(),
+              ],
+            ),
+            const SizedBox(height: sectionSpacing),
+            _SettingsSectionLabel(
+              title: ref.t('settings.preferences_title'),
+              subtitle: ref.t('settings.preferences_subtitle'),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _AppearanceSection(),
+                _PushNotificationSection(),
+                _PrayerReminderSection(),
+              ],
+            ),
+            const SizedBox(height: sectionSpacing),
+            _SettingsSectionLabel(
+              title: ref.t('settings.feedback_title'),
+              subtitle: ref.t('settings.feedback_subtitle'),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _FeedbackSection(),
+              ],
+            ),
+            const SizedBox(height: sectionSpacing),
+            _SettingsSectionLabel(
+              title: ref.t('settings.account_title'),
+              subtitle: ref.t('settings.account_subtitle'),
+            ),
+            const SizedBox(height: 10),
+            const _SettingsGroupCard(
+              children: [
+                _StorageSection(),
+                _LogoutSection(),
+                _DeleteAccountSection(),
+              ],
+            ),
+            const SizedBox(height: sectionSpacing),
+            const PraiseTheLordCard(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SettingsHeroCard extends StatelessWidget {
   const _SettingsHeroCard({
     required this.userAsync,
