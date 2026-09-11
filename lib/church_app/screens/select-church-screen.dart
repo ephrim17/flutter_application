@@ -15,7 +15,6 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
-import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
@@ -24,7 +23,6 @@ import 'package:flutter_application/church_app/screens/super_admin/create_church
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
@@ -33,6 +31,7 @@ import 'package:flutter_application/church_app/widgets/church_discovery_card.dar
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/global_feed_list_view.dart';
+import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
@@ -120,28 +119,6 @@ class SelectChurchScreen extends ConsumerStatefulWidget {
 class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
   late int _selectedIndex = widget.initialTabIndex;
 
-  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
-    final navigator = Navigator.of(context);
-    await ChurchLocalStorage().clearChurch();
-    await ChurchLocalStorage().clearSubscribedChurchTopic();
-    await ref.read(favoritesProvider.notifier).clearAll();
-    ref.read(selectedChurchProvider.notifier).state = null;
-    await ref.read(superAdminEntryModeProvider.notifier).clear();
-    ref.invalidate(currentChurchIdProvider);
-    ref.invalidate(userIdentityProvider);
-    ref.invalidate(currentMembershipProvider);
-    await FirebaseAuth.instance.signOut();
-    if (!context.mounted) return;
-    navigator.pushAndRemoveUntil(
-      PageRouteBuilder(
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        pageBuilder: (_, __, ___) => const AuthChoiceScreen(),
-      ),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final firebaseUser = ref.watch(authStateProvider).value;
@@ -157,8 +134,11 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: context.t('guest_shell.title')),
-        centerTitle: true,
+        centerTitle: false,
+        title: ChurchAppBarBrandTitle(
+          text: context.t('guest_shell.title'),
+          logo: '',
+        ),
         actions: [
           if (isSuperAdmin)
             IconButton(
@@ -191,11 +171,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                 child: const Icon(Icons.settings_outlined),
               ),
             ),
-          IconButton(
-            tooltip: context.t('drawer.logout'),
-            onPressed: () => _handleLogout(context, ref),
-            icon: const Icon(Icons.logout),
-          ),
         ],
       ),
       body: screens[_selectedIndex],

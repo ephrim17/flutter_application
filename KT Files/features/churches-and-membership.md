@@ -25,7 +25,8 @@ pending church that requires super-admin approval.
   `StreamProvider`s (`churchesProvider`, `myMembershipsProvider`), so a new
   request, an approval, or leaving a church updates all three sections
   immediately with no manual refresh.
-- The church-picker app bar shows a settings icon next to the logout action.
+- The church-picker app bar has no standalone logout action — `GuestSettingsScreen`'s
+  Account section covers it. The app bar shows a settings icon (see below).
   A red badge appears while the signed-in user's global `profileComplete`
   flag is `false`; tapping it opens `GuestSettingsScreen` — a pared-down
   Settings screen with no church to scope leave-church/register-another-
