@@ -2074,10 +2074,10 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                 });
               },
               child: InputDecorator(
-                decoration: InputDecoration(
+                decoration: appTextFieldDecoration(
+                  context,
                   labelText: ref.t('auth.birthday_label'),
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today_outlined),
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(
                   _formatDob(_dob).isEmpty
@@ -2168,9 +2168,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   });
                 },
                 child: InputDecorator(
-                  decoration: InputDecoration(
+                  decoration: appTextFieldDecoration(
+                    context,
                     labelText: ref.t('members.wedding_day_label'),
-                    border: const OutlineInputBorder(),
                     suffixIcon: const Icon(Icons.calendar_today_outlined),
                   ),
                   child: Text(
