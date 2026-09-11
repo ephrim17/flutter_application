@@ -21,6 +21,14 @@ pending church that requires super-admin approval.
 - Selecting an existing approved membership enters that church.
 - Selecting another church starts request access and creates
   `churches/{churchId}/users/{uid}`.
+- Your Churches, Pending Approval and Other Churches are driven by live
+  `StreamProvider`s (`churchesProvider`, `myMembershipsProvider`), so a new
+  request, an approval, or leaving a church updates all three sections
+  immediately with no manual refresh.
+- The church-picker app bar shows an account icon next to the logout action.
+  A red badge appears while the signed-in user's global `profileComplete`
+  flag is `false`; tapping the icon opens the Edit Profile sheet directly
+  (same sheet as Settings → Profile → Edit Profile).
 - Church registration requires the admin email to match the currently signed-in
   email. Church and admin recipients receive a welcome/pending-review email;
   super-admin email addresses are not displayed in the registration UI.
@@ -82,4 +90,6 @@ pending church that requires super-admin approval.
 | CHURCH-14 | Staff approves a self-registered (request-access) pending member | Approval succeeds; no `PERMISSION_DENIED` from the display-field-cache guard. |
 | CHURCH-15 | User has a pending request to church B while approved in church A | A shows under Your Churches; B shows under Pending Approval, not Your Churches or Other Churches. |
 | CHURCH-16 | Tap a church under Pending Approval | Opens `RequestPendingScreen` for that church; no duplicate request is submitted. |
+| CHURCH-17 | Request/approve/leave a church while the picker screen is open | Your Churches/Pending Approval/Other Churches reorder live with no manual refresh or re-entry to the screen. |
+| CHURCH-18 | Sign in with `profileComplete: false` / `true` | Account icon in the church-picker app bar shows/hides the red badge to match; tapping it opens Edit Profile. |
 

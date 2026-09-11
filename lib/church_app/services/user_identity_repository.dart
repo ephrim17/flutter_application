@@ -92,19 +92,24 @@ class UserIdentityRepository {
       profilePhotoUrl = '';
     }
 
+    final trimmedLocation = location.trim();
+    final trimmedAddress = address.trim();
+    final trimmedMaritalStatus = maritalStatus.trim();
     try {
       await _doc(uid).update({
         'phone': phone.trim(),
-        'location': location.trim(),
-        'address': address.trim(),
+        'location': trimmedLocation,
+        'address': trimmedAddress,
         'dob': dob != null ? Timestamp.fromDate(dob) : null,
-        'maritalStatus': maritalStatus.trim(),
+        'maritalStatus': trimmedMaritalStatus,
         'weddingDay':
             weddingDay != null ? Timestamp.fromDate(weddingDay) : null,
         'educationalQualification': educationalQualification.trim(),
         'talentsAndGifts': talentsAndGifts,
         'profilePhotoUrl': profilePhotoUrl,
-        'profileComplete': true,
+        'profileComplete': trimmedLocation.isNotEmpty &&
+            trimmedAddress.isNotEmpty &&
+            trimmedMaritalStatus.isNotEmpty,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (_) {

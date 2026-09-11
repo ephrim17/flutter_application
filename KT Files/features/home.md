@@ -21,6 +21,10 @@ session.
 - Notification enablement is always resolved first. After that sheet is
   dismissed or completed, Home re-checks eligible alerts and presents the
   announcement prompt followed by any remaining alert, one at a time.
+- The welcome/streak card shows a "Setup Profile" pill when the signed-in
+  user's global `profileComplete` flag is `false`. Tapping it opens the same
+  Edit Profile sheet as Settings → Profile → Edit Profile (see
+  [Navigation, Profile and Settings](navigation-profile-settings.md)).
 
 ## Technical map
 
@@ -44,4 +48,5 @@ session.
 | HOME-07 | Notification, birthday and announcement prompts all eligible | Notification appears first; after each dismissal the next eligible alert appears, with each shown at most once per session and one drag handle. |
 | HOME-08 | Empty/error/loading data | No crash; stable empty or recoverable state appears. |
 | HOME-09 | Welcome/streak around day boundaries | Greeting and streak remain correct for local timezone. |
+| HOME-11 | Sign in with `profileComplete: false` / `true` | Welcome card shows/hides the Setup Profile pill to match; tapping it opens Edit Profile. |
 | HOME-10 | Contact/social action | Confirmation precedes external app and cancellation stays in app. |

@@ -1,0 +1,63 @@
+appId: com.example.flutter_application
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Next"
+    timeout: 180000
+- repeat:
+    while:
+      notVisible: "Get Started"
+    commands:
+      - tapOn: "Next"
+- tapOn: "Get Started"
+
+- extendedWaitUntil:
+    visible: "Login"
+    timeout: 20000
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "Email Address"
+    timeout: 10000
+- tapOn: "Email Address"
+- inputText: "profile.setup.qa@example.com"
+- tapOn: "Password"
+- inputText: "MaestroQa123"
+- hideKeyboard
+- tapOn: "Login"
+
+- extendedWaitUntil:
+    visible: "Churches"
+    timeout: 60000
+- takeScreenshot: pc_01_account_icon_badge
+- tapOn: "Churches"
+- extendedWaitUntil:
+    visible: "(?s).*Your Churches.*"
+    timeout: 20000
+- tapOn: "(?s).*Your Churches.*"
+- waitForAnimationToEnd
+- tapOn: "(?s).*New Beginning Ministries.*"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Select Church"
+    timeout: 15000
+- tapOn: "Select Church"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "Community"
+    timeout: 60000
+- takeScreenshot: pc_02_setup_profile_prompt
+- tapOn: "Setup Profile"
+- extendedWaitUntil:
+    visible: "Marital Status"
+    timeout: 15000
+- takeScreenshot: pc_03_edit_profile_sheet
+- tapOn: "Marital Status"
+- extendedWaitUntil:
+    visible: "Married"
+    timeout: 10000
+- tapOn: "Married"
+- waitForAnimationToEnd
+- takeScreenshot: pc_04_family_section_revealed

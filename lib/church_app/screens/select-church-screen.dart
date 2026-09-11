@@ -19,6 +19,8 @@ import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
+    show showEditProfileSheet;
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -149,6 +151,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           data: (value) => value && firebaseUser != null,
           orElse: () => false,
         );
+    final userIdentity = ref.watch(userIdentityProvider).value;
     final screens = const [
       GlobalFeedListView(),
       ChurchPickerScreen(),
@@ -174,6 +177,19 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                 );
               },
               icon: const Icon(Icons.admin_panel_settings_outlined),
+            ),
+          if (userIdentity != null)
+            IconButton(
+              tooltip: userIdentity.profileComplete
+                  ? context.t('settings.edit_profile_title')
+                  : context.t('home.setup_profile_action'),
+              onPressed: () => showEditProfileSheet(context, userIdentity),
+              icon: Badge(
+                isLabelVisible: !userIdentity.profileComplete,
+                smallSize: 10,
+                backgroundColor: Theme.of(context).colorScheme.error,
+                child: const Icon(Icons.account_circle_outlined),
+              ),
             ),
           IconButton(
             tooltip: context.t('drawer.logout'),

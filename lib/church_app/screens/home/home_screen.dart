@@ -11,6 +11,8 @@ import 'package:flutter_application/church_app/screens/home/sections/announcemen
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
 import 'package:flutter_application/church_app/screens/home/sections/promise_section.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
+    show showEditProfileSheet;
 import 'package:flutter_application/church_app/widgets/prompts/prompt_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'home_sections_provider.dart';
@@ -184,6 +186,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _WelcomeCard(
                   userName: userName,
                   dayStreak: appUser?.dayStreak ?? 10,
+                  showSetupProfilePrompt: appUser != null &&
+                      !appUser.profileComplete,
+                  onSetupProfile: appUser == null
+                      ? null
+                      : () => showEditProfileSheet(context, appUser),
                 ),
               ),
             ),
@@ -244,10 +251,18 @@ class _WelcomeCard extends StatelessWidget {
   const _WelcomeCard({
     required this.userName,
     required this.dayStreak,
+    required this.showSetupProfilePrompt,
+    required this.onSetupProfile,
   });
 
   final String userName;
   final int dayStreak;
+
+  /// True once `users/{uid}.profileComplete` is false — see the field's own
+  /// doc comment in `UserIdentity` ("drives the non-blocking completion
+  /// prompt").
+  final bool showSetupProfilePrompt;
+  final VoidCallback? onSetupProfile;
 
   ({IconData icon, String label}) _greetingVisualForHour(
     BuildContext context,
@@ -413,6 +428,50 @@ class _WelcomeCard extends StatelessWidget {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ],
+                      if (showSetupProfilePrompt) ...[
+                        const SizedBox(height: 14),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: onSetupProfile,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.person_outline,
+                                  color: onPrimary,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  context.t('home.setup_profile_action'),
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: onPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: onPrimary,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

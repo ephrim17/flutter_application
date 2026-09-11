@@ -411,7 +411,9 @@ class AuthRepository {
             .map((item) => item.trim())
             .where((item) => item.isNotEmpty)
             .toList(),
-        'profileComplete': true,
+        'profileComplete': location.trim().isNotEmpty &&
+            address.trim().isNotEmpty &&
+            maritalStatus.trim().isNotEmpty,
         'schemaVersion': 1,
         if (!identitySnapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),

@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/self_signup_membership_helper.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -27,6 +28,7 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
 import 'package:flutter_application/church_app/screens/select-church-screen.dart';
+import 'package:flutter_application/church_app/services/side_drawer/members_repository.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_errors.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -427,6 +429,17 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
+/// Opens the same Edit Profile sheet Settings uses, for reuse from other
+/// entry points (the account-completion icon on the church picker, and the
+/// "Setup Profile" prompt on the home welcome card).
+Future<void> showEditProfileSheet(BuildContext context, UserIdentity user) {
+  return showAppModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => EditProfileSheet(user: user),
+  );
+}
+
 class _EditProfileSection extends ConsumerWidget {
   const _EditProfileSection();
 
@@ -459,11 +472,7 @@ class _EditProfileSection extends ConsumerWidget {
           icon: Icons.person_outline,
           title: ref.t('settings.edit_profile_title'),
           subtitle: ref.t('settings.edit_profile_subtitle'),
-          onTap: () => showAppModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => _EditProfileSheet(user: user),
-          ),
+          onTap: () => showEditProfileSheet(context, user),
         );
       },
     );
@@ -1492,21 +1501,22 @@ class _StorageSection extends ConsumerWidget {
   }
 }
 
-class _EditProfileSheet extends ConsumerStatefulWidget {
-  const _EditProfileSheet({required this.user});
+class EditProfileSheet extends ConsumerStatefulWidget {
+  const EditProfileSheet({super.key, required this.user});
 
   final UserIdentity user;
 
   @override
-  ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
+  ConsumerState<EditProfileSheet> createState() => _EditProfileSheetState();
 }
 
-class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
+class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   late final TextEditingController _phoneController;
   late final TextEditingController _locationController;
   late final TextEditingController _addressController;
   late final TextEditingController _educationalQualificationController;
   late final TextEditingController _talentsAndGiftsController;
+  late final TextEditingController _familyNameController;
   bool _isSaving = false;
   bool _isFetchingLocation = false;
   DateTime? _dob;
@@ -1514,6 +1524,18 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   DateTime? _weddingDay;
   PickedImageData? _profilePhoto;
   bool _removeProfilePhoto = false;
+
+  // Family ID is per-church-membership data (churches/{churchId}/members/
+  // {uid}.familyId), not part of the global identity doc this sheet
+  // otherwise edits — §9.2/§9.3. Only meaningful (and only shown) when
+  // opened from inside a church, since there's no membership to attach it
+  // to otherwise (e.g. the account icon on the church picker, before
+  // entering any church).
+  bool _useExistingFamilyId = false;
+  String? _selectedExistingFamilyId;
+  bool _familyFieldsPrefilled = false;
+  String? _familyIdsFutureChurchId;
+  Future<List<String>>? _familyIdsFuture;
 
   @override
   void initState() {
@@ -1525,6 +1547,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         TextEditingController(text: widget.user.educationalQualification);
     _talentsAndGiftsController =
         TextEditingController(text: widget.user.talentsAndGifts.join(', '));
+    _familyNameController = TextEditingController();
     _dob = widget.user.dob;
     _maritalStatus = widget.user.maritalStatus;
     _weddingDay = widget.user.weddingDay;
@@ -1537,7 +1560,79 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _addressController.dispose();
     _educationalQualificationController.dispose();
     _talentsAndGiftsController.dispose();
+    _familyNameController.dispose();
     super.dispose();
+  }
+
+  String _category() =>
+      _maritalStatus.trim().toLowerCase() == 'married' ? 'family' : 'individual';
+
+  String _normalizeFamilySeed(String value, String churchId) =>
+      normalizeMembershipSeed(value, churchId);
+
+  String _formatFamilyOptionLabel(String familyId, String churchId) {
+    final normalized = familyId.trim().toLowerCase();
+    if (normalized.isEmpty) return familyId;
+
+    final cleaned = normalized
+        .replaceFirst(RegExp(r'^family_'), '')
+        .replaceFirst(RegExp(r'^individual_'), '')
+        .replaceFirst(RegExp('_${churchId.toLowerCase()}\$'), '');
+
+    final displayName = cleaned
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1))
+        .join(' ')
+        .trim();
+
+    if (displayName.isEmpty) return familyId;
+
+    final suffix = displayName.endsWith('s') ? "'" : "'s";
+    return '$displayName$suffix family';
+  }
+
+  String _familySeedFromId(String familyId, String churchId) {
+    final normalized = familyId.trim().toLowerCase();
+    if (normalized.isEmpty) return '';
+
+    return normalized
+        .replaceFirst(RegExp(r'^family_'), '')
+        .replaceFirst(RegExp('_${churchId.toLowerCase()}\$'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+  }
+
+  void _prefillFamilyFieldsOnce(ChurchMembership membership, String churchId) {
+    if (_familyFieldsPrefilled) return;
+    _familyFieldsPrefilled = true;
+    final familyId = membership.familyId.trim();
+    if (familyId.toLowerCase().startsWith('family_')) {
+      _selectedExistingFamilyId = familyId.isEmpty ? null : familyId;
+      _useExistingFamilyId = _selectedExistingFamilyId != null;
+    }
+    if (membership.category.trim().toLowerCase() == 'family') {
+      _familyNameController.text = _familySeedFromId(familyId, churchId);
+    }
+  }
+
+  /// Resolves the familyId to persist for the current marital-status-derived
+  /// category, mirroring LoginRequestScreen's admin edit form. Empty means
+  /// "leave familyId as it already is" (e.g. individual not joining a
+  /// family) rather than clearing it.
+  String? _resolveFamilyIdToSave(String churchId, ChurchMembership current) {
+    if (_useExistingFamilyId &&
+        _selectedExistingFamilyId != null &&
+        _selectedExistingFamilyId!.trim().isNotEmpty) {
+      return _selectedExistingFamilyId!.trim();
+    }
+    if (_category() != 'family') return null;
+
+    final seed = _familyNameController.text.trim();
+    if (seed.isEmpty) return null;
+    final normalizedSeed = _normalizeFamilySeed(seed, churchId);
+    if (normalizedSeed.isEmpty) return null;
+    return 'family_${normalizedSeed}_$churchId';
   }
 
   List<String> _parsedTalentsAndGifts() {
@@ -1685,6 +1780,30 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       );
       return;
     }
+    final churchId = await ref.read(currentChurchIdProvider.future);
+    final currentMembership = ref.read(currentMembershipProvider).value;
+    if (churchId != null &&
+        currentMembership != null &&
+        _maritalStatus.isNotEmpty) {
+      if (_useExistingFamilyId &&
+          (_selectedExistingFamilyId == null ||
+              _selectedExistingFamilyId!.trim().isEmpty)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.t('members.existing_family_required'))),
+        );
+        return;
+      }
+      if (_category() == 'family' &&
+          !_useExistingFamilyId &&
+          _familyNameController.text.trim().isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.t('members.family_name_required'))),
+        );
+        return;
+      }
+    }
 
     setState(() {
       _isSaving = true;
@@ -1713,6 +1832,22 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         profilePhotoUrl.isEmpty ? null : profilePhotoUrl,
       );
 
+      if (churchId != null &&
+          currentMembership != null &&
+          _maritalStatus.isNotEmpty) {
+        final familyId = _resolveFamilyIdToSave(churchId, currentMembership);
+        if (familyId != null && familyId != currentMembership.familyId) {
+          await MembersRepository(
+            firestore: ref.read(firestoreProvider),
+            churchId: churchId,
+          ).updateMemberCategory(
+            firebaseUser.uid,
+            category: _category(),
+            familyId: familyId,
+          );
+        }
+      }
+
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       final message = ref.t('settings.profile_updated');
@@ -1725,6 +1860,104 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         });
       }
     }
+  }
+
+  /// Mirrors LoginRequestScreen's admin family-ID section (existing-family
+  /// toggle + dropdown, or a Family Name field to create a new one) — only
+  /// shown once a marital status is picked, and only when this sheet was
+  /// opened from inside a church (family ID has nowhere to attach to
+  /// otherwise). Not shown from the church-picker account icon.
+  Widget _buildFamilyIdSection(BuildContext context) {
+    final churchId = ref.watch(currentChurchIdProvider).value;
+    final membership = ref.watch(currentMembershipProvider).value;
+    if (churchId == null || membership == null) return const SizedBox.shrink();
+
+    _prefillFamilyFieldsOnce(membership, churchId);
+
+    if (_familyIdsFutureChurchId != churchId) {
+      _familyIdsFutureChurchId = churchId;
+      _familyIdsFuture = ref.read(authRepositoryProvider).getFamilyIds(churchId);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: FutureBuilder<List<String>>(
+        future: _familyIdsFuture,
+        builder: (context, snapshot) {
+          final familyIds = snapshot.data ?? const <String>[];
+          final selectedFamilyValue =
+              familyIds.contains(_selectedExistingFamilyId)
+                  ? _selectedExistingFamilyId
+                  : null;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (familyIds.isNotEmpty)
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  title: Text(ref.t('auth.family_existing_toggle')),
+                  value: _useExistingFamilyId,
+                  onChanged: (value) {
+                    setState(() {
+                      _useExistingFamilyId = value;
+                      if (!value) _selectedExistingFamilyId = null;
+                    });
+                  },
+                ),
+              if (familyIds.isNotEmpty) const SizedBox(height: 12),
+              if (familyIds.isNotEmpty && _useExistingFamilyId)
+                AppDropdownField<String>(
+                  initialValue: selectedFamilyValue,
+                  labelText: ref.t('members.family_id_label'),
+                  items: familyIds
+                      .map(
+                        (familyId) => DropdownMenuItem(
+                          value: familyId,
+                          child: Text(
+                            _formatFamilyOptionLabel(familyId, churchId),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedExistingFamilyId = value;
+                    });
+                  },
+                )
+              else if (_category() == 'family')
+                AppTextField(
+                  controller: _familyNameController,
+                  decoration: InputDecoration(
+                    labelText: ref.t('members.family_name_label'),
+                    helperText: ref.t('auth.family_name_helper'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              if (_category() == 'individual' && !_useExistingFamilyId)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    familyIds.isEmpty
+                        ? ref.t('auth.family_none_available')
+                        : ref.t('auth.family_join_existing_hint'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -1950,6 +2183,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 ),
               ),
             ],
+            if (_maritalStatus.isNotEmpty) _buildFamilyIdSection(context),
             const SizedBox(height: 16),
             AppTextField(
               controller: _educationalQualificationController,
