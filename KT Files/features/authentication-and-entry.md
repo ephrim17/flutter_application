@@ -143,10 +143,12 @@ viewer `CommunityFullScreenViewer` uses, sharing its `CommunityViewerPageView`,
 but global-only: no "Your Church" segment and no create-post action, since
 posting stays church-scoped from inside Community). "Churches" is a second
 bottom tab (`AppBottomTabBar`, mirroring `ChurchTabScreen`'s own tab bar)
-whose body is `ChurchPickerScreen` — "Welcome Home", "Your churches" /
-"Other churches" — for anyone who actually wants to pick or request a
-church rather than just browse the feed; the app bar's super-admin/logout
-actions stay visible across both tabs. `ChurchPickerScreen` has no
+whose body is `ChurchPickerScreen` — "Your Churches" / "Pending Approval" /
+"Other Churches" — for anyone who actually wants to pick or request a
+church rather than just browse the feed. The app bar's title always reads
+the fixed app brand name (`guest_shell.title`, "Church Tree") regardless of
+which of the two tabs is active, and its super-admin/account/logout actions
+stay visible across both tabs too. `ChurchPickerScreen` has no
 `Scaffold`/`AppBar` of its own and is never pushed — it's purely this tab's
 body, so there is no back button involved at all here, only the tab bar.
 `SelectChurchScreen` itself is always root-level (no back button in any of
@@ -184,15 +186,18 @@ This replaces `LoginRequestScreen` for the self-service path.
 admin-create path — an admin-created member has no identity doc, so the
 admin form still has to supply everything (§9.3 of the migration doc).
 
-`ChurchPickerScreen` ("Welcome Home", `SelectChurchScreen`'s "Churches" tab
-body) has two sections, driven by
-`userChurchesProvider` (every membership doc for the signed-in uid,
-approved or not — a plain `collectionGroup('members')` lookup, unfiltered):
+`ChurchPickerScreen` (`SelectChurchScreen`'s "Churches" tab body) has three
+sections — see [Churches and Membership](churches-and-membership.md) for the
+full behaviour and provider details (`userChurchesProvider` /
+`pendingChurchesProvider`, both derived live from `churchesProvider` and
+`myMembershipsProvider` so they update immediately on request/approve/leave,
+with no manual refresh):
 
 | Section | Contents |
 |---|---|
-| Your churches | Every church the person has a membership row in, approved or pending. Tapping an approved one enters it; tapping a pending one shows a "still pending" message instead of entering. |
-| Other churches | Every remaining church, reachable via "Request access". |
+| Your Churches | Every church the person has an *approved* membership row in. Tapping one enters it. |
+| Pending Approval | Every church with a membership row that isn't approved yet. Tapping one reopens `RequestPendingScreen` instead of entering. |
+| Other Churches | Every remaining church, reachable via "Request access". |
 
 Church Tree (global) learning modules are **not** shown for someone with no
 approved membership — they stay reachable inside any joined church (§5.6 of
@@ -414,7 +419,7 @@ continues to use the Firebase action-link email flow.
 | AUTH-12a | Press system back while inside a church (any tab) | Nothing happens — `PopScope(canPop: false)` blocks it; only the app-bar church name (switch) or Settings > Register-another-church/Logout can leave. |
 | AUTH-12b | Settings > "Register for another church" | Opens `SelectChurchScreen` (Home tab first) with the whole stack cleared (`pushAndRemoveUntil`) — no back button, matching its entry-gate behaviour; the "Churches" tab, where requesting access behaves exactly like the entry-gate flow. |
 | AUTH-12c | Tap a post in `SelectChurchScreen`'s Home tab feed | Opens `GlobalFeedFullScreenViewer` at that post — vertical swipe between global posts only, no segment toggle, no create-post action; back returns to `SelectChurchScreen`. |
-| AUTH-12d | Tap the "Churches" tab on `SelectChurchScreen` | Shows `ChurchPickerScreen` ("Welcome Home", Your churches / Other churches) in place — no push, no back button involved; tapping "Home" switches back to the feed the same way. |
+| AUTH-12d | Tap the "Churches" tab on `SelectChurchScreen` | Shows `ChurchPickerScreen` (Your Churches / Pending Approval / Other Churches) in place — no push, no back button involved; tapping "Home" switches back to the feed the same way, and the app bar title stays "Church Tree" on both tabs. |
 | AUTH-13 | Logout | Firebase session actually ends; lands on `AuthChoiceScreen` (Sign In / Sign Up), not straight to `SignInScreen`; relaunch requires signing in again. |
 | AUTH-14 | Maintenance mode as member/admin | Member is blocked; configured church admin can enter. |
 | AUTH-15 | Request password code for known account | Exactly one six-digit email arrives and verification screen opens. |

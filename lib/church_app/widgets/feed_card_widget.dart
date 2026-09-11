@@ -793,6 +793,69 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
   }
 }
 
+/// Lets a two-finger pinch zoom an image in place inside the feed, without
+/// opening the full-screen viewer and without hijacking the single-finger
+/// drags the surrounding vertical feed list / horizontal PageView need for
+/// scrolling and paging. `panEnabled: false` is what makes that possible:
+/// InteractiveViewer only engages once a second pointer is on the glass, so
+/// a plain scroll or swipe never enters its gesture arena. Releasing the
+/// pinch snaps the image back to its original size/position.
+class _InlinePinchZoomImage extends StatefulWidget {
+  const _InlinePinchZoomImage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_InlinePinchZoomImage> createState() => _InlinePinchZoomImageState();
+}
+
+class _InlinePinchZoomImageState extends State<_InlinePinchZoomImage>
+    with SingleTickerProviderStateMixin {
+  final _transformationController = TransformationController();
+  late final AnimationController _snapBackController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  )..addListener(_applySnapBackFrame);
+  Animation<Matrix4>? _snapBackAnimation;
+
+  @override
+  void dispose() {
+    _snapBackController.dispose();
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _applySnapBackFrame() {
+    final animation = _snapBackAnimation;
+    if (animation != null) {
+      _transformationController.value = animation.value;
+    }
+  }
+
+  void _onInteractionEnd(ScaleEndDetails details) {
+    if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) return;
+    _snapBackAnimation = Matrix4Tween(
+      begin: _transformationController.value,
+      end: Matrix4.identity(),
+    ).animate(
+      CurvedAnimation(parent: _snapBackController, curve: Curves.easeOutCubic),
+    );
+    _snapBackController.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InteractiveViewer(
+      transformationController: _transformationController,
+      panEnabled: false,
+      minScale: 1,
+      maxScale: 4,
+      onInteractionEnd: _onInteractionEnd,
+      child: widget.child,
+    );
+  }
+}
+
 class _FeedImageGallery extends StatefulWidget {
   const _FeedImageGallery({required this.imageUrls, required this.aspectRatio});
 
@@ -839,11 +902,13 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
                   // no nested AspectRatio/ClipRRect — so the flight can
                   // resize it smoothly frame-by-frame instead of fighting a
                   // locked ratio as the bounds morph toward full screen.
-                  child: Hero(
-                    tag: 'feed-gallery-$imageUrl',
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
+                  child: _InlinePinchZoomImage(
+                    child: Hero(
+                      tag: 'feed-gallery-$imageUrl',
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 );
@@ -916,25 +981,27 @@ class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
                 initialIndex: index,
                 heroTagBuilder: (url, _) => 'feed-gallery-$url',
               ),
-              child: Hero(
-                tag: 'feed-gallery-$imageUrl',
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  memCacheWidth: devicePixelWidth,
-                  fadeInDuration: Duration.zero,
-                  fadeOutDuration: Duration.zero,
-                  placeholder: (context, url) =>
-                      const ColoredBox(color: Colors.black),
-                  errorWidget: (context, url, error) => const ColoredBox(
-                    color: Colors.black,
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white38,
-                        size: 40,
+              child: _InlinePinchZoomImage(
+                child: Hero(
+                  tag: 'feed-gallery-$imageUrl',
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    memCacheWidth: devicePixelWidth,
+                    fadeInDuration: Duration.zero,
+                    fadeOutDuration: Duration.zero,
+                    placeholder: (context, url) =>
+                        const ColoredBox(color: Colors.black),
+                    errorWidget: (context, url, error) => const ColoredBox(
+                      color: Colors.black,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.white38,
+                          size: 40,
+                        ),
                       ),
                     ),
                   ),

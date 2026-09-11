@@ -35,6 +35,11 @@ cross-church activity before they've joined anything.
   legacy `imageUrl` compatibility.
 - Cards render a gallery; tapping opens the shared WhatsApp-style viewer with
   paging and zoom.
+- Feed images also support a two-finger pinch directly on the card, without
+  opening the full-screen viewer: `panEnabled: false` on the inline
+  `InteractiveViewer` means only a genuine two-finger pinch engages it, so a
+  single-finger drag still scrolls the feed / pages the image carousel as
+  normal. Releasing the pinch animates the image back to its original size.
 - User avatar/name opens the shared user quick card.
 - Hashtags are normalized, deduplicated and searchable.
 - The screen uses live/optimistic updates so moderation changes appear without
@@ -70,3 +75,4 @@ cross-church activity before they've joined anything.
 | FEED-12 | Rapid action/double-tap/offline | No duplicates, stale menu or crash; error can be retried. |
 | FEED-13 | Church switch | No local posts from previous church; global posts remain global. |
 | FEED-14 | Open create/edit sheet | The create control has an accessible label; the sheet has one shared small grab handle and no redundant Cancel button. |
+| FEED-15 | Two-finger pinch on a feed card image; separately, single-finger vertical drag / horizontal swipe on a multi-image card | Pinch zooms the image in place and snaps back on release without opening the full-screen viewer; single-finger drags still scroll the feed and page between images exactly as before. |

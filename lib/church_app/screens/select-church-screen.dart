@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -30,7 +29,6 @@ import 'package:flutter_application/church_app/services/notification_service.dar
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
-import 'package:flutter_application/church_app/widgets/app_logo_text.dart';
 import 'package:flutter_application/church_app/widgets/church_discovery_card.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/color_text_widget.dart';
@@ -159,7 +157,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppBarTitle(text: ''),
+        title: AppBarTitle(text: context.t('guest_shell.title')),
         centerTitle: true,
         actions: [
           if (isSuperAdmin)
@@ -381,68 +379,7 @@ class _ChurchPickerScreenState extends ConsumerState<ChurchPickerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 6),
-                      Center(
-                        child: Container(
-                          width: 96,
-                          height: 96,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x12000000),
-                                blurRadius: 24,
-                                offset: Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: SizedBox.expand(
-                              child: Image.asset(
-                                AppAssets.churchTreeAppIcon,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const AppLogoText(loop: false),
-                      const SizedBox(height: 24),
-                      Container(
-                        decoration: carouselBoxDecoration(context),
-                        padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-                        child: Column(
-                          children: [
-                            Text(
-                              context.t('church.welcome_home'),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              context.t('church.select_subtitle'),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              context.t('church.select_helper'),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(height: 1.45),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 10),
                       _buildChurchSections(
                         context,
                         churchesAsync: churchesAsync,
