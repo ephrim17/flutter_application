@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,7 +13,9 @@ import 'package:flutter_application/church_app/helpers/file_download.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/models/verse_image_template.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
+import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
+import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
@@ -45,6 +49,7 @@ Future<void> showVerseShareModal(
   BuildContext context, {
   required String text,
   required String reference,
+  PickedImageData? initialBackgroundImage,
 }) {
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -52,9 +57,303 @@ Future<void> showVerseShareModal(
       builder: (_) => VerseShareModal(
         text: text,
         reference: reference,
+        initialBackgroundImage: initialBackgroundImage,
       ),
     ),
   );
+}
+
+/// Entry point for verse sharing: asks whether to generate a background with
+/// AI or build the card manually, then routes to the matching flow. Replaces
+/// direct calls to [showVerseShareModal] at every share-icon call site.
+Future<void> showVerseShareChoiceSheet(
+  BuildContext context, {
+  required String text,
+  required String reference,
+}) async {
+  final choice = await showAppModalBottomSheet<_VerseShareChoice>(
+    context: context,
+    builder: (sheetContext) => _VerseShareChoiceSheet(),
+  );
+  if (choice == null || !context.mounted) return;
+  switch (choice) {
+    case _VerseShareChoice.ai:
+      await _startAiVerseShareFlow(context, text: text, reference: reference);
+    case _VerseShareChoice.manual:
+      await showVerseShareModal(context, text: text, reference: reference);
+  }
+}
+
+enum _VerseShareChoice { ai, manual }
+
+class _VerseShareChoiceSheet extends StatelessWidget {
+  const _VerseShareChoiceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.t('ui.verse_share.choice_title'),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _VerseShareChoiceTile(
+            icon: Icons.auto_awesome_rounded,
+            title: context.t('ui.verse_share.generate_with_ai'),
+            subtitle: context.t('ui.verse_share.generate_with_ai_subtitle'),
+            onTap: () =>
+                Navigator.of(context).pop(_VerseShareChoice.ai),
+          ),
+          const SizedBox(height: 12),
+          _VerseShareChoiceTile(
+            icon: Icons.edit_rounded,
+            title: context.t('ui.verse_share.create_manually'),
+            subtitle: context.t('ui.verse_share.create_manually_subtitle'),
+            onTap: () =>
+                Navigator.of(context).pop(_VerseShareChoice.manual),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VerseShareChoiceTile extends StatelessWidget {
+  const _VerseShareChoiceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(cornerRadius),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(cornerRadius),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: theme.colorScheme.primary),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Calls the backend for 3 AI-generated background candidates, lets the
+/// user pick one, then opens the full editor with it pre-applied.
+Future<void> _startAiVerseShareFlow(
+  BuildContext context, {
+  required String text,
+  required String reference,
+}) async {
+  final images = await showDialog<List<PickedImageData>>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => _AiVerseImageGenerationDialog(
+      text: text,
+      reference: reference,
+    ),
+  );
+  if (images == null || images.isEmpty || !context.mounted) return;
+
+  final selected = await showAppModalBottomSheet<PickedImageData>(
+    context: context,
+    builder: (sheetContext) => _AiVerseImagePickerSheet(images: images),
+  );
+  if (selected == null || !context.mounted) return;
+
+  await showVerseShareModal(
+    context,
+    text: text,
+    reference: reference,
+    initialBackgroundImage: selected,
+  );
+}
+
+class _AiVerseImageGenerationDialog extends StatefulWidget {
+  const _AiVerseImageGenerationDialog({
+    required this.text,
+    required this.reference,
+  });
+
+  final String text;
+  final String reference;
+
+  @override
+  State<_AiVerseImageGenerationDialog> createState() =>
+      _AiVerseImageGenerationDialogState();
+}
+
+class _AiVerseImageGenerationDialogState
+    extends State<_AiVerseImageGenerationDialog> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _generate());
+  }
+
+  Future<void> _generate() async {
+    try {
+      final result = await FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('generateVerseBackgroundImage').call<Map<String, dynamic>>({
+        'verseText': widget.text,
+        'reference': widget.reference,
+      });
+      final rawImages = (result.data['images'] as List?) ?? const [];
+      final images = rawImages
+          .whereType<Map>()
+          .map((item) => item['data'] as String?)
+          .whereType<String>()
+          .map(
+            (data) => PickedImageData(
+              bytes: base64Decode(data),
+              name: 'ai-verse-${DateTime.now().millisecondsSinceEpoch}',
+            ),
+          )
+          .toList(growable: false);
+      if (!mounted) return;
+      if (images.isEmpty) {
+        Navigator.of(context).pop();
+        _showErrorSnackBar(context, context.t('ui.verse_share.ai_generation_failed'));
+        return;
+      }
+      Navigator.of(context).pop(images);
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      final key = e.message == 'quota-exceeded'
+          ? 'ui.verse_share.ai_quota_exceeded'
+          : 'ui.verse_share.ai_generation_failed';
+      _showErrorSnackBar(context, context.t(key));
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showErrorSnackBar(context, context.t('ui.verse_share.ai_generation_failed'));
+    }
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Text(context.t('ui.verse_share.generating_image')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AiVerseImagePickerSheet extends StatelessWidget {
+  const _AiVerseImagePickerSheet({required this.images});
+
+  final List<PickedImageData> images;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.t('ui.verse_share.pick_a_background'),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                for (final image in images) ...[
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(cornerRadius),
+                      onTap: () => Navigator.of(context).pop(image),
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(cornerRadius),
+                          child: Image.memory(
+                            image.bytes,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (image != images.last) const SizedBox(width: 10),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class VerseShareModal extends StatefulWidget {
@@ -62,10 +361,16 @@ class VerseShareModal extends StatefulWidget {
     super.key,
     required this.text,
     required this.reference,
+    this.initialBackgroundImage,
   });
 
   final String text;
   final String reference;
+
+  /// Pre-selects this as the background (Image mode) instead of the default
+  /// solid color — used by the "Generate with AI" flow, which picks one of
+  /// several AI-generated candidates before opening this editor.
+  final PickedImageData? initialBackgroundImage;
 
   @override
   State<VerseShareModal> createState() => _VerseShareModalState();
@@ -80,7 +385,7 @@ class _VerseShareModalState extends State<VerseShareModal> {
   final TextEditingController _storyCaptionController = TextEditingController();
 
   ShareFormat format = ShareFormat.square;
-  BackgroundType backgroundType = BackgroundType.color;
+  late BackgroundType backgroundType;
   VerseLayoutKind layout = VerseLayoutKind.centered;
 
   Color backgroundColor = const Color(0xFFD6E3E7);
@@ -114,6 +419,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
     super.initState();
     _verseController = TextEditingController(text: widget.text);
     _referenceController = TextEditingController(text: widget.reference);
+    selectedImage = widget.initialBackgroundImage;
+    backgroundType = widget.initialBackgroundImage != null
+        ? BackgroundType.image
+        : BackgroundType.color;
   }
 
   @override
@@ -2191,6 +2500,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
   String _normalizeHighlightText(String value) => value.trim().toLowerCase();
 }
 
+/// Always-shown branding row: church logo, title and contact number — part
+/// of "the complete image" every share card produces, AI-generated or
+/// manual, so a downloaded card is self-identifying without extra editor
+/// steps.
 class _VerseShareBranding extends ConsumerWidget {
   const _VerseShareBranding();
 
@@ -2202,54 +2515,96 @@ class _VerseShareBranding extends ConsumerWidget {
       orElse: () => '',
     );
     final appTitle = ref.t('church_tab.app_title');
+    final contact = ref.watch(selectedChurchProvider)?.contact.trim() ?? '';
 
-    if (churchLogo.isNotEmpty) {
-      final uri = Uri.tryParse(churchLogo);
-      final isNetwork =
-          uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-      return ClipOval(
-        child: isNetwork
-            ? Image.network(
-                churchLogo,
-                width: 38,
-                height: 38,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _BrandText(appTitle: appTitle),
-              )
-            : Image.asset(
-                churchLogo,
-                width: 38,
-                height: 38,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _BrandText(appTitle: appTitle),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 220),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _BrandLogo(churchLogo: churchLogo),
+          if (appTitle.isNotEmpty || contact.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (appTitle.isNotEmpty)
+                    Text(
+                      appTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  if (contact.isNotEmpty)
+                    Text(
+                      contact,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
               ),
-      );
-    }
-    return _BrandText(appTitle: appTitle);
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
-class _BrandText extends StatelessWidget {
-  const _BrandText({required this.appTitle});
+class _BrandLogo extends StatelessWidget {
+  const _BrandLogo({required this.churchLogo});
 
-  final String appTitle;
+  final String churchLogo;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        appTitle,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.92),
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+    const fallback = Icon(
+      Icons.church_rounded,
+      size: 16,
+      color: Colors.white,
+    );
+    if (churchLogo.isEmpty) {
+      return const CircleAvatar(
+        radius: 14,
+        backgroundColor: Colors.white24,
+        child: fallback,
+      );
+    }
+    final uri = Uri.tryParse(churchLogo);
+    final isNetwork =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+    return ClipOval(
+      child: isNetwork
+          ? Image.network(
+              churchLogo,
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => fallback,
+            )
+          : Image.asset(
+              churchLogo,
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
     );
   }
 }

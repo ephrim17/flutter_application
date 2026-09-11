@@ -28,6 +28,19 @@ documents.
   plain card presentation. The card grows to fit the verse text (min-height
   only) instead of clipping it, so larger system text sizes remain fully
   readable.
+- Tapping the Daily Verse share icon (and Favorite Verses' share action —
+  see [Bible and Favorites](bible-and-favorites.md)) opens a choice sheet:
+  "Generate with AI" or "Create manually". Manual is the pre-existing full
+  editor unchanged. AI calls `generateVerseBackgroundImage` (Cloud
+  Function) with the verse's own text/reference, gets back up to 3
+  candidate background images, and lets the person pick one before opening
+  the same editor with it pre-applied — every other control (layout, style,
+  footer, download) is identical either way. AI generation is capped per
+  user per day (`AI_IMAGE_DAILY_CAP`, default 5 "generate" actions, each
+  worth up to 3 images) and fails gracefully with a friendly message on
+  quota or generation errors. Every share card — AI or manual — always
+  shows a branding pill (church logo, title, contact number) so a
+  downloaded/shared image is self-identifying.
 - Featured For You is the consolidated featured/plans presentation.
 - Articles are admin-authored, record `createdBy`/`updatedBy` footprints and
   show author details like feed cards. Tapping the author opens the common user
@@ -47,6 +60,11 @@ documents.
 - Providers: `providers/for_you_sections/`.
 - Repositories: `services/for_you_section/` and Studio repository.
 - Article data: `churches/{churchId}/articles/{articleId}`.
+- Verse sharing: `widgets/modals/verse_share_modal.dart`
+  (`showVerseShareChoiceSheet`, `VerseShareModal`); backend:
+  `functions/src/verseImage.ts` (`generateVerseBackgroundImage`); usage
+  cap: `users/{uid}/aiUsage/{yyyy-mm-dd}` (Admin-SDK-write-only, read-only
+  for the owner).
 
 ## Test flows
 
@@ -66,4 +84,8 @@ documents.
 | FORYOU-10 | Reading plan progress | Completed days persist for the same church/user and do not leak. |
 | FORYOU-11 | Notification opens article | App lands on For You/article list from all lifecycle states. |
 | FORYOU-12 | Section error | Other sections remain usable when one provider fails. |
+| FORYOU-14 | Tap Daily Verse share icon | Choice sheet opens with "Generate with AI" / "Create manually"; each opens the correct flow. |
+| FORYOU-15 | Generate with AI, pick a candidate | Up to 3 background images appear; picking one opens the editor with it already applied as the Image background. |
+| FORYOU-16 | Exhaust the daily AI quota, then generate again | Friendly "reached today's limit" message appears; no raw error, no partial state. |
+| FORYOU-17 | Any share card (AI or manual), any background | Branding pill (logo, church title, contact number) renders without overflow and survives download/share. |
 

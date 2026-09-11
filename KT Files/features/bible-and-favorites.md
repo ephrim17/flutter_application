@@ -14,6 +14,9 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
   its supported storage path.
 - Reader navigation loads book/chapter content and exposes verse actions.
 - Favorites are user scoped and displayed in the drawer with a compact count.
+- Favorite Verses' share action opens the same AI-or-manual verse-share
+  choice sheet Daily Verse uses — see
+  [For You Content](for-you-content.md) for the full behaviour.
 - Verse selection components validate book, chapter, starting verse and ending
   verse against available chapter data.
 - Reader font-size/preferences persist locally where implemented.

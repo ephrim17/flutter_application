@@ -387,6 +387,19 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.verse_share.color": "Color",
   "ui.verse_share.image": "Image",
   "ui.verse_share.choose_image": "Choose image",
+  "ui.verse_share.choice_title": "How would you like to share this verse?",
+  "ui.verse_share.generate_with_ai": "Generate with AI",
+  "ui.verse_share.generate_with_ai_subtitle":
+      "Create a background image from the verse's own words.",
+  "ui.verse_share.create_manually": "Create manually",
+  "ui.verse_share.create_manually_subtitle":
+      "Pick a color, photo or template yourself.",
+  "ui.verse_share.generating_image": "Creating your images...",
+  "ui.verse_share.pick_a_background": "Pick a background",
+  "ui.verse_share.ai_quota_exceeded":
+      "You've reached today's AI image limit. Try again tomorrow.",
+  "ui.verse_share.ai_generation_failed":
+      "Couldn't generate an image right now. Please try again.",
   "ui.verse_share.bold_425d": "Bold",
   "ui.verse_share.normal_6dd2": "Normal",
   "ui.verse_share.italic_fe26": "Italic",

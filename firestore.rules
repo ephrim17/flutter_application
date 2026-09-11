@@ -374,6 +374,13 @@ service cloud.firestore {
       match /learning_progress/{docId} {
         allow read, write: if isSelf(uid);
       }
+      // AI verse-image daily usage counter — read-only for the owner, no
+      // client write path at all. Only generateVerseBackgroundImage (Admin
+      // SDK, which bypasses these rules) increments it, so a client can
+      // never reset or forge its own quota.
+      match /aiUsage/{dateKey} {
+        allow read: if isSelf(uid);
+      }
     }
 
     match /globalFeeds/{postId} {

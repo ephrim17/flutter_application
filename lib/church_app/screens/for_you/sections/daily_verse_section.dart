@@ -76,7 +76,7 @@ class DailyVerseCard extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.share_outlined),
                       onPressed: () async {
-                        await showVerseShareModal(
+                        await showVerseShareChoiceSheet(
                           context,
                           text: verseText!,
                           reference: verse['reference']!,

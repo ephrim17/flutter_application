@@ -180,7 +180,7 @@ Future<void> _shareVerse({
   required String reference,
   required BuildContext context,
 }) async {
-  showVerseShareModal(
+  showVerseShareChoiceSheet(
     context,
     text: text,
     reference: reference,
