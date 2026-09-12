@@ -179,10 +179,11 @@ class _VerseShareChoiceTile extends StatelessWidget {
   }
 }
 
-/// Calls the backend for 3 complete AI-generated verse-card candidates
-/// (verse text, church name and date all rendered into the image by
-/// Gemini itself), lets the user pick one, then shows it for download —
-/// no further app-side editing, since the picked image is already final.
+/// Calls the backend for up to 3 complete AI-generated verse-card
+/// candidates (verse text, church name and date all rendered into the
+/// image by Gemini itself), then shows them full-screen and swipeable so
+/// the person can compare and download whichever they land on — no
+/// further app-side editing, since each candidate is already final.
 Future<void> _startAiVerseShareFlow(
   BuildContext context, {
   required String text,
@@ -198,16 +199,10 @@ Future<void> _startAiVerseShareFlow(
   );
   if (images == null || images.isEmpty || !context.mounted) return;
 
-  final selected = await showAppModalBottomSheet<PickedImageData>(
-    context: context,
-    builder: (sheetContext) => _AiVerseImagePickerSheet(images: images),
-  );
-  if (selected == null || !context.mounted) return;
-
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
       fullscreenDialog: true,
-      builder: (_) => _AiVerseSharePreviewScreen(image: selected),
+      builder: (_) => _AiVerseCardSwipeScreen(images: images),
     ),
   );
 }
@@ -236,14 +231,20 @@ class _AiVerseImageGenerationDialogState
 
   Future<void> _generate() async {
     try {
-      final churchName = ref.t('church_tab.app_title');
-      final dateLabel = DateFormat('dd/MM/yyyy').format(DateTime.now());
+      // The full church name (not the short Studio-configured app title
+      // abbreviation, e.g. "T.N.B.M") — Gemini renders its own decorative
+      // banner, which has room for the real name, unlike the small on-screen
+      // branding pill in the manual editor that still uses the abbreviation.
+      final churchName = ref.read(selectedChurchProvider)?.name.trim() ?? '';
+      final contactNumber = ref.read(selectedChurchProvider)?.contact ?? '';
+      final dateLabel = DateFormat('d MMMM yyyy').format(DateTime.now());
       final result = await FirebaseFunctions.instanceFor(
         region: 'us-central1',
       ).httpsCallable('generateVerseBackgroundImage').call<Map<String, dynamic>>({
         'verseText': widget.text,
         'reference': widget.reference,
         'churchName': churchName,
+        'contactNumber': contactNumber,
         'dateLabel': dateLabel,
       });
       final rawImages = (result.data['images'] as List?) ?? const [];
@@ -309,88 +310,46 @@ class _AiVerseImageGenerationDialogState
   }
 }
 
-class _AiVerseImagePickerSheet extends StatelessWidget {
-  const _AiVerseImagePickerSheet({required this.images});
+/// Shows every already-complete AI-generated verse card (verse text,
+/// church name and date all baked into the image by Gemini) full-screen
+/// and swipeable, with a page indicator, and downloads whichever candidate
+/// is currently visible — no further app-side compositing needed, since
+/// each candidate is already final.
+class _AiVerseCardSwipeScreen extends StatefulWidget {
+  const _AiVerseCardSwipeScreen({required this.images});
 
   final List<PickedImageData> images;
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.t('ui.verse_share.pick_a_background'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                for (final image in images) ...[
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(cornerRadius),
-                      onTap: () => Navigator.of(context).pop(image),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(cornerRadius),
-                          child: Image.memory(
-                            image.bytes,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (image != images.last) const SizedBox(width: 10),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<_AiVerseCardSwipeScreen> createState() =>
+      _AiVerseCardSwipeScreenState();
 }
 
-/// Shows one already-complete AI-generated verse card (verse text, church
-/// name and date all baked into the image by Gemini) and lets the user
-/// download it — no further compositing needed, so this just saves the
-/// picked candidate's raw bytes directly.
-class _AiVerseSharePreviewScreen extends StatefulWidget {
-  const _AiVerseSharePreviewScreen({required this.image});
-
-  final PickedImageData image;
+class _AiVerseCardSwipeScreenState extends State<_AiVerseCardSwipeScreen> {
+  final _pageController = PageController();
+  int _page = 0;
+  bool _isDownloading = false;
 
   @override
-  State<_AiVerseSharePreviewScreen> createState() =>
-      _AiVerseSharePreviewScreenState();
-}
-
-class _AiVerseSharePreviewScreenState
-    extends State<_AiVerseSharePreviewScreen> {
-  bool _isDownloading = false;
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   Future<void> _download() async {
     if (_isDownloading) return;
     setState(() => _isDownloading = true);
     try {
+      final bytes = widget.images[_page].bytes;
       final filename = 'verse-${DateTime.now().millisecondsSinceEpoch}.jpg';
       if (kIsWeb) {
         downloadBytes(
-          bytes: widget.image.bytes,
+          bytes: bytes,
           fileName: filename,
           mimeType: 'image/jpeg',
         );
       } else {
-        await Gal.putImageBytes(widget.image.bytes, name: filename);
+        await Gal.putImageBytes(bytes, name: filename);
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -425,9 +384,57 @@ class _AiVerseSharePreviewScreenState
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close_rounded),
         ),
+        title: widget.images.length > 1
+            ? Text(
+                context.t(
+                  'common.image_position',
+                  parameters: {
+                    'current': _page + 1,
+                    'total': widget.images.length,
+                  },
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : null,
+        centerTitle: true,
       ),
-      body: Center(
-        child: Image.memory(widget.image.bytes, fit: BoxFit.contain),
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (value) => setState(() => _page = value),
+            itemBuilder: (context, index) => Center(
+              child: Image.memory(
+                widget.images[index].bytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          if (widget.images.length > 1)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.images.length, (index) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 6,
+                    width: index == _page ? 20 : 6,
+                    decoration: BoxDecoration(
+                      color: Colors.white
+                          .withValues(alpha: index == _page ? 0.95 : 0.45),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  );
+                }),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
