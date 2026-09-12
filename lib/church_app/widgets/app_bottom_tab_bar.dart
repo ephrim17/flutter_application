@@ -26,43 +26,20 @@ class AppBottomTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(
-            colors.primary.withValues(alpha: isDark ? 0.06 : 0.025),
-            colors.surface,
-          ),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: colors.outlineVariant.withValues(alpha: 0.58),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(7),
-          child: Row(
-            children: List.generate(
-              items.length,
-              (index) => Expanded(
-                child: _AppBottomTab(
-                  key: ValueKey<String>('app-bottom-tab-$index'),
-                  item: items[index],
-                  selected: index == currentIndex,
-                  onTap: () => onTap(index),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.all(7),
+        child: Row(
+          children: List.generate(
+            items.length,
+            (index) => Expanded(
+              child: _AppBottomTab(
+                key: ValueKey<String>('app-bottom-tab-$index'),
+                item: items[index],
+                selected: index == currentIndex,
+                onTap: () => onTap(index),
               ),
             ),
           ),
