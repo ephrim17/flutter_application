@@ -14,10 +14,11 @@ on top of it.
 
 - Visitor: onboarding, then an explicit sign-in/sign-up choice
   (`AuthChoiceScreen`), registration, login and password recovery.
-- Signed-in, no identity doc yet: profile step (`CompleteProfileScreen`) —
-  reachable in the normal flow only as a resume case (see "Signup and entry
-  gate" below); the profile step in a fresh sign-up runs *before* any
-  Firebase account exists.
+- Signed-in, no identity doc yet: `AuthChoiceScreen`, which immediately
+  pushes the profile step (`CompleteProfileScreen`'s resume shape) on top
+  of itself — reachable in the normal flow only as a resume case (see
+  "Signup and entry gate" below); the profile step in a fresh sign-up runs
+  *before* any Firebase account exists.
 - Signed-in, identity exists but not email-verified: `EmailOtpVerificationScreen`.
 - Signed-in, identity but no approved membership anywhere: `SelectChurchScreen`
   — covers never-requested, pending, declined (silently — a decline just
@@ -63,19 +64,23 @@ on top of it.
      which creates the account and writes `users/{uid}` (draft + email) in
      one step. This is why profile setup happens *before* email/password
      now, not after.
-   - **Resume** (`AppEntry`, identity doc missing but a Firebase account
-     already exists — e.g. a sign-up abandoned between account creation and
-     profile submission on an older flow, or an interrupted retry):
-     submitting writes the identity doc directly using the already-signed-in
-     user. Its own screen rather than a step inside a bigger form is what
-     makes this resume possible either way.
+   - **Resume** (identity doc missing but a Firebase account already
+     exists — e.g. a sign-up abandoned between account creation and profile
+     submission on an older flow, or an interrupted retry): submitting
+     writes the identity doc directly using the already-signed-in user.
+     Its own screen rather than a step inside a bigger form is what makes
+     this resume possible either way. `AppEntry` never renders this shape
+     directly — it renders `AuthChoiceScreen` for the "signed in, no
+     identity doc" state, and `AuthChoiceScreen` itself detects that exact
+     condition and pushes `CompleteProfileScreen`'s resume shape on top of
+     itself, so this shape always has a real route underneath it too.
    `CompleteProfileScreen` has no "Login" link of its own — its `AppBar`
-   exists only for the automatic back button, which in the normal sign-up
-   shape returns to `AuthChoiceScreen` (always pushed directly on top of
-   it, thanks to `goToSignUp`'s stack-collapsing) for anyone who wants
-   Sign In instead. In the resume shape there's no route beneath it to pop
-   to, so no back arrow shows at all — the person is already signed in
-   there, so "go back to Sign In" would not mean anything.
+   exists only for the automatic back button, which in both shapes returns
+   to `AuthChoiceScreen` (always pushed directly on top of it — the normal
+   sign-up shape via `goToSignUp`'s stack-collapsing, the resume shape via
+   `AuthChoiceScreen`'s own resume push) for anyone who wants Sign In
+   instead, e.g. to switch to a different existing account rather than
+   finish the abandoned one.
    Phone is India-only: the field shows a fixed, non-editable "+91" prefix
    and accepts exactly ten digits (`^[6-9]\d{9}$`, same pattern
    `settings_screen.dart` already used); the stored `phone` value is still
@@ -397,7 +402,8 @@ continues to use the Firebase action-link email flow.
 | AUTH-02 | Valid login for approved member | Correct selected church opens without an unmounted-provider lifecycle error. |
 | AUTH-03 | Wrong password/disabled user | Localized error; no membership data shown. |
 | AUTH-04 | Complete a full sign-up (`CompleteProfileScreen` → `CreateAccountScreen`) | Phone field on the profile step shows a fixed "+91" prefix and only accepts 10 digits; submitting the account step creates the Firebase account and writes `users/{uid}` (draft fields + email, `emailVerified: false`) in one step, then proceeds to email-OTP verification, not straight to church resolution. |
-| AUTH-04d | Reach `AppEntry` with a Firebase account but no `users/{uid}` doc (resume case — e.g. an interrupted sign-up on an older build) | `CompleteProfileScreen` opens in its resume shape (no `onContinue`) and writes the identity doc directly using the already-signed-in user. |
+| AUTH-04d | Reach `AppEntry` with a Firebase account but no `users/{uid}` doc (resume case — e.g. an interrupted sign-up on an older build) | `AuthChoiceScreen` renders first, then auto-pushes `CompleteProfileScreen`'s resume shape (no `onContinue`) on top of itself; submitting writes the identity doc directly using the already-signed-in user. |
+| AUTH-04e | On the auto-pushed resume `CompleteProfileScreen`, press back | Returns to `AuthChoiceScreen`'s normal Sign In / Sign Up UI (not a stuck spinner); tapping Sign In allows switching to a different existing account instead of finishing the abandoned one. |
 | AUTH-04a | Reach `EmailOtpVerificationScreen` for the first time | A code is requested automatically on mount (no prior screen triggers it); resend is disabled for 60s. Requires `requestSignupEmailVerificationCode` to be deployed — if it isn't, the send fails, no email arrives, and "Resend" stays stuck at 60s (deployment gap, not a UI bug). |
 | AUTH-04f | On `EmailOtpVerificationScreen`, tap the back button | Signs out and returns to `AuthChoiceScreen`; the identity doc is untouched (still unverified) — signing back in with the same credentials lands back on this screen. |
 | AUTH-04g | With an unverified account's ID token, call Firestore directly (bypassing the app's screens) for church-public content, `globalFeeds`, or a `members/{docId}` self-create | Denied by `firestore.rules` (`hasVerifiedEmail()`) — the security boundary matches the UI gate, not just the routing. |

@@ -33,19 +33,20 @@ class ProfileDraft {
 ///   *before* a Firebase account exists — there is no `uid` to write yet, so
 ///   submitting hands the collected [ProfileDraft] to [onContinue] (which
 ///   pushes `CreateAccountScreen`) instead of touching Firestore.
-/// - Resume path (`onContinue` null, the default): `AppEntry` shows this
-///   when a Firebase account exists but its `users/{uid}` doc doesn't (e.g.
-///   a sign-up that was abandoned between account creation and profile
-///   submission) — submitting writes the identity doc directly using the
-///   already-signed-in user. Its own screen rather than a step inside the
-///   old combined auth screen precisely so this resume works — see
-///   KT Files/architecture/user-church-decoupling-migration.md §5.5.
+/// - Resume path (`onContinue` null, the default): reached when a Firebase
+///   account exists but its `users/{uid}` doc doesn't (e.g. a sign-up that
+///   was abandoned between account creation and profile submission) —
+///   submitting writes the identity doc directly using the already-signed-in
+///   user. `AppEntry` renders `AuthChoiceScreen` for this state (not this
+///   screen directly); `AuthChoiceScreen` itself detects it and pushes this
+///   screen on top of itself, so there's always a real route underneath —
+///   see KT Files/architecture/user-church-decoupling-migration.md §5.5.
 ///
-/// The transparent `AppBar` exists only for its automatic back button: in
-/// the sign-up path it's always pushed directly on `AuthChoiceScreen`
-/// (thanks to `goToSignUp`'s stack-collapsing), so back returns there; in
-/// the resume path there's no route beneath it to pop to, so Flutter hides
-/// the back arrow entirely rather than showing a dead one.
+/// The transparent `AppBar` exists for its automatic back button: in both
+/// call shapes this screen is always pushed on top of `AuthChoiceScreen`
+/// (the sign-up path via `goToSignUp`'s stack-collapsing, the resume path
+/// via `AuthChoiceScreen`'s own resume handling), so back always has
+/// somewhere real to go.
 class CompleteProfileScreen extends ConsumerStatefulWidget {
   const CompleteProfileScreen({super.key, this.onContinue});
 

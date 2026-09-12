@@ -2463,3 +2463,28 @@ re-touching the same document minutes later mirrored correctly, and the
 Admin-SDK backfill (which doesn't depend on the trigger at all) was
 unaffected. All test data (1 disposable church, 2 disposable accounts)
 cleaned up afterward.
+
+### Addendum (resume CompleteProfileScreen was a dead end)
+
+Direct follow-up feedback: reaching `CompleteProfileScreen`'s resume shape
+(a Firebase account exists but its `users/{uid}` doc doesn't — an
+abandoned sign-up) left the person stuck. `AppEntry` rendered it directly
+as the current screen with nothing beneath it on the Navigator, so its
+`AppBar` correctly showed no back arrow (there was nowhere to go) — but
+that meant no way to reach `AuthChoiceScreen`'s Sign In option either, e.g.
+to log into a different, valid existing account instead of finishing the
+abandoned one. Confirmed live: an orphaned local session (from deleting a
+test account's Firestore doc while its client-side auth session was still
+cached) landed here with no escape short of clearing app data.
+
+Fix: `AppEntry`'s "signed in, no identity doc" branch now renders
+`AuthChoiceScreen` instead of `CompleteProfileScreen` directly.
+`AuthChoiceScreen` itself (`ConsumerStatefulWidget` now, was
+`StatelessWidget`) watches `authStateProvider`/`userIdentityProvider`, and
+when it detects this exact state, pushes `CompleteProfileScreen`'s resume
+shape on top of itself via a guarded post-frame callback (`_resumePushed`,
+so it only fires once and doesn't refire after the person backs out).
+While the push is pending it shows a loading placeholder instead of
+flashing the Sign In/Sign Up buttons first. `CompleteProfileScreen` now
+always has `AuthChoiceScreen` beneath it in both call shapes, so its
+`AppBar`'s automatic back button always has somewhere real to go.

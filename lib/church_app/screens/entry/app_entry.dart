@@ -11,7 +11,6 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/admin_mode_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_choice_screen.dart';
-import 'package:flutter_application/church_app/screens/entry/complete_profile_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/email_otp_verification_screen.dart';
 import 'package:flutter_application/church_app/screens/church_tab_screen.dart';
 import 'package:flutter_application/church_app/screens/onboarding_screen.dart';
@@ -27,9 +26,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// user-church-decoupling-migration.md §5.4:
 ///   onboarding incomplete           -> onboarding
 ///   signed out                      -> sign in / sign up choice
-///   signed in, no identity doc      -> complete profile (resume only —
-///                                      normal sign-up writes it before
-///                                      AppEntry ever sees the new user)
+///   signed in, no identity doc      -> AuthChoiceScreen, which pushes
+///                                      CompleteProfileScreen's resume mode
+///                                      on top of itself (normal sign-up
+///                                      writes the doc before AppEntry ever
+///                                      sees the new user, so this is the
+///                                      abandoned-sign-up case only)
 ///   signed in, email not verified   -> email OTP verification
 ///   super admin                     -> mode chooser
 ///   signed in, no approved anywhere -> SelectChurchScreen
@@ -210,7 +212,11 @@ class _AppEntryState extends ConsumerState<AppEntry> {
       return const AuthChoiceScreen();
     }
     if (identity == null) {
-      return const CompleteProfileScreen();
+      // AuthChoiceScreen itself detects this exact state (signed in, no
+      // identity doc — an abandoned sign-up) and pushes CompleteProfileScreen
+      // on top of itself, so there's always a real screen underneath and a
+      // working back button — see AuthChoiceScreen's own resume handling.
+      return const AuthChoiceScreen();
     }
     if (!identity.emailVerified) {
       return const EmailOtpVerificationScreen();

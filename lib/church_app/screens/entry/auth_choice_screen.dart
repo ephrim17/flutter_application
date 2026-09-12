@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/auth_navigation.dart';
+import 'package:flutter_application/church_app/screens/entry/complete_profile_screen.dart';
+import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// First screen after onboarding for anyone signed out — an explicit
 /// Sign In / Sign Up choice, replacing the old email-first screen that
@@ -11,11 +15,51 @@ import 'package:flutter_application/church_app/widgets/solid_button_widget.dart'
 /// then `CreateAccountScreen` (email/password), then email-OTP verification.
 /// "Sign In" goes straight to `SignInScreen` since the intent is already
 /// known here.
-class AuthChoiceScreen extends StatelessWidget {
+///
+/// Also the landing point for an *abandoned* sign-up (a Firebase account
+/// exists but its `users/{uid}` doc doesn't — `AppEntry` routes here for
+/// that state too): [_AuthChoiceScreenState] detects it and pushes
+/// `CompleteProfileScreen`'s resume mode on top of itself, so that screen
+/// always has a real route underneath it and a working back button, instead
+/// of ever being shown as a dead-end root screen.
+class AuthChoiceScreen extends ConsumerStatefulWidget {
   const AuthChoiceScreen({super.key});
 
   @override
+  ConsumerState<AuthChoiceScreen> createState() => _AuthChoiceScreenState();
+}
+
+class _AuthChoiceScreenState extends ConsumerState<AuthChoiceScreen> {
+  bool _resumePushed = false;
+
+  void _maybeResumeProfile(bool shouldResume) {
+    if (!shouldResume || _resumePushed) return;
+    _resumePushed = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CompleteProfileScreen()),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final firebaseUser = ref.watch(authStateProvider).value;
+    final identityAsync = ref.watch(userIdentityProvider);
+    final needsProfileResume = firebaseUser != null &&
+        identityAsync.hasValue &&
+        identityAsync.value == null;
+    _maybeResumeProfile(needsProfileResume);
+
+    // Only hide the choice UI for the brief moment before the resume push
+    // above actually happens — once it has (or the person backed out of it),
+    // this screen must show its normal Register/Login UI, not a stuck
+    // spinner, since needsProfileResume otherwise stays true forever.
+    if (needsProfileResume && !_resumePushed) {
+      return const Scaffold(body: Center(child: AppLoadingIndicator()));
+    }
+
     final theme = Theme.of(context);
 
     return Scaffold(
