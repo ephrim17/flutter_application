@@ -163,7 +163,7 @@ void showLanguageShareOptions(
               onTap: () {
                 _shareVerse(
                   text: verse['tamil'],
-                  reference: verse['reference'],
+                  reference: verse['referenceTamil'] ?? verse['reference'],
                   context: context,
                 );
               },

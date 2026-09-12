@@ -36,16 +36,31 @@ documents.
     Every manual card always shows a branding pill (church logo, title,
     contact number) so a downloaded/shared image is self-identifying.
   - **Generate with AI** calls `generateVerseBackgroundImage` (Cloud
-    Function) with the verse's own text/reference plus the church name and
-    today's date. Gemini renders a *complete* devotional card itself —
-    background, the verse text (in its original script), and a church
-    name/date caption at the bottom — not just a background for the app to
-    composite. The callable returns up to 3 candidates; picking one opens
-    a simple full-screen preview with a Download button directly (no
-    editor step, since the image is already final).
-  - AI generation is capped per user per day (`AI_IMAGE_DAILY_CAP`,
-    default 5 "generate" actions, each worth up to 3 images) and fails
-    gracefully with a friendly message on quota or generation errors.
+    Function) with the verse's own text/reference plus the church's full
+    name (not the short Studio "app title" abbreviation — Gemini's banner
+    has room the manual editor's on-screen branding pill doesn't), contact
+    number and today's date (human-readable, e.g. "12 September 2026").
+    Gemini renders a *complete* devotional card itself — a top banner
+    reading "Praise the Lord" with the date in the top-right corner, the
+    verse text (in its original script) with decorative typography
+    (bold/accent-colored key phrases, underline highlights), and a
+    decorative bottom banner with the church's full name in bold all-caps
+    (sized/wrapped to fit rather than truncated) plus a "For prayer" ribbon
+    and phone icon + contact number — not just a plain background for the
+    app to composite. The callable returns up to 3 candidates, shown
+    full-screen and swipeable (with a page-dot indicator) so the person can
+    compare them side by side; downloading saves whichever candidate is
+    currently on screen — no editor step, since each candidate is already
+    final.
+  - AI generation is capped per user per day in production
+    (`AI_IMAGE_DAILY_CAP`, strictly 1 "generate" action per day, worth up
+    to 3 candidates) and fails gracefully with a friendly message on quota
+    or generation errors. One hardcoded email bypasses this cap for
+    testing (temporary, see the `unlimitedTestEmail` comment in
+    `verseImage.ts`).
+  - The verse reference passed to both share paths (and shown on the Daily
+    Verse card itself) now follows the Tamil/English toggle correctly —
+    previously it stayed in English regardless of the toggle.
   - Known quality tradeoff (accepted product decision): letting Gemini
     render the verse text itself is unreliable for non-Latin scripts —
     confirmed live with Tamil content, where the verse body rendered
@@ -96,7 +111,7 @@ documents.
 | FORYOU-11 | Notification opens article | App lands on For You/article list from all lifecycle states. |
 | FORYOU-12 | Section error | Other sections remain usable when one provider fails. |
 | FORYOU-14 | Tap Daily Verse share icon | Choice sheet opens with "Generate with AI" / "Create manually"; each opens the correct flow. |
-| FORYOU-15 | Generate with AI, pick a candidate | Up to 3 complete verse-card candidates appear (verse text, church name, date baked in); picking one opens a full-screen preview with Download, no editor step. |
-| FORYOU-16 | Exhaust the daily AI quota, then generate again | Friendly "reached today's limit" message appears; no raw error, no partial state. |
+| FORYOU-15 | Generate with AI | Up to 3 complete verse-card candidates (verse text, decorative typography, church banner with name/"For prayer"/contact number/date all baked in) open full-screen and swipeable, with a page-dot indicator; downloading saves whichever candidate is currently visible, no editor step. |
+| FORYOU-16 | Exhaust the daily AI quota (1/day in production), then generate again | Friendly "reached today's limit" message appears; no raw error, no partial state. |
 | FORYOU-17 | Create manually, any background | Branding pill (logo, church title, contact number) renders without overflow and survives download/share. |
 

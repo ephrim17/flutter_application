@@ -53,6 +53,9 @@ class DailyVerseCard extends ConsumerWidget {
       data: (verse) {
         final verseText =
             language == BibleLanguage.tamil ? verse['tamil'] : verse['english'];
+        final reference = language == BibleLanguage.tamil
+            ? verse['referenceTamil']
+            : verse['reference'];
 
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: forYouPrimaryCardHeight),
@@ -79,7 +82,7 @@ class DailyVerseCard extends ConsumerWidget {
                         await showVerseShareChoiceSheet(
                           context,
                           text: verseText!,
-                          reference: verse['reference']!,
+                          reference: reference!,
                         );
                       },
                     ),
@@ -98,7 +101,7 @@ class DailyVerseCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 ScriptureReferencePill(
-                  reference: verse['reference']!,
+                  reference: reference!,
                 ),
               ],
             ),

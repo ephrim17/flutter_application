@@ -91,7 +91,17 @@ class BibleRepository {
       'tamil': text['tamil']?.toString() ?? '',
       'english': text['english']?.toString() ?? '',
       'reference': '$book $chapter:$verse',
+      'referenceTamil': '${_tamilBookName(book)} $chapter:$verse',
     };
+  }
+
+  /// Looks up the Tamil display name for an English book key (e.g.
+  /// `Psalms` -> `சங்கீதம்`) — falls back to the key itself if not found.
+  String _tamilBookName(String book) {
+    for (final entry in catalog.bibleBooks) {
+      if (entry.key == book) return entry.name;
+    }
+    return book;
   }
 
   Future<Map<String, String>> getVerseRange({
@@ -136,6 +146,7 @@ class BibleRepository {
       'tamil': tamil.join('\n\n'),
       'english': english.join('\n\n'),
       'reference': '$book $chapter:$range',
+      'referenceTamil': '${_tamilBookName(book)} $chapter:$range',
     };
   }
 }
