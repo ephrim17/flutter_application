@@ -15,6 +15,13 @@ links).
 
 ## Behaviour
 
+- The shell's app bar shows the app's own "Church Tree" brand (logo + name),
+  not the selected church's identity — the church switcher (that church's
+  logo + a chevron) lives in a right-side action button instead, opening the
+  same `ChurchQuickSwitcherSheet`.
+- The bottom tab bar's individual tabs float directly on the page background
+  — there is no surrounding solid card/pill behind them, only the selected
+  tab's own highlight.
 - Bottom tabs preserve the selected index while the shell is alive.
 - Dashboard exists only when the current user is a church admin and the feature
   is enabled.
@@ -70,6 +77,7 @@ links).
 | ID | Scenario | Expected result |
 |---|---|---|
 | NAV-01 | Tap each bottom tab repeatedly | Correct screen opens once; no state/index crash. |
+| NAV-01a | Open the shell, tap the right-side church action | App bar title reads "Church Tree" with its own logo; the action button opens the church switcher sheet unchanged. |
 | NAV-02 | Member vs admin shell | Member cannot see Dashboard/Studio/Equipment; eligible admin can. |
 | NAV-03 | Disable a feature remotely | Matching tab/drawer item disappears safely. |
 | NAV-08 | Switch between Highlights/Community inside For You, then back to Home/Community tab and return | Segment selection and each segment's scroll/pagination state survive the round trip. |

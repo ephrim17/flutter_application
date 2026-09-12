@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
@@ -23,6 +24,7 @@ import 'package:flutter_application/church_app/services/notification_service.dar
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_quick_switcher_sheet.dart';
 import 'package:flutter_application/church_app/widgets/gradient_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/hideable_app_bar.dart';
@@ -221,29 +223,42 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
               appBar: AppBar(
                 centerTitle: false,
                 toolbarHeight: 40,
-                title: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: _openChurchSwitcher,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ChurchAppBarBrandTitle(
-                        text: ref.t('church_tab.app_title'),
-                        logo: selectedChurch?.logo ?? '',
-                        maxWidth: MediaQuery.of(context).size.width * 0.6,
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 20,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
-                      ),
-                    ],
-                  ),
+                title: ChurchAppBarBrandTitle(
+                  text: ref.t('guest_shell.title'),
+                  logo: AppAssets.churchTreeAppIcon,
                 ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: _openChurchSwitcher,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ChurchLogoAvatar(
+                              logo: selectedChurch?.logo ?? '',
+                              size: 28,
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 20,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
