@@ -271,6 +271,18 @@ service cloud.firestore {
            // so a direct API call can't bypass it (see FeedPost.editWindow).
            request.time < resource.data.createdAt + duration.value(30, 'm'));
         allow delete: if isChurchStaff(churchId) || resource.data.userId == request.auth.uid;
+
+        // Self-only reaction doc, one per user per post (doc id == uid).
+        // reactionSummary/reactionTotal on the post itself are written only
+        // by onChurchFeedReactionWrite (Admin SDK, bypasses these rules) —
+        // the post's own update rule above doesn't allow arbitrary members
+        // to write those fields directly.
+        match /reactions/{uid} {
+          allow read: if isApprovedMember(churchId) || isChurchStaff(churchId);
+          allow create, update: if request.auth.uid == uid &&
+            request.resource.data.uid == uid;
+          allow delete: if request.auth.uid == uid;
+        }
       }
 
       // Prayer requests: authors see their own + church-visible ones;
@@ -403,6 +415,15 @@ service cloud.firestore {
         isSuperAdmin() ||
         resource.data.userId == request.auth.uid ||
         (resource.data.churchId is string && isChurchAdmin(resource.data.churchId));
+
+      // Self-only reaction doc — see the church-feed match above for the
+      // same shape and why the aggregate fields aren't writable here.
+      match /reactions/{uid} {
+        allow read: if hasVerifiedEmail();
+        allow create, update: if request.auth.uid == uid &&
+          request.resource.data.uid == uid;
+        allow delete: if request.auth.uid == uid;
+      }
     }
 
     match /globalPrayerRequests/{prayerId} {

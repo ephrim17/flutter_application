@@ -415,6 +415,12 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.feed_card.unable_to_open_youtube_link": "Unable to open YouTube link",
   "ui.feed_card.show_more": "…more",
   "ui.feed_card.show_less": "Show less",
+  "ui.feed_card.react_hint": "Long-press to react",
+  "ui.feed_card.reaction_failed": "Couldn't save your reaction. Please try again.",
+  "ui.feed_reactions.title": "{count} Reactions",
+  "ui.feed_reactions.all": "All",
+  "ui.feed_reactions.load_failed": "Couldn't load reactions.",
+  "ui.feed_reactions.unknown_name": "Someone",
   "ui.disabled_feature_tips.enable_this_feature_from_studio_when_it_is_ready":
       "Enable this feature from Studio when it is ready.",
   "ui.bible_verse_picker.choose_a_book_chapter_and_verse_from_the_bible_list":

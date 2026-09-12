@@ -9,13 +9,15 @@ import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/app_image_gallery_viewer.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
+import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
+import 'package:flutter_application/church_app/providers/feed_reaction_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
+import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +25,10 @@ import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
 import 'package:flutter_application/church_app/models/feed_model.dart';
+import 'package:flutter_application/church_app/models/feed_reaction_model.dart';
+import 'package:flutter_application/church_app/services/feed_reaction_repository.dart';
 import 'package:flutter_application/church_app/widgets/linkified_text_widget.dart';
+import 'package:flutter_application/church_app/widgets/modals/feed_reactions_sheet.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
@@ -91,10 +96,23 @@ class _FeedCardState extends ConsumerState<FeedCard> {
         (isGlobal ? isPostChurchAdmin && isPromotedGlobal : isAdmin);
     final canDelete = !isPromotedGlobal &&
         (isOwner || (isGlobal ? isPostChurchAdmin : isAdmin));
+    // Reaction breakdown ("who reacted") is only for the post's own author
+    // and admins — everyone else can only see/set their own reaction via
+    // the button itself (its emoji, once set), never the full list.
+    final canViewReactors = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
     final canEdit =
         isOwner && !isPromotedGlobal && post.canEditAt(DateTime.now());
     final theme = Theme.of(context);
     final hasImage = post.imageUrls.isNotEmpty;
+    final reactionChurchId = isGlobal
+        ? null
+        : (post.churchId?.trim().isNotEmpty ?? false)
+            ? post.churchId!.trim()
+            : ref.watch(currentChurchIdProvider).value;
+    final reactionTarget =
+        FeedReactionTarget(churchId: reactionChurchId, postId: post.id);
+    final myReactionEmoji =
+        ref.watch(myFeedReactionProvider(reactionTarget)).value?.emoji;
     final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
       '${post.title}\n${post.description}',
     );
@@ -162,105 +180,134 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     final card = Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: carouselBoxDecoration(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
-            child: Row(
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => _showPostAuthorDetails(context, ref),
-                  child: AppProfileAvatar(
-                    name: post.userName,
-                    imageUrl: post.userPhoto,
-                    radius: 21,
-                    backgroundColor:
-                        theme.colorScheme.primary.withValues(alpha: 0.10),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.userName,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
+                child: Row(
+                  children: [
+                    InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () => _showPostAuthorDetails(context, ref),
+                      child: AppProfileAvatar(
+                        name: post.userName,
+                        imageUrl: post.userPhoto,
+                        radius: 21,
+                        backgroundColor:
+                            theme.colorScheme.primary.withValues(alpha: 0.10),
                       ),
-                      const SizedBox(height: 2),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            humanFormatDate(post.createdAt),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
+                            post.userName,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          if (!isGlobal && post.isGlobal)
-                            _GlobalFeedBadge(
-                              label: ref.t('feed.global_badge'),
-                            ),
+                          const SizedBox(height: 2),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                humanFormatDate(post.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              if (!isGlobal && post.isGlobal)
+                                _GlobalFeedBadge(
+                                  label: ref.t('feed.global_badge'),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    if (_isBusy)
+                      const Padding(
+                        padding: EdgeInsets.all(9),
+                        child: SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (actions.isNotEmpty)
+                      AppPopupMenu<_FeedPostAction>(
+                        onSelected: handlePostAction,
+                        actions: actions,
+                      ),
+                  ],
                 ),
-                if (_isBusy)
-                  const Padding(
-                    padding: EdgeInsets.all(9),
-                    child: SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                else if (actions.isNotEmpty)
-                  AppPopupMenu<_FeedPostAction>(
-                    onSelected: handlePostAction,
-                    actions: actions,
-                  ),
-              ],
-            ),
+              ),
+              if (hasImage)
+                _FeedImageGallery(
+                  imageUrls: post.imageUrls,
+                  aspectRatio: post.clampedImageAspectRatio ?? 1,
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    if (post.title.trim().isNotEmpty)
+                      LinkifiedText(
+                        text: post.title,
+                        onHashtagTap: onHashtagTap,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                    if (post.description.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _ExpandableDescription(
+                        text: post.description,
+                        onHashtagTap: onHashtagTap,
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+                      ),
+                    ],
+                    if (youtubePreview != null) ...[
+                      const SizedBox(height: 12),
+                      _YoutubePreviewCard(preview: youtubePreview),
+                    ],
+                    // Clearance so the corner reaction button never overlaps the
+                    // last line of text/preview above it.
+                    const SizedBox(height: 34),
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (hasImage)
-            _FeedImageGallery(
-              imageUrls: post.imageUrls,
-              aspectRatio: post.clampedImageAspectRatio ?? 1,
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                if (post.title.trim().isNotEmpty)
-                  LinkifiedText(
-                    text: post.title,
-                    onHashtagTap: onHashtagTap,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                if (post.description.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  _ExpandableDescription(
-                    text: post.description,
-                    onHashtagTap: onHashtagTap,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
-                  ),
-                ],
-                if (youtubePreview != null) ...[
-                  const SizedBox(height: 12),
-                  _YoutubePreviewCard(preview: youtubePreview),
-                ],
-              ],
+          Positioned(
+            right: 14,
+            bottom: 10,
+            child: _FeedReactionButton(
+              emoji: myReactionEmoji,
+              onTapUp: (position) => _handleReactionButtonTap(
+                position,
+                ref,
+                reactionTarget,
+                myReactionEmoji,
+              ),
+              onLongPress: canViewReactors
+                  ? () => showFeedReactionsSheet(
+                        context,
+                        churchId: reactionTarget.churchId,
+                        postId: reactionTarget.postId,
+                      )
+                  : null,
             ),
           ),
         ],
@@ -396,8 +443,8 @@ class _FeedCardState extends ConsumerState<FeedCard> {
                                       overflow: TextOverflow.ellipsis,
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.92),
+                                        color: Colors.white
+                                            .withValues(alpha: 0.92),
                                         height: 1.3,
                                       ),
                                     ),
@@ -470,7 +517,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     await _refreshFeed(ref);
     onPostChanged?.call();
   }
-
 
   Future<void> _setPostGlobal(
     BuildContext context,
@@ -729,6 +775,111 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     if (!doc.exists) return null;
     return ChurchMembership.fromFirestore(doc.id, churchId, doc.data()!);
   }
+
+  /// The corner reaction button's tap: with no reaction yet, opens the
+  /// picker at the button's own position; already reacted, removes it
+  /// directly (no picker) — tapping the button again is the "un-react"
+  /// gesture, matching a plain toggle rather than reopening the same choice.
+  Future<void> _handleReactionButtonTap(
+    Offset globalPosition,
+    WidgetRef ref,
+    FeedReactionTarget target,
+    String? currentEmoji,
+  ) async {
+    if (currentEmoji != null) {
+      await _applyReaction(ref, target, currentEmoji, currentEmoji);
+      return;
+    }
+    await _showReactionPicker(context, ref, globalPosition, target, null);
+  }
+
+  /// A row of the fixed emoji choices anchored at the given point (the
+  /// corner reaction button's own tap position) — tapping one sets/
+  /// overwrites the reactor's own reaction.
+  Future<void> _showReactionPicker(
+    BuildContext context,
+    WidgetRef ref,
+    Offset globalPosition,
+    FeedReactionTarget target,
+    String? currentEmoji,
+  ) async {
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final theme = Theme.of(context);
+    final selected = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        globalPosition & const Size(1, 1),
+        Offset.zero & overlay.size,
+      ),
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+      ),
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final emoji in feedReactionEmojiChoices)
+                InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () => Navigator.of(context).pop(emoji),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: const EdgeInsets.all(6),
+                    decoration: emoji == currentEmoji
+                        ? BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          )
+                        : null,
+                    child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (selected == null || !mounted) return;
+    await _applyReaction(ref, target, selected, currentEmoji);
+  }
+
+  Future<void> _applyReaction(
+    WidgetRef ref,
+    FeedReactionTarget target,
+    String selectedEmoji,
+    String? currentEmoji,
+  ) async {
+    final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (uid == null) return;
+    final repository = FeedReactionRepository(
+      firestore: ref.read(firestoreProvider),
+      churchId: target.churchId,
+      postId: target.postId,
+    );
+    try {
+      if (selectedEmoji == currentEmoji) {
+        await repository.removeReaction(uid);
+      } else {
+        final identity = ref.read(userIdentityProvider).value;
+        await repository.setReaction(
+          uid: uid,
+          emoji: selectedEmoji,
+          name: identity?.name ?? '',
+          phone: identity?.phone ?? '',
+          photoUrl: identity?.profilePhotoUrl,
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.t('ui.feed_card.reaction_failed'))),
+      );
+    }
+  }
 }
 
 /// LinkedIn-style truncation: shows the first [previewLength] characters
@@ -747,8 +898,7 @@ class _ExpandableDescription extends StatefulWidget {
   final int previewLength;
 
   @override
-  State<_ExpandableDescription> createState() =>
-      _ExpandableDescriptionState();
+  State<_ExpandableDescription> createState() => _ExpandableDescriptionState();
 }
 
 class _ExpandableDescriptionState extends State<_ExpandableDescription> {
@@ -970,10 +1120,9 @@ class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
             // no fade-in and no shimmer sweep — and caps decode size to the
             // device's own pixel width so swiping doesn't stall on
             // full-resolution camera photos.
-            final devicePixelWidth =
-                (MediaQuery.of(context).size.width *
-                        MediaQuery.of(context).devicePixelRatio)
-                    .round();
+            final devicePixelWidth = (MediaQuery.of(context).size.width *
+                    MediaQuery.of(context).devicePixelRatio)
+                .round();
             return GestureDetector(
               onTap: () => showAppImageGallery(
                 context,
@@ -1162,6 +1311,56 @@ class _GlobalFeedBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The corner reaction button — a neutral "react" icon with no reaction
+/// yet, or the reactor's own chosen emoji once they've reacted. Tapping
+/// toggles (open the picker / remove); long-pressing shows who reacted,
+/// gated by the caller to the post's author and admins only ([onLongPress]
+/// is null for anyone else, so long-press is silently a no-op for them).
+class _FeedReactionButton extends StatelessWidget {
+  const _FeedReactionButton({
+    required this.emoji,
+    required this.onTapUp,
+    this.onLongPress,
+  });
+
+  final String? emoji;
+  final ValueChanged<Offset> onTapUp;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTapUp: (details) => onTapUp(details.globalPosition),
+      onLongPress: onLongPress,
+      child: Container(
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: emoji == null
+            ? Icon(
+                Icons.add_reaction_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              )
+            : Text(emoji!, style: const TextStyle(fontSize: 18)),
       ),
     );
   }

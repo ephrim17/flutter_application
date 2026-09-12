@@ -398,6 +398,24 @@ class FirestorePaths {
     return firestore.collection(globalFeeds);
   }
 
+  /// `.../reactions` under one feed post — church-scoped when [churchId] is
+  /// given, `globalFeeds/{postId}/reactions` otherwise.
+  static CollectionReference<Map<String, dynamic>> feedReactionsCollection(
+    FirebaseFirestore firestore, {
+    required String? churchId,
+    required String postId,
+  }) {
+    final DocumentReference<Map<String, dynamic>> postRef =
+        (churchId == null || churchId.isEmpty)
+            ? firestore.collection(globalFeeds).doc(postId)
+            : firestore
+                .collection('churches')
+                .doc(churchId)
+                .collection('feeds')
+                .doc(postId);
+    return postRef.collection('reactions');
+  }
+
   static CollectionReference<Map<String, dynamic>> globalPrayerCollection(
     FirebaseFirestore firestore,
   ) {

@@ -36,6 +36,14 @@ class FeedPost {
   final int likeCount;
   final int commentCount;
 
+  /// Reaction counts by emoji (e.g. {'🙏': 9, '❤️': 6}) and their total —
+  /// written only by `onChurchFeedReactionWrite`/`onGlobalFeedReactionWrite`
+  /// (Cloud Functions, Admin SDK) from the post's `reactions` subcollection.
+  /// The client never writes these fields directly; see
+  /// `FeedReactionRepository` for the per-user reaction doc it does write.
+  final Map<String, int> reactionSummary;
+  final int reactionTotal;
+
   FeedPost({
     required this.id,
     required this.userId,
@@ -65,6 +73,8 @@ class FeedPost {
     required this.createdAt,
     required this.likeCount,
     required this.commentCount,
+    this.reactionSummary = const {},
+    this.reactionTotal = 0,
   });
 
   factory FeedPost.fromJson(String id, Map<String, dynamic> json) {
@@ -98,7 +108,20 @@ class FeedPost {
           DateTime.fromMillisecondsSinceEpoch(0),
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
+      reactionSummary: _parseReactionSummary(json['reactionSummary']),
+      reactionTotal: (json['reactionTotal'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  static Map<String, int> _parseReactionSummary(dynamic value) {
+    if (value is! Map) return const {};
+    final result = <String, int>{};
+    value.forEach((key, rawCount) {
+      final emoji = key.toString();
+      final parsed = (rawCount as num?)?.toInt() ?? 0;
+      if (emoji.isNotEmpty && parsed > 0) result[emoji] = parsed;
+    });
+    return result;
   }
 
   static DateTime? _parseDate(dynamic value) {
@@ -190,6 +213,8 @@ class FeedPost {
       createdAt: createdAt,
       likeCount: likeCount,
       commentCount: commentCount,
+      reactionSummary: reactionSummary,
+      reactionTotal: reactionTotal,
     );
   }
 }
