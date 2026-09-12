@@ -790,52 +790,10 @@ class _DeleteAccountSection extends ConsumerWidget {
   const _DeleteAccountSection();
 
   Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
     final password = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(ref.t('settings.delete_account_title')),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(ref.t('settings.delete_account_message')),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: ref.t('settings.delete_account_password_label'),
-                ),
-                validator: (value) => (value == null || value.isEmpty)
-                    ? ref.t('settings.delete_account_password_required')
-                    : null,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(ref.t('settings.cancel')),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () {
-              if (formKey.currentState?.validate() != true) return;
-              Navigator.pop(dialogContext, passwordController.text);
-            },
-            child: Text(ref.t('settings.delete_account_confirm')),
-          ),
-        ],
-      ),
+      builder: (_) => const _DeleteAccountPasswordDialog(),
     );
-    passwordController.dispose();
     if (password == null || !context.mounted) return;
 
     showDialog<void>(
@@ -871,6 +829,75 @@ class _DeleteAccountSection extends ConsumerWidget {
       title: ref.t('settings.delete_account_title'),
       subtitle: ref.t('settings.delete_account_subtitle'),
       onTap: () => _confirmAndDelete(context, ref),
+    );
+  }
+}
+
+/// Its own StatefulWidget so the password controller is disposed when this
+/// dialog's Element is actually torn down (after the dialog's exit
+/// transition finishes) — disposing it right after `showDialog`'s Future
+/// resolves (i.e. right as `Navigator.pop` fires, but before the fade-out
+/// animation that follows it finishes) used the controller after dispose,
+/// since the TextFormField is still on screen and rebuilding mid-transition.
+class _DeleteAccountPasswordDialog extends ConsumerStatefulWidget {
+  const _DeleteAccountPasswordDialog();
+
+  @override
+  ConsumerState<_DeleteAccountPasswordDialog> createState() =>
+      _DeleteAccountPasswordDialogState();
+}
+
+class _DeleteAccountPasswordDialogState
+    extends ConsumerState<_DeleteAccountPasswordDialog> {
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(ref.t('settings.delete_account_title')),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(ref.t('settings.delete_account_message')),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: ref.t('settings.delete_account_password_label'),
+              ),
+              validator: (value) => (value == null || value.isEmpty)
+                  ? ref.t('settings.delete_account_password_required')
+                  : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(ref.t('settings.cancel')),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          onPressed: () {
+            if (_formKey.currentState?.validate() != true) return;
+            Navigator.pop(context, _passwordController.text);
+          },
+          child: Text(ref.t('settings.delete_account_confirm')),
+        ),
+      ],
     );
   }
 }

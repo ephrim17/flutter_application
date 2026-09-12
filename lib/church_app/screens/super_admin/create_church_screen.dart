@@ -317,52 +317,10 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
     final church = widget.church;
     if (church == null) return;
 
-    final confirmController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.t('super_admin.delete_church_title')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.t(
-                'super_admin.delete_church_message',
-                parameters: {'church': church.name},
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmController,
-              decoration: InputDecoration(
-                labelText: context.t(
-                  'super_admin.delete_church_type_to_confirm',
-                  parameters: {'church': church.name},
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(context.t('settings.cancel')),
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: confirmController,
-            builder: (_, value, __) => TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              onPressed: value.text.trim() == church.name.trim()
-                  ? () => Navigator.pop(dialogContext, true)
-                  : null,
-              child: Text(context.t('super_admin.delete_church_action')),
-            ),
-          ),
-        ],
-      ),
+      builder: (_) => _DeleteChurchConfirmDialog(churchName: church.name),
     );
-    confirmController.dispose();
     if (confirmed != true || !context.mounted) return;
 
     setState(() => _isSubmitting = true);
@@ -1151,6 +1109,77 @@ class _CreateChurchScreenState extends ConsumerState<CreateChurchScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Its own StatefulWidget so the confirm-text controller is disposed when
+/// this dialog's Element is actually torn down (after the dialog's exit
+/// transition finishes), not right as `showDialog`'s Future resolves —
+/// see `_DeleteAccountPasswordDialog` in settings_screen.dart for the same
+/// fix and the crash it avoids.
+class _DeleteChurchConfirmDialog extends StatefulWidget {
+  const _DeleteChurchConfirmDialog({required this.churchName});
+
+  final String churchName;
+
+  @override
+  State<_DeleteChurchConfirmDialog> createState() =>
+      _DeleteChurchConfirmDialogState();
+}
+
+class _DeleteChurchConfirmDialogState
+    extends State<_DeleteChurchConfirmDialog> {
+  final _confirmController = TextEditingController();
+
+  @override
+  void dispose() {
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.t('super_admin.delete_church_title')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.t(
+              'super_admin.delete_church_message',
+              parameters: {'church': widget.churchName},
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _confirmController,
+            decoration: InputDecoration(
+              labelText: context.t(
+                'super_admin.delete_church_type_to_confirm',
+                parameters: {'church': widget.churchName},
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(context.t('settings.cancel')),
+        ),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _confirmController,
+          builder: (_, value, __) => TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: value.text.trim() == widget.churchName.trim()
+                ? () => Navigator.pop(context, true)
+                : null,
+            child: Text(context.t('super_admin.delete_church_action')),
+          ),
+        ),
+      ],
     );
   }
 }
