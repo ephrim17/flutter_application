@@ -395,7 +395,6 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.verse_share.create_manually_subtitle":
       "Pick a color, photo or template yourself.",
   "ui.verse_share.generating_image": "Creating your images...",
-  "ui.verse_share.pick_a_background": "Pick one to use",
   "ui.verse_share.image_saved": "Image saved.",
   "ui.verse_share.download_failed": "Unable to save image. Please try again.",
   "ui.verse_share.ai_quota_exceeded":
@@ -428,6 +427,15 @@ const Map<String, String> defaultChurchTextContents = {
   'ui.bible_verse_picker.load_failed':
       'Unable to load this Bible book. Please try again.',
   "ui.bible_reader_appbar.aa": "aA",
+  "ui.bible_reader_appbar.ai_summary": "Summarize chapter with AI",
+  "ui.bible_reader_appbar.summarize_with_ai": "Summarize with AI",
+  "ui.bible_reader_appbar.add_highlight": "Highlight this verse",
+  "ui.bible_reader_appbar.remove_highlight": "Remove highlight",
+  "ui.bible_reader_appbar.summarizing": "Summarizing...",
+  "ui.bible_reader_appbar.summary_quota_exceeded":
+      "You've reached today's summary limit. Try again tomorrow.",
+  "ui.bible_reader_appbar.summary_failed":
+      "Couldn't generate a summary right now. Please try again.",
   "ui.app_splash.church_tree": "Church Tree",
   "ui.super_admin_home.no_feedback_has_been_submitted_yet":
       "No feedback has been submitted yet.",

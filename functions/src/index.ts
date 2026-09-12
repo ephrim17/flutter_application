@@ -30,6 +30,7 @@ export {setFeedPostGlobal} from "./feed_global";
 export {fanOutIdentityChanges} from "./identityFanout";
 export {deleteAccount, deleteChurch, leaveChurch} from "./lifecycle";
 export {generateVerseBackgroundImage} from "./verseImage";
+export {summarizeBibleContent} from "./bibleSummary";
 import {firestoreDatabaseIdParam, firestoreDb} from "./firestoreDb";
 
 admin.initializeApp();

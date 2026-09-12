@@ -20,6 +20,18 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
 - Verse selection components validate book, chapter, starting verse and ending
   verse against available chapter data.
 - Reader font-size/preferences persist locally where implemented.
+- Chapter reader app bar has an "AI Summary" action that summarizes the whole
+  currently-visible chapter. Long-pressing a verse opens a popup with two
+  actions — Highlight/Un-highlight (replaces the old plain-tap toggle) and
+  Summarize with AI (verse-scoped). Both summary paths call Gemini through a
+  fixed, tutor-style prompt (never a free-form user prompt) and return a
+  short bilingual (Tamil + English) bulleted explanation, shown in a bottom
+  sheet.
+- AI summaries are rate-limited server-side, checked before calling Gemini:
+  1 chapter summary and 5 verse summaries per user per UTC day. A hitting the
+  cap shows a friendly "come back tomorrow" message instead of a raw error.
+  One hardcoded email bypasses both caps for testing (temporary, see the
+  `unlimitedTestEmail` comment in `bibleSummary.ts`).
 
 ## Technical map
 
@@ -30,6 +42,12 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
   adapters.
 - Providers: `bible_versions_provider.dart`, `favorites_provider.dart`.
 - Shared picker: `widgets/bible_verse_picker_sheet.dart`.
+- AI summary: `functions/src/bibleSummary.ts` (callable
+  `summarizeBibleContent`, region `us-central1`), called from
+  `bible_book_screen.dart`. Quota state lives in
+  `users/{uid}/bibleSummaryUsage/{yyyy-mm-dd}` (`chapterCount`/`verseCount`
+  fields, each against its own cap), read-only for the owner client-side —
+  only the callable's Admin SDK writes it.
 
 ## Test flows
 
@@ -45,4 +63,8 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
 | BIBLE-08 | Change font size/theme | Reader remains legible and preference persists. |
 | BIBLE-09 | Web vs mobile storage | Each platform uses supported adapter without filesystem crash. |
 | BIBLE-10 | Corrupt/missing local file | Actionable retry/redownload state appears. |
+| BIBLE-11 | Tap chapter AI-summary icon | Loading dialog then a bulleted Tamil+English summary sheet, no overflow. |
+| BIBLE-12 | Long-press a verse, tap Summarize with AI | Same bilingual bulleted summary, scoped to that one verse. |
+| BIBLE-13 | Long-press a verse, tap Highlight/Un-highlight | Highlight toggles and the popup label/icon flips accordingly. |
+| BIBLE-14 | Exceed the daily chapter or verse summary cap | Friendly limit-reached message; no Gemini call is made. |
 
