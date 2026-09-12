@@ -9,7 +9,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FavoritesScreen extends ConsumerWidget {
-  const FavoritesScreen({super.key});
+  const FavoritesScreen({super.key, this.isGuestShare = false});
+
+  /// True when opened from the guest shell's drawer (no church in context)
+  /// — shares from here never include church branding, regardless of
+  /// whatever the last-selected-church state happens to still hold.
+  final bool isGuestShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,6 +115,7 @@ class FavoritesScreen extends ConsumerWidget {
                               showLanguageShareOptions(
                                 context,
                                 verse: verse,
+                                isGuestShare: isGuestShare,
                               );
                             },
                             child: Icon(Icons.share,
@@ -133,6 +139,7 @@ class FavoritesScreen extends ConsumerWidget {
 void showLanguageShareOptions(
   BuildContext context, {
   required Map<String, dynamic> verse,
+  bool isGuestShare = false,
 }) {
   showAppModalBottomSheet(
     context: context,
@@ -152,6 +159,7 @@ void showLanguageShareOptions(
                   text: verse['english'],
                   reference: verse['reference'],
                   context: context,
+                  isGuestShare: isGuestShare,
                 );
               },
             ),
@@ -165,6 +173,7 @@ void showLanguageShareOptions(
                   text: verse['tamil'],
                   reference: verse['referenceTamil'] ?? verse['reference'],
                   context: context,
+                  isGuestShare: isGuestShare,
                 );
               },
             ),
@@ -179,10 +188,12 @@ Future<void> _shareVerse({
   required String text,
   required String reference,
   required BuildContext context,
+  bool isGuestShare = false,
 }) async {
   showVerseShareChoiceSheet(
     context,
     text: text,
     reference: reference,
+    isGuestShare: isGuestShare,
   );
 }

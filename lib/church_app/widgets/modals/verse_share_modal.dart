@@ -49,6 +49,7 @@ Future<void> showVerseShareModal(
   BuildContext context, {
   required String text,
   required String reference,
+  bool isGuestShare = false,
 }) {
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -56,6 +57,7 @@ Future<void> showVerseShareModal(
       builder: (_) => VerseShareModal(
         text: text,
         reference: reference,
+        isGuestShare: isGuestShare,
       ),
     ),
   );
@@ -64,10 +66,16 @@ Future<void> showVerseShareModal(
 /// Entry point for verse sharing: asks whether to generate a background with
 /// AI or build the card manually, then routes to the matching flow. Replaces
 /// direct calls to [showVerseShareModal] at every share-icon call site.
+///
+/// [isGuestShare] is true when sharing from the guest shell's drawer (no
+/// church in context) — both flows below suppress all church branding
+/// (name, logo, contact number) when it's set, regardless of whatever the
+/// last-selected-church state still happens to hold.
 Future<void> showVerseShareChoiceSheet(
   BuildContext context, {
   required String text,
   required String reference,
+  bool isGuestShare = false,
 }) async {
   final choice = await showAppModalBottomSheet<_VerseShareChoice>(
     context: context,
@@ -76,9 +84,19 @@ Future<void> showVerseShareChoiceSheet(
   if (choice == null || !context.mounted) return;
   switch (choice) {
     case _VerseShareChoice.ai:
-      await _startAiVerseShareFlow(context, text: text, reference: reference);
+      await _startAiVerseShareFlow(
+        context,
+        text: text,
+        reference: reference,
+        isGuestShare: isGuestShare,
+      );
     case _VerseShareChoice.manual:
-      await showVerseShareModal(context, text: text, reference: reference);
+      await showVerseShareModal(
+        context,
+        text: text,
+        reference: reference,
+        isGuestShare: isGuestShare,
+      );
   }
 }
 
@@ -188,6 +206,7 @@ Future<void> _startAiVerseShareFlow(
   BuildContext context, {
   required String text,
   required String reference,
+  bool isGuestShare = false,
 }) async {
   final images = await showDialog<List<PickedImageData>>(
     context: context,
@@ -195,6 +214,7 @@ Future<void> _startAiVerseShareFlow(
     builder: (dialogContext) => _AiVerseImageGenerationDialog(
       text: text,
       reference: reference,
+      isGuestShare: isGuestShare,
     ),
   );
   if (images == null || images.isEmpty || !context.mounted) return;
@@ -211,10 +231,12 @@ class _AiVerseImageGenerationDialog extends ConsumerStatefulWidget {
   const _AiVerseImageGenerationDialog({
     required this.text,
     required this.reference,
+    this.isGuestShare = false,
   });
 
   final String text;
   final String reference;
+  final bool isGuestShare;
 
   @override
   ConsumerState<_AiVerseImageGenerationDialog> createState() =>
@@ -235,8 +257,15 @@ class _AiVerseImageGenerationDialogState
       // abbreviation, e.g. "T.N.B.M") — Gemini renders its own decorative
       // banner, which has room for the real name, unlike the small on-screen
       // branding pill in the manual editor that still uses the abbreviation.
-      final churchName = ref.read(selectedChurchProvider)?.name.trim() ?? '';
-      final contactNumber = ref.read(selectedChurchProvider)?.contact ?? '';
+      // Both stay "" for a guest share, regardless of whatever the
+      // last-selected-church state still holds — Gemini is told explicitly
+      // not to invent church branding on its own (see verseImage.ts).
+      final churchName = widget.isGuestShare
+          ? ''
+          : ref.read(selectedChurchProvider)?.name.trim() ?? '';
+      final contactNumber = widget.isGuestShare
+          ? ''
+          : ref.read(selectedChurchProvider)?.contact ?? '';
       final dateLabel = DateFormat('d MMMM yyyy').format(DateTime.now());
       final result = await FirebaseFunctions.instanceFor(
         region: 'us-central1',
@@ -464,10 +493,16 @@ class VerseShareModal extends StatefulWidget {
     super.key,
     required this.text,
     required this.reference,
+    this.isGuestShare = false,
   });
 
   final String text;
   final String reference;
+
+  /// True when sharing from the guest shell (no church in context) —
+  /// suppresses the church branding pill regardless of whatever the
+  /// last-selected-church state still holds.
+  final bool isGuestShare;
 
   @override
   State<VerseShareModal> createState() => _VerseShareModalState();
@@ -1060,12 +1095,14 @@ class _VerseShareModalState extends State<VerseShareModal> {
                         ),
                       ),
                     ),
-                    const Positioned(
+                    Positioned(
                       bottom: 12,
                       right: 12,
                       child: Opacity(
                         opacity: 0.85,
-                        child: _VerseShareBranding(),
+                        child: _VerseShareBranding(
+                          isGuestShare: widget.isGuestShare,
+                        ),
                       ),
                     ),
                   ],
@@ -2593,15 +2630,25 @@ class _VerseShareModalState extends State<VerseShareModal> {
   String _normalizeHighlightText(String value) => value.trim().toLowerCase();
 }
 
-/// Always-shown branding row: church logo, title and contact number — part
-/// of "the complete image" every share card produces, AI-generated or
-/// manual, so a downloaded card is self-identifying without extra editor
-/// steps.
+/// Branding row: church logo, title and contact number — part of "the
+/// complete image" every share card produces, AI-generated or manual, so a
+/// downloaded card is self-identifying without extra editor steps. Hidden
+/// entirely for a guest share (explicit [isGuestShare], e.g. from
+/// Favourites in the guest shell — checked first and independent of
+/// [selectedChurchProvider], which can still hold a stale value there) or
+/// with no selected church at all — there's no church to brand it with,
+/// and showing a generic placeholder logo/pill would be a meaningless
+/// watermark.
 class _VerseShareBranding extends ConsumerWidget {
-  const _VerseShareBranding();
+  const _VerseShareBranding({this.isGuestShare = false});
+
+  final bool isGuestShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (isGuestShare || ref.watch(selectedChurchProvider) == null) {
+      return const SizedBox.shrink();
+    }
     final configAsync = ref.watch(appConfigProvider);
     final churchLogo = configAsync.maybeWhen(
       data: (config) => config.churchLogo.trim(),

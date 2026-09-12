@@ -66,14 +66,17 @@ async function reserveDailyQuota(uid: string): Promise<void> {
  * Builds a fixed, moderation-friendly prompt from the verse text/reference —
  * the client never controls the raw prompt sent to Gemini. Asks for a
  * complete, ready-to-share devotional card: a top banner ("Praise the
- * Lord" + date), the verse text itself (in its original script) rendered
- * directly into the image, and a decorative church banner (full name in
- * bold capitals, "For prayer" callout, phone number) at the bottom — not
- * just an abstract background.
+ * Lord" + date) and the verse text itself (in its original script)
+ * rendered directly into the image. When a church is known, also asks for
+ * a decorative church banner (full name in bold capitals, "For prayer"
+ * callout, phone number) at the bottom; when it isn't (e.g. a guest with
+ * no selected church), explicitly tells the model not to invent one.
  * @param {string} verseText The verse's text.
  * @param {string} reference The verse's reference (e.g. "John 3:16").
- * @param {string} churchName The church's full display name, if known.
- * @param {string} contactNumber The church's contact phone number, if known.
+ * @param {string} churchName The church's full display name, or "" if
+ * there's no church in context (e.g. a guest sharing from Favourites).
+ * @param {string} contactNumber The church's contact phone number, or ""
+ * under the same condition as churchName.
  * @param {string} dateLabel Today's date, pre-formatted human-readable
  * (e.g. "12 September 2026") by the client.
  * @return {string} The prompt to send to Gemini.
@@ -119,6 +122,19 @@ function buildPrompt(
       "ribbon or ribbon-shaped highlight reading " +
       `"For prayer"${phonePart}. Keep this banner visually secondary to ` +
       "the verse text above it — smaller scale, at the bottom edge only.";
+  } else {
+    // No church in context (e.g. a guest with no selected church sharing
+    // from Favourites) — say so explicitly rather than just omitting the
+    // banner instruction, since a devotional-card prompt with no
+    // instruction either way can still lead the model to invent a generic
+    // church/ministry name, "For prayer" ribbon or contact number on its
+    // own, having seen that pattern often in training data.
+    footerInstruction = " This card has no church affiliation — do not " +
+      "invent or render any church name, ministry name, contact number, " +
+      "phone icon, \"for prayer\" banner, or any other church-branding " +
+      "element anywhere in the image. Keep the image strictly to the top " +
+      "banner and verse text described above, for an individual's " +
+      "personal use.";
   }
   return "Design a complete, ready-to-share devotional verse card image, " +
     "in the style of a designed Christian social-media graphic." +
