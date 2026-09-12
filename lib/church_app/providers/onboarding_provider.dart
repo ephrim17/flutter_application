@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' show FirebaseException;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_application/church_app/models/app_theme_colors_model.dart'
+    show appThemeColorsDocId;
 import 'package:flutter_application/church_app/models/onboarding_model.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_provider.dart';
@@ -17,6 +19,7 @@ final onboardingPagesProvider =
     final snapshot =
         await ref.read(firestoreProvider).collection('onBoarding').get();
     final pages = snapshot.docs
+        .where((doc) => doc.id != appThemeColorsDocId)
         .map((doc) => OnboardingModel.fromFirestore(doc))
         .where((page) => page.isActive)
         .toList();

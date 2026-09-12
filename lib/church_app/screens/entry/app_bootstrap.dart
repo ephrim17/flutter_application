@@ -4,6 +4,7 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_system_ui_overlay.dart';
 import 'package:flutter_application/church_app/helpers/app_colors.dart';
 import 'package:flutter_application/church_app/models/user_identity_model.dart';
+import 'package:flutter_application/church_app/providers/app_theme_colors_provider.dart';
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/entry/app_routes.dart';
@@ -93,8 +94,15 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     );
     final themeMode = ref.watch(themeProvider);
 
-    // One brand theme everywhere — no per-church color customization, so
-    // there's nothing here to wait on before picking a theme.
+    // One brand theme everywhere — no per-church color customization — but
+    // remotely tunable without a release via `onBoarding/appTheme` in
+    // Firestore (see appThemeColorsProvider). Falls back to the hardcoded
+    // AppColors defaults while loading, on error, or for any field left
+    // unset there.
+    final themeColors = ref.watch(appThemeColorsProvider).asData?.value;
+    final primaryColor = themeColors?.primary ?? AppColors.primary;
+    final secondaryColor = themeColors?.secondary ?? AppColors.secondary;
+
     return MaterialApp(
       builder: buildAppSystemUiOverlay,
       navigatorObservers: [analyticsObserver],
@@ -105,16 +113,16 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
         brightness: Brightness.light,
         bgColor: AppColors.background,
         cardColor: AppColors.card,
-        primaryColor: AppColors.primary,
-        secondaryColor: AppColors.secondary,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
       ),
       darkTheme: _buildTheme(
         context: context,
         brightness: Brightness.dark,
         bgColor: AppColors.darkBackground,
         cardColor: AppColors.darkCard,
-        primaryColor: AppColors.primary,
-        secondaryColor: AppColors.secondary,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
       ),
       home: _minimumSplashElapsed
           ? const AppEntry()

@@ -437,6 +437,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Global first-run onboarding slides, plus the `appTheme` doc holding
+    // global (not per-church) brand color overrides for AppColors. Public,
+    // non-sensitive, read-only from the client — console/Studio managed.
+    match /onBoarding/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Super-admin roster — console/functions managed only.
     match /superAdmins/{docId} {
       allow read: if hasVerifiedEmail() && resource.data.email == myEmail();

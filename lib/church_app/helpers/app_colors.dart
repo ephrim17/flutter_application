@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// The app's single brand color pair — striking dark green (primary) and
+/// The app's default brand color pair — striking dark green (primary) and
 /// striking orange (secondary) — used for every screen, church or not.
-/// There is no per-church color customization; this is the one source of
-/// truth (previously `AppConfig.primaryColorHex`/etc, read per church from
-/// `churches/{id}/config/app.theme` and editable via Studio's Theme tab —
-/// both removed).
+/// There is no per-church color customization. These are the fallback
+/// values; `onBoarding/appTheme` in Firestore can override both globally
+/// without a release (see `appThemeColorsProvider`) — a different mechanism
+/// from the old per-church `AppConfig.primaryColorHex`/etc (read from
+/// `churches/{id}/config/app.theme`, editable via Studio's Theme tab), which
+/// stays removed.
 class AppColors {
   const AppColors._();
 
