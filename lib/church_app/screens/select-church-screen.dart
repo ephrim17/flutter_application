@@ -14,6 +14,8 @@ import 'package:flutter_application/church_app/providers/authentication/super_ad
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/screens/church_side_drawer.dart'
+    show GuestSideDrawer;
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
@@ -173,6 +175,7 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
             ),
         ],
       ),
+      drawer: const GuestSideDrawer(),
       body: screens[_selectedIndex],
       bottomNavigationBar: AppBottomTabBar(
         currentIndex: _selectedIndex,

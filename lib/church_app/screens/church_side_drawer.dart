@@ -10,7 +10,10 @@ import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/members_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
+import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/bible_library_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_viewmodel.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -206,6 +209,96 @@ class AppDrawer extends ConsumerWidget {
         builder: (context) => item.route!,
       ));
     }
+  }
+}
+
+/// A reduced drawer for the guest shell (signed in, no church selected yet)
+/// — only the features that are global/person-scoped and don't need a
+/// church: Holy Bible, Favourites and the Bible-in-a-year reading plan.
+/// Learning Modules is deliberately left out for now: completing a section
+/// or exam there still requires a churchId.
+class GuestSideDrawer extends ConsumerWidget {
+  const GuestSideDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userIdentityProvider);
+    final favoritesCount = ref.watch(favoritesProvider).asData?.value.length;
+
+    return Drawer(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          userAsync.when(
+            loading: () => const DrawerHeader(
+              child: Center(child: AppLoadingIndicator()),
+            ),
+            error: (_, __) => DrawerHeader(
+              child: Text(context.t('drawer.error_loading_user')),
+            ),
+            data: (user) {
+              final theme = Theme.of(context);
+              return DrawerHeader(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                ),
+                margin: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      user?.name ?? '',
+                      style: theme.textTheme.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      user?.email ?? '',
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.book_online_outlined),
+            title: Text(context.t('drawer.holy_bible')),
+            onTap: () => _openScreen(context, const BibleLibraryScreen()),
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite_rounded),
+            title: Text(context.t('drawer.favorites')),
+            trailing: favoritesCount == null
+                ? null
+                : AppCountBadge(
+                    count: favoritesCount,
+                    semanticLabel: context.t('drawer.favorites'),
+                  ),
+            onTap: () => _openScreen(
+              context,
+              const FavoritesScreen(isGuestShare: true),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: Text(context.t('reading_plan.title')),
+            onTap: () => _openScreen(context, const PlanListScreen()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openScreen(BuildContext context, Widget screen) {
+    if (_shouldDebounceDrawerNavigation()) return;
+    Navigator.pop(context);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 }
 
