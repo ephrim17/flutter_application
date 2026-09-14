@@ -26,6 +26,16 @@ links).
 - Dashboard exists only when the current user is a church admin and the feature
   is enabled.
 - Drawer items are filtered by role and feature flags.
+- Both `AppDrawer` (full shell) and `GuestSideDrawer` (guest shell) show the
+  signed-in user's profile avatar (photo, or initials if none) above their
+  name/email in the header — a plain `Container` sized to its content, not
+  Flutter's `DrawerHeader` (whose fixed default height was sized for the
+  old name/email/chip-only content and overflowed once the avatar was
+  added). `GuestSideDrawer`'s "Settings" item lives in the drawer itself
+  (not a separate app bar icon like the full shell never had either) — see
+  [Churches and Membership](churches-and-membership.md) for the
+  `GuestSettingsScreen` it opens and the incomplete-profile badge on its
+  icon.
 - Favorites, prayer requests, members and equipment display a compact number at
   the end of the row when the count is available.
 - Profile photo can be added, changed or removed and is reused through the
@@ -78,6 +88,8 @@ links).
 |---|---|---|
 | NAV-01 | Tap each bottom tab repeatedly | Correct screen opens once; no state/index crash. |
 | NAV-01a | Open the shell, tap the right-side church action | App bar title reads "Church Tree" with its own logo; the action button opens the church switcher sheet unchanged. |
+| NAV-01b | Open `AppDrawer` or `GuestSideDrawer` | Profile avatar (photo/initials) shows above name/email with no overflow, regardless of image load timing. |
+| NAV-01c | Open `GuestSideDrawer`, tap Settings | Opens `GuestSettingsScreen`; the guest shell's app bar itself has no settings icon. |
 | NAV-02 | Member vs admin shell | Member cannot see Dashboard/Studio/Equipment; eligible admin can. |
 | NAV-03 | Disable a feature remotely | Matching tab/drawer item disappears safely. |
 | NAV-08 | Switch between Highlights/Community inside For You, then back to Home/Community tab and return | Segment selection and each segment's scroll/pagination state survive the round trip. |

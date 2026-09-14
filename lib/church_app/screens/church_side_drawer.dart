@@ -14,7 +14,10 @@ import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan
 import 'package:flutter_application/church_app/screens/side_drawer/bible_library_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_viewmodel.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/favorite_verses_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
+    show GuestSettingsScreen;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
+import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
 import 'package:flutter_application/church_app/widgets/member_since_chip_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -149,31 +152,45 @@ class AppDrawer extends ConsumerWidget {
             ),
             data: (user) {
               final theme = Theme.of(context);
-              return DrawerHeader(
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                ),
-                margin: EdgeInsets.zero,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      user?.name ?? '',
-                      style: theme.textTheme.titleLarge,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              // A plain Container (not DrawerHeader) — DrawerHeader enforces
+              // a fixed height sized for the old name/email/chip-only
+              // content and clips/overflows once the avatar adds to it;
+              // this sizes to whatever the content actually needs.
+              return Container(
+                width: double.infinity,
+                color: theme.scaffoldBackgroundColor,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppProfileAvatar(
+                          name: user?.name ?? '',
+                          imageUrl: user?.profilePhotoUrl,
+                          radius: 28,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          user?.name ?? '',
+                          style: theme.textTheme.titleLarge,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          user?.email ?? '',
+                          style: theme.textTheme.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 10),
+                        MemberSinceChip(date: user?.createdAt),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      user?.email ?? '',
-                      style: theme.textTheme.bodyMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 10),
-                    MemberSinceChip(date: user?.createdAt),
-                  ],
+                  ),
                 ),
               );
             },
@@ -223,6 +240,7 @@ class GuestSideDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userIdentityProvider);
+    final user = userAsync.value;
     final favoritesCount = ref.watch(favoritesProvider).asData?.value.length;
 
     return Drawer(
@@ -239,32 +257,52 @@ class GuestSideDrawer extends ConsumerWidget {
             ),
             data: (user) {
               final theme = Theme.of(context);
-              return DrawerHeader(
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                ),
-                margin: EdgeInsets.zero,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      user?.name ?? '',
-                      style: theme.textTheme.titleLarge,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              return Container(
+                width: double.infinity,
+                color: theme.scaffoldBackgroundColor,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppProfileAvatar(
+                          name: user?.name ?? '',
+                          imageUrl: user?.profilePhotoUrl,
+                          radius: 28,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          user?.name ?? '',
+                          style: theme.textTheme.titleLarge,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          user?.email ?? '',
+                          style: theme.textTheme.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      user?.email ?? '',
-                      style: theme.textTheme.bodyMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  ),
                 ),
               );
             },
+          ),
+          ListTile(
+            leading: Badge(
+              isLabelVisible: user != null && !user.profileComplete,
+              smallSize: 10,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              child: const Icon(Icons.settings_outlined),
+            ),
+            title: Text(context.t('settings.title')),
+            onTap: () => _openScreen(context, const GuestSettingsScreen()),
           ),
           ListTile(
             leading: const Icon(Icons.book_online_outlined),

@@ -155,10 +155,12 @@ church rather than just browse the feed. The app bar's title is the
 `ChurchTabScreen` uses) reading the fixed app brand name (`guest_shell.title`,
 "Church Tree") regardless of which of the two tabs is active — the empty
 `logo` falls back to the Church Tree app icon rather than a church's own
-logo, since no church is selected yet. Its super-admin/account actions stay
-visible across both tabs too; there is no standalone logout action here —
-`GuestSettingsScreen`'s Account section (behind the settings icon) covers
-it. `ChurchPickerScreen` has no
+logo, since no church is selected yet. Its super-admin action (when
+applicable) stays visible across both tabs; there is no standalone logout
+action here — `GuestSettingsScreen`'s Account section covers it, reached
+via `GuestSideDrawer`'s "Settings" item (its drawer, opened via the
+hamburger icon this shell's app bar auto-gets from `drawer:`, not a
+separate app bar icon). `ChurchPickerScreen` has no
 `Scaffold`/`AppBar` of its own and is never pushed — it's purely this tab's
 body, so there is no back button involved at all here, only the tab bar.
 `SelectChurchScreen` itself is always root-level (no back button in any of

@@ -26,9 +26,12 @@ pending church that requires super-admin approval.
   request, an approval, or leaving a church updates all three sections
   immediately with no manual refresh.
 - The church-picker app bar has no standalone logout action — `GuestSettingsScreen`'s
-  Account section covers it. The app bar shows a settings icon (see below).
-  A red badge appears while the signed-in user's global `profileComplete`
-  flag is `false`; tapping it opens `GuestSettingsScreen` — a pared-down
+  Account section covers it. `GuestSettingsScreen` is reached from
+  `GuestSideDrawer`'s "Settings" item (not a separate app bar icon — moved
+  there so the app bar stays just the app brand + the super-admin action).
+  A red badge on that drawer item's icon appears while the signed-in user's
+  global `profileComplete` flag is `false`; tapping it opens
+  `GuestSettingsScreen` — a pared-down
   Settings screen with no church to scope leave-church/register-another-
   church/church-profile-editor sections to, so it shows only Profile (Edit
   Profile), Preferences (appearance/notifications/prayer reminders),
@@ -100,6 +103,6 @@ pending church that requires super-admin approval.
 | CHURCH-15 | User has a pending request to church B while approved in church A | A shows under Your Churches; B shows under Pending Approval, not Your Churches or Other Churches. |
 | CHURCH-16 | Tap a church under Pending Approval | Opens `RequestPendingScreen` for that church; no duplicate request is submitted. |
 | CHURCH-17 | Request/approve/leave a church while the picker screen is open | Your Churches/Pending Approval/Other Churches reorder live with no manual refresh or re-entry to the screen. |
-| CHURCH-18 | Sign in with `profileComplete: false` / `true` | Settings icon in the church-picker app bar shows/hides the red badge to match; tapping it opens `GuestSettingsScreen`. |
-| CHURCH-19 | Open `GuestSettingsScreen` from the church-picker app bar | Shows only Profile/Preferences/Feedback/Account (no leave-church, register-another-church, or church-profile-editor sections); hero card shows no church chip; no church name appears anywhere on the screen (including no copyright line). |
+| CHURCH-18 | Sign in with `profileComplete: false` / `true` | Settings item in `GuestSideDrawer` shows/hides the red badge to match; tapping it opens `GuestSettingsScreen`. |
+| CHURCH-19 | Open `GuestSettingsScreen` from `GuestSideDrawer` | Shows only Profile/Preferences/Feedback/Account (no leave-church, register-another-church, or church-profile-editor sections); hero card shows no church chip; no church name appears anywhere on the screen (including no copyright line). |
 

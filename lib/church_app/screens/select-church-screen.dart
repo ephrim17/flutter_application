@@ -19,8 +19,6 @@ import 'package:flutter_application/church_app/screens/church_side_drawer.dart'
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/entry/request_church_access_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/request_pending_screen.dart';
-import 'package:flutter_application/church_app/screens/side_drawer/settings_screen.dart'
-    show GuestSettingsScreen;
 import 'package:flutter_application/church_app/screens/super_admin/create_church_screen.dart';
 import 'package:flutter_application/church_app/screens/super_admin/super_admin_home_screen.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
@@ -128,7 +126,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
           data: (value) => value && firebaseUser != null,
           orElse: () => false,
         );
-    final userIdentity = ref.watch(userIdentityProvider).value;
     final screens = const [
       GlobalFeedListView(),
       ChurchPickerScreen(),
@@ -157,21 +154,6 @@ class _SelectChurchScreenState extends ConsumerState<SelectChurchScreen> {
                 );
               },
               icon: const Icon(Icons.admin_panel_settings_outlined),
-            ),
-          if (userIdentity != null)
-            IconButton(
-              tooltip: context.t('settings.title'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const GuestSettingsScreen(),
-                ),
-              ),
-              icon: Badge(
-                isLabelVisible: !userIdentity.profileComplete,
-                smallSize: 10,
-                backgroundColor: Theme.of(context).colorScheme.error,
-                child: const Icon(Icons.settings_outlined),
-              ),
             ),
         ],
       ),
