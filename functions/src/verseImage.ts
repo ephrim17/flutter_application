@@ -63,14 +63,77 @@ async function reserveDailyQuota(uid: string): Promise<void> {
 }
 
 /**
+ * The top banner instruction shared by every card style: "Praise the Lord"
+ * plus today's date in the top-right corner, when known.
+ * @param {string} dateLabel Today's date, pre-formatted human-readable
+ * (e.g. "12 September 2026") by the client, or "" if not supplied.
+ * @return {string} The instruction fragment.
+ */
+function buildTopInstruction(dateLabel: string): string {
+  return " At the very top of the image, add a small " +
+    "banner or heading that reads \"Praise the Lord\"" +
+    (dateLabel ?
+      `, and place today's date, "${dateLabel}", in the top-right ` +
+        "corner in a small, human-readable style (already given as day, " +
+        "full month name and year — render it exactly as given, not as " +
+        "numeric digits-only)." :
+      ".");
+}
+
+/**
+ * The bottom church-banner instruction shared by every card style: the
+ * church's name/contact when known, or an explicit no-branding instruction
+ * when there's no church in context (see [buildBackgroundStylePrompt] for
+ * why the negative instruction is spelled out rather than just omitted).
+ * @param {string} churchName The church's full display name, or "".
+ * @param {string} contactNumber The church's contact phone number, or "".
+ * @return {string} The instruction fragment.
+ */
+function buildFooterInstruction(
+  churchName: string,
+  contactNumber: string,
+): string {
+  if (!churchName && !contactNumber) {
+    return " This card has no church affiliation — do not " +
+      "invent or render any church name, ministry name, contact number, " +
+      "phone icon, \"for prayer\" banner, or any other church-branding " +
+      "element anywhere in the image. Keep the image strictly to the top " +
+      "banner and verse text described above, for an individual's " +
+      "personal use.";
+  }
+  // Uppercased here (not left to the model) so it's guaranteed correct
+  // regardless of how well the prompt's styling instruction is followed.
+  const namePart = churchName ?
+    `"${churchName.toUpperCase()}"` :
+    "the church's name";
+  const phonePart = contactNumber ?
+    ` and a phone icon next to the number "${contactNumber}"` :
+    "";
+  return " At the very bottom of the image, design a " +
+    "decorative banner strip like a hand-painted signboard: a bold, " +
+    "all-capital-letters rendering (already given in capitals below — " +
+    "keep it exactly as given, do not lowercase any of it) of the " +
+    "church's full name, exactly and completely as written, with no " +
+    `words shortened, abbreviated, cut off or dropped: ${namePart}. ` +
+    "Size this name's text to fit the banner's width at full length — " +
+    "shrink the font size or wrap it onto two lines if it's long, " +
+    "rather than truncating, clipping, or letting it overflow the " +
+    "banner's edges. Beneath the name, add a small contrasting-color " +
+    "ribbon or ribbon-shaped highlight reading " +
+    `"For prayer"${phonePart}. Keep this banner visually secondary to ` +
+    "the verse text above it — smaller scale, at the bottom edge only.";
+}
+
+/**
  * Builds a fixed, moderation-friendly prompt from the verse text/reference —
  * the client never controls the raw prompt sent to Gemini. Asks for a
  * complete, ready-to-share devotional card: a top banner ("Praise the
  * Lord" + date) and the verse text itself (in its original script)
- * rendered directly into the image. When a church is known, also asks for
- * a decorative church banner (full name in bold capitals, "For prayer"
- * callout, phone number) at the bottom; when it isn't (e.g. a guest with
- * no selected church), explicitly tells the model not to invent one.
+ * rendered directly into the image, over a background matching the
+ * verse's mood. When a church is known, also asks for a decorative church
+ * banner (full name in bold capitals, "For prayer" callout, phone number)
+ * at the bottom; when it isn't (e.g. a guest with no selected church),
+ * explicitly tells the model not to invent one.
  * @param {string} verseText The verse's text.
  * @param {string} reference The verse's reference (e.g. "John 3:16").
  * @param {string} churchName The church's full display name, or "" if
@@ -81,7 +144,7 @@ async function reserveDailyQuota(uid: string): Promise<void> {
  * (e.g. "12 September 2026") by the client.
  * @return {string} The prompt to send to Gemini.
  */
-function buildPrompt(
+function buildBackgroundStylePrompt(
   verseText: string,
   reference: string,
   churchName: string,
@@ -89,53 +152,8 @@ function buildPrompt(
   dateLabel: string,
 ): string {
   const referencePart = reference ? ` (${reference})` : "";
-
-  const topInstruction = " At the very top of the image, add a small " +
-    "banner or heading that reads \"Praise the Lord\"" +
-    (dateLabel ?
-      `, and place today's date, "${dateLabel}", in the top-right ` +
-        "corner in a small, human-readable style (already given as day, " +
-        "full month name and year — render it exactly as given, not as " +
-        "numeric digits-only)." :
-      ".");
-
-  let footerInstruction = "";
-  if (churchName || contactNumber) {
-    // Uppercased here (not left to the model) so it's guaranteed correct
-    // regardless of how well the prompt's styling instruction is followed.
-    const namePart = churchName ?
-      `"${churchName.toUpperCase()}"` :
-      "the church's name";
-    const phonePart = contactNumber ?
-      ` and a phone icon next to the number "${contactNumber}"` :
-      "";
-    footerInstruction = " At the very bottom of the image, design a " +
-      "decorative banner strip like a hand-painted signboard: a bold, " +
-      "all-capital-letters rendering (already given in capitals below — " +
-      "keep it exactly as given, do not lowercase any of it) of the " +
-      "church's full name, exactly and completely as written, with no " +
-      `words shortened, abbreviated, cut off or dropped: ${namePart}. ` +
-      "Size this name's text to fit the banner's width at full length — " +
-      "shrink the font size or wrap it onto two lines if it's long, " +
-      "rather than truncating, clipping, or letting it overflow the " +
-      "banner's edges. Beneath the name, add a small contrasting-color " +
-      "ribbon or ribbon-shaped highlight reading " +
-      `"For prayer"${phonePart}. Keep this banner visually secondary to ` +
-      "the verse text above it — smaller scale, at the bottom edge only.";
-  } else {
-    // No church in context (e.g. a guest with no selected church sharing
-    // from Favourites) — say so explicitly rather than just omitting the
-    // banner instruction, since a devotional-card prompt with no
-    // instruction either way can still lead the model to invent a generic
-    // church/ministry name, "For prayer" ribbon or contact number on its
-    // own, having seen that pattern often in training data.
-    footerInstruction = " This card has no church affiliation — do not " +
-      "invent or render any church name, ministry name, contact number, " +
-      "phone icon, \"for prayer\" banner, or any other church-branding " +
-      "element anywhere in the image. Keep the image strictly to the top " +
-      "banner and verse text described above, for an individual's " +
-      "personal use.";
-  }
+  const topInstruction = buildTopInstruction(dateLabel);
+  const footerInstruction = buildFooterInstruction(churchName, contactNumber);
   return "Design a complete, ready-to-share devotional verse card image, " +
     "in the style of a designed Christian social-media graphic." +
     `${topInstruction} Create a background that evokes the mood and ` +
@@ -151,6 +169,52 @@ function buildPrompt(
     "devotional graphic would — based on what the verse itself emphasizes: " +
     `"${verseText}"${referencePart}.${footerInstruction} Keep all text ` +
     "sharp, legible and well-contrasted against the background.";
+}
+
+/**
+ * Builds the infographic-style variant: a flat-design, icon-and-callout
+ * layout instead of a photographic/painterly background — the same top
+ * "Praise the Lord" banner and church-branding footer rules as
+ * [buildBackgroundStylePrompt], but the verse itself is treated as the
+ * centerpiece of a clean, scannable infographic rather than overlaid on
+ * mood imagery.
+ * @param {string} verseText The verse's text.
+ * @param {string} reference The verse's reference (e.g. "John 3:16").
+ * @param {string} churchName The church's full display name, or "" if
+ * there's no church in context.
+ * @param {string} contactNumber The church's contact phone number, or ""
+ * under the same condition as churchName.
+ * @param {string} dateLabel Today's date, pre-formatted human-readable, by
+ * the client.
+ * @return {string} The prompt to send to Gemini.
+ */
+function buildInfographicPrompt(
+  verseText: string,
+  reference: string,
+  churchName: string,
+  contactNumber: string,
+  dateLabel: string,
+): string {
+  const referencePart = reference ? ` (${reference})` : "";
+  const topInstruction = buildTopInstruction(dateLabel);
+  const footerInstruction = buildFooterInstruction(churchName, contactNumber);
+  return "Design a clean, modern, flat-design infographic-style devotional " +
+    "card for this Bible verse — the look of a well-designed social-media " +
+    "infographic (flat vector shapes, a soft solid or gently-gradiented " +
+    "background, generous whitespace, a clean grid-aligned layout), not a " +
+    "photographic or painterly background." +
+    `${topInstruction} Render the verse text itself directly and legibly ` +
+    "onto the image, in its original script and language, exactly as " +
+    "written, as the large, bold visual centerpiece of the card. Beneath " +
+    "or around the verse text, add 2 to 3 small flat-icon-plus-short-label " +
+    "callouts (a simple flat icon paired with a two-to-four-word phrase " +
+    "each) that visually break down the verse's key theme, encouragement " +
+    "or the action it calls for — the way a well-made infographic " +
+    "presents a few scannable visual points instead of paragraphs, based " +
+    `on what this specific verse itself emphasizes: "${verseText}"` +
+    `${referencePart}.${footerInstruction} Keep all text sharp, legible ` +
+    "and well-contrasted against the background, and keep the whole " +
+    "composition tidy and grid-aligned rather than busy.";
 }
 
 type InteractionContentBlock = {
@@ -247,7 +311,10 @@ async function callGeminiImageGeneration(
   return image;
 }
 
-const candidatesPerRequest = 3;
+// Product decision: 3 candidates per generate action, but not 3 identical
+// rolls of the same prompt — one infographic-style card plus two
+// background-style cards, so the swipeable picker actually offers a choice
+// of look, not just three random variations of the same design.
 
 // Temporary testing carve-out, per direct instruction: unlimited
 // generations for this one account while the feature is being tried out
@@ -277,17 +344,25 @@ export const generateVerseBackgroundImage = onCall(
       await reserveDailyQuota(uid);
     }
 
-    const prompt = buildPrompt(
+    const infographicPrompt = buildInfographicPrompt(
       verseText,
       reference,
       churchName,
       contactNumber,
       dateLabel,
     );
-    const settled = await Promise.allSettled(
-      Array.from({length: candidatesPerRequest}, () =>
-        callGeminiImageGeneration(prompt)),
+    const backgroundPrompt = buildBackgroundStylePrompt(
+      verseText,
+      reference,
+      churchName,
+      contactNumber,
+      dateLabel,
     );
+    const settled = await Promise.allSettled([
+      callGeminiImageGeneration(infographicPrompt),
+      callGeminiImageGeneration(backgroundPrompt),
+      callGeminiImageGeneration(backgroundPrompt),
+    ]);
     const images = settled
       .filter(
         (result): result is PromiseFulfilledResult<GeneratedImage> =>

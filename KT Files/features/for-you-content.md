@@ -41,17 +41,20 @@ documents.
     has room the manual editor's on-screen branding pill doesn't), contact
     number and today's date (human-readable, e.g. "12 September 2026").
     Gemini renders a *complete* devotional card itself — a top banner
-    reading "Praise the Lord" with the date in the top-right corner, the
-    verse text (in its original script) with decorative typography
-    (bold/accent-colored key phrases, underline highlights), and a
+    reading "Praise the Lord" with the date in the top-right corner, and a
     decorative bottom banner with the church's full name in bold all-caps
     (sized/wrapped to fit rather than truncated) plus a "For prayer" ribbon
-    and phone icon + contact number — not just a plain background for the
-    app to composite. The callable returns up to 3 candidates, shown
-    full-screen and swipeable (with a page-dot indicator) so the person can
-    compare them side by side; downloading saves whichever candidate is
-    currently on screen — no editor step, since each candidate is already
-    final.
+    and phone icon + contact number (both shared by every candidate) — not
+    just a plain background for the app to composite. The 3 candidates are
+    deliberately **not** 3 rolls of the same prompt: 1 flat-design
+    infographic-style card (verse text as the centerpiece, with 2-3
+    small icon-and-short-label callouts on its key theme) plus 2
+    background-style cards (a photographic/painterly background matching
+    the verse's mood, with decorative typography — bold/accent-colored key
+    phrases, underline highlights). Shown full-screen and swipeable (with a
+    page-dot indicator) so the person can compare all 3 styles side by
+    side; downloading saves whichever candidate is currently on screen — no
+    editor step, since each candidate is already final.
   - AI generation is capped per user per day in production
     (`AI_IMAGE_DAILY_CAP`, strictly 1 "generate" action per day, worth up
     to 3 candidates) and fails gracefully with a friendly message on quota
@@ -67,6 +70,11 @@ documents.
     correctly but a mixed-script reference (e.g. "Psalms 5:3" inside a
     Tamil-script card) came out garbled. No app-side fallback exists for
     this; manual creation remains available as the reliable alternative.
+    The same risk category extends to the infographic card's short
+    icon-label phrases — confirmed live producing occasional
+    barely-legible/garbled short phrases (e.g. "oreak word") even in
+    English, since the model is composing its own short label text per
+    icon rather than only rendering the verse's own given text.
 - Featured For You is the consolidated featured/plans presentation.
 - Articles are admin-authored, record `createdBy`/`updatedBy` footprints and
   show author details like feed cards. Tapping the author opens the common user
