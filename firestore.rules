@@ -329,8 +329,15 @@ service cloud.firestore {
         allow delete: if isSelf(docId) || isChurchStaff(churchId);
 
         // Church modules only — Church Tree (global) progress lives on
-        // users/{uid}/learning_progress instead (§5.6, D9).
-        match /learning_progress/{docId} {
+        // users/{uid}/learning_progress instead (§5.6, D9). Uses a
+        // differently-named wildcard here deliberately: reusing `docId`
+        // shadowed the outer `members/{docId}` (the member's own uid) with
+        // this subcollection's own doc id (always the literal "progress"),
+        // making `isSelf(docId)` evaluate `isSelf("progress")` — always
+        // false, for every caller — so completing a lesson/exam always
+        // failed with PERMISSION_DENIED and reading progress silently
+        // returned nothing for anyone but staff.
+        match /learning_progress/{progressDocId} {
           allow read: if isSelf(docId) || isChurchStaff(churchId);
           allow write: if isSelf(docId);
         }

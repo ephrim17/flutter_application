@@ -47,7 +47,17 @@ standing when they take it:
   church does not reset it.
 - **Church modules** — progress at `churches/{churchId}/members/{uid}/
   learning_progress/progress` (unchanged shape/behaviour from before the
-  split). Final-exam/section-quiz attempts:
+  split). `firestore.rules`' nested `match /learning_progress/{docId}` under
+  `members/{docId}` used to shadow the outer `docId` (the member's own uid)
+  with the inner one (always the literal string `"progress"`), so
+  `isSelf(docId)` there always evaluated `isSelf("progress")` — always
+  false for every caller. This silently broke `allow write` completely
+  (completing a lesson or exam for a church module always failed with
+  `PERMISSION_DENIED`, client-side visible only as a button that appeared
+  to do nothing) and broke `allow read` for anyone but staff. Fixed by
+  renaming the inner wildcard so the outer `docId` stays visible.
+
+  Final-exam/section-quiz attempts:
   `churches/{churchId}/learning_results/{resultId}`, tagged
   `source: 'church'`. Leaving the church loses the progress doc; the
   `learning_results` rows survive as that church's record.
@@ -93,6 +103,7 @@ standing when they take it:
 | LEARN-07 | YouTube/external link | Inline video is smooth; explicit full screen rotates landscape; return restores portrait; link asks confirmation. |
 | LEARN-08 | Android file upload | Image/PDF bytes upload without unable-to-read-file or `_dependents` crash. |
 | LEARN-09 | Complete all lessons | Final exam unlocks only after final lesson completion. |
+| LEARN-09a | Tap Complete lesson on a church-module section (not a global one) | Section marks complete and the screen returns immediately — no `PERMISSION_DENIED` write failure. |
 | LEARN-10 | Fail exam | Attempt is recorded, module remains incomplete and Retake is available. |
 | LEARN-11 | Pass exam | Result says Module completed; next module unlocks. |
 | LEARN-12 | Open completed module | All sections are reviewable; final exam is non-tappable and cannot be replayed. |

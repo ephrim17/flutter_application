@@ -699,11 +699,21 @@ class _LearningSectionScreenState
       Navigator.pop(context);
       return;
     }
-    final churchId = ref.read(currentChurchIdProvider).asData?.value;
-    final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
-    if (churchId == null || userId == null) return;
     setState(() => _completing = true);
     try {
+      // Awaited rather than a synchronous `.asData?.value` read — the
+      // latter silently reads null (looking exactly like a dead button, no
+      // error shown) whenever this FutureProvider hasn't finished
+      // resolving yet at the moment of tapping, even though
+      // `selectedChurchProvider` (what it resolves from first) is already
+      // set. Inside this try block (not before it) so a genuine rejection
+      // here — not just a null result — still lands in the catch below
+      // instead of leaving `_completing` stuck true forever.
+      final churchId = await ref.read(currentChurchIdProvider.future);
+      final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
+      if (churchId == null || userId == null) {
+        throw StateError('No church or user in context.');
+      }
       await ref.read(learningModuleRepositoryProvider).completeSection(
             churchId: churchId,
             userId: userId,
@@ -1241,12 +1251,17 @@ class _LearningQuizScreenState extends ConsumerState<_LearningQuizScreen> {
       total: questions.length,
       passingPercentage: widget.module.passingPercentage,
     );
-    final churchId = ref.read(currentChurchIdProvider).asData?.value;
-    final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
-    final appUser = ref.read(userIdentityProvider).asData?.value;
-    if (churchId == null || userId == null) return;
     setState(() => _submitting = true);
     try {
+      // See _completeSection's identical fix for why this is awaited
+      // (inside this try block, not before it) rather than a synchronous
+      // `.asData?.value` read.
+      final churchId = await ref.read(currentChurchIdProvider.future);
+      final userId = ref.read(firebaseAuthProvider).currentUser?.uid;
+      final appUser = ref.read(userIdentityProvider).asData?.value;
+      if (churchId == null || userId == null) {
+        throw StateError('No church or user in context.');
+      }
       await ref.read(learningModuleRepositoryProvider).submitModuleExam(
             churchId: churchId,
             userId: userId,
