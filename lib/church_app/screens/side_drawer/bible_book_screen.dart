@@ -12,6 +12,8 @@ import 'package:flutter_application/church_app/services/side_drawer/bible_book_r
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
+import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart'
+    show generateAiVerseCards;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -20,10 +22,12 @@ class BibleBookScreen extends StatelessWidget {
     super.key,
     required this.version,
     this.requireDownloaded = true,
+    this.isGuestShare = false,
   });
 
   final BibleVersion version;
   final bool requireDownloaded;
+  final bool isGuestShare;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +53,7 @@ class BibleBookScreen extends StatelessWidget {
                     book: book,
                     version: version,
                     requireDownloaded: requireDownloaded,
+                    isGuestShare: isGuestShare,
                   ),
                 ),
               );
@@ -66,11 +71,13 @@ class ChapterScreen extends StatefulWidget {
     required this.book,
     required this.version,
     this.requireDownloaded = true,
+    this.isGuestShare = false,
   });
 
   final BibleBook book;
   final BibleVersion version;
   final bool requireDownloaded;
+  final bool isGuestShare;
 
   @override
   State<ChapterScreen> createState() => _ChapterScreenState();
@@ -146,6 +153,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
                         version: widget.version,
                         requireDownloaded: widget.requireDownloaded,
                         startChapterIndex: index,
+                        isGuestShare: widget.isGuestShare,
                       ),
                     ),
                   );
@@ -168,6 +176,7 @@ class VerseScreen extends ConsumerStatefulWidget {
   final bool requireDownloaded;
   final int startChapterIndex;
   final int? endChapterIndex;
+  final bool isGuestShare;
 
   const VerseScreen({
     super.key,
@@ -176,6 +185,7 @@ class VerseScreen extends ConsumerStatefulWidget {
     this.requireDownloaded = false,
     required this.startChapterIndex,
     this.endChapterIndex,
+    this.isGuestShare = false,
   });
 
   @override
@@ -370,6 +380,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                                       .currentUser
                                       ?.uid,
                                 );
+                                if (!mounted) return;
                                 ref.invalidate(favoritesProvider);
                               },
                             ),
@@ -485,6 +496,16 @@ ${verse['text']['english']}
             ],
           ),
         ),
+        PopupMenuItem(
+          value: 'generate_image',
+          child: Row(
+            children: [
+              const Icon(Icons.image_outlined, size: 20),
+              const SizedBox(width: 10),
+              Text(context.t('ui.bible_reader_appbar.generate_ai_image')),
+            ],
+          ),
+        ),
       ],
     );
     if (selected == 'highlight') {
@@ -496,6 +517,13 @@ ${verse['text']['english']}
         tamilText: tamilText,
         englishText: englishText,
         reference: reference,
+      );
+    } else if (selected == 'generate_image' && context.mounted) {
+      await generateAiVerseCards(
+        context,
+        text: tamilText,
+        reference: reference,
+        isGuestShare: widget.isGuestShare,
       );
     }
   }

@@ -5,7 +5,9 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/plan/plan_card.dart';
 
 class PlanListScreen extends StatelessWidget {
-  const PlanListScreen({super.key});
+  const PlanListScreen({super.key, this.isGuestShare = false});
+
+  final bool isGuestShare;
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +60,10 @@ class PlanListScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        PlanDetailsScreen(month: months[index]),
+                    builder: (context) => PlanDetailsScreen(
+                      month: months[index],
+                      isGuestShare: isGuestShare,
+                    ),
                   ),
                 );
               },

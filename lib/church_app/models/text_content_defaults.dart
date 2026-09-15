@@ -435,6 +435,7 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.bible_reader_appbar.aa": "aA",
   "ui.bible_reader_appbar.ai_summary": "Summarize chapter with AI",
   "ui.bible_reader_appbar.summarize_with_ai": "Summarize with AI",
+  "ui.bible_reader_appbar.generate_ai_image": "Generate AI image",
   "ui.bible_reader_appbar.add_highlight": "Highlight this verse",
   "ui.bible_reader_appbar.remove_highlight": "Remove highlight",
   "ui.bible_reader_appbar.summarizing": "Summarizing...",

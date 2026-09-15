@@ -10,7 +10,9 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BibleLibraryScreen extends ConsumerStatefulWidget {
-  const BibleLibraryScreen({super.key});
+  const BibleLibraryScreen({super.key, this.isGuestShare = false});
+
+  final bool isGuestShare;
 
   @override
   ConsumerState<BibleLibraryScreen> createState() => _BibleLibraryScreenState();
@@ -277,6 +279,7 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
         builder: (_) => BibleBookScreen(
           version: version,
           requireDownloaded: requireDownloaded,
+          isGuestShare: widget.isGuestShare,
         ),
       ),
     );

@@ -14,8 +14,13 @@ import 'package:flutter_application/church_app/models/bible_book_model.dart';
 
 class PlanDetailsScreen extends ConsumerStatefulWidget {
   final String month;
+  final bool isGuestShare;
 
-  const PlanDetailsScreen({super.key, required this.month});
+  const PlanDetailsScreen({
+    super.key,
+    required this.month,
+    this.isGuestShare = false,
+  });
 
   @override
   ConsumerState<PlanDetailsScreen> createState() => _PlanDetailsScreenState();
@@ -158,6 +163,7 @@ class _PlanDetailsScreenState extends ConsumerState<PlanDetailsScreen> {
                                               ),
                                               startChapterIndex: range[0] - 1,
                                               endChapterIndex: range[1] - 1,
+                                              isGuestShare: widget.isGuestShare,
                                             ),
                                           ),
                                         );

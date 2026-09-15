@@ -307,7 +307,10 @@ class GuestSideDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.book_online_outlined),
             title: Text(context.t('drawer.holy_bible')),
-            onTap: () => _openScreen(context, const BibleLibraryScreen()),
+            onTap: () => _openScreen(
+              context,
+              const BibleLibraryScreen(isGuestShare: true),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.favorite_rounded),
@@ -326,7 +329,10 @@ class GuestSideDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
             title: Text(context.t('reading_plan.title')),
-            onTap: () => _openScreen(context, const PlanListScreen()),
+            onTap: () => _openScreen(
+              context,
+              const PlanListScreen(isGuestShare: true),
+            ),
           ),
         ],
       ),

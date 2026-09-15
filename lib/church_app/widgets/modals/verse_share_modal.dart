@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -98,6 +99,24 @@ Future<void> showVerseShareChoiceSheet(
         isGuestShare: isGuestShare,
       );
   }
+}
+
+/// Generates and shows up to 3 AI verse-card candidates directly, skipping
+/// the "Generate with AI" vs "Create manually" choice sheet — for entry
+/// points where the user has already chosen AI generation explicitly (e.g.
+/// the Bible reader's long-press verse menu).
+Future<void> generateAiVerseCards(
+  BuildContext context, {
+  required String text,
+  required String reference,
+  bool isGuestShare = false,
+}) {
+  return _startAiVerseShareFlow(
+    context,
+    text: text,
+    reference: reference,
+    isGuestShare: isGuestShare,
+  );
 }
 
 enum _VerseShareChoice { ai, manual }
@@ -267,15 +286,30 @@ class _AiVerseImageGenerationDialogState
           ? ''
           : ref.read(selectedChurchProvider)?.contact ?? '';
       final dateLabel = DateFormat('d MMMM yyyy').format(DateTime.now());
+      // Generating 3 candidates in parallel server-side can legitimately
+      // take longer than the plugin's 60s default HttpsCallableOptions
+      // timeout, so that's raised here — but a live test found the
+      // underlying platform call can also just hang past its own timeout
+      // on Android without ever rejecting the awaited Future (observed: a
+      // client-side socket timeout ~50s in, never surfaced as a catchable
+      // Dart exception). The outer `.timeout(...)` is a hard backstop that
+      // guarantees this `await` completes one way or another, so the
+      // loading dialog can never get stuck indefinitely regardless of that
+      // plugin behavior.
       final result = await FirebaseFunctions.instanceFor(
         region: 'us-central1',
-      ).httpsCallable('generateVerseBackgroundImage').call<Map<String, dynamic>>({
-        'verseText': widget.text,
-        'reference': widget.reference,
-        'churchName': churchName,
-        'contactNumber': contactNumber,
-        'dateLabel': dateLabel,
-      });
+      )
+          .httpsCallable(
+            'generateVerseBackgroundImage',
+            options: HttpsCallableOptions(timeout: const Duration(seconds: 120)),
+          )
+          .call<Map<String, dynamic>>({
+            'verseText': widget.text,
+            'reference': widget.reference,
+            'churchName': churchName,
+            'contactNumber': contactNumber,
+            'dateLabel': dateLabel,
+          }).timeout(const Duration(seconds: 130));
       final rawImages = (result.data['images'] as List?) ?? const [];
       final images = rawImages
           .whereType<Map>()

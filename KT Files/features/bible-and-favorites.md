@@ -21,12 +21,25 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
   verse against available chapter data.
 - Reader font-size/preferences persist locally where implemented.
 - Chapter reader app bar has an "AI Summary" action that summarizes the whole
-  currently-visible chapter. Long-pressing a verse opens a popup with two
-  actions — Highlight/Un-highlight (replaces the old plain-tap toggle) and
-  Summarize with AI (verse-scoped). Both summary paths call Gemini through a
-  fixed, tutor-style prompt (never a free-form user prompt) and return a
-  short bilingual (Tamil + English) bulleted explanation, shown in a bottom
-  sheet.
+  currently-visible chapter. Long-pressing a verse opens a popup with three
+  actions — Highlight/Un-highlight (replaces the old plain-tap toggle),
+  Summarize with AI (verse-scoped), and Generate AI image. Both summary paths
+  call Gemini through a fixed, tutor-style prompt (never a free-form user
+  prompt) and return a short bilingual (Tamil + English) bulleted
+  explanation, shown in a bottom sheet.
+- Generate AI image reuses the same `generateVerseBackgroundImage` flow and
+  3-style swipeable picker described in
+  [For You Content](for-you-content.md), invoked directly (skipping the
+  "Generate with AI" vs "Create manually" choice sheet, since long-pressing
+  a verse is already an explicit AI choice) and passing the verse's Tamil
+  text as `verseText` (this reader always shows Tamil as the primary line).
+  `isGuestShare` is threaded through every path that can reach `VerseScreen`
+  — `BibleLibraryScreen` → `BibleBookScreen`/`ChapterScreen`, and separately
+  `PlanListScreen` → `PlanDetailsScreen` (reading plans) — from each drawer's
+  own entry point (`true` from the guest shell, `false` from the member
+  drawer/For You tab), matching how `FavoritesScreen` already does it, so a
+  guest's card never carries an invented church name regardless of stale
+  `selectedChurchProvider` state.
 - AI summaries are rate-limited server-side, checked before calling Gemini:
   1 chapter summary and 5 verse summaries per user per UTC day. A hitting the
   cap shows a friendly "come back tomorrow" message instead of a raw error.
@@ -67,4 +80,6 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
 | BIBLE-12 | Long-press a verse, tap Summarize with AI | Same bilingual bulleted summary, scoped to that one verse. |
 | BIBLE-13 | Long-press a verse, tap Highlight/Un-highlight | Highlight toggles and the popup label/icon flips accordingly. |
 | BIBLE-14 | Exceed the daily chapter or verse summary cap | Friendly limit-reached message; no Gemini call is made. |
+| BIBLE-15 | Long-press a verse, tap Generate AI image | Same 3-style swipeable AI card picker as Daily Verse/Favourites opens directly (no choice sheet), scoped to that one verse; downloading works with no editor step. |
+| BIBLE-16 | Generate AI image from the guest shell's Bible reader | Card carries no church name/logo/contact — same no-branding guarantee as guest Favourites sharing. |
 
