@@ -77,6 +77,7 @@ class BibleSwipeVerseScreen extends ConsumerWidget {
                                   .currentUser
                                   ?.uid,
                             );
+                            if (!context.mounted) return;
                             ref.invalidate(favoritesProvider);
                           },
                         ),
