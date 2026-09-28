@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -21,6 +22,7 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -62,6 +64,138 @@ Future<void> showVerseShareModal(
       ),
     ),
   );
+}
+
+/// Identifies the one verse a whole church shares on a given day, so its AI
+/// cards can be generated once and reused by every member.
+///
+/// Only the Daily Verse can be cached this way: it is the same verse for
+/// everyone in the church, unlike the Bible reader's long-press generation
+/// where each member picks their own verse. The reference is sent so the
+/// server can check it against the church's configured Daily Verse and
+/// refuse anything else — see
+/// KT Files/architecture/daily-verse-card-caching.md.
+@immutable
+class DailyVerseCacheKey {
+  const DailyVerseCacheKey({
+    required this.churchId,
+    required this.language,
+    required this.book,
+    required this.chapter,
+    required this.verse,
+    this.mode = 'fetch',
+  });
+
+  final String churchId;
+  final VerseShareLanguage language;
+  final String book;
+  final int chapter;
+  final int verse;
+
+  Map<String, dynamic> toPayload() => {
+        'churchId': churchId,
+        'language': language == VerseShareLanguage.tamil ? 'ta' : 'en',
+        'book': book,
+        'chapter': chapter,
+        'verse': verse,
+        'mode': mode,
+      };
+
+  /// `fetch` reads the cache and never spends; `generate` is admin-only and
+  /// is what the Studio's "Generate images" button sends.
+  final String mode;
+
+  // Value equality so this can key a provider family — otherwise every
+  // rebuild would look like a new key and refetch the images.
+  @override
+  bool operator ==(Object other) =>
+      other is DailyVerseCacheKey &&
+      other.churchId == churchId &&
+      other.language == language &&
+      other.book == book &&
+      other.chapter == chapter &&
+      other.verse == verse &&
+      other.mode == mode;
+
+  @override
+  int get hashCode =>
+      Object.hash(churchId, language, book, chapter, verse, mode);
+}
+
+/// Generates today's Daily Verse cards for **both** languages from the
+/// Studio editor, and reports what happened.
+///
+/// Members never generate — this is the only entry point that does, and the
+/// Cloud Function independently rejects a `generate` call from anyone who
+/// isn't a church admin. Each language is its own batch (and its own cache
+/// entry), so they are sent one after the other rather than in parallel: two
+/// simultaneous image batches would compete for the same function instance's
+/// 180s budget.
+///
+/// Returns the languages that failed, so the caller can say which.
+///
+/// [onLanguageSettled] fires as each language finishes, successfully or not,
+/// with how many of [VerseShareLanguage] have been dealt with so far. It is
+/// the only progress signal this flow has — Gemini reports nothing mid-batch
+/// — and Studio turns it into the percentage it shows the admin.
+Future<List<VerseShareLanguage>> generateDailyVerseCardsBothLanguages({
+  required String churchId,
+  required String book,
+  required int chapter,
+  required int verse,
+  required String englishText,
+  required String englishReference,
+  required String tamilText,
+  required String tamilReference,
+  void Function(int settled, int total)? onLanguageSettled,
+}) async {
+  final failed = <VerseShareLanguage>[];
+  final requests = [
+    (
+      VerseShareLanguage.english,
+      englishText,
+      englishReference,
+    ),
+    (
+      VerseShareLanguage.tamil,
+      tamilText,
+      tamilReference,
+    ),
+  ];
+  var settled = 0;
+  void report() => onLanguageSettled?.call(++settled, requests.length);
+
+  for (final (language, text, reference) in requests) {
+    if (text.trim().isEmpty) {
+      failed.add(language);
+      report();
+      continue;
+    }
+    try {
+      final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
+          .httpsCallable(
+            'generateVerseBackgroundImage',
+            options: HttpsCallableOptions(timeout: const Duration(seconds: 180)),
+          )
+          .call<Map<String, dynamic>>({
+        'verseText': text,
+        'reference': reference,
+        'dailyVerse': DailyVerseCacheKey(
+          churchId: churchId,
+          language: language,
+          book: book,
+          chapter: chapter,
+          verse: verse,
+          mode: 'generate',
+        ).toPayload(),
+      }).timeout(const Duration(seconds: 190));
+      if (result.data['status'] != 'ready') failed.add(language);
+    } catch (_) {
+      failed.add(language);
+    }
+    report();
+  }
+  return failed;
 }
 
 /// Entry point for verse sharing: asks whether to generate a background with
@@ -117,6 +251,163 @@ Future<void> generateAiVerseCards(
     reference: reference,
     isGuestShare: isGuestShare,
   );
+}
+
+/// Which language a verse leaves the app in. The Bible reader holds both
+/// scripts for every verse, so the choice has to be made at the share/generate
+/// call site rather than inferred from the app's UI language.
+enum VerseShareLanguage { english, tamil }
+
+/// Asks whether to share/generate this verse in English or Tamil, mirroring
+/// the Favourites screen's share-language sheet.
+///
+/// Returns null when the sheet is dismissed without a choice — callers must
+/// treat that as "cancelled" and not fall back to a default language, since
+/// generating in the wrong script spends the user's daily AI quota on a card
+/// they didn't ask for.
+Future<VerseShareLanguage?> showVerseLanguageChoiceSheet(
+  BuildContext context,
+) {
+  return showAppModalBottomSheet<VerseShareLanguage>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text(sheetContext.t('favorites.share_english')),
+            onTap: () => Navigator.pop(
+              sheetContext,
+              VerseShareLanguage.english,
+            ),
+          ),
+          ListTile(
+            title: Text(sheetContext.t('favorites.share_tamil')),
+            onTap: () => Navigator.pop(
+              sheetContext,
+              VerseShareLanguage.tamil,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Opens the full-screen, swipeable card viewer with its download action,
+/// starting at [initialIndex].
+Future<void> showAiVerseCardViewer(
+  BuildContext context, {
+  required List<PickedImageData> images,
+  int initialIndex = 0,
+}) {
+  return Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => _AiVerseCardSwipeScreen(
+        images: images,
+        initialIndex: initialIndex,
+      ),
+    ),
+  );
+}
+
+/// Reads this church's pre-generated Daily Verse cards for one language.
+///
+/// Fetch-only: the Cloud Function will not generate anything on this path,
+/// so calling it can never cost the church money. An empty list means the
+/// church's admin hasn't generated today's images yet (or has changed the
+/// verse since), and the caller should say so rather than offer to generate.
+Future<List<PickedImageData>> fetchDailyVerseCards({
+  required DailyVerseCacheKey key,
+  required String verseText,
+  required String reference,
+}) async {
+  final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
+      .httpsCallable(
+        'generateVerseBackgroundImage',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+      )
+      .call<Map<String, dynamic>>({
+    'verseText': verseText,
+    'reference': reference,
+    'dailyVerse': key.toPayload(),
+  }).timeout(const Duration(seconds: 70));
+
+  if (result.data['status'] != 'ready') return const [];
+  final cards = ((result.data['cards'] as List?) ?? const [])
+      .whereType<Map>()
+      .toList(growable: false);
+  final stamp = DateTime.now().millisecondsSinceEpoch;
+  final downloaded = await Future.wait(cards.map(_downloadCard));
+  return downloaded
+      .whereType<Uint8List>()
+      .map((bytes) => PickedImageData(bytes: bytes, name: 'daily-verse-$stamp'))
+      .toList(growable: false);
+}
+
+/// Bytes for one cached card.
+///
+/// Reads the tokenised download URL the function stores, which is how every
+/// other image in this app is loaded (feeds, logos, pastor photos) and needs
+/// no Storage-rules evaluation.
+///
+/// Goes through [DefaultCacheManager] — the same disk cache
+/// `cached_network_image` uses behind [ShimmerImage] — rather than a plain
+/// GET, so a card is downloaded from Storage once and then served locally on
+/// every later view, including after an app restart. The card URLs carry the
+/// day and the content fingerprint, so a new day or a regenerated card is a
+/// new URL and a natural cache miss; nothing has to be invalidated by hand.
+///
+/// Falls back to reading the object by path for entries generated before URLs
+/// were stored, in case the server could not backfill one.
+Future<Uint8List?> _downloadCard(Map<dynamic, dynamic> card) async {
+  final url = card['url'] as String?;
+  if (url != null && url.isNotEmpty) {
+    try {
+      final file = await DefaultCacheManager()
+          .getSingleFile(url)
+          .timeout(const Duration(seconds: 30));
+      return await file.readAsBytes();
+    } catch (_) {
+      // Fall through to the path read below.
+    }
+  }
+  final path = card['path'] as String?;
+  if (path == null || path.isEmpty) return null;
+  try {
+    return await FirebaseStorage.instance.ref(path).getData(6 * 1024 * 1024);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Whether this church's one Daily Verse generation for today is spent.
+///
+/// Asks the server rather than reading `dailyVerseCards/{dayKey}` from the
+/// client. The rules-based read looks simpler but does not work: both rules
+/// files compare the caller's lowercased email against `config/app.admins`
+/// exactly as stored, so an admin whose stored entry carries a capital letter
+/// fails `isChurchAdmin` and the read is denied. The callable's `authorize()`
+/// lowercases both sides and gets the same question right.
+///
+/// `fetch` mode never generates, so this costs the church nothing.
+Future<bool> fetchDailyVerseGenerationUsed({
+  required DailyVerseCacheKey key,
+  required String verseText,
+  required String reference,
+}) async {
+  final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
+      .httpsCallable(
+        'generateVerseBackgroundImage',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+      )
+      .call<Map<String, dynamic>>({
+    'verseText': verseText,
+    'reference': reference,
+    'dailyVerse': key.toPayload(),
+  }).timeout(const Duration(seconds: 70));
+  return result.data['generationUsed'] == true;
 }
 
 enum _VerseShareChoice { ai, manual }
@@ -310,6 +601,7 @@ class _AiVerseImageGenerationDialogState
             'contactNumber': contactNumber,
             'dateLabel': dateLabel,
           }).timeout(const Duration(seconds: 130));
+
       final rawImages = (result.data['images'] as List?) ?? const [];
       final images = rawImages
           .whereType<Map>()
@@ -332,7 +624,11 @@ class _AiVerseImageGenerationDialogState
     } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop();
-      final key = e.message == 'quota-exceeded'
+      // `church-cap-exceeded` is the shared Daily Verse cache's own limit,
+      // not the per-user one, but it reads the same to the person holding
+      // the phone: no new card today.
+      final key = (e.message == 'quota-exceeded' ||
+              e.message == 'church-cap-exceeded')
           ? 'ui.verse_share.ai_quota_exceeded'
           : 'ui.verse_share.ai_generation_failed';
       _showErrorSnackBar(context, context.t(key));
@@ -379,9 +675,13 @@ class _AiVerseImageGenerationDialogState
 /// is currently visible — no further app-side compositing needed, since
 /// each candidate is already final.
 class _AiVerseCardSwipeScreen extends StatefulWidget {
-  const _AiVerseCardSwipeScreen({required this.images});
+  const _AiVerseCardSwipeScreen({required this.images, this.initialIndex = 0});
 
   final List<PickedImageData> images;
+
+  /// Which card to open on, so tapping the third thumbnail in the Daily
+  /// Verse card doesn't dump the reader back at the first.
+  final int initialIndex;
 
   @override
   State<_AiVerseCardSwipeScreen> createState() =>
@@ -389,8 +689,9 @@ class _AiVerseCardSwipeScreen extends StatefulWidget {
 }
 
 class _AiVerseCardSwipeScreenState extends State<_AiVerseCardSwipeScreen> {
-  final _pageController = PageController();
-  int _page = 0;
+  late final PageController _pageController =
+      PageController(initialPage: widget.initialIndex);
+  late int _page = widget.initialIndex;
   bool _isDownloading = false;
 
   @override

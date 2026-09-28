@@ -63,6 +63,9 @@ dependencies:
   shimmer: ^3.0.0
   fl_chart: ^0.68.0
   cached_network_image: ^3.3.1
+  # Already present transitively via cached_network_image; declared directly
+  # because the Daily Verse cards read bytes from the same cache store.
+  flutter_cache_manager: ^3.4.1
   flutter_local_notifications: ^17.0.0
   timezone: ^0.9.2
   firebase_storage: ^13.0.6

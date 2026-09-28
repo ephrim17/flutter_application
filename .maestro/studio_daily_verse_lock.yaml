@@ -1,0 +1,44 @@
+appId: com.example.flutter_application
+---
+# FORYOU-33 — Studio's "Generate images" is locked once the day's one
+# successful generation has happened, and says why
+# (KT Files/features/for-you-content.md).
+#
+# Read-only: the button under test is disabled, so nothing generates and no
+# cap is spent. Requires the signed-in account to be an admin of the selected
+# church, and that church to have generated today.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "For You"
+    timeout: 60000
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Studio"
+- extendedWaitUntil:
+    visible: "Studio"
+    timeout: 30000
+# Studio is a hub; the Daily Verse editor is one of its Content & Worship
+# entries, so it has to be scrolled to and opened first.
+- scrollUntilVisible:
+    element:
+      # Hub cards merge title, status chip and subtitle into one node, so
+      # match on a substring rather than the whole label.
+      text: "(?s).*Daily Verse.*"
+    direction: DOWN
+    timeout: 30000
+    speed: 30
+    visibilityPercentage: 20
+    centerElement: true
+- tapOn: "(?s).*Daily Verse.*"
+- waitForAnimationToEnd:
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "(?s).*Images already created for today.*"
+    direction: DOWN
+    timeout: 30000
+    speed: 30
+    visibilityPercentage: 20
+- takeScreenshot: studio_01_generate_locked
+- assertVisible: "(?s).*Images can be created once a day.*"

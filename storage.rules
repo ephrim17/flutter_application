@@ -48,6 +48,15 @@ service firebase.storage {
     // config/app.admins to be listed in, and they are not the super admin).
     // Once the church doc exists, this always reads false and
     // `isChurchStaff` alone governs further writes.
+    // Mirrors firestore.rules' isApprovedMember(): the membership doc lives
+    // at churches/{churchId}/members/{uid} (renamed from `users` during the
+    // user/church decoupling migration) and must carry approved == true.
+    function isApprovedMember(churchId) {
+      return hasVerifiedEmail() &&
+        firestore.exists(/databases/(default)/documents/churches/$(churchId)/members/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/churches/$(churchId)/members/$(request.auth.uid)).data.approved == true;
+    }
+
     function isUnclaimedChurch(churchId) {
       return !firestore.exists(/databases/(default)/documents/churches/$(churchId));
     }
@@ -107,6 +116,23 @@ service firebase.storage {
     match /churches/global/learning_modules/{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin();
+    }
+
+    // Cached Daily Verse AI cards, written only by the Cloud Function via
+    // the Admin SDK (which bypasses these rules entirely). See
+    // KT Files/architecture/daily-verse-card-caching.md.
+    //
+    // Rooted here rather than under churches/{churchId}/ so a single GCS
+    // lifecycle rule can match the literal prefix `dailyVerseCards/` for
+    // retention — lifecycle rules cannot express `churches/*/dailyVerseCards/`.
+    // Church scoping is unaffected: churchId is still the first path segment
+    // and the read rule binds to it.
+    //
+    // isChurchAdmin, NOT isChurchStaff: isChurchStaff folds in isSuperAdmin,
+    // and super-admin status must never imply per-church access.
+    match /dailyVerseCards/{churchId}/{dayKey}/{fileName} {
+      allow read: if isApprovedMember(churchId) || isChurchAdmin(churchId);
+      allow write: if false;
     }
 
     // No broad catch-all — anything not matched above is denied by default.

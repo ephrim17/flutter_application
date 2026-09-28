@@ -395,6 +395,28 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.verse_share.create_manually_subtitle":
       "Pick a color, photo or template yourself.",
   "ui.verse_share.generating_image": "Creating your images...",
+  "ui.verse_share.ai_cards_unavailable":
+      "Today's verse images haven't been created yet. "
+          "Please check back later.",
+  "ui.studio.generate_verse_images": "Generate images",
+  "ui.studio.generate_verse_images_hint":
+      "Creates today's shareable verse cards in English and Tamil for "
+          "everyone in your church.",
+  "ui.studio.generating_verse_images":
+      "Creating verse images. This takes a couple of minutes...",
+  "ui.studio.verse_images_ready": "Verse images created for both languages.",
+  "ui.studio.verse_images_partial":
+      "Some verse images could not be created. Please try again.",
+  "ui.studio.verse_images_failed":
+      "Could not create verse images. Please try again.",
+  "ui.studio.verse_images_progress_percent": "{percent}%",
+  "ui.studio.verse_images_used_today":
+      "Today's images are done. Images can be created once a day, so any "
+          "further change to the verse will appear on tomorrow's card.",
+  "ui.studio.verse_images_already_generated":
+      "Images already created for today.",
+  "ui.studio.tamil_label": "Tamil",
+  "ui.studio.english_label": "English",
   "ui.verse_share.image_saved": "Image saved.",
   "ui.verse_share.download_failed": "Unable to save image. Please try again.",
   "ui.verse_share.ai_quota_exceeded":
@@ -436,6 +458,7 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.bible_reader_appbar.ai_summary": "Summarize chapter with AI",
   "ui.bible_reader_appbar.summarize_with_ai": "Summarize with AI",
   "ui.bible_reader_appbar.generate_ai_image": "Generate AI image",
+  "ui.bible_reader_appbar.share_as_text": "Share as text",
   "ui.bible_reader_appbar.add_highlight": "Highlight this verse",
   "ui.bible_reader_appbar.remove_highlight": "Remove highlight",
   "ui.bible_reader_appbar.summarizing": "Summarizing...",

@@ -1,0 +1,49 @@
+appId: com.example.flutter_application
+---
+# FORYOU-27a — the For You Daily Verse card must show cards even when today's
+# have not been generated, by falling back to the most recent earlier day
+# (KT Files/features/for-you-content.md, KT Files/architecture/daily-verse-card-caching.md).
+#
+# Read-only: the card calls the function in `fetch` mode, which never
+# generates, so running this costs the church nothing and spends no cap.
+#
+# Precondition: the church has ready cards for some day within the last 7 and
+# none for today — that is exactly the state the fallback exists for. Before
+# the fallback shipped this flow fails at the assertion below with the
+# "haven't been created yet" message on screen.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "For You"
+    timeout: 60000
+- tapOn: "For You"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Daily verse"
+    timeout: 30000
+- takeScreenshot: daily_verse_00_card_initial
+# The card spins while the callable round trip and the image download
+# complete. waitForAnimationToEnd alone is not enough — it has returned while
+# the spinner was still on screen, which makes the assertions below pass
+# against a loading card and prove nothing. Burn a bounded settle window
+# instead.
+- repeat:
+    times: 30
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000
+- takeScreenshot: daily_verse_01_card_loaded
+- assertVisible: "Daily verse"
+- assertNotVisible: "(?s).*haven't been created yet.*"
+
+# Third tier — the complete fallback. English has no generated cards on any
+# day in the lookback window, so switching the toggle must drop to the verse
+# as plain text rather than an apology.
+- tapOn: "TN"
+- repeat:
+    times: 20
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000
+- takeScreenshot: daily_verse_02_text_fallback
+- assertNotVisible: "(?s).*haven't been created yet.*"

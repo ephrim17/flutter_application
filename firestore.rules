@@ -143,6 +143,22 @@ service cloud.firestore {
       match /dashboard_metrics/{docId} {
         allow read, write: if isChurchStaff(churchId);
       }
+      // Cached Daily Verse AI card state: the generation lock, the per-day
+      // attempt counter and the Storage paths. Writes stay Admin-SDK-only —
+      // letting a member write here would let them point their church's card
+      // at any object, or reset the lock and spend the church's daily cap.
+      // No client reads it either — not even a church admin. Studio needs to
+      // know whether today's one generation is spent, and the obvious way to
+      // answer that is an admin read of this doc; it was tried and reverted.
+      // `isChurchAdmin` compares the caller's lowercased email against
+      // `config/app.admins` exactly as stored, so an admin whose stored entry
+      // carries a capital letter (real case: "Ephrim17@gmail.com") is denied,
+      // and rules cannot lowercase the stored list to fix it. The callable
+      // answers instead: its `authorize()` lowercases both sides.
+      // See KT Files/architecture/daily-verse-card-caching.md.
+      match /dailyVerseCards/{dayKey} {
+        allow read, write: if false;
+      }
       match /notification_requests/{docId} {
         // Regular member actions (posting a feed item, completing a faith
         // engagement step) enqueue their own notification job.

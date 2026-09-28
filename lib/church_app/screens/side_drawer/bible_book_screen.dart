@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/helpers/chapter_paging_window.dart';
 import 'package:flutter_application/church_app/models/bible_book_model.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
@@ -13,9 +14,32 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart'
-    show generateAiVerseCards;
+    show
+        VerseShareLanguage,
+        generateAiVerseCards,
+        showVerseLanguageChoiceSheet;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+
+/// Formats a verse for plain-text sharing: both scripts, each under its own
+/// language's reference (English first, matching the order the long-press
+/// menu's language sheet lists them in).
+///
+/// Either script may be empty for a given verse in some Bible versions, so
+/// an empty half is dropped entirely rather than shared as a reference with
+/// nothing under it.
+String buildVerseShareText({
+  required String reference,
+  required String tamilReference,
+  required String englishText,
+  required String tamilText,
+}) {
+  final blocks = <String>[
+    if (englishText.trim().isNotEmpty) '$reference\n${englishText.trim()}',
+    if (tamilText.trim().isNotEmpty) '$tamilReference\n${tamilText.trim()}',
+  ];
+  return blocks.join('\n\n');
+}
 
 class BibleBookScreen extends StatelessWidget {
   const BibleBookScreen({
@@ -199,11 +223,17 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
   late final Future<Map<String, dynamic>> _bookFuture;
   String chapterIndexText = '';
 
+  /// The page the reader opens on. For the unbounded Bible reader this is the
+  /// entry chapter's own index (the window spans the whole book); for a
+  /// plan-scoped range it's 0 (the window *is* the range).
+  int get _initialPage =>
+      widget.endChapterIndex != null ? 0 : widget.startChapterIndex;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController(
-      initialPage: 0,
+      initialPage: _initialPage,
     );
     _bookFuture = repo.loadBook(
       widget.book.key,
@@ -280,12 +310,15 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
 
         final allChapters = snapshot.data!['chapters'] as List<dynamic>;
 
-        final chapters = widget.endChapterIndex != null
-            ? allChapters.sublist(
-                widget.startChapterIndex,
-                widget.endChapterIndex! + 1,
-              )
-            : allChapters.sublist(widget.startChapterIndex);
+        final window = resolveChapterPagingWindow(
+          totalChapters: allChapters.length,
+          startChapterIndex: widget.startChapterIndex,
+          endChapterIndex: widget.endChapterIndex,
+        );
+        final chapters = allChapters.sublist(
+          window.firstChapterIndex,
+          window.firstChapterIndex + window.chapterCount,
+        );
 
         final highlights = ref.watch(favoritesProvider).maybeWhen(
               data: (h) => h,
@@ -317,27 +350,23 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                 tooltip: context.t('ui.bible_reader_appbar.ai_summary'),
                 onPressed: () => _summarizeChapter(context, chapters),
               ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () => _share(chapters, highlights),
-              ),
             ],
           ),
           body: PageView.builder(
             controller: _pageController,
             itemCount: chapters.length,
             onPageChanged: (index) {
-              final actualChapterIndex = widget.startChapterIndex + index;
               setState(() {
-                chapterIndexText = (actualChapterIndex + 1).toString();
+                chapterIndexText = window.chapterNumberForPage(index).toString();
               });
             },
             itemBuilder: (context, chapterIndex) {
               final chapter = chapters[chapterIndex];
               final verses = chapter['verses'] as List<dynamic>;
 
-              final actualChapterIndex =
-                  widget.startChapterIndex + chapterIndex;
+              final actualChapterIndex = window.chapterIndexForPage(
+                chapterIndex,
+              );
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -346,6 +375,11 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                   final verse = verses[index];
                   final reference =
                       "${widget.book.key} ${actualChapterIndex + 1}:${verse['verse']}";
+                  // `book.key` is the English book name, `book.name` the Tamil
+                  // one — a Tamil card must carry the Tamil reference too,
+                  // otherwise the verse renders in Tamil under "Genesis 23:2".
+                  final tamilReference =
+                      "${widget.book.name} ${actualChapterIndex + 1}:${verse['verse']}";
                   final isHighlighted = highlights
                       .any((v) => (v['reference'] ?? '') == reference);
 
@@ -366,6 +400,7 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                               context,
                               details.globalPosition,
                               reference: reference,
+                              tamilReference: tamilReference,
                               tamilText: verse['text']['tamil'],
                               englishText: verse['text']['english'],
                               isHighlighted: isHighlighted,
@@ -403,35 +438,40 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
     );
   }
 
-  void _share(List<dynamic> chapters, List<dynamic> highlights) {
-    if (highlights.isEmpty) return;
-    final currentPage = _pageController.page?.round() ?? 0;
-    final verses = chapters[currentPage]['verses'] as List<dynamic>;
-    final text = highlights.map((v) {
-      final reference = v['reference'] ?? '';
-      final verse = verses.firstWhere(
-        (vv) => "$chapterIndexText:${vv['verse']}" == reference.split(' ').last,
-        orElse: () => null,
-      );
-      if (verse == null) return '';
-      return '''
-${widget.book.key} ${widget.book.name}: $chapterIndexText:${verse['verse']}
-
-${verse['text']['tamil']}
-${verse['text']['english']}
-''';
-    }).join('\n');
-    if (text.trim().isNotEmpty) {
-      Share.share(text.trim());
-    }
+  /// Shares one verse as plain text in both scripts, each under its own
+  /// language's reference. Replaces the app bar's old share icon, which only
+  /// ever shared the chapter's *highlighted* verses and silently did nothing
+  /// when none were highlighted — sharing is per-verse from the long-press
+  /// menu now, alongside the other verse actions.
+  Future<void> _shareVerseAsText({
+    required String reference,
+    required String tamilReference,
+    required String englishText,
+    required String tamilText,
+  }) {
+    final text = buildVerseShareText(
+      reference: reference,
+      tamilReference: tamilReference,
+      englishText: englishText,
+      tamilText: tamilText,
+    );
+    // share_plus rejects empty content on some platforms — a verse with
+    // neither script is nothing to share, so stop before the sheet opens.
+    if (text.isEmpty) return Future<void>.value();
+    return Share.share(text);
   }
 
   Future<void> _summarizeChapter(
     BuildContext context,
     List<dynamic> chapters,
   ) async {
-    final currentPage =
-        _pageController.hasClients ? (_pageController.page?.round() ?? 0) : 0;
+    // Page 0 is no longer the chapter the reader opened on (the window spans
+    // the whole book for free reading), so fall back to the entry page rather
+    // than to chapter 1 when the controller hasn't attached yet.
+    final rawPage = _pageController.hasClients
+        ? (_pageController.page?.round() ?? _initialPage)
+        : _initialPage;
+    final currentPage = rawPage.clamp(0, chapters.length - 1);
     final verses = chapters[currentPage]['verses'] as List<dynamic>;
     final tamilText = verses
         .map((v) => "${v['verse']}. ${v['text']['tamil']}")
@@ -453,6 +493,7 @@ ${verse['text']['english']}
     BuildContext context,
     Offset position, {
     required String reference,
+    required String tamilReference,
     required String tamilText,
     required String englishText,
     required bool isHighlighted,
@@ -506,6 +547,16 @@ ${verse['text']['english']}
             ],
           ),
         ),
+        PopupMenuItem(
+          value: 'share_text',
+          child: Row(
+            children: [
+              const Icon(Icons.share_outlined, size: 20),
+              const SizedBox(width: 10),
+              Text(context.t('ui.bible_reader_appbar.share_as_text')),
+            ],
+          ),
+        ),
       ],
     );
     if (selected == 'highlight') {
@@ -519,11 +570,21 @@ ${verse['text']['english']}
         reference: reference,
       );
     } else if (selected == 'generate_image' && context.mounted) {
+      final language = await showVerseLanguageChoiceSheet(context);
+      if (language == null || !context.mounted) return;
+      final isTamil = language == VerseShareLanguage.tamil;
       await generateAiVerseCards(
         context,
-        text: tamilText,
-        reference: reference,
+        text: isTamil ? tamilText : englishText,
+        reference: isTamil ? tamilReference : reference,
         isGuestShare: widget.isGuestShare,
+      );
+    } else if (selected == 'share_text') {
+      await _shareVerseAsText(
+        reference: reference,
+        tamilReference: tamilReference,
+        englishText: englishText,
+        tamilText: tamilText,
       );
     }
   }

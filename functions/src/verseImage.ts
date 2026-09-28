@@ -3,6 +3,7 @@ import {defineSecret, defineString} from "firebase-functions/params";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import {firestoreDb} from "./firestoreDb";
+import {getOrCreateDailyVerseCards, istToday} from "./dailyVerseCache";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 // Product policy: strictly 1 "generate" action per user per day in
@@ -29,11 +30,13 @@ function readString(value: unknown): string {
 }
 
 /**
- * Today's date key (UTC) for the per-user daily usage counter.
+ * Today's date key for the per-user daily usage counter — the Asia/Kolkata
+ * church-day, so the cap resets at 12am IST for everyone, the same moment
+ * Studio's Daily Verse generation unlocks.
  * @return {string} A YYYY-MM-DD string.
  */
 function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  return istToday().dayKey;
 }
 
 /**
@@ -66,6 +69,51 @@ async function reserveDailyQuota(uid: string): Promise<void> {
       {merge: true},
     );
   });
+}
+
+/**
+ * Returns a unit reserved by [reserveDailyQuota] when the whole batch failed.
+ *
+ * The reservation happens *before* any Gemini call so a request that would
+ * exceed the cap never spends API cost — but that also meant a total failure
+ * (all candidates errored, or Gemini was down) burned the user's entire daily
+ * allowance and handed them an error for it. Only a total failure refunds: a
+ * partial success still delivered cards, so it still costs a unit.
+ *
+ * Floored at 0 rather than using `FieldValue.increment(-1)`, so a double
+ * refund (a retry racing the first call) can never push the counter negative
+ * and hand out free generations for the rest of the day.
+ * @param {string} uid The signed-in user's uid.
+ * @return {Promise<void>} Resolves once the counter is decremented.
+ */
+async function refundDailyQuota(uid: string): Promise<void> {
+  const usageRef = firestoreDb()
+    .collection("users")
+    .doc(uid)
+    .collection("aiUsage")
+    .doc(todayKey());
+  try {
+    await firestoreDb().runTransaction(async (tx) => {
+      const snapshot = await tx.get(usageRef);
+      const count = (snapshot.data()?.count as number | undefined) ?? 0;
+      if (count <= 0) return;
+      tx.set(
+        usageRef,
+        {
+          count: count - 1,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        {merge: true},
+      );
+    });
+  } catch (error) {
+    // The caller is already on its way to throwing `generation-failed`; a
+    // failed refund must not replace that with a confusing Firestore error.
+    logger.error("Failed to refund AI image quota.", {
+      uid,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 /**
@@ -150,6 +198,42 @@ function buildSpellingInstruction(): string {
 }
 
 /**
+ * The shared art-direction instruction that forces every style's imagery to
+ * follow *this* verse rather than generic Christian stock imagery. Confirmed
+ * live that without it the model anchors on the prompt's own example imagery:
+ * Genesis 23:2 ("Sarah died... and Abraham came to mourn for her, and to
+ * weep for her") still produced a smiling person holding a Bible under a
+ * golden sunrise, because the devotional-poster prompt described that scene
+ * literally. Scene, people, setting, light and palette are all stated here as
+ * derived-from-the-verse, with the generic sunrise/Bible/cross imagery called
+ * out as an explicit anti-pattern.
+ * @return {string} The instruction fragment.
+ */
+function buildVerseSceneInstruction(): string {
+  return " Before designing anything, read the verse text given below and " +
+    "work out what it is actually about: who is in it, where and when it " +
+    "happens, what is happening, and its emotional register (grief, " +
+    "lament, repentance, fear, warning, longing, joy, praise, " +
+    "thanksgiving, promise, instruction). Every visual choice — the " +
+    "scene, any people and what they are doing, the setting, the time of " +
+    "day, the weather, the lighting and the color palette — must follow " +
+    "from that reading of this specific verse. A verse of mourning, " +
+    "death, lament or repentance must look somber and subdued (fading or " +
+    "overcast light, muted desaturated colors, quiet restrained posture); " +
+    "a verse of praise, promise or deliverance may look bright and warm. " +
+    "Never fall back on generic Christian stock imagery that ignores the " +
+    "verse: do not depict anyone holding, opening or reading a Bible " +
+    "unless the verse itself speaks about Scripture, and do not add a " +
+    "sunrise, a cross on a hilltop, praying hands or a dove merely as " +
+    "decoration when this verse's own content points somewhere else. " +
+    "Keep the depiction reverent, dignified and suitable for all " +
+    "audiences: convey sorrow, death, judgement or conflict through mood, " +
+    "posture, distance and light rather than anything graphic, gory or " +
+    "frightening, and do not depict any real, recognizable or famous " +
+    "living individual.";
+}
+
+/**
  * Builds a fixed, moderation-friendly prompt from the verse text/reference —
  * the client never controls the raw prompt sent to Gemini. Asks for a
  * complete, ready-to-share devotional card: a top banner ("Praise the
@@ -181,9 +265,9 @@ function buildBackgroundStylePrompt(
   const footerInstruction = buildFooterInstruction(churchName, contactNumber);
   return "Design a complete, ready-to-share devotional verse card image, " +
     "in the style of a designed Christian social-media graphic." +
-    `${topInstruction} Create a background that evokes the mood and ` +
-    "imagery of this Bible verse — photographic or soft painterly style, " +
-    "calm and reverent, suitable for all audiences — and render the " +
+    `${topInstruction}${buildVerseSceneInstruction()} Create a background ` +
+    "that depicts the scene, imagery and mood of this Bible verse — " +
+    "photographic or soft painterly style — and render the " +
     "verse text itself directly and legibly onto the image, in its " +
     "original script and language, exactly as written, positioned " +
     "wherever best suits the composition (below the top banner, center, " +
@@ -228,7 +312,10 @@ function buildInfographicPrompt(
     "infographic (flat vector shapes, a soft solid or gently-gradiented " +
     "background, generous whitespace, a clean grid-aligned layout), not a " +
     "photographic or painterly background." +
-    `${topInstruction} Render the verse text itself directly and legibly ` +
+    `${topInstruction}${buildVerseSceneInstruction()}` +
+    " Within that flat design language, let the background color, the " +
+    "accent colors and any illustrated shapes carry this verse's own mood " +
+    "and subject. Render the verse text itself directly and legibly " +
     "onto the image, in its original script and language, exactly as " +
     "written, as the large, bold visual centerpiece of the card. Beneath " +
     "or around the verse text, add 2 to 3 small flat-icon-plus-short-label " +
@@ -248,11 +335,16 @@ function buildInfographicPrompt(
 /**
  * Builds the devotional-poster variant: the vibrant, photographic
  * "WhatsApp-forward" devotional graphic common in South Indian Christian
- * circles — a real person against a golden-hour outdoor scene, with the
+ * circles — a person on the left against an outdoor scene, with the
  * verse broken into short phrases stacked as bold, colorful icon-labeled
  * banner strips (not painted ornamental lettering). Shares the same
  * top-banner and church-branding footer rules as
  * [buildBackgroundStylePrompt]; only the art direction differs.
+ *
+ * The layout is fixed, but the figure, scene and palette inside it are
+ * verse-derived (see [buildVerseSceneInstruction]) — the golden-hour
+ * hills/cross-hilltop scene this style used to describe unconditionally is
+ * now only the fallback for verses that depict no scene of their own.
  *
  * Deliberately asks for no church logo: the model would invent a
  * plausible-but-wrong emblem for a real, named ministry. The church's
@@ -281,34 +373,48 @@ function buildDevotionalPosterPrompt(
     "the widely-shared South Indian Christian WhatsApp/Facebook-forward " +
     "style — photographic, energetic and colorful, not painterly or " +
     "muted, not a flat-design infographic." +
-    `${topInstruction} On the left side of the image, place a ` +
-    "contemporary young Indian man or woman, shown from the chest up in " +
-    "three-quarter profile, wearing casual modern clothing, gazing " +
-    "upward and outward with a hopeful, faithful expression, holding a " +
-    "black Bible with a small cross on its cover clutched close to the " +
-    "chest. Behind this person, render a warm golden-hour outdoor " +
-    "landscape: green hills and trees, a winding path, a large low sun " +
-    "casting golden light and soft lens-glow across a partly-cloudy " +
-    "blue sky, and a simple cross silhouette standing on a distant " +
-    "hilltop, backlit by the sunrise. Render this person " +
-    "photorealistically and with dignity; do not depict any real, " +
-    "recognizable or famous individual. Across the right two-thirds of " +
+    `${topInstruction}${buildVerseSceneInstruction()} On the left side of ` +
+    "the image, place a single photorealistic human figure, shown from " +
+    "the chest up in three-quarter profile, whose age, clothing, posture, " +
+    "gaze and facial expression are drawn from this verse: either the " +
+    "person the verse itself is about, or a present-day South Indian " +
+    "believer living out what the verse says. If the verse describes " +
+    "grief, weeping or repentance, this figure must show that — head " +
+    "bowed or turned away, eyes lowered, hands empty or covering the " +
+    "face, subdued clothing — not a hopeful upward gaze. Give the figure " +
+    "an object to hold only if the verse itself puts one there. Behind " +
+    "this person, render an outdoor setting, time of day, weather and " +
+    "light taken from the verse's own scene and mood — the place the " +
+    "verse names or implies, in the era it describes, lit to match its " +
+    "emotional register. Only when the verse describes no scene of its " +
+    "own (a bare promise, proverb or instruction) fall back to a warm " +
+    "golden-hour landscape of green hills, a winding path and a distant " +
+    "cross-topped hilltop. Render this person photorealistically and " +
+    "with dignity. Across the right two-thirds of " +
     "the image, break the verse text into its natural short phrases and " +
     "stack them vertically as a sequence of bold, rounded " +
     "highlighter-style banner strips — one phrase per strip, each strip " +
-    "a different vivid solid color (blue, green, magenta, teal, purple, " +
-    "orange; vary them so no two adjacent strips share a color), each " +
+    "a different solid color drawn from a palette that suits the verse's " +
+    "emotional register (vivid blue, green, magenta, teal, purple and " +
+    "orange for joy, praise, promise or encouragement; deeper, quieter " +
+    "tones such as slate, indigo, deep plum and muted teal for grief, " +
+    "lament, repentance or warning), varied so no two adjacent strips " +
+    "share a color, each " +
     "paired on its left with a small simple white icon whose meaning " +
-    "matches that phrase's own theme (choose icons appropriate to this " +
-    "specific verse — for example an open book, a walking figure, a " +
-    "heart, a dove, a cross, a shield — based on what each phrase " +
-    "itself says). Render every phrase's text in bold white lettering " +
+    "matches what that phrase itself says — pick each icon from the " +
+    "phrase's own words (a place, an action, a person, an object or an " +
+    "emotion it names) rather than from a stock set of religious symbols; " +
+    "an icon of a book, dove or cross belongs there only if that phrase " +
+    "is about Scripture, the Spirit or the cross. " +
+    "Render every phrase's text in bold white lettering " +
     "with a thin dark outline so it stays legible against its strip's " +
     "color, breaking the verse only at natural phrase boundaries, never " +
     "mid-word. Beneath the phrase strips, add one larger, visually " +
     "distinct banner in a different solid color (e.g. deep navy) " +
-    "holding the verse's concluding clause or summary phrase in bold, " +
-    "bright-yellow lettering sized larger than the strips above it, so " +
+    "holding the verse's concluding clause or summary phrase in bold " +
+    "lettering, in whichever high-contrast color best suits the palette " +
+    "chosen above (bright yellow on a deep tone, for instance), sized " +
+    "larger than the strips above it, so " +
     "it reads as the verse's main takeaway. Below that banner, place " +
     "the verse reference inside a small rounded pill, flanked on both " +
     "sides by a small decorative leaf or olive-branch flourish. Render " +
@@ -328,12 +434,20 @@ type InteractionStep = {
   content?: InteractionContentBlock[];
 };
 
+// The interactions endpoint's usage field isn't documented under a single
+// stable name, so both spellings are accepted and whichever is present is
+// logged verbatim — see [logUsage].
+type GeminiUsage = Record<string, unknown>;
+
 type GeminiInteractionResponse = {
   output_image?: {
     data?: string;
     mime_type?: string;
   };
   steps?: InteractionStep[];
+  usage?: GeminiUsage;
+  usage_metadata?: GeminiUsage;
+  usageMetadata?: GeminiUsage;
 };
 
 type GeneratedImage = {
@@ -370,13 +484,37 @@ function extractGeneratedImage(
 }
 
 /**
+ * Logs whatever token-usage block the response carried.
+ *
+ * Image output is billed per image at a known rate, but this model also
+ * bills its *thinking* tokens, and that share has never been measured here
+ * because the response was discarded. Logging it verbatim — rather than
+ * picking fields out of it — means the log stays useful if the endpoint
+ * renames or extends the block.
+ * @param {string} style Which style prompt this call generated.
+ * @param {GeminiInteractionResponse} payload The parsed response body.
+ * @return {void}
+ */
+function logUsage(style: string, payload: GeminiInteractionResponse): void {
+  const usage =
+    payload.usage ?? payload.usage_metadata ?? payload.usageMetadata;
+  if (!usage) {
+    logger.info("Gemini image generation reported no usage block.", {style});
+    return;
+  }
+  logger.info("Gemini image generation usage.", {style, usage});
+}
+
+/**
  * Calls Gemini's image-generation endpoint and returns the raw base64 image
  * bytes plus mime type.
  * @param {string} prompt The prompt to send.
+ * @param {string} style Which style prompt this is, for usage logging.
  * @return {Promise<GeneratedImage>} The generated image.
  */
 async function callGeminiImageGeneration(
   prompt: string,
+  style: string,
 ): Promise<GeneratedImage> {
   // A single hung Gemini call must not be allowed to block the whole
   // Promise.allSettled batch (and, transitively, the function's own
@@ -421,6 +559,7 @@ async function callGeminiImageGeneration(
     throw new HttpsError("internal", "generation-failed");
   }
   const payload = await response.json() as GeminiInteractionResponse;
+  logUsage(style, payload);
   const image = extractGeneratedImage(payload);
   if (!image) {
     logger.error("Gemini image generation returned no image.", {payload});
@@ -435,11 +574,124 @@ async function callGeminiImageGeneration(
 // swipeable picker offers a real choice of look rather than three random
 // variations of one design.
 
-// Temporary testing carve-out, per direct instruction: unlimited
-// generations for this one account while the feature is being tried out
-// post-release, bypassing the otherwise-strict 1/day production cap.
-// Remove once testing is done.
-const unlimitedTestEmail = "ephrim17@gmail.com";
+/**
+ * Serves the church's shared Daily Verse cards, generating them once per
+ * church per day per language.
+ *
+ * The church name, contact number and date label are resolved server-side
+ * inside [getOrCreateDailyVerseCards] and passed back here, so nothing the
+ * client sent can shape what the whole church sees. The verse reference the
+ * client claims is validated against the church's configured Daily Verse
+ * before any generation happens.
+ * @param {object} args Caller identity, verse strings and the raw
+ * `dailyVerse` argument from the request.
+ * @return {Promise<object>} `{status, cards}` for the client.
+ */
+async function handleDailyVerse(args: {
+  uid: string;
+  email: string;
+  verseText: string;
+  reference: string;
+  dailyVerse: Record<string, unknown>;
+}): Promise<{
+  status: string;
+  cards?: {style: string; path: string; url?: string}[];
+  images?: {data: string; mimeType: string}[];
+  fromDayKey?: string;
+  generationUsed?: boolean;
+}> {
+  const churchId = readString(args.dailyVerse.churchId);
+  if (!churchId) {
+    throw new HttpsError("invalid-argument", "Missing churchId.");
+  }
+  const language = readString(args.dailyVerse.language) === "en" ? "en" : "ta";
+  const mode =
+    readString(args.dailyVerse.mode) === "generate" ? "generate" : "fetch";
+  const book = readString(args.dailyVerse.book);
+  const chapter = Number(args.dailyVerse.chapter);
+  const verse = Number(args.dailyVerse.verse);
+  if (!book || !chapter || !verse) {
+    throw new HttpsError("invalid-argument", "Missing verse reference.");
+  }
+
+  const result = await getOrCreateDailyVerseCards({
+    uid: args.uid,
+    email: args.email,
+    churchId,
+    language,
+    book,
+    chapter,
+    verse,
+    mode,
+    generate: async ({churchName, contactNumber, dateLabel}) => {
+      const settled = await Promise.allSettled([
+        callGeminiImageGeneration(
+          buildInfographicPrompt(
+            args.verseText,
+            args.reference,
+            churchName,
+            contactNumber,
+            dateLabel,
+          ),
+          "infographic",
+        ),
+        callGeminiImageGeneration(
+          buildDevotionalPosterPrompt(
+            args.verseText,
+            args.reference,
+            churchName,
+            contactNumber,
+            dateLabel,
+          ),
+          "devotionalPoster",
+        ),
+        callGeminiImageGeneration(
+          buildBackgroundStylePrompt(
+            args.verseText,
+            args.reference,
+            churchName,
+            contactNumber,
+            dateLabel,
+          ),
+          "moodBackground",
+        ),
+      ]);
+      const styles = ["infographic", "devotionalPoster", "moodBackground"];
+      return settled.flatMap((outcome, index) =>
+        outcome.status === "fulfilled" ?
+          [{
+            style: styles[index],
+            data: outcome.value.data,
+            mimeType: outcome.value.mimeType,
+          }] :
+          [],
+      );
+    },
+  });
+
+  if (result.status !== "ready") {
+    return {
+      status: result.status,
+      generationUsed: "generationUsed" in result ?
+        result.generationUsed :
+        undefined,
+    };
+  }
+  return {
+    status: "ready",
+    cards: result.cards,
+    // Present only when today's cards were missing and an earlier day's are
+    // being served instead — the client shows them either way.
+    fromDayKey: result.fromDayKey,
+    // Whether this church's one generation for today is spent; Studio locks
+    // its Generate button on this.
+    generationUsed: result.generationUsed,
+    images: result.images?.map((image) => ({
+      data: image.data,
+      mimeType: image.mimeType,
+    })),
+  };
+}
 
 export const generateVerseBackgroundImage = onCall(
   // 3 image-generation candidates run in parallel below, each individually
@@ -462,11 +714,29 @@ export const generateVerseBackgroundImage = onCall(
     const contactNumber = readString(request.data?.contactNumber);
     const dateLabel = readString(request.data?.dateLabel);
 
+    // The Daily Verse path caches per church: the same verse, church banner
+    // and date for every member, so one member's generation serves everyone
+    // and the church pays once a day instead of once a member. Everything
+    // else (the Bible reader's long-press, Favourites) is an arbitrary
+    // user-chosen verse that cannot be shared, so it stays on the per-user
+    // quota below, unchanged.
+    // See KT Files/architecture/daily-verse-card-caching.md.
+    const dailyVerse = request.data?.dailyVerse as
+      | Record<string, unknown>
+      | undefined;
+    if (dailyVerse) {
+      return await handleDailyVerse({
+        uid,
+        email,
+        verseText,
+        reference,
+        dailyVerse,
+      });
+    }
+
     // One quota unit covers the whole batch of candidates below — the cap
     // is expressed in user-facing "generate" actions, not raw API calls.
-    if (email !== unlimitedTestEmail) {
-      await reserveDailyQuota(uid);
-    }
+    await reserveDailyQuota(uid);
 
     const infographicPrompt = buildInfographicPrompt(
       verseText,
@@ -490,9 +760,9 @@ export const generateVerseBackgroundImage = onCall(
       dateLabel,
     );
     const settled = await Promise.allSettled([
-      callGeminiImageGeneration(infographicPrompt),
-      callGeminiImageGeneration(devotionalPosterPrompt),
-      callGeminiImageGeneration(backgroundPrompt),
+      callGeminiImageGeneration(infographicPrompt, "infographic"),
+      callGeminiImageGeneration(devotionalPosterPrompt, "devotionalPoster"),
+      callGeminiImageGeneration(backgroundPrompt, "moodBackground"),
     ]);
     const images = settled
       .filter(
@@ -502,6 +772,9 @@ export const generateVerseBackgroundImage = onCall(
       .map((result) => result.value);
 
     if (images.length === 0) {
+      // Nothing was delivered, so the reserved unit is given back — the user
+      // would otherwise lose their whole day to a transient Gemini outage.
+      await refundDailyQuota(uid);
       throw new HttpsError("internal", "generation-failed");
     }
 
