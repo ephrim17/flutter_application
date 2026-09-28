@@ -117,21 +117,19 @@ async function refundDailyQuota(uid: string): Promise<void> {
 }
 
 /**
- * The top banner instruction shared by every card style: "Praise the Lord"
- * plus today's date in the top-right corner, when known.
- * @param {string} dateLabel Today's date, pre-formatted human-readable
- * (e.g. "12 September 2026") by the client, or "" if not supplied.
+ * The top banner instruction shared by every card style: "Praise the Lord".
+ *
+ * Deliberately dateless. Cards used to carry the generation date in the
+ * top-right corner, which made every card wrong the moment it outlived the
+ * day it was made for — and the Daily Verse card is now explicitly allowed to
+ * outlive it, since a church with no images for today falls back to the most
+ * recent day that has them. A dateless card is reusable; a dated one contra-
+ * dicts itself.
  * @return {string} The instruction fragment.
  */
-function buildTopInstruction(dateLabel: string): string {
+function buildTopInstruction(): string {
   return " At the very top of the image, add a small " +
-    "banner or heading that reads \"Praise the Lord\"" +
-    (dateLabel ?
-      `, and place today's date, "${dateLabel}", in the top-right ` +
-        "corner in a small, human-readable style (already given as day, " +
-        "full month name and year — render it exactly as given, not as " +
-        "numeric digits-only)." :
-      ".");
+    "banner or heading that reads \"Praise the Lord\".";
 }
 
 /**
@@ -249,8 +247,6 @@ function buildVerseSceneInstruction(): string {
  * there's no church in context (e.g. a guest sharing from Favourites).
  * @param {string} contactNumber The church's contact phone number, or ""
  * under the same condition as churchName.
- * @param {string} dateLabel Today's date, pre-formatted human-readable
- * (e.g. "12 September 2026") by the client.
  * @return {string} The prompt to send to Gemini.
  */
 function buildBackgroundStylePrompt(
@@ -258,10 +254,9 @@ function buildBackgroundStylePrompt(
   reference: string,
   churchName: string,
   contactNumber: string,
-  dateLabel: string,
 ): string {
   const referencePart = reference ? ` (${reference})` : "";
-  const topInstruction = buildTopInstruction(dateLabel);
+  const topInstruction = buildTopInstruction();
   const footerInstruction = buildFooterInstruction(churchName, contactNumber);
   return "Design a complete, ready-to-share devotional verse card image, " +
     "in the style of a designed Christian social-media graphic." +
@@ -293,8 +288,6 @@ function buildBackgroundStylePrompt(
  * there's no church in context.
  * @param {string} contactNumber The church's contact phone number, or ""
  * under the same condition as churchName.
- * @param {string} dateLabel Today's date, pre-formatted human-readable, by
- * the client.
  * @return {string} The prompt to send to Gemini.
  */
 function buildInfographicPrompt(
@@ -302,10 +295,9 @@ function buildInfographicPrompt(
   reference: string,
   churchName: string,
   contactNumber: string,
-  dateLabel: string,
 ): string {
   const referencePart = reference ? ` (${reference})` : "";
-  const topInstruction = buildTopInstruction(dateLabel);
+  const topInstruction = buildTopInstruction();
   const footerInstruction = buildFooterInstruction(churchName, contactNumber);
   return "Design a clean, modern, flat-design infographic-style devotional " +
     "card for this Bible verse — the look of a well-designed social-media " +
@@ -355,8 +347,6 @@ function buildInfographicPrompt(
  * there's no church in context.
  * @param {string} contactNumber The church's contact phone number, or ""
  * under the same condition as churchName.
- * @param {string} dateLabel Today's date, pre-formatted human-readable, by
- * the client.
  * @return {string} The prompt to send to Gemini.
  */
 function buildDevotionalPosterPrompt(
@@ -364,10 +354,9 @@ function buildDevotionalPosterPrompt(
   reference: string,
   churchName: string,
   contactNumber: string,
-  dateLabel: string,
 ): string {
   const referencePart = reference ? ` (${reference})` : "";
-  const topInstruction = buildTopInstruction(dateLabel);
+  const topInstruction = buildTopInstruction();
   const footerInstruction = buildFooterInstruction(churchName, contactNumber);
   return "Design a vibrant, modern devotional social-media graphic in " +
     "the widely-shared South Indian Christian WhatsApp/Facebook-forward " +
@@ -623,7 +612,7 @@ async function handleDailyVerse(args: {
     chapter,
     verse,
     mode,
-    generate: async ({churchName, contactNumber, dateLabel}) => {
+    generate: async ({churchName, contactNumber}) => {
       const settled = await Promise.allSettled([
         callGeminiImageGeneration(
           buildInfographicPrompt(
@@ -631,7 +620,6 @@ async function handleDailyVerse(args: {
             args.reference,
             churchName,
             contactNumber,
-            dateLabel,
           ),
           "infographic",
         ),
@@ -641,7 +629,6 @@ async function handleDailyVerse(args: {
             args.reference,
             churchName,
             contactNumber,
-            dateLabel,
           ),
           "devotionalPoster",
         ),
@@ -651,7 +638,6 @@ async function handleDailyVerse(args: {
             args.reference,
             churchName,
             contactNumber,
-            dateLabel,
           ),
           "moodBackground",
         ),
@@ -712,10 +698,9 @@ export const generateVerseBackgroundImage = onCall(
     const reference = readString(request.data?.reference);
     const churchName = readString(request.data?.churchName);
     const contactNumber = readString(request.data?.contactNumber);
-    const dateLabel = readString(request.data?.dateLabel);
 
-    // The Daily Verse path caches per church: the same verse, church banner
-    // and date for every member, so one member's generation serves everyone
+    // The Daily Verse path caches per church: the same verse and church
+    // banner for every member, so one member's generation serves everyone
     // and the church pays once a day instead of once a member. Everything
     // else (the Bible reader's long-press, Favourites) is an arbitrary
     // user-chosen verse that cannot be shared, so it stays on the per-user
@@ -743,21 +728,18 @@ export const generateVerseBackgroundImage = onCall(
       reference,
       churchName,
       contactNumber,
-      dateLabel,
     );
     const devotionalPosterPrompt = buildDevotionalPosterPrompt(
       verseText,
       reference,
       churchName,
       contactNumber,
-      dateLabel,
     );
     const backgroundPrompt = buildBackgroundStylePrompt(
       verseText,
       reference,
       churchName,
       contactNumber,
-      dateLabel,
     );
     const settled = await Promise.allSettled([
       callGeminiImageGeneration(infographicPrompt, "infographic"),

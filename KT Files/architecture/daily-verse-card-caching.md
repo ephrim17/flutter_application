@@ -40,7 +40,7 @@ reader path).
 | D3 | Cache key | `churchId` + church-day key (Asia/Kolkata) + language. One Firestore doc per church-day holding both languages. |
 | D4 | Invalidation | A **content fingerprint** stored on the entry; any mismatch is a miss and regenerates under a new object name. |
 | D5 | Verse text source | **Option B — chosen by the owner 2026-09-18.** The client sends `book`, `chapter`, `verse` *and* the rendered `verseText` and display `reference`. The server reads `config/app.dailyVerse` and **rejects the call** (`failed-precondition`) if the client's reference does not match it. The fingerprint (D4) is built from the *server's* config values, never the client's, so a caller cannot move the cache key — steady state stays one batch per church per day and the D8 cap is never reachable by a user. Accepted residual risk: a tampered direct call can still put wrong verse text on the shared card. Rejected Option A (full server-side resolution from the Bible JSON) closed that too, but cost the D18 Tamil-name duplication for no cost saving. |
-| D6 | Church name / contact / date label | All resolved **server-side** (church doc + Asia/Kolkata clock) — confirmed by the owner. Near-free: the function already reads `churches/{churchId}` to authorize the caller, and the date is the server clock. Values come out identical to what the client would have sent. |
+| D6 | Church name / contact / date label (date dropped 2026-09-28, see below) | All resolved **server-side** (church doc + Asia/Kolkata clock) — confirmed by the owner. Near-free: the function already reads `churches/{churchId}` to authorize the caller, and the date is the server clock. Values come out identical to what the client would have sent. |
 | D7 | Concurrency | Firestore transaction on the church-day doc; `generating`/`ready`/`failed` state machine; 240s stale-lock takeover. |
 | D8 | Quota model | Daily Verse path **does not touch** `users/{uid}/aiUsage`. It gets its own **per-church daily generation cap** (`DAILY_VERSE_CARD_DAILY_CAP`, default `3`). Chosen by the owner over `4`: it
 covers both languages plus one regeneration, and caps a church at
@@ -291,6 +291,25 @@ previously-cached card until tomorrow. |
 > Joshua 1:1 after the day's generation: Studio's button disabled with its
 > info line; For You in Tamil showing the 22 September card; For You in
 > English dropping to the plain-text Joshua 1:1 card.
+
+> **Amendment, 2026-09-28 — cards no longer carry a date.** The top banner
+> used to print the generation date in its top-right corner (D6). That made
+> every card wrong the moment it outlived the day it was made for — which the
+> previous-day fallback makes routine, since a church with nothing for today
+> is deliberately served the most recent day that has cards. A dateless card
+> is reusable; a dated one contradicts the card beside it. `buildTopInstruction`
+> now takes no argument, `GenerateFn` no longer passes one, `istToday` returns
+> only `dayKey`, and the client has stopped sending `dateLabel` on the
+> on-demand path. D6 still stands for church name and contact.
+>
+> **`PROMPT_VERSION` was deliberately not bumped.** Its rule is "bump whenever
+> a prompt builder changes in a way that should invalidate already-cached
+> cards", and this one should not: a dated card already in the cache is still
+> perfectly serviceable. Bumping would have been strictly worse — it moves
+> today's fingerprint, so today's cards stop being served, and the
+> once-a-day rule blocks regenerating them, so members would have been shown
+> *yesterday's* card (still dated, and the wrong verse) instead of today's.
+> The change therefore lands on the next generation, not retroactively.
 
 > **Still uncached: the callable itself.** Every visit to For You invokes
 > `generateVerseBackgroundImage` in `fetch` mode (one function invocation plus

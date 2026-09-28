@@ -39,9 +39,8 @@ documents.
     Function) with the verse's own text/reference plus the church's full
     name (not the short Studio "app title" abbreviation — Gemini's banner
     has room the manual editor's on-screen branding pill doesn't), contact
-    number and today's date (human-readable, e.g. "12 September 2026").
-    Gemini renders a *complete* devotional card itself — a top banner
-    reading "Praise the Lord" with the date in the top-right corner, and a
+    number. Gemini renders a *complete* devotional card itself — a top
+    banner reading "Praise the Lord" (no date, see below), and a
     decorative bottom banner with the church's full name in bold all-caps
     (sized/wrapped to fit rather than truncated) plus a "For prayer" ribbon
     and phone icon + contact number (both shared by every candidate) — not

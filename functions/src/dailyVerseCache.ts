@@ -32,17 +32,16 @@ const FAILURE_COOLDOWN_MS = 600_000;
 const FALLBACK_LOOKBACK_DAYS = 7;
 
 // Bumped by hand whenever a prompt builder in verseImage.ts changes in a way
-// that should invalidate already-cached cards.
+// that should invalidate already-cached cards. Removing the date from those
+// prompts (2026-09-28) deliberately did not bump it: a dated card already in
+// the cache still serves fine, and invalidating would have pulled today's
+// card while the once-a-day rule blocked regenerating it.
 const PROMPT_VERSION = "2026-09-18.1";
 
 // India has a fixed +05:30 offset and no DST, so a plain millisecond shift is
 // exact. `index.ts` already hardcodes Asia/Kolkata for recurring events.
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 export type DailyVerseLanguage = "en" | "ta";
 
@@ -88,7 +87,6 @@ export type GeneratedCandidate = {
 export type GenerateFn = (inputs: {
   churchName: string;
   contactNumber: string;
-  dateLabel: string;
 }) => Promise<GeneratedCandidate[]>;
 
 export type DailyVerseRequest = {
@@ -108,18 +106,18 @@ export type DailyVerseRequest = {
 };
 
 /**
- * Today's date in Asia/Kolkata, as `YYYY-MM-DD` plus a human label.
- * @return {{dayKey: string, dateLabel: string}} The church-day key and label.
+ * Today's church-day key in Asia/Kolkata, as `YYYY-MM-DD`.
+ *
+ * It used to also return a human-readable label, which was printed onto the
+ * cards themselves; the cards are dateless now so only the key remains.
+ * @return {{dayKey: string}} The church-day key.
  */
-export function istToday(): {dayKey: string; dateLabel: string} {
+export function istToday(): {dayKey: string} {
   const shifted = new Date(Date.now() + IST_OFFSET_MS);
-  const year = shifted.getUTCFullYear();
-  const month = shifted.getUTCMonth();
-  const day = shifted.getUTCDate();
   const pad = (value: number) => value.toString().padStart(2, "0");
   return {
-    dayKey: `${year}-${pad(month + 1)}-${pad(day)}`,
-    dateLabel: `${day} ${MONTHS[month]} ${year}`,
+    dayKey: `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-` +
+      `${pad(shifted.getUTCDate())}`,
   };
 }
 
@@ -463,7 +461,7 @@ export async function getOrCreateDailyVerseCards(
 
   const churchName = readString(churchSnap.data()?.name);
   const contactNumber = readString(churchSnap.data()?.contact);
-  const {dayKey, dateLabel} = istToday();
+  const {dayKey} = istToday();
   const fp = fingerprint([
     churchId,
     dayKey,
@@ -585,7 +583,7 @@ export async function getOrCreateDailyVerseCards(
 
   let candidates: GeneratedCandidate[];
   try {
-    candidates = await generate({churchName, contactNumber, dateLabel});
+    candidates = await generate({churchName, contactNumber});
   } catch (error) {
     await markFailed(cacheRef, language, error);
     throw error instanceof HttpsError ?

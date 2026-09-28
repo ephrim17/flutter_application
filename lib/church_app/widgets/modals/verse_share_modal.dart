@@ -576,7 +576,6 @@ class _AiVerseImageGenerationDialogState
       final contactNumber = widget.isGuestShare
           ? ''
           : ref.read(selectedChurchProvider)?.contact ?? '';
-      final dateLabel = DateFormat('d MMMM yyyy').format(DateTime.now());
       // Generating 3 candidates in parallel server-side can legitimately
       // take longer than the plugin's 60s default HttpsCallableOptions
       // timeout, so that's raised here — but a live test found the
@@ -599,7 +598,6 @@ class _AiVerseImageGenerationDialogState
             'reference': widget.reference,
             'churchName': churchName,
             'contactNumber': contactNumber,
-            'dateLabel': dateLabel,
           }).timeout(const Duration(seconds: 130));
 
       final rawImages = (result.data['images'] as List?) ?? const [];
