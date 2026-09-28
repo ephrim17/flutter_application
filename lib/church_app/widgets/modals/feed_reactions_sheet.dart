@@ -1,3 +1,4 @@
+import 'package:flutter_application/church_app/helpers/emoji_text_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/feed_reaction_provider.dart';
@@ -91,7 +92,8 @@ class _FeedReactionsSheetState extends ConsumerState<_FeedReactionsSheet> {
                       for (final entry in summary.entries) ...[
                         const SizedBox(width: 8),
                         _ReactionFilterChip(
-                          label: '${entry.key} ${entry.value}',
+                          emoji: entry.key,
+                          label: '${entry.value}',
                           selected: _selectedEmoji == entry.key,
                           onTap: () =>
                               setState(() => _selectedEmoji = entry.key),
@@ -122,7 +124,7 @@ class _FeedReactionsSheetState extends ConsumerState<_FeedReactionsSheet> {
                         ),
                         trailing: Text(
                           reaction.emoji,
-                          style: const TextStyle(fontSize: 22),
+                          style: emojiTextStyle(fontSize: 22),
                         ),
                       );
                     },
@@ -142,11 +144,18 @@ class _ReactionFilterChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.emoji,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Drawn in its own [Text] rather than concatenated into [label], so it can
+  /// carry the emoji font while the count keeps the app's typeface. Inter
+  /// supplies a monochrome U+2764, so a "❤️ 3" built as one string renders
+  /// the heart grey.
+  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
@@ -159,11 +168,20 @@ class _ReactionFilterChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (emoji != null) ...[
+                Text(emoji!, style: emojiTextStyle(fontSize: 16)),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -46,12 +46,28 @@ cross-church activity before they've joined anything.
   pull-to-refresh.
 - Create/edit sheets use the shared grab handle as their dismiss affordance and
   do not repeat it with a Cancel button.
+- Post images fade in over ~260ms (`appImageFadeDuration`) against a still
+  neutral placeholder. They used to sweep a shimmer highlight left-to-right
+  while loading; in a feed that is mostly images, several sweeps at once read
+  as motion the eye chases, drawing attention to the loading rather than the
+  post. The same fade now covers the full-bleed feed image, link-preview
+  thumbnails (`ShimmerImage`, which despite its name no longer shimmers) and
+  the per-post church logo.
 - Reactions (WhatsApp-channel style) — a round button sits in the bottom-right
   corner of every card. Its own state, always live: a neutral "react" icon
   when the signed-in user hasn't reacted, or their own chosen emoji once
   they have. Tapping it toggles: with no reaction, opens a fixed 5-emoji
   picker (🙏 ❤️ 🤍 👍 🎉) anchored at the button; already reacted, taps it
-  away directly (no picker) rather than reopening the choice. Both directions
+  away directly (no picker) rather than reopening the choice.
+  **Every emoji is drawn with `emojiTextStyle`, never the app's text
+  style.** The theme is `GoogleFonts.interTextTheme`, and Inter ships its own
+  monochrome glyph for U+2764 — so "❤️" (U+2764 plus the emoji variation
+  selector) rendered as a thin grey heart until the picker was pointed at the
+  platform emoji fonts instead. The same applies to the reactions sheet's
+  filter chips, which is why they draw the emoji and its count as two
+  separate `Text`s rather than one "❤️ 3" string. Note 🤍 is a pale emoji by
+  nature and still reads faintly on a white sheet; that is the emoji, not the
+  font. Both directions
   update the button instantly via a dedicated per-user listener — no refresh
   needed, unlike most other feed mutations in this doc. There is no
   public-facing count or "who reacted" pill on the card itself — the "N
@@ -74,7 +90,8 @@ cross-church activity before they've joined anything.
 - Storage: `churches/{scope}/feeds/{postId}/images/...`.
 - Backend: `setFeedPostGlobal`, notification request processing.
 - Reactions: the corner button is `_FeedReactionButton` inside
-  `widgets/feed_card_widget.dart`; `widgets/modals/feed_reactions_sheet.dart`
+  `widgets/feed_card_widget.dart` (emoji via `helpers/emoji_text_style.dart`);
+  `widgets/modals/feed_reactions_sheet.dart`
   is the "N Reactions" sheet. Also `services/feed_reaction_repository.dart`,
   `providers/feed_reaction_provider.dart`, `models/feed_reaction_model.dart`.
   Data: `.../feeds/{postId}/reactions/{uid}` (church) or

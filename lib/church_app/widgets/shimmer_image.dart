@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart';
 
+/// How long a loaded image takes to fade in, everywhere in the app.
+const Duration appImageFadeDuration = Duration(milliseconds: 260);
+
+/// A network (or asset) image that fades in once it has loaded.
+///
+/// This used to sweep a shimmer highlight left-to-right across a grey box
+/// while loading. In a feed that is mostly images — the Community tab, church
+/// and global — several of those sweeping at once read as motion the eye
+/// keeps chasing, drawing attention to the loading rather than the post. A
+/// quiet placeholder plus a short fade says the same thing without the
+/// animation. Named `ShimmerImage` still only because it is referenced from
+/// several screens; it deliberately no longer shimmers.
 class ShimmerImage extends StatelessWidget {
   final String imageUrl;
   final double aspectRatio;
@@ -32,33 +43,53 @@ class ShimmerImage extends StatelessWidget {
                 imageUrl: imageUrl,
                 fit: fit,
                 width: double.infinity,
-                placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: Colors.grey.shade300,
-                  highlightColor: Colors.grey.shade100,
-                  child: Container(color: Colors.white),
-                ),
+                fadeInDuration: appImageFadeDuration,
+                fadeInCurve: Curves.easeOut,
+                // Fading the placeholder out over the same beat would cross-
+                // dissolve two greys; snapping it keeps the fade to one move.
+                fadeOutDuration: Duration.zero,
+                placeholder: (context, url) => const _ImagePlaceholder(),
                 errorWidget: (context, url, error) =>
-                    errorWidget ??
-                    Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 40),
-                      ),
-                    ),
+                    errorWidget ?? const _ImageFailed(),
               )
             : Image.asset(
                 imageUrl,
                 fit: fit,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) =>
-                    errorWidget ??
-                    Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 40),
-                      ),
-                    ),
+                    errorWidget ?? const _ImageFailed(),
               ),
+      ),
+    );
+  }
+}
+
+/// The still, neutral box shown while an image loads.
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+    );
+  }
+}
+
+class _ImageFailed extends StatelessWidget {
+  const _ImageFailed();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: colors.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: 40,
+          color: colors.onSurfaceVariant,
+        ),
       ),
     );
   }

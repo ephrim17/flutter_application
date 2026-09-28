@@ -29,6 +29,7 @@ import 'package:flutter_application/church_app/models/feed_reaction_model.dart';
 import 'package:flutter_application/church_app/services/feed_reaction_repository.dart';
 import 'package:flutter_application/church_app/widgets/linkified_text_widget.dart';
 import 'package:flutter_application/church_app/widgets/modals/feed_reactions_sheet.dart';
+import 'package:flutter_application/church_app/helpers/emoji_text_style.dart';
 import 'package:flutter_application/church_app/widgets/shimmer_image.dart';
 import 'package:flutter_application/church_app/widgets/user_quick_card_widget.dart';
 import 'package:intl/intl.dart';
@@ -835,7 +836,7 @@ class _FeedCardState extends ConsumerState<FeedCard> {
                             shape: BoxShape.circle,
                           )
                         : null,
-                    child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                    child: Text(emoji, style: emojiTextStyle(fontSize: 26)),
                   ),
                 ),
             ],
@@ -1115,11 +1116,11 @@ class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
           onPageChanged: (value) => setState(() => _page = value),
           itemBuilder: (context, index) {
             final imageUrl = widget.imageUrls[index];
-            // A raw CachedNetworkImage (not the shimmer-wrapped helper) so
-            // this full-bleed feed shows posts as they naturally arrive —
-            // no fade-in and no shimmer sweep — and caps decode size to the
-            // device's own pixel width so swiping doesn't stall on
-            // full-resolution camera photos.
+            // A raw CachedNetworkImage rather than the shared helper: this
+            // full-bleed feed needs its own black backdrop and a decode size
+            // capped to the device's pixel width, so swiping doesn't stall on
+            // full-resolution camera photos. The fade matches the rest of the
+            // app — a photo appearing out of black is abrupt at this size.
             final devicePixelWidth = (MediaQuery.of(context).size.width *
                     MediaQuery.of(context).devicePixelRatio)
                 .round();
@@ -1139,7 +1140,8 @@ class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
                     width: double.infinity,
                     height: double.infinity,
                     memCacheWidth: devicePixelWidth,
-                    fadeInDuration: Duration.zero,
+                    fadeInDuration: appImageFadeDuration,
+                    fadeInCurve: Curves.easeOut,
                     fadeOutDuration: Duration.zero,
                     placeholder: (context, url) =>
                         const ColoredBox(color: Colors.black),
@@ -1360,7 +1362,7 @@ class _FeedReactionButton extends StatelessWidget {
                 size: 20,
                 color: theme.colorScheme.onSurfaceVariant,
               )
-            : Text(emoji!, style: const TextStyle(fontSize: 18)),
+            : Text(emoji!, style: emojiTextStyle(fontSize: 18)),
       ),
     );
   }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_assets.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:flutter_application/church_app/widgets/shimmer_image.dart'
+    show appImageFadeDuration;
 
 class ChurchLogoBuilder extends ConsumerWidget {
   const ChurchLogoBuilder({
@@ -21,7 +22,7 @@ class ChurchLogoBuilder extends ConsumerWidget {
     final appConfigAsync = ref.watch(appConfigProvider);
 
     return appConfigAsync.when(
-      loading: () => _logoShimmer(size),
+      loading: () => _logoPlaceholder(size),
       error: (_, __) => _fallbackLogo(),
       data: (config) => _buildLogo(config.churchLogo),
     );
@@ -41,9 +42,22 @@ class ChurchLogoBuilder extends ConsumerWidget {
         height: size,
         width: size,
         fit: fit,
+        // Fade the logo in rather than sweeping a shimmer behind it: a feed
+        // shows one of these per post, and several sweeps at once is motion
+        // the eye chases. `frameBuilder` runs once the frame is decoded,
+        // `loadingBuilder` while bytes arrive.
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: appImageFadeDuration,
+            curve: Curves.easeOut,
+            child: child,
+          );
+        },
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
-          return _logoShimmer(size);
+          return _logoPlaceholder(size);
         },
         errorBuilder: (_, __, ___) => _fallbackLogo(),
       );
@@ -67,15 +81,12 @@ class ChurchLogoBuilder extends ConsumerWidget {
     );
   }
 
-  Widget _logoShimmer(double size) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
-      child: Container(
-        height: size,
-        width: size,
-        color: Colors.white,
-      ),
+  /// A still placeholder. Deliberately not a shimmer — see [ShimmerImage].
+  Widget _logoPlaceholder(double size) {
+    return Container(
+      height: size,
+      width: size,
+      color: Colors.grey.shade200,
     );
   }
 }
