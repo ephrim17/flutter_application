@@ -31,10 +31,15 @@ What replaced it:
   stops, at one YouTube quota unit per check.
 - **Admin can end it early** with "End live card", and switching *Live
   services* off takes any card down immediately.
-- Discovery automation is gone: `renewYouTubeChannelSubscriptions` is deleted
-  from source, `youtubeLiveWebhook` acknowledges and ignores pushes so a stale
-  subscription cannot resurrect a card, and
-  `syncYouTubeChannelSubscription` now only ever takes a card *down*.
+- Discovery automation is gone. `renewYouTubeChannelSubscriptions` was
+  deleted from source **and from the project** (2026-09-28), and the `tnbm`
+  channel was unsubscribed from the hub — the hub's verification GET reached
+  the webhook and was answered, so no further pushes are sent for it. Any
+  subscription still out there simply lapses: nothing renews them, and
+  `youtubeLiveWebhook` now acknowledges and ignores pushes so a stale one
+  cannot resurrect a card. `syncYouTubeChannelSubscription` only ever takes a
+  card *down*. Restoring automatic detection would mean redeploying the
+  renewal function and re-subscribing, not just a code revert.
 
 ## Configuration and playback
 
