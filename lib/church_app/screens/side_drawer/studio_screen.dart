@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/blocking_percent_progress_dialog.dart';
@@ -2368,15 +2369,70 @@ class _LiveChurchEditor extends StatefulWidget {
 class _LiveChurchEditorState extends State<_LiveChurchEditor> {
   final _formKey = GlobalKey<FormState>();
   final _channelController = TextEditingController();
+  final _videoLinkController = TextEditingController();
   bool _enabled = true;
   bool _notifyWhenLive = false;
   bool _initialized = false;
   bool _saving = false;
+  bool _switchingBroadcast = false;
 
   @override
   void dispose() {
     _channelController.dispose();
+    _videoLinkController.dispose();
     super.dispose();
+  }
+
+  /// Puts the card up or takes it down, and says what happened.
+  ///
+  /// Every refusal the callable can raise is a condition the admin can do
+  /// something about, so each maps to its own message rather than a generic
+  /// failure — "no live stream found yet" and "add your channel ID" call for
+  /// very different next steps.
+  Future<void> _setBroadcast({required bool live}) async {
+    setState(() => _switchingBroadcast = true);
+    try {
+      await widget.repository.setLiveBroadcast(
+        live: live,
+        videoUrl: live ? _videoLinkController.text : null,
+      );
+      if (!mounted) return;
+      _videoLinkController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.t(
+              live ? 'ui.studio.live_started' : 'ui.studio.live_ended',
+            ),
+          ),
+        ),
+      );
+    } on FirebaseFunctionsException catch (error) {
+      if (!mounted) return;
+      const messages = {
+        'no-live-video': 'ui.studio.live_error_no_live_video',
+        'live-church-disabled': 'ui.studio.live_error_disabled',
+        'no-channel': 'ui.studio.live_error_no_channel',
+        'bad-video-link': 'ui.studio.live_error_bad_link',
+        'admin-required': 'ui.studio.live_error_admin',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.t(
+              messages[error.message] ?? 'ui.studio.live_error_generic',
+            ),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.t('ui.studio.live_error_generic'))),
+      );
+    } finally {
+      if (mounted) setState(() => _switchingBroadcast = false);
+    }
   }
 
   @override
@@ -2465,6 +2521,15 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
                     : const Icon(Icons.save_outlined),
                 label: Text(context.t('ui.studio.save_live_church_settings')),
               ),
+              const Divider(height: 40),
+              _LiveBroadcastControls(
+                statusStream: widget.repository.watchLiveChurchStatus(),
+                videoLinkController: _videoLinkController,
+                busy: _switchingBroadcast,
+                enabled: _enabled,
+                onGoLive: () => _setBroadcast(live: true),
+                onEndLive: () => _setBroadcast(live: false),
+              ),
             ],
           ),
         );
@@ -2489,6 +2554,133 @@ class _LiveChurchEditorState extends State<_LiveChurchEditor> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+}
+
+/// The manual half of Live Church: the admin says when the card goes up.
+///
+/// Only *going* live is manual. The card appears for members once the stream
+/// is genuinely running, and disappears when it ends, because the server
+/// leaves the broadcast monitored and re-checks it every minute — so pressing
+/// Go live before the stream starts is safe and expected.
+class _LiveBroadcastControls extends StatelessWidget {
+  const _LiveBroadcastControls({
+    required this.statusStream,
+    required this.videoLinkController,
+    required this.busy,
+    required this.enabled,
+    required this.onGoLive,
+    required this.onEndLive,
+  });
+
+  final Stream<Map<String, dynamic>?> statusStream;
+  final TextEditingController videoLinkController;
+  final bool busy;
+  final bool enabled;
+  final VoidCallback onGoLive;
+  final VoidCallback onEndLive;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: statusStream,
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final isLive = data?['isLive'] == true;
+        // Monitored but not live yet: the admin has pressed Go live on a
+        // stream that has not started, and the server is watching for it.
+        final waiting = !isLive && data?['monitoring'] == true;
+        final showing = isLive || waiting;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.t('ui.studio.live_broadcast_title'),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(context.t('ui.studio.live_broadcast_hint')),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  isLive
+                      ? Icons.sensors_rounded
+                      : waiting
+                          ? Icons.schedule_rounded
+                          : Icons.sensors_off_rounded,
+                  size: 18,
+                  color: isLive
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.t(
+                      isLive
+                          ? 'ui.studio.live_state_live'
+                          : waiting
+                              ? 'ui.studio.live_state_waiting'
+                              : 'ui.studio.live_state_off',
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isLive
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: isLive ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (!showing) ...[
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: videoLinkController,
+                decoration: InputDecoration(
+                  labelText: context.t('ui.studio.live_video_link_optional'),
+                  helperText: context.t('ui.studio.live_video_link_helper'),
+                  helperMaxLines: 3,
+                  prefixIcon: const Icon(Icons.link_rounded),
+                ),
+                textInputAction: TextInputAction.done,
+              ),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: showing
+                  ? OutlinedButton.icon(
+                      onPressed: busy ? null : onEndLive,
+                      icon: busy
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.stop_circle_outlined),
+                      label: Text(context.t('ui.studio.end_live_now')),
+                    )
+                  : FilledButton.icon(
+                      onPressed: (busy || !enabled) ? null : onGoLive,
+                      icon: busy
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.podcasts_rounded),
+                      label: Text(context.t('ui.studio.go_live_now')),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

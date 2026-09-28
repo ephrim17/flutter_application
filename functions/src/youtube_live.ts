@@ -1,15 +1,12 @@
 /* eslint-disable max-len, require-jsdoc */
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions";
-import {defineSecret, defineString} from "firebase-functions/params";
+import {defineSecret} from "firebase-functions/params";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
-import {onRequest} from "firebase-functions/v2/https";
+import {HttpsError, onCall, onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 
 const youtubeApiKey = defineSecret("YOUTUBE_API_KEY");
-const youtubeWebhookCallbackUrl = defineString("YOUTUBE_WEBHOOK_CALLBACK_URL");
-const youtubeHubUrl = "https://pubsubhubbub.appspot.com/subscribe";
-const youtubeFeedBaseUrl = "https://www.youtube.com/feeds/videos.xml";
 
 type LiveChurchConfigData = {
   enabled?: boolean;
@@ -94,11 +91,148 @@ type YouTubeVideo = {
   };
 };
 
+/**
+ * Puts this church's live card up or takes it down, on an admin's say-so.
+ *
+ * Going live is manual: YouTube's push feed notifies on a video being
+ * published, not on a stream starting, so for a broadcast scheduled ahead of
+ * time nothing ever arrived and the card only appeared when an admin re-saved
+ * the Live Church settings (which ran the search below as a side effect).
+ * That search is now the deliberate action instead of a side effect.
+ *
+ * Coming down stays automatic: this writes `monitoring: true`, and
+ * `refreshKnownYouTubeBroadcasts` re-checks that video every minute for one
+ * quota unit — flipping `isLive` on when the stream actually starts, and
+ * ending the card when it stops. So an admin can press this before the stream
+ * is live and the card still only appears once it is really available.
+ */
+export const setLiveChurchBroadcast = onCall(
+  {region: "us-central1", secrets: [youtubeApiKey]},
+  async (request) => {
+    const uid = request.auth?.uid;
+    const email = String(request.auth?.token?.email ?? "").toLowerCase();
+    if (!uid) throw new HttpsError("unauthenticated", "sign-in-required");
+
+    const data = (request.data ?? {}) as Record<string, unknown>;
+    const churchId = String(data.churchId ?? "").trim();
+    if (!churchId) throw new HttpsError("invalid-argument", "missing-church");
+    const stopping = String(data.action ?? "start") == "stop";
+    const videoUrl = String(data.videoUrl ?? "").trim();
+
+    await assertChurchAdmin(uid, email, churchId);
+
+    const liveRef = admin.firestore()
+      .collection("churches").doc(churchId).collection("live_church");
+    const statusRef = liveRef.doc("status");
+
+    if (stopping) {
+      await statusRef.set(endedStatus(), {merge: true});
+      return {isLive: false, monitoring: false};
+    }
+
+    const config = (await liveRef.doc("config").get())
+      .data() as LiveChurchConfigData | undefined;
+    if (config?.enabled !== true) {
+      throw new HttpsError("failed-precondition", "live-church-disabled");
+    }
+
+    // An explicit link wins: a stream that is unlisted, or not yet indexed,
+    // will not come back from the search but is perfectly playable.
+    let video: YouTubeVideo | null = null;
+    if (videoUrl) {
+      const videoId = parseYouTubeVideoId(videoUrl);
+      if (!videoId) throw new HttpsError("invalid-argument", "bad-video-link");
+      video = (await fetchYouTubeVideos([videoId]))[0] ?? null;
+    } else {
+      const channelId = readChannelId(config);
+      if (!channelId) {
+        throw new HttpsError("failed-precondition", "no-channel");
+      }
+      video = await findCurrentLiveVideo(channelId);
+    }
+
+    if (!video?.liveStreamingDetails) {
+      throw new HttpsError("failed-precondition", "no-live-video");
+    }
+
+    const status = statusFromVideo(video);
+    await statusRef.set(status, {merge: true});
+    return {
+      isLive: status.isLive === true,
+      monitoring: status.monitoring === true,
+      videoId: status.videoId,
+      title: status.title,
+    };
+  },
+);
+
+/**
+ * Throws unless the caller is an admin of this church.
+ *
+ * Both sides are lowercased: `config/app.admins` stores emails as typed, so a
+ * stored "Ephrim17@gmail.com" must still match a token's
+ * "ephrim17@gmail.com". Super-admin status deliberately does not qualify —
+ * the three authorities in this app stay separate.
+ * @param {string} uid The caller's uid.
+ * @param {string} email The caller's lowercased email.
+ * @param {string} churchId The church being changed.
+ * @return {Promise<void>} Resolves when the caller is an admin.
+ */
+async function assertChurchAdmin(
+  uid: string,
+  email: string,
+  churchId: string,
+): Promise<void> {
+  const config = await admin.firestore()
+    .collection("churches").doc(churchId)
+    .collection("config").doc("app").get();
+  const admins = config.data()?.admins;
+  const isAdmin = Array.isArray(admins) && !!email && admins.some(
+    (entry) => typeof entry == "string" && entry.toLowerCase() == email,
+  );
+  if (!isAdmin) {
+    logger.warn("Rejected a non-admin Live Church broadcast change.", {
+      churchId, uid,
+    });
+    throw new HttpsError("permission-denied", "admin-required");
+  }
+}
+
+/**
+ * The video id in a YouTube link, or a bare id, or null.
+ * @param {string} input A link the admin pasted, or a bare video id.
+ * @return {string | null} The 11-character video id, or null.
+ */
+export function parseYouTubeVideoId(input: string): string | null {
+  const value = input.trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(value)) return value;
+  const patterns = [
+    /[?&]v=([A-Za-z0-9_-]{11})/,
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/live\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = pattern.exec(value);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/**
+ * Takes a live card down when the settings say it should not be showing.
+ *
+ * It used to do the opposite as well — subscribe to the channel's push feed
+ * and search for a live video — which is why re-saving the settings was the
+ * only thing that ever made the card appear. Discovery is
+ * [setLiveChurchBroadcast]'s job now, so this deliberately never puts a card
+ * *up*; it would otherwise contradict an admin who has just taken one down.
+ */
 export const syncYouTubeChannelSubscription = onDocumentWritten(
   {
     document: "churches/{churchId}/live_church/config",
     region: "us-central1",
-    secrets: [youtubeApiKey],
   },
   async (event) => {
     const before = event.data?.before.data() as
@@ -107,53 +241,14 @@ export const syncYouTubeChannelSubscription = onDocumentWritten(
     const oldChannelId = readChannelId(before);
     const newChannelId = readChannelId(after);
 
-    if (oldChannelId && oldChannelId != newChannelId) {
-      await trySubscribe(oldChannelId, "unsubscribe");
-    }
-    if (oldChannelId != newChannelId || after?.enabled !== true) {
-      const statusRef = event.data?.after.ref.parent.doc("status") ??
-        event.data?.before.ref.parent.doc("status");
-      if (statusRef) await statusRef.set(endedStatus(), {merge: true});
-    }
-    if (newChannelId && after?.enabled === true) {
-      await trySubscribe(newChannelId, "subscribe");
-      const liveVideo = await findCurrentLiveVideo(newChannelId);
-      if (liveVideo) {
-        await publishVideoState(newChannelId, liveVideo);
-      }
-    } else if (newChannelId) {
-      await trySubscribe(newChannelId, "unsubscribe");
-    }
-  },
-);
+    // Switched off, or pointed at a different channel than the card showing.
+    const shouldEnd = after?.enabled !== true ||
+      (oldChannelId != null && oldChannelId != newChannelId);
+    if (!shouldEnd) return;
 
-export const renewYouTubeChannelSubscriptions = onSchedule(
-  {
-    schedule: "every day 03:00",
-    timeZone: "UTC",
-    region: "us-central1",
-  },
-  async () => {
-    const configs = await admin.firestore().collectionGroup("live_church")
-      .where("enabled", "==", true)
-      .get();
-    const channelIds = new Set(
-      configs.docs
-        .filter((doc) => doc.id == "config")
-        .map((doc) => readChannelId(doc.data()))
-        .filter((value): value is string => value != null),
-    );
-
-    for (const channelId of channelIds) {
-      try {
-        await updateHubSubscription(channelId, "subscribe");
-      } catch (error) {
-        logger.error("Failed to renew YouTube channel subscription.", {
-          channelId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
+    const statusRef = event.data?.after.ref.parent.doc("status") ??
+      event.data?.before.ref.parent.doc("status");
+    if (statusRef) await statusRef.set(endedStatus(), {merge: true});
   },
 );
 
@@ -179,27 +274,12 @@ export const youtubeLiveWebhook = onRequest(
       return;
     }
 
-    // Acknowledge empty unsubscribe/deletion notifications.
-    const xml = req.rawBody?.toString("utf8") ?? "";
-    const videoId = readXmlValue(xml, "yt:videoId");
-    const channelId = readXmlValue(xml, "yt:channelId");
-    if (!videoId || !channelId) {
-      res.status(204).send();
-      return;
-    }
-
-    try {
-      const [video] = await fetchYouTubeVideos([videoId]);
-      if (video) await publishVideoState(channelId, video);
-      res.status(204).send();
-    } catch (error) {
-      logger.error("Failed to process YouTube push notification.", {
-        channelId,
-        videoId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      res.status(500).send("Unable to process notification");
-    }
+    // Acknowledged and ignored. Going live is an admin action now, so a push
+    // must not put a card up that nobody asked for or resurrect one that was
+    // just taken down. This stays only so that subscriptions still out there
+    // get a clean 204 instead of retries until their leases lapse; nothing
+    // renews them any more.
+    res.status(204).send();
   },
 );
 
@@ -237,47 +317,6 @@ export const refreshKnownYouTubeBroadcasts = onSchedule(
   },
 );
 
-async function trySubscribe(
-  channelId: string,
-  mode: "subscribe" | "unsubscribe",
-): Promise<void> {
-  try {
-    await updateHubSubscription(channelId, mode);
-  } catch (error) {
-    logger.error("YouTube hub subscription request failed.", {
-      channelId,
-      mode,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-}
-
-async function updateHubSubscription(
-  channelId: string,
-  mode: "subscribe" | "unsubscribe",
-): Promise<void> {
-  const callbackUrl = youtubeWebhookCallbackUrl.value().trim();
-  if (!callbackUrl) {
-    throw new Error("YOUTUBE_WEBHOOK_CALLBACK_URL is not configured.");
-  }
-  const topicUrl = `${youtubeFeedBaseUrl}?channel_id=${channelId}`;
-  const body = new URLSearchParams({
-    "hub.callback": callbackUrl,
-    "hub.topic": topicUrl,
-    "hub.verify": "async",
-    "hub.mode": mode,
-    "hub.lease_seconds": "864000",
-  });
-  const response = await fetch(youtubeHubUrl, {
-    method: "POST",
-    headers: {"content-type": "application/x-www-form-urlencoded"},
-    body,
-  });
-  if (!response.ok) {
-    throw new Error(`YouTube hub returned HTTP ${response.status}.`);
-  }
-}
-
 async function fetchYouTubeVideos(ids: string[]): Promise<YouTubeVideo[]> {
   if (ids.length == 0) return [];
   const url = new URL("https://www.googleapis.com/youtube/v3/videos");
@@ -313,25 +352,6 @@ async function findCurrentLiveVideo(
   if (!videoId) return null;
   const [video] = await fetchYouTubeVideos([videoId]);
   return video ?? null;
-}
-
-async function publishVideoState(
-  channelId: string,
-  video: YouTubeVideo,
-): Promise<void> {
-  if (!video.liveStreamingDetails) return;
-  const configs = await admin.firestore().collectionGroup("live_church")
-    .where("youtubeChannelId", "==", channelId)
-    .get();
-  const batch = admin.firestore().batch();
-  for (const config of configs.docs.filter(
-    (doc) => doc.id == "config" && doc.data().enabled === true,
-  )) {
-    batch.set(config.ref.parent.doc("status"), statusFromVideo(video), {
-      merge: true,
-    });
-  }
-  await batch.commit();
 }
 
 function statusFromVideo(video: YouTubeVideo): Record<string, unknown> {
@@ -376,11 +396,3 @@ function readChannelId(data?: LiveChurchConfigData): string | null {
   return /^UC[A-Za-z0-9_-]{20,}$/.test(value) ? value : null;
 }
 
-function readXmlValue(xml: string, tag: string): string | null {
-  const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(
-    `<${escapedTag}>([^<]+)</${escapedTag}>`,
-    "i",
-  ).exec(xml);
-  return match?.[1]?.trim() || null;
-}

@@ -486,13 +486,43 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.studio.pick_the_exact_bible_verse_users_will_see_use_the_butto":
       "Pick the exact Bible verse users will see. Use the button below to change book, chapter, or verse number.",
   "ui.studio.change_book_chapter_verse": "Change book / chapter / verse",
-  "ui.studio.automatic_youtube_live_detection":
-      "Automatic YouTube live detection",
+  "ui.studio.automatic_youtube_live_detection": "YouTube live service",
   "ui.studio.enter_the_permanent_channel_id_that_starts_with_uc":
-      "Enter the permanent channel ID that starts with UC. The backend will publish a player only while that channel is live.",
-  "ui.studio.automatic_detection": "Automatic detection",
+      "Enter the permanent channel ID that starts with UC. It is used to "
+          "find your stream when you press Go live below.",
+  "ui.studio.automatic_detection": "Live services enabled",
   "ui.studio.allow_the_backend_to_show_live_services_for_this_church":
-      "Allow the backend to show live services for this church.",
+      "Allow a live card to be shown to this church. Turning this off takes "
+          "any live card down straight away.",
+  "ui.studio.live_broadcast_title": "Go live",
+  "ui.studio.live_broadcast_hint":
+      "Start your stream on YouTube first, then press Go live. The card "
+          "appears for members as soon as the stream is actually running, "
+          "and comes down by itself when it ends.",
+  "ui.studio.live_video_link_optional": "Live video link (optional)",
+  "ui.studio.live_video_link_helper":
+      "Leave empty to use whatever is live on your channel. Paste a link if "
+          "the stream is unlisted or too new to be found.",
+  "ui.studio.go_live_now": "Go live",
+  "ui.studio.end_live_now": "End live card",
+  "ui.studio.live_state_live": "Live now — members can see the card.",
+  "ui.studio.live_state_waiting":
+      "Waiting for the stream to start. The card appears by itself once it "
+          "is running.",
+  "ui.studio.live_state_off": "No live card is showing.",
+  "ui.studio.live_started": "The live card is set up.",
+  "ui.studio.live_ended": "The live card has been taken down.",
+  "ui.studio.live_error_no_live_video":
+      "No live stream found on your channel yet. Start the stream on "
+          "YouTube, or paste its link below.",
+  "ui.studio.live_error_disabled":
+      "Turn on live services above and save before going live.",
+  "ui.studio.live_error_no_channel":
+      "Add your YouTube channel ID above and save first.",
+  "ui.studio.live_error_bad_link": "That does not look like a YouTube link.",
+  "ui.studio.live_error_admin": "Only a church admin can change the live card.",
+  "ui.studio.live_error_generic":
+      "Could not change the live card. Please try again.",
   "ui.studio.notify_members_when_live": "Notify members when live",
   "ui.studio.send_one_push_notification_when_a_new_service_goes_live":
       "Send one push notification when a new service goes live.",

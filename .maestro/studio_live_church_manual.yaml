@@ -1,0 +1,40 @@
+appId: com.example.flutter_application
+---
+# LIVE-01 — Studio's Live Church editor offers manual control: a Go live
+# action, the current card state, and an optional link field
+# (KT Files/features/ ... live church).
+#
+# Read-only: it opens the editor and asserts what is on screen. It does not
+# press Go live, which would put a real card in front of members.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: "For You"
+    timeout: 60000
+- tapOn: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Studio"
+- extendedWaitUntil:
+    visible: "Studio"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "(?s).*Live Church.*"
+    direction: DOWN
+    timeout: 30000
+    speed: 30
+    visibilityPercentage: 20
+    centerElement: true
+- tapOn: "(?s).*Live Church.*"
+- waitForAnimationToEnd:
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "(?s).*Go live.*"
+    direction: DOWN
+    timeout: 30000
+    speed: 30
+    visibilityPercentage: 20
+- takeScreenshot: live_01_manual_controls
+- assertVisible: "(?s).*No live card is showing.*"
+- assertVisible: "(?s).*Start your stream on YouTube first.*"

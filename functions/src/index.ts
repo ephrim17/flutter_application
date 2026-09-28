@@ -22,7 +22,7 @@ import {
 export {
   notifyChurchWhenYouTubeLive,
   refreshKnownYouTubeBroadcasts,
-  renewYouTubeChannelSubscriptions,
+  setLiveChurchBroadcast,
   syncYouTubeChannelSubscription,
   youtubeLiveWebhook,
 } from "./youtube_live";

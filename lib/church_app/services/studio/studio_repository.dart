@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
@@ -46,6 +47,8 @@ class StudioRepository {
       firestore.collection('churches').doc(churchId);
   DocumentReference<Map<String, dynamic>> get liveChurchConfigRef =>
       FirestorePaths.churchLiveChurchConfig(firestore, churchId);
+  DocumentReference<Map<String, dynamic>> get liveChurchStatusRef =>
+      FirestorePaths.churchLiveChurchStatus(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get aboutRef =>
       FirestorePaths.churchAboutDoc(firestore, churchId);
   DocumentReference<Map<String, dynamic>> get bibleSwipeRef =>
@@ -107,6 +110,41 @@ class StudioRepository {
 
   Stream<Map<String, dynamic>?> watchLiveChurchConfig() {
     return liveChurchConfigRef.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  Stream<Map<String, dynamic>?> watchLiveChurchStatus() {
+    return liveChurchStatusRef.snapshots().map((snapshot) => snapshot.data());
+  }
+
+  /// Puts this church's live card up, or takes it down.
+  ///
+  /// Goes through the `setLiveChurchBroadcast` callable rather than writing
+  /// `live_church/status` directly: the server resolves the video against the
+  /// YouTube API (the key is a server secret), decides whether it is actually
+  /// live yet, and re-checks admin rights with a case-insensitive email
+  /// comparison the rules cannot do. Throws [FirebaseFunctionsException] with
+  /// a `code` the caller turns into a message.
+  ///
+  /// [videoUrl] is optional: without it the server searches the configured
+  /// channel for whatever is live now, which is the normal path. With it, a
+  /// specific stream is used — needed when a stream is unlisted or too new to
+  /// be found by search.
+  Future<Map<String, dynamic>> setLiveBroadcast({
+    required bool live,
+    String? videoUrl,
+  }) async {
+    final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
+        .httpsCallable(
+          'setLiveChurchBroadcast',
+          options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+        )
+        .call<Map<String, dynamic>>({
+      'churchId': churchId,
+      'action': live ? 'start' : 'stop',
+      if (videoUrl != null && videoUrl.trim().isNotEmpty)
+        'videoUrl': videoUrl.trim(),
+    }).timeout(const Duration(seconds: 70));
+    return result.data;
   }
 
   Future<void> updateLiveChurchConfig({
