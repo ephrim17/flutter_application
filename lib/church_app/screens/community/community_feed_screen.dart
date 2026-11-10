@@ -8,8 +8,8 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/community_upload_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
-import 'package:flutter_application/church_app/screens/community/community_full_screen_viewer.dart';
-import 'package:flutter_application/church_app/screens/feed_screen.dart' show FeedHashtagScreen;
+import 'package:flutter_application/church_app/screens/feed_screen.dart'
+    show FeedHashtagScreen;
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/community_upload_banner.dart';
@@ -19,8 +19,14 @@ import 'package:flutter_application/church_app/widgets/hideable_app_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// LinkedIn-style feed: a plain scrollable list of post cards per segment
-/// ("Your Church" / "All Churches"). Tapping a card opens the full-screen
-/// swipeable viewer at that post.
+/// ("Your Church" / "All Churches").
+///
+/// The card itself is the whole post — tapping one deliberately navigates
+/// nowhere. An earlier build opened a Reels-style full-screen pager here,
+/// which made an ordinary tap on a card silently replace the feed with a
+/// different way of reading the same posts. Everything that viewer offered
+/// is on the card: the description expands in place, an image opens in the
+/// gallery viewer, and the reaction pill opens the reactor list.
 class CommunityFeedScreen extends ConsumerStatefulWidget {
   const CommunityFeedScreen({super.key});
 
@@ -74,65 +80,67 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               Column(
                 children: [
                   HideableAppBar(
-                visible: _appBarVisible,
-                appBar: AppBar(
-                  toolbarHeight: 64,
-                  titleSpacing: 4,
-                  elevation: 0,
-                  scrolledUnderElevation: 0,
-                  leading: IconButton(
-                    tooltip: context.t('feed.create_title'),
-                    icon: const Icon(Icons.add_circle_outline_rounded, size: 28),
-                    onPressed: () => _openCreatePostModal(
-                      context,
-                      churchId,
-                      isGlobal: globalFeedEnabled && _segment == 1,
+                    visible: _appBarVisible,
+                    appBar: AppBar(
+                      toolbarHeight: 64,
+                      titleSpacing: 4,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      leading: IconButton(
+                        tooltip: context.t('feed.create_title'),
+                        icon: const Icon(Icons.add_circle_outline_rounded,
+                            size: 28),
+                        onPressed: () => _openCreatePostModal(
+                          context,
+                          churchId,
+                          isGlobal: globalFeedEnabled && _segment == 1,
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: _SegmentTab(
+                              label: ref.t('ui.feed.your_church'),
+                              selected: _segment == 0,
+                              onTap: () => setState(() => _segment = 0),
+                            ),
+                          ),
+                          if (globalFeedEnabled) ...[
+                            const SizedBox(width: 20),
+                            Flexible(
+                              child: _SegmentTab(
+                                label: ref.t('ui.feed.all_churches'),
+                                selected: _segment == 1,
+                                onTap: () => setState(() => _segment = 1),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
-                  title: Row(
-                    children: [
-                      Flexible(
-                        child: _SegmentTab(
-                          label: ref.t('ui.feed.your_church'),
-                          selected: _segment == 0,
-                          onTap: () => setState(() => _segment = 0),
-                        ),
-                      ),
-                      if (globalFeedEnabled) ...[
-                        const SizedBox(width: 20),
-                        Flexible(
-                          child: _SegmentTab(
-                            label: ref.t('ui.feed.all_churches'),
-                            selected: _segment == 1,
-                            onTap: () => setState(() => _segment = 1),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _handleScrollNotification,
+                      child: IndexedStack(
+                        index: _segment,
+                        children: [
+                          _CommunityFeedListView(
+                            key: const PageStorageKey('community-church-list'),
+                            churchId: churchId,
+                            isGlobal: false,
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _handleScrollNotification,
-                  child: IndexedStack(
-                    index: _segment,
-                    children: [
-                      _CommunityFeedListView(
-                        key: const PageStorageKey('community-church-list'),
-                        churchId: churchId,
-                        isGlobal: false,
+                          if (globalFeedEnabled)
+                            _CommunityFeedListView(
+                              key:
+                                  const PageStorageKey('community-global-list'),
+                              churchId: churchId,
+                              isGlobal: true,
+                            ),
+                        ],
                       ),
-                      if (globalFeedEnabled)
-                        _CommunityFeedListView(
-                          key: const PageStorageKey('community-global-list'),
-                          churchId: churchId,
-                          isGlobal: true,
-                        ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
                 ],
               ),
               const CommunityUploadBanner(),
@@ -271,18 +279,6 @@ class _CommunityFeedListViewState
     _notifier().loadMore();
   }
 
-  void _openFullScreenViewer(String postId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CommunityFullScreenViewer(
-          churchId: widget.churchId,
-          initialIsGlobal: widget.isGlobal,
-          initialPostId: postId,
-        ),
-      ),
-    );
-  }
-
   void _openHashtagFeed(
     BuildContext context,
     String tag, {
@@ -370,7 +366,6 @@ class _CommunityFeedListViewState
             currentUid: currentUid,
             isAdmin: isAdmin,
             isGlobal: widget.isGlobal,
-            onTap: () => _openFullScreenViewer(post.id),
             onHashtagTap: (tag) => _openHashtagFeed(
               context,
               tag,

@@ -14,8 +14,8 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
   its supported storage path.
 - Reader navigation loads book/chapter content and exposes verse actions.
 - Favorites are user scoped and displayed in the drawer with a compact count.
-- Favorite Verses' share action opens the same AI-or-manual verse-share
-  choice sheet Daily Verse uses — see
+- Favorite Verses' share action opens the same "Create an AI prompt" /
+  "Create manually" choice sheet Daily Verse uses — see
   [For You Content](for-you-content.md) for the full behaviour.
 - Verse selection components validate book, chapter, starting verse and ending
   verse against available chapter data.
@@ -23,24 +23,24 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
 - Chapter reader app bar has an "AI Summary" action that summarizes the whole
   currently-visible chapter. Long-pressing a verse opens a popup with four
   actions — Highlight/Un-highlight (replaces the old plain-tap toggle),
-  Summarize with AI (verse-scoped), Generate AI image, and Share as text.
+  Summarize with AI (verse-scoped), Create AI prompt, and Share as text.
   Both summary paths
   call Gemini through a fixed, tutor-style prompt (never a free-form user
   prompt) and return a short bilingual (Tamil + English) bulleted
   explanation, shown in a bottom sheet.
-- Generate AI image reuses the same `generateVerseBackgroundImage` flow and
-  3-style swipeable picker described in
-  [For You Content](for-you-content.md), skipping the "Generate with AI" vs
-  "Create manually" choice sheet (long-pressing a verse is already an
-  explicit AI choice) and instead asking **English or Tamil** first, via the
+- Create AI prompt opens the same Poster prompt builder described in
+  [For You Content](for-you-content.md) (the app no longer generates AI
+  images — the person copies the prompt into ChatGPT or Gemini), skipping
+  the "Create an AI prompt" vs "Create manually" choice sheet (long-pressing
+  a verse is already an explicit choice) and instead asking **English or
+  Tamil** first, via the
   shared `showVerseLanguageChoiceSheet` in `verse_share_modal.dart` — the
   same two-option sheet Favourites uses. The chosen language decides *both*
-  halves of what the card renders: the verse text (`verse['text']['english']`
+  halves of what the prompt carries: the verse text (`verse['text']['english']`
   vs `['tamil']`) and the reference, built from `book.key` (English name) or
-  `book.name` (Tamil name) so a Tamil card reads "ஆதியாகமம் 23:2", not
+  `book.name` (Tamil name) so a Tamil prompt reads "ஆதியாகமம் 23:2", not
   "Genesis 23:2". Dismissing the sheet cancels — it never falls back to a
-  default script, since a wrong-language card would still spend the user's
-  one daily generate. Previously this path hardcoded the Tamil text with the
+  default script. Previously this path hardcoded the Tamil text with the
   English reference, because the reader shows Tamil as its primary line.
   `isGuestShare` is threaded through every path that can reach `VerseScreen`
   — `BibleLibraryScreen` → `BibleBookScreen`/`ChapterScreen`, and separately
@@ -111,10 +111,10 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
 | BIBLE-12 | Long-press a verse, tap Summarize with AI | Same bilingual bulleted summary, scoped to that one verse. |
 | BIBLE-13 | Long-press a verse, tap Highlight/Un-highlight | Highlight toggles and the popup label/icon flips accordingly. |
 | BIBLE-14 | Exceed the daily chapter or verse summary cap | Friendly limit-reached message; no Gemini call is made. |
-| BIBLE-15 | Long-press a verse, tap Generate AI image | An English/Tamil sheet appears first (no "Generate with AI vs Create manually" choice sheet), then the same 3-style swipeable AI card picker as Daily Verse/Favourites, scoped to that one verse; downloading works with no editor step. |
-| BIBLE-15b | Long-press a verse, tap Generate AI image, choose Tamil | Cards render the Tamil verse text under the Tamil reference (e.g. "ஆதியாகமம் 23:2"), not the English book name. Choosing English gives English text with the English reference. |
-| BIBLE-15c | Long-press a verse, tap Generate AI image, dismiss the language sheet (back/swipe down) | Nothing generates, no loading dialog appears, and the daily AI quota is not spent. |
-| BIBLE-16 | Generate AI image from the guest shell's Bible reader | Card carries no church name/logo/contact — same no-branding guarantee as guest Favourites sharing. |
+| BIBLE-15 | Long-press a verse, tap Create AI prompt | An English/Tamil sheet appears first (no "Create an AI prompt vs Create manually" choice sheet), then the Poster prompt builder prefilled with that one verse; Copy prompt puts the prompt on the clipboard. |
+| BIBLE-15b | Long-press a verse, tap Create AI prompt, choose Tamil | The prompt carries the Tamil verse text, the Tamil reference (e.g. "ஆதியாகமம் 23:2") and language "Tamil (Tamil script)". Choosing English gives English text, reference and language. |
+| BIBLE-15c | Long-press a verse, tap Create AI prompt, dismiss the language sheet (back/swipe down) | The prompt builder does not open. |
+| BIBLE-16 | Create AI prompt from the guest shell's Bible reader | The prompt carries no church name or contact — same no-branding guarantee as guest Favourites sharing. |
 | BIBLE-17 | Long-press a verse, tap Share as text | The OS share sheet opens with that one verse in both scripts, English text under its English reference and Tamil text under its Tamil reference. |
 | BIBLE-18 | Open the Bible reader app bar | Only the font-size control and the chapter AI-summary icon remain; the old share icon is gone and no action is orphaned by its removal. |
 | BIBLE-19 | Open Exodus 8, swipe forward twice, then back three times | Chapters track 8 → 9 → 10 → 9 → 8 → **7**; swiping back past the chapter you opened on works, and the app bar's chapter number follows every swipe. |

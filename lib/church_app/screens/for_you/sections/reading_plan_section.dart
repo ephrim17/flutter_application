@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
@@ -18,7 +19,9 @@ class ReadingPlanSection implements MasterSection {
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: forYouSidePadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -27,7 +30,7 @@ class ReadingPlanSection implements MasterSection {
                 text: context.t('for_you.reading_plan.section_title'),
                 padding: 0.0,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: forYouHeaderGap),
               PlanListScreen()
             ],
           ),

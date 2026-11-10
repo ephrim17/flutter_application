@@ -19,10 +19,6 @@ class PrayerRequest {
   final bool isAnonymous;
   final bool visibleToChurchMembers;
   final DateTime expiryDate;
-  final bool isGlobal;
-  final String sourceChurchId;
-  final String sourcePrayerId;
-  final String sourceChurchName;
 
   PrayerRequest({
     required this.id,
@@ -32,10 +28,6 @@ class PrayerRequest {
     required this.isAnonymous,
     this.visibleToChurchMembers = false,
     required this.expiryDate,
-    this.isGlobal = false,
-    this.sourceChurchId = '',
-    this.sourcePrayerId = '',
-    this.sourceChurchName = '',
   });
 
   /// 🔹 For .withConverter()
@@ -55,10 +47,6 @@ class PrayerRequest {
       expiryDate: expiryValue is Timestamp
           ? expiryValue.toDate()
           : DateTime.fromMillisecondsSinceEpoch(0),
-      isGlobal: data['isGlobal'] == true,
-      sourceChurchId: data['sourceChurchId'] ?? data['churchId'] ?? '',
-      sourcePrayerId: data['sourcePrayerId'] ?? '',
-      sourceChurchName: data['sourceChurchName'] ?? '',
     );
   }
 
@@ -71,10 +59,6 @@ class PrayerRequest {
       'isAnonymous': isAnonymous,
       'visibleToChurchMembers': visibleToChurchMembers,
       'expiryDate': Timestamp.fromDate(expiryDate),
-      'isGlobal': isGlobal,
-      if (sourceChurchId.isNotEmpty) 'sourceChurchId': sourceChurchId,
-      if (sourcePrayerId.isNotEmpty) 'sourcePrayerId': sourcePrayerId,
-      if (sourceChurchName.isNotEmpty) 'sourceChurchName': sourceChurchName,
     };
   }
 }

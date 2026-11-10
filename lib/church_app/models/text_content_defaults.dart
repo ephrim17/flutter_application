@@ -388,41 +388,63 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.verse_share.image": "Image",
   "ui.verse_share.choose_image": "Choose image",
   "ui.verse_share.choice_title": "How would you like to share this verse?",
-  "ui.verse_share.generate_with_ai": "Generate with AI",
-  "ui.verse_share.generate_with_ai_subtitle":
-      "Let AI design a complete, ready-to-share verse card for you.",
+  "ui.verse_share.ai_prompt": "Create an AI prompt",
+  "ui.verse_share.ai_prompt_subtitle":
+      "Build a poster prompt to paste into ChatGPT or Gemini.",
   "ui.verse_share.create_manually": "Create manually",
   "ui.verse_share.create_manually_subtitle":
       "Pick a color, photo or template yourself.",
-  "ui.verse_share.generating_image": "Creating your images...",
-  "ui.verse_share.ai_cards_unavailable":
-      "Today's verse images haven't been created yet. "
-          "Please check back later.",
-  "ui.studio.generate_verse_images": "Generate images",
-  "ui.studio.generate_verse_images_hint":
-      "Creates today's shareable verse cards in English and Tamil for "
-          "everyone in your church.",
-  "ui.studio.generating_verse_images":
-      "Creating verse images. This takes a couple of minutes...",
-  "ui.studio.verse_images_ready": "Verse images created for both languages.",
-  "ui.studio.verse_images_partial":
-      "Some verse images could not be created. Please try again.",
-  "ui.studio.verse_images_failed":
-      "Could not create verse images. Please try again.",
-  "ui.studio.verse_images_progress_percent": "{percent}%",
-  "ui.studio.verse_images_used_today":
-      "Today's images are done. Images can be created once a day, so any "
-          "further change to the verse will appear on tomorrow's card.",
-  "ui.studio.verse_images_already_generated":
-      "Images already created for today.",
+  "ui.verse_share.verse_unavailable":
+      "Today's verse couldn't be loaded. Please check back later.",
+  "ui.verse_prompt.title": "Poster prompt",
+  "ui.verse_prompt.intro":
+      "Choose how the poster should look, then copy the prompt and paste it "
+          "into ChatGPT or Gemini to create the image.",
+  "ui.verse_prompt.reset": "Reset",
+  "ui.verse_prompt.copy": "Copy prompt",
+  "ui.verse_prompt.copied": "Prompt copied. Paste it into ChatGPT or Gemini.",
+  "ui.verse_prompt.section_top": "1 · Top of the poster",
+  "ui.verse_prompt.top_name": "Name shown at the top",
+  "ui.verse_prompt.style": "Style",
+  "ui.verse_prompt.add_date": "Add a date",
+  "ui.verse_prompt.date_format": "Date format",
+  "ui.verse_prompt.date_place": "Date style & position",
+  "ui.verse_prompt.section_verse": "2 · Bible verse",
+  "ui.verse_prompt.add_title": "Add a title above the verse",
+  "ui.verse_prompt.title_text": "Title",
+  "ui.verse_prompt.title_hint": "e.g. Today's Promise",
+  "ui.verse_prompt.title_style": "Title style",
+  "ui.verse_prompt.verse_text": "Verse text",
+  "ui.verse_prompt.reference": "Reference",
+  "ui.verse_prompt.verse_size": "Verse font size",
+  "ui.verse_prompt.size_small": "Small",
+  "ui.verse_prompt.size_medium": "Medium",
+  "ui.verse_prompt.size_large": "Large",
+  "ui.verse_prompt.size_extra_large": "Extra large",
+  "ui.verse_prompt.verse_position": "Verse position",
+  "ui.verse_prompt.language": "Language of the text",
+  "ui.verse_prompt.section_text_style": "3 · Text style",
+  "ui.verse_prompt.text_style": "Verse text style",
+  "ui.verse_prompt.reference_style": "Reference style",
+  "ui.verse_prompt.section_background": "4 · Background",
+  "ui.verse_prompt.background": "Describe the background scene",
+  "ui.verse_prompt.theme": "Colour theme",
+  "ui.verse_prompt.section_render": "5 · Render style",
+  "ui.verse_prompt.render": "Art style",
+  "ui.verse_prompt.ratio": "Size / platform",
+  "ui.verse_prompt.mood": "Mood",
+  "ui.verse_prompt.section_footer": "6 · Footer",
+  "ui.verse_prompt.use_footer": "Add a footer",
+  "ui.verse_prompt.ministry": "Ministry name",
+  "ui.verse_prompt.contact": "Contact",
+  "ui.verse_prompt.contact_hint": "Phone, website or social handle",
+  "ui.verse_prompt.use_logo":
+      "I will attach my logo. Place it in the footer unchanged",
+  "ui.verse_prompt.footer_style": "Footer style",
+  "ui.verse_prompt.section_prompt": "Your prompt",
+  "ui.verse_prompt.prompt_hint": "Updates as you make changes above.",
   "ui.studio.tamil_label": "Tamil",
   "ui.studio.english_label": "English",
-  "ui.verse_share.image_saved": "Image saved.",
-  "ui.verse_share.download_failed": "Unable to save image. Please try again.",
-  "ui.verse_share.ai_quota_exceeded":
-      "You've reached today's AI image limit. Try again tomorrow.",
-  "ui.verse_share.ai_generation_failed":
-      "Couldn't generate an image right now. Please try again.",
   "ui.verse_share.bold_425d": "Bold",
   "ui.verse_share.normal_6dd2": "Normal",
   "ui.verse_share.italic_fe26": "Italic",
@@ -437,9 +459,11 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.feed_card.unable_to_open_youtube_link": "Unable to open YouTube link",
   "ui.feed_card.show_more": "…more",
   "ui.feed_card.show_less": "Show less",
-  "ui.feed_card.react_hint": "Long-press to react",
-  "ui.feed_card.reaction_failed": "Couldn't save your reaction. Please try again.",
+  "ui.feed_card.reaction_failed":
+      "Couldn't save your reaction. Please try again.",
+  "ui.feed_card.reactions_pill_label": "{count} reactions. See who reacted.",
   "ui.feed_reactions.title": "{count} Reactions",
+  "ui.feed_reactions.title_one": "1 Reaction",
   "ui.feed_reactions.all": "All",
   "ui.feed_reactions.load_failed": "Couldn't load reactions.",
   "ui.feed_reactions.unknown_name": "Someone",
@@ -457,7 +481,7 @@ const Map<String, String> defaultChurchTextContents = {
   "ui.bible_reader_appbar.aa": "aA",
   "ui.bible_reader_appbar.ai_summary": "Summarize chapter with AI",
   "ui.bible_reader_appbar.summarize_with_ai": "Summarize with AI",
-  "ui.bible_reader_appbar.generate_ai_image": "Generate AI image",
+  "ui.bible_reader_appbar.create_ai_prompt": "Create AI prompt",
   "ui.bible_reader_appbar.share_as_text": "Share as text",
   "ui.bible_reader_appbar.add_highlight": "Highlight this verse",
   "ui.bible_reader_appbar.remove_highlight": "Remove highlight",
@@ -466,6 +490,9 @@ const Map<String, String> defaultChurchTextContents = {
       "You've reached today's summary limit. Try again tomorrow.",
   "ui.bible_reader_appbar.summary_failed":
       "Couldn't generate a summary right now. Please try again.",
+  "ui.bible_reader_appbar.summary_ai_disclaimer":
+      "Written by AI. It can be wrong — read the passage itself and check "
+          "anything you plan to teach.",
   "ui.app_splash.church_tree": "Church Tree",
   "ui.super_admin_home.no_feedback_has_been_submitted_yet":
       "No feedback has been submitted yet.",
@@ -1047,14 +1074,167 @@ const Map<String, String> defaultChurchTextContents = {
   'favorites.share_english': 'Share in English',
   'favorites.share_tamil': 'Share in Tamil',
 
+  // Attendance
+  'drawer.attendance': 'Attendance',
+  // Communication — WhatsApp/SMS/email hand-off, church staff only.
+  'church_tab.communication': 'Messages',
+  'communication.title': 'Communication',
+  'communication.subtitle':
+      'WhatsApp, SMS and email for your members.',
+  'communication.stat_messages': 'Messages this month',
+  'communication.stat_reached': 'People reached this month',
+  'communication.stat_with_phone': 'Have a phone number',
+  'communication.stat_without_phone': 'Missing a phone number',
+  'communication.tab_compose': 'Compose',
+  'communication.tab_history': 'History',
+  'communication.tab_templates': 'Templates',
+  'communication.channel_label': 'Send by',
+  'communication.channel.whatsapp': 'WhatsApp',
+  'communication.channel.sms': 'SMS',
+  'communication.channel.email': 'Email',
+  'communication.category_label': 'Subject',
+  'communication.category.general': 'General',
+  'communication.category.event_reminder': 'Event reminder',
+  'communication.category.greeting': 'Greeting',
+  'communication.category.ministry': 'Ministry or team',
+  'communication.category.emergency': 'Urgent notice',
+  'communication.template_label': 'Template',
+  'communication.template_hint': 'Start from a saved message',
+  'communication.message_label': 'Message',
+  'communication.message_hint': 'What do you want to say?',
+  'communication.placeholder_hint':
+      'Use {name} or {first} for the person, {church} for your church.',
+  'communication.per_person_warning':
+      'This message names the person, so it has to be sent one at a time — '
+          'use the send button beside each name below.',
+  'communication.remove_placeholders': 'Remove names',
+  'communication.recipients_label': 'Who it goes to',
+  'communication.group_label': 'Which group',
+  'communication.group_everyone': 'Everyone',
+  'communication.wa_groups_title': 'Your WhatsApp groups',
+  'communication.wa_groups_hint':
+      'Share opens WhatsApp with your message ready — pick any chat or '
+          'group there. A saved group opens that group, with the message '
+          'copied for you to paste.',
+  'communication.wa_share': 'Share to a chat or group',
+  'communication.wa_group_add': 'Add group',
+  'communication.wa_group_open': 'Open',
+  'communication.wa_group_remove': 'Remove group',
+  'communication.wa_group_name': 'Group name',
+  'communication.wa_group_link': 'Invite link',
+  'communication.wa_group_link_example': 'https://chat.whatsapp.com/...',
+  'communication.wa_group_link_hint':
+      'In WhatsApp: Group info -> Invite via link -> Copy link.',
+  'communication.wa_group_link_invalid':
+      'Give the group a name and paste its chat.whatsapp.com invite link.',
+  'communication.wa_group_copied': 'Message copied — paste it in WhatsApp',
+  'communication.batch_title':
+      '{count} people — sent in {batches} batches',
+  'communication.batch_hint':
+      'Too many for one hand-off. Open each batch, send it, then come '
+          'back for the next. Ticks show what you have already opened.',
+  'communication.batch_row': 'Batch {index} · {count} people',
+  'communication.batch_open': 'Open',
+  'communication.batch_again': 'Open again',
+  'communication.recipients_all': '{count} members can be reached.',
+  'communication.recipients_some':
+      '{count} members can be reached. {missing} have nothing on file for '
+          'this, so they will not get it.',
+  'communication.audience_reachable': '{count} members',
+  'communication.open_sms_all': 'Open SMS to everyone',
+  'communication.open_email_all': 'Open email to everyone',
+  'communication.copy_message': 'Copy message',
+  'communication.copy_numbers': 'Copy numbers',
+  'communication.log_as_sent': 'Log as sent',
+  'communication.message_copied': 'Message copied',
+  'communication.numbers_copied': 'Numbers copied',
+  'communication.send_to_one': 'Send to this person',
+  'communication.logged': 'Recorded in the history',
+  'communication.log_failed': "Couldn't record it. Please try again.",
+  'communication.load_failed':
+      "Couldn't load this. Check your connection and try again.",
+  'communication.members_failed': "Couldn't load your members.",
+  'communication.history_empty':
+      'Nothing logged yet. Once you send something and tap "Log as sent", '
+          'it is recorded here.',
+  'communication.history_recipients': 'Sent to {count} members',
+  'communication.templates_empty':
+      'No templates yet. Save the messages you send often.',
+  'communication.new_template': 'New template',
+  'communication.edit_template': 'Edit template',
+  'communication.template_name': 'Template name',
+  'communication.delete_template': 'Delete template',
+  'communication.member_fallback': 'Member',
+  'attendance.screen_title': 'Attendance',
+  'attendance.header_title': 'Services and who was present',
+  'attendance.record_service': 'Record a service',
+  'attendance.stat_last': 'Present at last service',
+  'attendance.stat_average': 'Average, last 8 services',
+  'attendance.stat_percent': 'Of active members, last service',
+  'attendance.stat_absent': 'Not seen for 3 services',
+  'attendance.stat_absent_hint': 'Worth a call',
+  'attendance.trend_title': 'Attendance trend',
+  'attendance.trend_hint': 'Members present, most recent on the right.',
+  'attendance.empty_title': 'No services recorded yet',
+  'attendance.empty_hint':
+      'Record a service, then tap each member who was present.',
+  'attendance.filter_all_types': 'All service types',
+  'attendance.service_date': 'Date',
+  'attendance.service_type': 'Service type',
+  'attendance.service_subheader': 'Subheader (optional)',
+  'attendance.service_subheader_hint': 'e.g. 2nd service, Tamil service',
+  'attendance.visitor_count': 'Visitors (headcount)',
+  'attendance.children_count': 'Children (headcount)',
+  'attendance.notes': 'Notes (preacher, theme, special event)',
+  'attendance.create_action': 'Create and mark attendance',
+  'attendance.save_details_action': 'Save details',
+  'attendance.edit_service': 'Edit service',
+  'attendance.delete_service': 'Delete service',
+  'attendance.delete_confirm_title': 'Delete this service?',
+  'attendance.delete_confirm_message':
+      'The service and everyone marked present on it are removed. This '
+          'cannot be undone.',
+  'attendance.deleted': 'Service deleted',
+  'attendance.date_required': 'Pick a date for this service',
+  'attendance.save_failed': "Couldn't save. Please try again.",
+  'attendance.load_failed':
+      "Couldn't load attendance. Check your connection and try again.",
+  'attendance.mark_title': 'Mark attendance',
+  'attendance.mark_save': 'Save attendance',
+  'attendance.mark_saved': 'Saved — {count} present',
+  'attendance.tally': '{count} present',
+  'attendance.search_member': 'Find a member',
+  'attendance.show_everyone': 'Everyone',
+  'attendance.show_not_marked': 'Not yet marked',
+  'attendance.household_mode': 'Household check-in',
+  'attendance.household_hint':
+      'Marks everyone in the same family when you tap one of them.',
+  'attendance.household_marked': '{count} marked present',
+  'attendance.family_of': 'Family of {count}',
+  'attendance.mark_family': '+{count} family',
+  'attendance.no_members_match': 'No members match.',
+  'attendance.no_members':
+      'No approved members yet. Add members before recording attendance.',
+  'attendance.present_count': '{count} present',
+  'attendance.percent_of_active': '{percent}% of active',
+  'attendance.visitors_suffix': '{count} visitors',
+  'attendance.children_suffix': '{count} children',
+  'attendance.absent_title': 'Not seen for 3 services',
+  'attendance.absent_empty': 'Everyone active has been seen recently.',
+  'attendance.service_type.sunday_worship': 'Sunday worship',
+  'attendance.service_type.midweek': 'Midweek service',
+  'attendance.service_type.prayer_meeting': 'Prayer meeting',
+  'attendance.service_type.fasting_prayer': 'Fasting prayer',
+  'attendance.service_type.bible_study': 'Bible study',
+  'attendance.service_type.youth_meeting': 'Youth meeting',
+  'attendance.service_type.special_meeting': 'Special meeting',
+
   // Prayer requests
   'prayer.screen_title': 'Prayer Requests',
   'prayer.my_requests_title': 'My Prayer Requests',
   'prayer.all_requests_title': 'All Prayer Requests',
-  'prayer.global_requests_title': 'Global Prayer Requests',
   'prayer.my_requests_tab': 'My Requests',
   'prayer.all_requests_tab': 'All Requests',
-  'prayer.global_requests_tab': 'Global',
   'prayer.requests_count': '{count} requests',
   'prayer.showing_label': 'Showing',
   'prayer.new_request': 'New request',
@@ -1062,17 +1242,14 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.community_subtitle': 'Share a burden and stand in faith with others.',
   'prayer.choose_view': 'Choose what to view',
   'prayer.choose_view_hint':
-      'Move between your requests and the wider community.',
+      'Move between your own requests and your church\'s.',
   'prayer.my_requests_hint': 'Requests you have shared',
   'prayer.church_requests_hint': 'Active requests from your church',
-  'prayer.global_requests_hint': 'Requests shared across churches',
   'prayer.anonymous_badge': 'Anonymous',
   'prayer.ends_today': 'Ends today',
   'prayer.days_left': 'days left',
   'prayer.empty_hint':
       'When a need is shared, your community can stand with you.',
-  'prayer.global_empty_hint':
-      'Global requests shared by churches will appear here.',
   'prayer.load_error': 'Could not load prayer requests',
   'prayer.delete_confirm_title': 'Delete this prayer request?',
   'prayer.delete_confirm_message':
@@ -1088,12 +1265,7 @@ const Map<String, String> defaultChurchTextContents = {
   'prayer.expiry_date_title': 'Keep request active until',
   'prayer.submit_action': 'Share request',
   'prayer.update_action': 'Save changes',
-  'prayer.global_badge': 'Global request',
   'prayer.edit_action': 'Edit',
-  'prayer.make_global_action': 'Make global',
-  'prayer.remove_global_action': 'Remove from global',
-  'prayer.global_success': 'Prayer request is now global',
-  'prayer.global_removed': 'Prayer request removed from global requests',
   'prayer.none': 'No prayer requests yet',
   'prayer.by_loading': 'By: Loading...',
   'prayer.by_unknown': 'By: Unknown',
@@ -1238,7 +1410,6 @@ const Map<String, String> defaultChurchTextContents = {
       '{count} {memberLabel} have built a 7+ day rhythm.',
   'dashboard.strong_streak_count_singular':
       '{count} member has built a 7+ day rhythm.',
-  'dashboard.member_singular': 'member',
   'dashboard.member_plural': 'members',
   'dashboard.current_streak_leader': 'Current streak leader',
   'dashboard.no_streak_yet': 'No streak yet',
@@ -1264,50 +1435,39 @@ const Map<String, String> defaultChurchTextContents = {
   'dashboard.no_active_events_hint':
       'When events are scheduled, they will show up here as a quick pulse.',
   'dashboard.event_fallback': 'Event',
-  'dashboard.gender_members_title': '{gender} Members',
-  'dashboard.gender_member_count': '{count} {memberLabel}',
-  'dashboard.search_gender_members': 'Search {gender} members',
-  'dashboard.no_gender_search_results': 'No members match this search',
-  'dashboard.no_gender_members': 'No {gender} members yet',
-  'dashboard.church_member_fallback': 'Church member',
   'dashboard.gender_view': 'Gender View',
   'dashboard.gender_view_description':
       'See how member records are distributed by gender.',
   'dashboard.age_view': 'Age View',
   'dashboard.age_view_description':
       'Track the age mix across children, youth, adults, and seniors.',
+  // Member-snapshot bucket labels. Keyed by the stable bucket id so a
+  // church can rename a segment without breaking its colour or its filter.
+  'dashboard.gender_bucket.male': 'Male',
+  'dashboard.gender_bucket.female': 'Female',
+  'dashboard.gender_bucket.unknown': 'Unknown',
+  'dashboard.age_bucket.children': 'Children',
+  'dashboard.age_bucket.youth': 'Youth',
+  'dashboard.age_bucket.adults': 'Adults',
+  'dashboard.age_bucket.seniors': 'Seniors',
+  'dashboard.age_bucket.unknown': 'Unknown',
+  'dashboard.family_bucket.family': 'Family',
+  'dashboard.family_bucket.individual': 'Individual',
+  'dashboard.family_bucket.other': 'Other',
+  'dashboard.family_bucket.unspecified': 'Unspecified',
+  'dashboard.solemnized_bucket.solemnized': 'Solemnized',
+  'dashboard.solemnized_bucket.not_solemnized': 'Not solemnized',
+  // Secondary line under a member's name in a bucket preview.
   'dashboard.family_view': 'Family Mode',
   'dashboard.family_view_description':
       'Understand how many profiles are registered as families or individuals.',
   'dashboard.solemnized_view': 'Solemnized View',
   'dashboard.solemnized_view_description':
       'See how many members are solemnized across the recorded membership base.',
-  'dashboard.no_member_insights': 'No member insights yet',
-  'dashboard.no_member_insights_hint':
-      'As member profiles are completed, interactive insights will show up here.',
   'dashboard.no_chart_data': 'No chart data available',
   'dashboard.no_chart_data_hint':
       'Member profile data is needed before this chart can render.',
   'dashboard.members': 'Members',
-  'dashboard.segment_member_count': '{count} members in this {view} segment',
-  'dashboard.no_matching_members': 'No matching members',
-  'dashboard.no_matching_members_hint':
-      'Once profiles are updated, matching members will appear here.',
-  'dashboard.families': 'Families',
-  'dashboard.family_member_count': '{count} members',
-  'dashboard.more_families': '+ {count} more families',
-  'dashboard.view_all': 'View all',
-  'dashboard.members_in_family': 'Members in {family}',
-  'dashboard.family_member_fallback': 'Family member',
-  'dashboard.family_load_failed': 'Unable to load family members',
-  'dashboard.family_load_failed_hint':
-      'Try refreshing the dashboard to load this family again.',
-  'dashboard.no_family_members': 'No family members found',
-  'dashboard.no_family_members_hint':
-      'No members are currently linked to this family.',
-  'dashboard.all_families': 'All Families',
-  'dashboard.search_families': 'Search families',
-  'dashboard.no_family_search_results': 'No families match this search.',
 
   // About
   'about.our_mission': 'Our Mission',
@@ -1430,7 +1590,7 @@ const Map<String, String> defaultChurchTextContents = {
   'studio.tab_admins': 'Admins',
   'studio.tab_admin_mode': 'Admin Mode',
   'studio.tab_sections': 'Sections',
-  'studio.tab_prompt': 'Important',
+  'studio.tab_prompt': 'Important Alerts',
   'studio.add_event': 'Add event',
   'studio.add_pastor': 'Add pastor',
   'studio.no_events': 'No events yet.',
@@ -1531,11 +1691,11 @@ const Map<String, String> defaultChurchTextContents = {
   'admin_mode.okay': 'Okay',
   'super_admin.disabled_message':
       'Your church is disabled temporarily. Please contact super admin.',
-  'studio.prompt_title': 'Important',
+  'studio.prompt_title': 'Important Alerts',
   'studio.prompt_description':
       'This controls the important pop-up card shown to members for urgent announcements or special updates.',
-  'studio.prompt_updated': 'Important updated',
-  'studio.prompt_save': 'Save Important',
+  'studio.prompt_updated': 'Important Alerts updated',
+  'studio.prompt_save': 'Save Important Alerts',
   'studio.announcement_create': 'Create announcement',
   'studio.announcement_edit': 'Edit announcement',
   'studio.announcement_body': 'Body',
@@ -1948,6 +2108,7 @@ const Map<String, String> defaultChurchTextContents = {
   'finance.title': 'Financial Dashboard',
   'equipment.title': 'Equipment',
   'daily_verse.title': 'Daily verse',
+  'daily_verse.share': 'Share verse',
   'about.developed_with': 'Developed with ',
   'articles.view_articles': 'View Articles',
   // User-facing defaults migrated from legacy field properties.

@@ -13,11 +13,9 @@ import 'package:flutter_application/church_app/services/side_drawer/bible_book_r
 import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart';
 import 'package:flutter_application/church_app/widgets/bible_reader_appbar.dart';
 import 'package:flutter_application/church_app/widgets/bible_verse_item_widget.dart';
+import 'package:flutter_application/church_app/widgets/modals/verse_prompt_builder_screen.dart';
 import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart'
-    show
-        VerseShareLanguage,
-        generateAiVerseCards,
-        showVerseLanguageChoiceSheet;
+    show VerseShareLanguage, showVerseLanguageChoiceSheet;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -357,7 +355,8 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
             itemCount: chapters.length,
             onPageChanged: (index) {
               setState(() {
-                chapterIndexText = window.chapterNumberForPage(index).toString();
+                chapterIndexText =
+                    window.chapterNumberForPage(index).toString();
               });
             },
             itemBuilder: (context, chapterIndex) {
@@ -473,12 +472,10 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
         : _initialPage;
     final currentPage = rawPage.clamp(0, chapters.length - 1);
     final verses = chapters[currentPage]['verses'] as List<dynamic>;
-    final tamilText = verses
-        .map((v) => "${v['verse']}. ${v['text']['tamil']}")
-        .join('\n');
-    final englishText = verses
-        .map((v) => "${v['verse']}. ${v['text']['english']}")
-        .join('\n');
+    final tamilText =
+        verses.map((v) => "${v['verse']}. ${v['text']['tamil']}").join('\n');
+    final englishText =
+        verses.map((v) => "${v['verse']}. ${v['text']['english']}").join('\n');
     final reference = '${widget.book.key} $chapterIndexText';
     await _requestSummary(
       context,
@@ -538,12 +535,12 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
           ),
         ),
         PopupMenuItem(
-          value: 'generate_image',
+          value: 'ai_prompt',
           child: Row(
             children: [
               const Icon(Icons.image_outlined, size: 20),
               const SizedBox(width: 10),
-              Text(context.t('ui.bible_reader_appbar.generate_ai_image')),
+              Text(context.t('ui.bible_reader_appbar.create_ai_prompt')),
             ],
           ),
         ),
@@ -569,11 +566,11 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
         englishText: englishText,
         reference: reference,
       );
-    } else if (selected == 'generate_image' && context.mounted) {
+    } else if (selected == 'ai_prompt' && context.mounted) {
       final language = await showVerseLanguageChoiceSheet(context);
       if (language == null || !context.mounted) return;
       final isTamil = language == VerseShareLanguage.tamil;
-      await generateAiVerseCards(
+      await showVersePromptBuilder(
         context,
         text: isTamil ? tamilText : englishText,
         reference: isTamil ? tamilReference : reference,
@@ -709,10 +706,49 @@ class _VerseScreenState extends ConsumerState<VerseScreen> {
                       .bodyLarge
                       ?.copyWith(height: 1.5),
                 ),
+              const SizedBox(height: 20),
+              const _AiTextDisclaimer(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Footer for anywhere the app shows text a model wrote.
+///
+/// This is the only place in the app that displays generated prose, and it
+/// is generated prose *about scripture* — the one subject where a confident
+/// paraphrase that drifts from the text does real harm. Someone preparing a
+/// message should not have to guess which parts came from a model, so the
+/// card says so plainly rather than hiding it behind a sparkle icon.
+class _AiTextDisclaimer extends StatelessWidget {
+  const _AiTextDisclaimer();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.info_outline_rounded,
+          size: 15,
+          color: colors.onSurfaceVariant,
+        ),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            context.t('ui.bible_reader_appbar.summary_ai_disclaimer'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

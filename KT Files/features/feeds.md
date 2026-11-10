@@ -13,11 +13,22 @@ older content.
 
 The global scope is also the whole of `SelectChurchScreen`'s body (see
 [Authentication and Entry](authentication-and-entry.md)) — `GlobalFeedListView`
-shows the same feed inline, and tapping a post opens
-`GlobalFeedFullScreenViewer`, which reuses `CommunityViewerPageView`
-(extracted from `CommunityFullScreenViewer`), global-only and with no
-create-post action — someone still choosing a church sees the same
-cross-church activity before they've joined anything.
+shows the same feed inline, with no create-post action, so someone still
+choosing a church sees the same cross-church activity before they've joined
+anything.
+
+**Tapping a post card navigates nowhere, by design.** Both feed lists used to
+open a Reels-style vertical full-screen pager at the tapped post
+(`CommunityFullScreenViewer` / `GlobalFeedFullScreenViewer`, sharing
+`CommunityViewerPageView`). An ordinary tap anywhere on a card therefore
+replaced the feed with a second, differently-shaped way of reading the same
+posts — unannounced, and easy to trigger by accident while scrolling. Those
+screens and `FeedCard`'s `fullBleed` / `onTap` / `onDescriptionTap`
+parameters were all removed; the card is the whole post. Everything the
+viewer offered is on the card: the description expands in place, an image
+opens the shared gallery viewer, and the reaction pill opens the reactor
+list. Reinstating a tap target here means adding a single-post detail screen,
+not bringing the pager back.
 
 ## Roles and actions
 
@@ -69,16 +80,40 @@ cross-church activity before they've joined anything.
   nature and still reads faintly on a white sheet; that is the emoji, not the
   font. Both directions
   update the button instantly via a dedicated per-user listener — no refresh
-  needed, unlike most other feed mutations in this doc. There is no
-  public-facing count or "who reacted" pill on the card itself — the "N
-  Reactions" breakdown (a filter chip per emoji, a list of reactors — avatar
-  and name only, no phone) is reached only by long-pressing the button, and
-  only opens at all for the post's own author or an admin (church admin for
-  a church post, or for the church a global post came from); everyone else's
-  long-press is a silent no-op. The button's aggregate data
-  (`reactionSummary`/`reactionTotal` on the post) is written only by a Cloud
-  Function — reacting itself never needs write access to the post doc, only
-  to the reactor's own reaction doc.
+  needed, unlike most other feed mutations in this doc. The button's aggregate
+  data (`reactionSummary`/`reactionTotal` on the post) is written only by a
+  Cloud Function — reacting itself never needs write access to the post doc,
+  only to the reactor's own reaction doc.
+- The **reaction pill** sits in the opposite (bottom-left) corner of the card:
+  up to three emoji, most-reacted first, then the total. Tapping it opens the
+  "N Reactions" sheet — a filter chip per emoji plus "All", and a list of
+  reactors showing avatar and name only, never a phone number. It renders
+  nothing at all on a post with no reactions, so a quiet feed stays quiet.
+  Long-pressing the corner reaction button opens the same sheet.
+  - **Open to anyone who can see the post.** It was previously restricted to
+    the post's author and admins, with no pill and nothing but an
+    undiscoverable long-press to reach it — which meant, for example, that
+    `ephrim17@gmail.com` (not in `tnbm`'s `config/app.admins`) had no way to
+    see reactions on any `tnbm` post they hadn't written, and no indication
+    why. `firestore.rules` already grants read on the whole `reactions`
+    subcollection to any approved member (any verified-email user, on the
+    global feed), so the restriction bought no privacy — it only produced a
+    dead gesture.
+  - The pill reconciles a **snapshot aggregate with a live reaction**, which
+    is the subtle part. `reactionSummary` is denormalized by a Cloud Function,
+    and the feed paginates with one-shot `get()`s, so the aggregate a loaded
+    card holds never moves on its own; the reactor's own reaction, by
+    contrast, is a live single-doc listener. `feedReactionPillSummary`
+    (`helpers/feed_reaction_summary.dart`) applies only the difference
+    between the reaction as the aggregate saw it — the first value that live
+    listener produced — and what it is now. So the count moves the instant
+    you react and still agrees with the server after a refetch. `FeedCard`
+    resets that baseline in `didUpdateWidget` whenever the post's aggregate
+    changes, or a refetch that already counts your reaction would double it.
+    Other people's reactions arriving after fetch time aren't reflected until
+    the next refresh — the same staleness the rest of the card carries.
+    Counts are clamped at zero, so a mid-flight aggregate can't render a
+    negative.
 
 ## Technical map
 
@@ -91,6 +126,8 @@ cross-church activity before they've joined anything.
 - Backend: `setFeedPostGlobal`, notification request processing.
 - Reactions: the corner button is `_FeedReactionButton` inside
   `widgets/feed_card_widget.dart` (emoji via `helpers/emoji_text_style.dart`);
+  the count pill is `widgets/feed_reaction_summary_pill.dart`, whose display
+  maths lives in `helpers/feed_reaction_summary.dart`;
   `widgets/modals/feed_reactions_sheet.dart`
   is the "N Reactions" sheet. Also `services/feed_reaction_repository.dart`,
   `providers/feed_reaction_provider.dart`, `models/feed_reaction_model.dart`.
@@ -100,6 +137,22 @@ cross-church activity before they've joined anything.
   (Cloud Functions, `functions/src/feedReactions.ts`) recompute
   `reactionSummary`/`reactionTotal` on the parent post from that
   subcollection on every reaction write.
+  - **That write uses `mergeFields`, never `merge: true`.** A plain merge
+    deep-merges map fields, so writing a fresh `{👍: 1}` over a stored
+    `{👍: 1, ❤️: 1}` left the ❤️ key behind — `reactionSummary`
+    could only ever grow, and an emoji nobody still reacted with stayed on
+    the pill forever. `reactionTotal` is a scalar and always overwrote
+    correctly, so the signature of the bug is a summary whose counts don't
+    add up to the total. Found on 2026-11-10, when the new pill showed "2"
+    on a `tnbm` post whose sheet listed one reactor; 1 of 76 posts had
+    drifted. The aggregate is always a **full recount**, never an
+    increment, so a missed or out-of-order trigger can't drift it on its
+    own — only that merge could.
+  - `functions/scripts/repair/reactionAggregates.ts`
+    (`npm --prefix functions run repair:reactions`) audits every post's
+    aggregate against its reaction docs and, with `--write`, repairs the
+    drifted ones. It audits only by default, and only writes posts that
+    actually disagree.
 
 ## Test flows
 
@@ -123,5 +176,13 @@ cross-church activity before they've joined anything.
 | FEED-16 | Tap the corner reaction button with no reaction yet | A 5-emoji picker opens anchored at the button; picking one immediately turns the button into that emoji, no refresh needed. |
 | FEED-17 | Tap the corner button again once it shows your emoji | Your reaction is removed directly (no picker reopens); the button reverts to the neutral icon immediately. |
 | FEED-18 | Tap the button, pick a different emoji than your current one | Your reaction switches to the new emoji; still counts as one reaction (no duplicate). |
-| FEED-19 | Long-press the corner button as the post's author or a church admin | "N Reactions" sheet opens with a chip per emoji (plus "All") and a list of reactors — avatar and name only, no phone number. |
-| FEED-20 | Long-press the corner button as a regular member who isn't the author | Nothing opens — a silent no-op. |
+| FEED-19 | Long-press the corner reaction button | "N Reactions" sheet opens with a chip per emoji (plus "All") and a list of reactors — avatar and name only, no phone number. |
+| FEED-20 | Tap the reaction pill as a regular member who is neither the author nor any kind of admin | The same "N Reactions" sheet opens and lists every reactor. (Was a silent no-op before the pill existed.) |
+| FEED-21 | Scroll a feed of posts with and without reactions | Posts with reactions show a bottom-left pill (up to 3 emoji, most-reacted first, then the total); posts with none show no pill at all, not a "0". |
+| FEED-22 | React to a post that already has reactions, without refreshing | The pill's total increments by exactly one and your emoji appears in it immediately — the denormalized aggregate on the post has not been refetched. |
+| FEED-23 | React, then change your emoji, then remove it — all without refreshing | The total goes +1, holds steady while the emoji moves across, then returns to its original value. It never shows a negative or a double count. |
+| FEED-24 | React to a post, then pull to refresh the feed | The pill shows the same total after the refetch as it did before — the server aggregate and the local adjustment agree, no double count. |
+| FEED-25 | Tap a post card anywhere that isn't an image, the author row, a hashtag, the pill or the reaction button | Nothing happens — no navigation. Confirms the Reels-style full-screen pager is gone from both the Community list and `SelectChurchScreen`'s global feed. |
+| FEED-26 | Open a post with exactly one reaction and read the sheet's heading | It reads "1 Reaction", not "1 Reactions" (`ui.feed_reactions.title_one`). |
+| FEED-27 | React with one emoji, remove it, react with a different one, then pull to refresh | The pill shows only the emoji currently reacted with — the removed one's key does not linger. Guards the `mergeFields` fix in `recomputeReactionAggregate`. |
+| FEED-28 | Run `npm --prefix functions run repair:reactions` against production | Reports 0 drifted posts. Any drift means a reaction write path is bypassing `recomputeReactionAggregate` or the merge regression is back. |

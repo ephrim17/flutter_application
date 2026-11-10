@@ -142,11 +142,11 @@ this whole area that isn't about switching sides at all is `SignInScreen`'s
 forgot-password link (`ForgotPasswordScreen` stays a normal push).
 
 `SelectChurchScreen` itself is feed-first, not a church list — its body is
-`GlobalFeedListView` (the cross-church feed, inline, tap a post to open
-`GlobalFeedFullScreenViewer` at that post — the same Reels-style swipeable
-viewer `CommunityFullScreenViewer` uses, sharing its `CommunityViewerPageView`,
-but global-only: no "Your Church" segment and no create-post action, since
-posting stays church-scoped from inside Community). "Churches" is a second
+`GlobalFeedListView` (the cross-church feed, inline, with no create-post
+action, since posting stays church-scoped from inside Community; tapping a
+card navigates nowhere, same as the Community tab's list — see
+[Feeds](feeds.md) for why the Reels-style pager that used to open here was
+removed). "Churches" is a second
 bottom tab (`AppBottomTabBar`, mirroring `ChurchTabScreen`'s own tab bar)
 whose body is `ChurchPickerScreen` — "Your Churches" / "Pending Approval" /
 "Other Churches" — for anyone who actually wants to pick or request a
@@ -431,7 +431,7 @@ continues to use the Firebase action-link email flow.
 | AUTH-12 | Pick a different approved church from the sheet | Session is not ended; whole nav stack is replaced (`pushAndRemoveUntil`) so the church left behind is not reachable via back. |
 | AUTH-12a | Press system back while inside a church (any tab) | Nothing happens — `PopScope(canPop: false)` blocks it; only the app-bar church name (switch) or Settings > Register-another-church/Logout can leave. |
 | AUTH-12b | Settings > "Register for another church" | Opens `SelectChurchScreen` (Home tab first) with the whole stack cleared (`pushAndRemoveUntil`) — no back button, matching its entry-gate behaviour; the "Churches" tab, where requesting access behaves exactly like the entry-gate flow. |
-| AUTH-12c | Tap a post in `SelectChurchScreen`'s Home tab feed | Opens `GlobalFeedFullScreenViewer` at that post — vertical swipe between global posts only, no segment toggle, no create-post action; back returns to `SelectChurchScreen`. |
+| AUTH-12c | Tap a post in `SelectChurchScreen`'s Home tab feed | Nothing happens — the card is the whole post, and the Reels-style full-screen pager that used to open here is gone. Images, the author row and the reaction pill still respond to their own taps. |
 | AUTH-12d | Tap the "Churches" tab on `SelectChurchScreen` | Shows `ChurchPickerScreen` (Your Churches / Pending Approval / Other Churches) in place — no push, no back button involved; tapping "Home" switches back to the feed the same way, and the app bar title stays "Church Tree" on both tabs. |
 | AUTH-13 | Logout | Firebase session actually ends; lands on `AuthChoiceScreen` (Sign In / Sign Up), not straight to `SignInScreen`; relaunch requires signing in again. |
 | AUTH-14 | Maintenance mode as member/admin | Member is blocked; configured church admin can enter. |

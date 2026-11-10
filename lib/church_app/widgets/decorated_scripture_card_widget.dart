@@ -113,6 +113,11 @@ class ScriptureReferencePill extends StatelessWidget {
       ),
       child: Text(
         reference,
+        // The Daily Verse card now sits this pill in a row beside the
+        // language toggle and the share button, so a long reference has to
+        // give way rather than overflow the bar.
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontSize: fontSize,
               fontWeight: FontWeight.w700,

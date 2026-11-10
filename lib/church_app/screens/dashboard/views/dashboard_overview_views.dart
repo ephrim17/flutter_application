@@ -368,13 +368,18 @@ String _anniversaryDashboardLabel(
 class _DashboardMemberJoinHistory extends StatelessWidget {
   const _DashboardMemberJoinHistory({
     required this.summary,
+    required this.memberCount,
   });
 
   final DashboardMemberMetrics summary;
 
+  /// Live member count, for the "is there anything to show" gate and the
+  /// caption. The stored `summary.memberCount` lags a trigger run.
+  final int memberCount;
+
   @override
   Widget build(BuildContext context) {
-    if (summary.memberCount == 0 || summary.firstRecordedAt == null) {
+    if (memberCount == 0 || summary.firstRecordedAt == null) {
       return _DashboardEmptyState(
         title: context.t('dashboard.no_membership_history'),
         subtitle: context.t('dashboard.no_membership_history_hint'),
@@ -389,7 +394,7 @@ class _DashboardMemberJoinHistory extends StatelessWidget {
           tone: _SignalTone.healthy,
           caption: context.t(
             'dashboard.members_recorded_since',
-            parameters: {'count': summary.memberCount},
+            parameters: {'count': memberCount},
           ),
         ),
         const SizedBox(height: 12),
@@ -463,11 +468,14 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
       children: [
         _DashboardSignalTile(
           title: context.t('dashboard.pending_approvals'),
-          value: state.memberMetrics.pendingApprovals.toString(),
-          tone: state.memberMetrics.pendingApprovals == 0
+          // From the live member list, like every other composition number
+          // on this screen — reading it off the stored metrics put two
+          // answers to one question side by side.
+          value: state.metrics.pendingApprovals.toString(),
+          tone: state.metrics.pendingApprovals == 0
               ? _SignalTone.healthy
               : _SignalTone.attention,
-          caption: state.memberMetrics.pendingApprovals == 0
+          caption: state.metrics.pendingApprovals == 0
               ? context.t('dashboard.no_pending_approvals')
               : context.t('dashboard.pending_approvals_hint'),
         ),
@@ -505,13 +513,19 @@ class _DashboardHealthSignalsPanel extends StatelessWidget {
 class _DashboardMemberStreakPanel extends StatelessWidget {
   const _DashboardMemberStreakPanel({
     required this.summary,
+    required this.memberCount,
   });
 
   final DashboardMemberMetrics summary;
 
+  /// Live member count, used only to decide whether there is a church here
+  /// to report streaks for. The streak numbers themselves stay server-side:
+  /// they read `users/{uid}`, which rules expose only to that user.
+  final int memberCount;
+
   @override
   Widget build(BuildContext context) {
-    if (summary.memberCount == 0) {
+    if (memberCount == 0) {
       return _DashboardEmptyState(
         title: context.t('dashboard.no_streak_data'),
         subtitle: context.t('dashboard.no_streak_data_hint'),
@@ -655,35 +669,23 @@ class _DashboardStatRow extends StatelessWidget {
   const _DashboardStatRow({
     required this.label,
     required this.value,
-    this.onTap,
-    this.selected = false,
   });
 
   final String label;
   final String value;
-  final VoidCallback? onTap;
-  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withValues(alpha: 0.4)
-              : Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.24),
-          borderRadius: BorderRadius.circular(18),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(18),
+      ),
         child: Row(
           children: [
             Expanded(
@@ -704,7 +706,6 @@ class _DashboardStatRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

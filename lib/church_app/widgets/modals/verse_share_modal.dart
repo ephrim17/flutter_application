@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -19,10 +16,10 @@ import 'package:flutter_application/church_app/providers/select_church_provider.
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/widgets/modals/verse_prompt_builder_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gal/gal.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -66,141 +63,10 @@ Future<void> showVerseShareModal(
   );
 }
 
-/// Identifies the one verse a whole church shares on a given day, so its AI
-/// cards can be generated once and reused by every member.
-///
-/// Only the Daily Verse can be cached this way: it is the same verse for
-/// everyone in the church, unlike the Bible reader's long-press generation
-/// where each member picks their own verse. The reference is sent so the
-/// server can check it against the church's configured Daily Verse and
-/// refuse anything else — see
-/// KT Files/architecture/daily-verse-card-caching.md.
-@immutable
-class DailyVerseCacheKey {
-  const DailyVerseCacheKey({
-    required this.churchId,
-    required this.language,
-    required this.book,
-    required this.chapter,
-    required this.verse,
-    this.mode = 'fetch',
-  });
-
-  final String churchId;
-  final VerseShareLanguage language;
-  final String book;
-  final int chapter;
-  final int verse;
-
-  Map<String, dynamic> toPayload() => {
-        'churchId': churchId,
-        'language': language == VerseShareLanguage.tamil ? 'ta' : 'en',
-        'book': book,
-        'chapter': chapter,
-        'verse': verse,
-        'mode': mode,
-      };
-
-  /// `fetch` reads the cache and never spends; `generate` is admin-only and
-  /// is what the Studio's "Generate images" button sends.
-  final String mode;
-
-  // Value equality so this can key a provider family — otherwise every
-  // rebuild would look like a new key and refetch the images.
-  @override
-  bool operator ==(Object other) =>
-      other is DailyVerseCacheKey &&
-      other.churchId == churchId &&
-      other.language == language &&
-      other.book == book &&
-      other.chapter == chapter &&
-      other.verse == verse &&
-      other.mode == mode;
-
-  @override
-  int get hashCode =>
-      Object.hash(churchId, language, book, chapter, verse, mode);
-}
-
-/// Generates today's Daily Verse cards for **both** languages from the
-/// Studio editor, and reports what happened.
-///
-/// Members never generate — this is the only entry point that does, and the
-/// Cloud Function independently rejects a `generate` call from anyone who
-/// isn't a church admin. Each language is its own batch (and its own cache
-/// entry), so they are sent one after the other rather than in parallel: two
-/// simultaneous image batches would compete for the same function instance's
-/// 180s budget.
-///
-/// Returns the languages that failed, so the caller can say which.
-///
-/// [onLanguageSettled] fires as each language finishes, successfully or not,
-/// with how many of [VerseShareLanguage] have been dealt with so far. It is
-/// the only progress signal this flow has — Gemini reports nothing mid-batch
-/// — and Studio turns it into the percentage it shows the admin.
-Future<List<VerseShareLanguage>> generateDailyVerseCardsBothLanguages({
-  required String churchId,
-  required String book,
-  required int chapter,
-  required int verse,
-  required String englishText,
-  required String englishReference,
-  required String tamilText,
-  required String tamilReference,
-  void Function(int settled, int total)? onLanguageSettled,
-}) async {
-  final failed = <VerseShareLanguage>[];
-  final requests = [
-    (
-      VerseShareLanguage.english,
-      englishText,
-      englishReference,
-    ),
-    (
-      VerseShareLanguage.tamil,
-      tamilText,
-      tamilReference,
-    ),
-  ];
-  var settled = 0;
-  void report() => onLanguageSettled?.call(++settled, requests.length);
-
-  for (final (language, text, reference) in requests) {
-    if (text.trim().isEmpty) {
-      failed.add(language);
-      report();
-      continue;
-    }
-    try {
-      final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
-          .httpsCallable(
-            'generateVerseBackgroundImage',
-            options: HttpsCallableOptions(timeout: const Duration(seconds: 180)),
-          )
-          .call<Map<String, dynamic>>({
-        'verseText': text,
-        'reference': reference,
-        'dailyVerse': DailyVerseCacheKey(
-          churchId: churchId,
-          language: language,
-          book: book,
-          chapter: chapter,
-          verse: verse,
-          mode: 'generate',
-        ).toPayload(),
-      }).timeout(const Duration(seconds: 190));
-      if (result.data['status'] != 'ready') failed.add(language);
-    } catch (_) {
-      failed.add(language);
-    }
-    report();
-  }
-  return failed;
-}
-
-/// Entry point for verse sharing: asks whether to generate a background with
-/// AI or build the card manually, then routes to the matching flow. Replaces
-/// direct calls to [showVerseShareModal] at every share-icon call site.
+/// Entry point for verse sharing: asks whether to build an AI image prompt
+/// (to paste into ChatGPT or Gemini) or make the card in the manual editor,
+/// then routes to the matching flow. Replaces direct calls to
+/// [showVerseShareModal] at every share-icon call site.
 ///
 /// [isGuestShare] is true when sharing from the guest shell's drawer (no
 /// church in context) — both flows below suppress all church branding
@@ -218,8 +84,8 @@ Future<void> showVerseShareChoiceSheet(
   );
   if (choice == null || !context.mounted) return;
   switch (choice) {
-    case _VerseShareChoice.ai:
-      await _startAiVerseShareFlow(
+    case _VerseShareChoice.aiPrompt:
+      await showVersePromptBuilder(
         context,
         text: text,
         reference: reference,
@@ -235,36 +101,16 @@ Future<void> showVerseShareChoiceSheet(
   }
 }
 
-/// Generates and shows up to 3 AI verse-card candidates directly, skipping
-/// the "Generate with AI" vs "Create manually" choice sheet — for entry
-/// points where the user has already chosen AI generation explicitly (e.g.
-/// the Bible reader's long-press verse menu).
-Future<void> generateAiVerseCards(
-  BuildContext context, {
-  required String text,
-  required String reference,
-  bool isGuestShare = false,
-}) {
-  return _startAiVerseShareFlow(
-    context,
-    text: text,
-    reference: reference,
-    isGuestShare: isGuestShare,
-  );
-}
-
 /// Which language a verse leaves the app in. The Bible reader holds both
-/// scripts for every verse, so the choice has to be made at the share/generate
+/// scripts for every verse, so the choice has to be made at the share/prompt
 /// call site rather than inferred from the app's UI language.
 enum VerseShareLanguage { english, tamil }
 
-/// Asks whether to share/generate this verse in English or Tamil, mirroring
+/// Asks whether to share/prompt this verse in English or Tamil, mirroring
 /// the Favourites screen's share-language sheet.
 ///
 /// Returns null when the sheet is dismissed without a choice — callers must
-/// treat that as "cancelled" and not fall back to a default language, since
-/// generating in the wrong script spends the user's daily AI quota on a card
-/// they didn't ask for.
+/// treat that as "cancelled" and not fall back to a default language.
 Future<VerseShareLanguage?> showVerseLanguageChoiceSheet(
   BuildContext context,
 ) {
@@ -294,123 +140,7 @@ Future<VerseShareLanguage?> showVerseLanguageChoiceSheet(
   );
 }
 
-/// Opens the full-screen, swipeable card viewer with its download action,
-/// starting at [initialIndex].
-Future<void> showAiVerseCardViewer(
-  BuildContext context, {
-  required List<PickedImageData> images,
-  int initialIndex = 0,
-}) {
-  return Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      fullscreenDialog: true,
-      builder: (_) => _AiVerseCardSwipeScreen(
-        images: images,
-        initialIndex: initialIndex,
-      ),
-    ),
-  );
-}
-
-/// Reads this church's pre-generated Daily Verse cards for one language.
-///
-/// Fetch-only: the Cloud Function will not generate anything on this path,
-/// so calling it can never cost the church money. An empty list means the
-/// church's admin hasn't generated today's images yet (or has changed the
-/// verse since), and the caller should say so rather than offer to generate.
-Future<List<PickedImageData>> fetchDailyVerseCards({
-  required DailyVerseCacheKey key,
-  required String verseText,
-  required String reference,
-}) async {
-  final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
-      .httpsCallable(
-        'generateVerseBackgroundImage',
-        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
-      )
-      .call<Map<String, dynamic>>({
-    'verseText': verseText,
-    'reference': reference,
-    'dailyVerse': key.toPayload(),
-  }).timeout(const Duration(seconds: 70));
-
-  if (result.data['status'] != 'ready') return const [];
-  final cards = ((result.data['cards'] as List?) ?? const [])
-      .whereType<Map>()
-      .toList(growable: false);
-  final stamp = DateTime.now().millisecondsSinceEpoch;
-  final downloaded = await Future.wait(cards.map(_downloadCard));
-  return downloaded
-      .whereType<Uint8List>()
-      .map((bytes) => PickedImageData(bytes: bytes, name: 'daily-verse-$stamp'))
-      .toList(growable: false);
-}
-
-/// Bytes for one cached card.
-///
-/// Reads the tokenised download URL the function stores, which is how every
-/// other image in this app is loaded (feeds, logos, pastor photos) and needs
-/// no Storage-rules evaluation.
-///
-/// Goes through [DefaultCacheManager] — the same disk cache
-/// `cached_network_image` uses behind [ShimmerImage] — rather than a plain
-/// GET, so a card is downloaded from Storage once and then served locally on
-/// every later view, including after an app restart. The card URLs carry the
-/// day and the content fingerprint, so a new day or a regenerated card is a
-/// new URL and a natural cache miss; nothing has to be invalidated by hand.
-///
-/// Falls back to reading the object by path for entries generated before URLs
-/// were stored, in case the server could not backfill one.
-Future<Uint8List?> _downloadCard(Map<dynamic, dynamic> card) async {
-  final url = card['url'] as String?;
-  if (url != null && url.isNotEmpty) {
-    try {
-      final file = await DefaultCacheManager()
-          .getSingleFile(url)
-          .timeout(const Duration(seconds: 30));
-      return await file.readAsBytes();
-    } catch (_) {
-      // Fall through to the path read below.
-    }
-  }
-  final path = card['path'] as String?;
-  if (path == null || path.isEmpty) return null;
-  try {
-    return await FirebaseStorage.instance.ref(path).getData(6 * 1024 * 1024);
-  } catch (_) {
-    return null;
-  }
-}
-
-/// Whether this church's one Daily Verse generation for today is spent.
-///
-/// Asks the server rather than reading `dailyVerseCards/{dayKey}` from the
-/// client. The rules-based read looks simpler but does not work: both rules
-/// files compare the caller's lowercased email against `config/app.admins`
-/// exactly as stored, so an admin whose stored entry carries a capital letter
-/// fails `isChurchAdmin` and the read is denied. The callable's `authorize()`
-/// lowercases both sides and gets the same question right.
-///
-/// `fetch` mode never generates, so this costs the church nothing.
-Future<bool> fetchDailyVerseGenerationUsed({
-  required DailyVerseCacheKey key,
-  required String verseText,
-  required String reference,
-}) async {
-  final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
-      .httpsCallable(
-        'generateVerseBackgroundImage',
-        options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
-      )
-      .call<Map<String, dynamic>>({
-    'verseText': verseText,
-    'reference': reference,
-    'dailyVerse': key.toPayload(),
-  }).timeout(const Duration(seconds: 70));
-  return result.data['generationUsed'] == true;
-}
-
-enum _VerseShareChoice { ai, manual }
+enum _VerseShareChoice { aiPrompt, manual }
 
 class _VerseShareChoiceSheet extends StatelessWidget {
   const _VerseShareChoiceSheet();
@@ -432,18 +162,16 @@ class _VerseShareChoiceSheet extends StatelessWidget {
           const SizedBox(height: 16),
           _VerseShareChoiceTile(
             icon: Icons.auto_awesome_rounded,
-            title: context.t('ui.verse_share.generate_with_ai'),
-            subtitle: context.t('ui.verse_share.generate_with_ai_subtitle'),
-            onTap: () =>
-                Navigator.of(context).pop(_VerseShareChoice.ai),
+            title: context.t('ui.verse_share.ai_prompt'),
+            subtitle: context.t('ui.verse_share.ai_prompt_subtitle'),
+            onTap: () => Navigator.of(context).pop(_VerseShareChoice.aiPrompt),
           ),
           const SizedBox(height: 12),
           _VerseShareChoiceTile(
             icon: Icons.edit_rounded,
             title: context.t('ui.verse_share.create_manually'),
             subtitle: context.t('ui.verse_share.create_manually_subtitle'),
-            onTap: () =>
-                Navigator.of(context).pop(_VerseShareChoice.manual),
+            onTap: () => Navigator.of(context).pop(_VerseShareChoice.manual),
           ),
         ],
       ),
@@ -501,320 +229,6 @@ class _VerseShareChoiceTile extends StatelessWidget {
             ),
             const Icon(Icons.chevron_right_rounded),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Calls the backend for up to 3 complete AI-generated verse-card
-/// candidates (verse text, church name and date all rendered into the
-/// image by Gemini itself), then shows them full-screen and swipeable so
-/// the person can compare and download whichever they land on — no
-/// further app-side editing, since each candidate is already final.
-Future<void> _startAiVerseShareFlow(
-  BuildContext context, {
-  required String text,
-  required String reference,
-  bool isGuestShare = false,
-}) async {
-  final images = await showDialog<List<PickedImageData>>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) => _AiVerseImageGenerationDialog(
-      text: text,
-      reference: reference,
-      isGuestShare: isGuestShare,
-    ),
-  );
-  if (images == null || images.isEmpty || !context.mounted) return;
-
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      fullscreenDialog: true,
-      builder: (_) => _AiVerseCardSwipeScreen(images: images),
-    ),
-  );
-}
-
-class _AiVerseImageGenerationDialog extends ConsumerStatefulWidget {
-  const _AiVerseImageGenerationDialog({
-    required this.text,
-    required this.reference,
-    this.isGuestShare = false,
-  });
-
-  final String text;
-  final String reference;
-  final bool isGuestShare;
-
-  @override
-  ConsumerState<_AiVerseImageGenerationDialog> createState() =>
-      _AiVerseImageGenerationDialogState();
-}
-
-class _AiVerseImageGenerationDialogState
-    extends ConsumerState<_AiVerseImageGenerationDialog> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _generate());
-  }
-
-  Future<void> _generate() async {
-    try {
-      // The full church name (not the short Studio-configured app title
-      // abbreviation, e.g. "T.N.B.M") — Gemini renders its own decorative
-      // banner, which has room for the real name, unlike the small on-screen
-      // branding pill in the manual editor that still uses the abbreviation.
-      // Both stay "" for a guest share, regardless of whatever the
-      // last-selected-church state still holds — Gemini is told explicitly
-      // not to invent church branding on its own (see verseImage.ts).
-      final churchName = widget.isGuestShare
-          ? ''
-          : ref.read(selectedChurchProvider)?.name.trim() ?? '';
-      final contactNumber = widget.isGuestShare
-          ? ''
-          : ref.read(selectedChurchProvider)?.contact ?? '';
-      // Generating 3 candidates in parallel server-side can legitimately
-      // take longer than the plugin's 60s default HttpsCallableOptions
-      // timeout, so that's raised here — but a live test found the
-      // underlying platform call can also just hang past its own timeout
-      // on Android without ever rejecting the awaited Future (observed: a
-      // client-side socket timeout ~50s in, never surfaced as a catchable
-      // Dart exception). The outer `.timeout(...)` is a hard backstop that
-      // guarantees this `await` completes one way or another, so the
-      // loading dialog can never get stuck indefinitely regardless of that
-      // plugin behavior.
-      final result = await FirebaseFunctions.instanceFor(
-        region: 'us-central1',
-      )
-          .httpsCallable(
-            'generateVerseBackgroundImage',
-            options: HttpsCallableOptions(timeout: const Duration(seconds: 120)),
-          )
-          .call<Map<String, dynamic>>({
-            'verseText': widget.text,
-            'reference': widget.reference,
-            'churchName': churchName,
-            'contactNumber': contactNumber,
-          }).timeout(const Duration(seconds: 130));
-
-      final rawImages = (result.data['images'] as List?) ?? const [];
-      final images = rawImages
-          .whereType<Map>()
-          .map((item) => item['data'] as String?)
-          .whereType<String>()
-          .map(
-            (data) => PickedImageData(
-              bytes: base64Decode(data),
-              name: 'ai-verse-${DateTime.now().millisecondsSinceEpoch}',
-            ),
-          )
-          .toList(growable: false);
-      if (!mounted) return;
-      if (images.isEmpty) {
-        Navigator.of(context).pop();
-        _showErrorSnackBar(context, context.t('ui.verse_share.ai_generation_failed'));
-        return;
-      }
-      Navigator.of(context).pop(images);
-    } on FirebaseFunctionsException catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      // `church-cap-exceeded` is the shared Daily Verse cache's own limit,
-      // not the per-user one, but it reads the same to the person holding
-      // the phone: no new card today.
-      final key = (e.message == 'quota-exceeded' ||
-              e.message == 'church-cap-exceeded')
-          ? 'ui.verse_share.ai_quota_exceeded'
-          : 'ui.verse_share.ai_generation_failed';
-      _showErrorSnackBar(context, context.t(key));
-    } catch (_) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      _showErrorSnackBar(context, context.t('ui.verse_share.ai_generation_failed'));
-    }
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      child: AlertDialog(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Text(context.t('ui.verse_share.generating_image')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Shows every already-complete AI-generated verse card (verse text,
-/// church name and date all baked into the image by Gemini) full-screen
-/// and swipeable, with a page indicator, and downloads whichever candidate
-/// is currently visible — no further app-side compositing needed, since
-/// each candidate is already final.
-class _AiVerseCardSwipeScreen extends StatefulWidget {
-  const _AiVerseCardSwipeScreen({required this.images, this.initialIndex = 0});
-
-  final List<PickedImageData> images;
-
-  /// Which card to open on, so tapping the third thumbnail in the Daily
-  /// Verse card doesn't dump the reader back at the first.
-  final int initialIndex;
-
-  @override
-  State<_AiVerseCardSwipeScreen> createState() =>
-      _AiVerseCardSwipeScreenState();
-}
-
-class _AiVerseCardSwipeScreenState extends State<_AiVerseCardSwipeScreen> {
-  late final PageController _pageController =
-      PageController(initialPage: widget.initialIndex);
-  late int _page = widget.initialIndex;
-  bool _isDownloading = false;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _download() async {
-    if (_isDownloading) return;
-    setState(() => _isDownloading = true);
-    try {
-      final bytes = widget.images[_page].bytes;
-      final filename = 'verse-${DateTime.now().millisecondsSinceEpoch}.jpg';
-      if (kIsWeb) {
-        downloadBytes(
-          bytes: bytes,
-          fileName: filename,
-          mimeType: 'image/jpeg',
-        );
-      } else {
-        await Gal.putImageBytes(bytes, name: filename);
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('ui.verse_share.image_saved')),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      debugPrint('AI verse image download error: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('ui.verse_share.download_failed')),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isDownloading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          tooltip: context.t('common.close'),
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close_rounded),
-        ),
-        title: widget.images.length > 1
-            ? Text(
-                context.t(
-                  'common.image_position',
-                  parameters: {
-                    'current': _page + 1,
-                    'total': widget.images.length,
-                  },
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.images.length,
-            onPageChanged: (value) => setState(() => _page = value),
-            itemBuilder: (context, index) => Center(
-              child: Image.memory(
-                widget.images[index].bytes,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-          if (widget.images.length > 1)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.images.length, (index) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    height: 6,
-                    width: index == _page ? 20 : 6,
-                    decoration: BoxDecoration(
-                      color: Colors.white
-                          .withValues(alpha: index == _page ? 0.95 : 0.45),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  );
-                }),
-              ),
-            ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _isDownloading ? null : _download,
-              icon: _isDownloading
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.download_rounded),
-              label: Text(context.t('common.download')),
-            ),
-          ),
         ),
       ),
     );

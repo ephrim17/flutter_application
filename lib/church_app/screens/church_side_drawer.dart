@@ -3,10 +3,8 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_count_badge.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/drawer_constants.dart';
-import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
 import 'package:flutter_application/church_app/providers/members_provider.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
@@ -31,7 +29,8 @@ DateTime? _lastDrawerNavigationAt;
 bool _shouldDebounceDrawerNavigation() {
   final now = DateTime.now();
   if (_lastDrawerNavigationAt != null &&
-      now.difference(_lastDrawerNavigationAt!) < const Duration(milliseconds: 600)) {
+      now.difference(_lastDrawerNavigationAt!) <
+          const Duration(milliseconds: 600)) {
     return true;
   }
   _lastDrawerNavigationAt = now;
@@ -109,20 +108,17 @@ class AppDrawer extends ConsumerWidget {
       }
       return isAdmin || !item.adminOnly;
     }).toList();
-    final churchId =
-        ref.watch(currentChurchIdProvider).asData?.value?.trim() ?? '';
     final favoritesCount = ref.watch(favoritesProvider).asData?.value.length;
     final myPrayersAsync = ref.watch(myPrayerRequestsProvider);
-    final globalPrayersAsync = ref.watch(globalPrayerRequestsProvider);
     final allPrayersAsync =
         isAdmin ? ref.watch(allPrayerRequestsProvider) : null;
-    final prayerCount = _overallPrayerCount(
-      churchId: churchId,
-      localPrayers: isAdmin
-          ? allPrayersAsync?.asData?.value
-          : myPrayersAsync.asData?.value,
-      globalPrayers: globalPrayersAsync.asData?.value,
-    );
+    // One church, one list — an admin counts every active request, everyone
+    // else counts their own. Cross-church requests no longer exist, so there
+    // is nothing left to de-duplicate against.
+    final prayerCount = (isAdmin
+            ? allPrayersAsync?.asData?.value
+            : myPrayersAsync.asData?.value)
+        ?.length;
     final membersCount = items.contains(DrawerMenuItem.members)
         ? ref.watch(membersProvider).asData?.value.length
         : null;
@@ -344,27 +340,4 @@ class GuestSideDrawer extends ConsumerWidget {
     Navigator.pop(context);
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
-}
-
-int? _overallPrayerCount({
-  required String churchId,
-  required List<PrayerRequest>? localPrayers,
-  required List<PrayerRequest>? globalPrayers,
-}) {
-  if (localPrayers == null || globalPrayers == null) return null;
-
-  final requestKeys = <String>{
-    for (final prayer in localPrayers) 'local:${prayer.id}',
-  };
-  for (final prayer in globalPrayers) {
-    final isLinkedLocalPrayer = churchId.isNotEmpty &&
-        prayer.sourceChurchId == churchId &&
-        prayer.sourcePrayerId.isNotEmpty;
-    requestKeys.add(
-      isLinkedLocalPrayer
-          ? 'local:${prayer.sourcePrayerId}'
-          : 'global:${prayer.id}',
-    );
-  }
-  return requestKeys.length;
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -6,6 +8,8 @@ import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+const _sectionPadding = 16.0;
 
 class PromiseSection implements MasterSection {
   const PromiseSection();
@@ -23,7 +27,7 @@ class PromiseSection implements MasterSection {
         child: Consumer(
           builder: (context, ref, _) {
             return const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: _sectionPadding),
               child: PromiseVerseCard(),
             );
           },
@@ -45,7 +49,20 @@ class PromiseVerseCard extends ConsumerWidget {
       error: (e, _) => Text(e.toString()),
       data: (verse) {
         final screenWidth = MediaQuery.sizeOf(context).width;
-        final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+        final maxWidth = homeSectionMaxWidth(screenWidth);
+        // The header lines up with the other section headers (16, from the
+        // sliver padding); the card lines up with the Events/Announcements
+        // carousel cards, which sit further in than their headers. Both boxes
+        // are centred, so the difference is between their left edges.
+        final carouselWidth = maxWidth ?? screenWidth;
+        final carouselCardLeft = (screenWidth - carouselWidth) / 2 +
+            homeCarouselCardInset(screenWidth);
+        final promiseWidth = math.min(
+          screenWidth - _sectionPadding * 2,
+          maxWidth ?? double.infinity,
+        );
+        final promiseLeft = (screenWidth - promiseWidth) / 2;
+        final cardInset = math.max(0.0, carouselCardLeft - promiseLeft);
 
         return Align(
           alignment: Alignment.center,
@@ -74,34 +91,37 @@ class PromiseVerseCard extends ConsumerWidget {
                       padding: 0.0,
                     ),
                     const SizedBox(height: 10),
-                    DecoratedScriptureCard(
-                      width: availableWidth,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTabletWidth ? 18 : 6,
-                          vertical: isTabletWidth ? 12 : 4,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              verse['tamil']!,
-                              textAlign: TextAlign.center,
-                              style: tamilStyle,
-                            ),
-                            SizedBox(height: isTabletWidth ? 14 : 10),
-                            Text(
-                              verse['english']!,
-                              textAlign: TextAlign.center,
-                              style: englishStyle,
-                            ),
-                            SizedBox(height: isTabletWidth ? 16 : 12),
-                            ScriptureReferencePill(
-                              reference: verse['reference']!,
-                              fontSize: isTabletWidth ? 15 : 14,
-                            ),
-                          ],
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: cardInset),
+                      child: DecoratedScriptureCard(
+                        width: availableWidth - cardInset * 2,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTabletWidth ? 18 : 6,
+                            vertical: isTabletWidth ? 12 : 4,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                verse['tamil']!,
+                                textAlign: TextAlign.center,
+                                style: tamilStyle,
+                              ),
+                              SizedBox(height: isTabletWidth ? 14 : 10),
+                              Text(
+                                verse['english']!,
+                                textAlign: TextAlign.center,
+                                style: englishStyle,
+                              ),
+                              SizedBox(height: isTabletWidth ? 16 : 12),
+                              ScriptureReferencePill(
+                                reference: verse['reference']!,
+                                fontSize: isTabletWidth ? 15 : 14,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

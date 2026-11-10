@@ -48,6 +48,7 @@ class _AppImageGalleryViewerState extends State<AppImageGalleryViewer> {
   late final PageController _pageController =
       PageController(initialPage: widget.initialIndex);
   late int _page = widget.initialIndex;
+  bool _zoomed = false;
 
   @override
   void dispose() {
@@ -82,21 +83,52 @@ class _AppImageGalleryViewerState extends State<AppImageGalleryViewer> {
         body: PageView.builder(
           controller: _pageController,
           itemCount: widget.imageUrls.length,
-          onPageChanged: (page) => setState(() => _page = page),
+          // While an image is zoomed, a horizontal drag has to pan that image
+          // rather than flick to the next one — otherwise the pager steals
+          // the gesture and zooming in makes the photo unexplorable.
+          physics: _zoomed
+              ? const NeverScrollableScrollPhysics()
+              : const PageScrollPhysics(),
+          onPageChanged: (page) => setState(() {
+            _page = page;
+            // Each photo opens fitted, the way a gallery does; the next one
+            // must not inherit the last one's magnification.
+            _zoomed = false;
+          }),
           itemBuilder: (context, index) {
             final imageUrl = widget.imageUrls[index];
             final heroTag = widget.heroTagBuilder?.call(imageUrl, index);
-            return _ZoomableNetworkImage(imageUrl: imageUrl, heroTag: heroTag);
+            return _ZoomableNetworkImage(
+              key: ValueKey(imageUrl),
+              imageUrl: imageUrl,
+              heroTag: heroTag,
+              isActive: index == _page,
+              onZoomChanged: (zoomed) {
+                if (zoomed != _zoomed) setState(() => _zoomed = zoomed);
+              },
+            );
           },
         ),
       );
 }
 
 class _ZoomableNetworkImage extends StatefulWidget {
-  const _ZoomableNetworkImage({required this.imageUrl, this.heroTag});
+  const _ZoomableNetworkImage({
+    super.key,
+    required this.imageUrl,
+    this.heroTag,
+    this.isActive = true,
+    this.onZoomChanged,
+  });
 
   final String imageUrl;
   final String? heroTag;
+
+  /// False for the pager's off-screen neighbours, which reset themselves so
+  /// a photo is never returned to still magnified.
+  final bool isActive;
+
+  final ValueChanged<bool>? onZoomChanged;
 
   @override
   State<_ZoomableNetworkImage> createState() => _ZoomableNetworkImageState();
@@ -105,9 +137,34 @@ class _ZoomableNetworkImage extends StatefulWidget {
 class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   final _transformationController = TransformationController();
   TapDownDetails? _doubleTapDetails;
+  bool _zoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController.addListener(_reportZoom);
+  }
+
+  @override
+  void didUpdateWidget(_ZoomableNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive && !widget.isActive) {
+      _transformationController.value = Matrix4.identity();
+    }
+  }
+
+  /// Anything above 1 counts as zoomed. The epsilon keeps a pinch that lands
+  /// a hair off identity from latching the pager shut.
+  void _reportZoom() {
+    final zoomed = _transformationController.value.getMaxScaleOnAxis() > 1.01;
+    if (zoomed == _zoomed) return;
+    _zoomed = zoomed;
+    widget.onZoomChanged?.call(zoomed);
+  }
 
   @override
   void dispose() {
+    _transformationController.removeListener(_reportZoom);
     _transformationController.dispose();
     super.dispose();
   }
@@ -118,9 +175,19 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     // — so the incoming flight only ever animates plain image bounds. Pan
     // and pinch-zoom wrap it as a separate layer that only takes over once
     // the flight has settled.
+    // Twice the screen's pixel width: enough that pinch-zoom still resolves
+    // detail, while refusing to hold a full 12MP decode per open image. The
+    // feed caps far harder (see _FeedImageGallery) because it keeps several
+    // alive at once; here only one or two are.
+    final zoomPixelWidth = (MediaQuery.of(context).size.width *
+            MediaQuery.of(context).devicePixelRatio *
+            2)
+        .round();
+
     final image = CachedNetworkImage(
       imageUrl: widget.imageUrl,
       fit: BoxFit.contain,
+      memCacheWidth: zoomPixelWidth,
       placeholder: (_, __) => const Center(child: AppLoadingIndicator()),
       errorWidget: (_, __, ___) => const Center(
         child: Icon(
@@ -141,7 +208,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
         transformationController: _transformationController,
         minScale: 1,
         maxScale: 5,
-        boundaryMargin: const EdgeInsets.all(36),
+        // Zero, not a margin. A margin is slack around the child, so the
+        // photo could be dragged loose inside the black backdrop even at fit
+        // scale — which no gallery does. At zero it cannot move until it is
+        // bigger than the screen, and then only as far as its own edges.
+        boundaryMargin: EdgeInsets.zero,
         child: Center(child: hero),
       ),
     );
@@ -154,13 +225,18 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     }
     final position = _doubleTapDetails?.localPosition ?? Offset.zero;
     const scale = 2.5;
+    var dx = -position.dx * (scale - 1);
+    var dy = -position.dy * (scale - 1);
+    // Setting the matrix by hand bypasses InteractiveViewer's own clamping,
+    // so a double-tap near an edge would jump past it and show empty space.
+    // Clamp to the same bounds a drag would have been held to.
+    final size = context.size;
+    if (size != null) {
+      dx = dx.clamp(-size.width * (scale - 1), 0.0);
+      dy = dy.clamp(-size.height * (scale - 1), 0.0);
+    }
     _transformationController.value = Matrix4.identity()
-      ..translateByDouble(
-        -position.dx * (scale - 1),
-        -position.dy * (scale - 1),
-        0,
-        1,
-      )
+      ..translateByDouble(dx, dy, 0, 1)
       ..scaleByDouble(scale, scale, scale, 1);
   }
 }

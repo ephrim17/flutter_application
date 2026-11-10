@@ -46,26 +46,11 @@ class ChurchLocalStorage {
     return prefs.getString(_churchTopicKey);
   }
 
+  /// Kept for sign-out and account-switch paths. Nothing subscribes to FCM
+  /// topics any more — the server addresses devices from church membership —
+  /// so these only clear what older installs left behind.
   Future<void> clearSubscribedChurchTopic() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_churchTopicKey);
-  }
-
-  Future<Set<String>> getSubscribedNotificationTopics() async {
-    final prefs = await SharedPreferences.getInstance();
-    final topics = prefs.getStringList(_notificationTopicsKey) ?? const [];
-    final legacyChurchTopic = prefs.getString(_churchTopicKey)?.trim();
-    return {
-      ...topics.map((topic) => topic.trim()).where((topic) => topic.isNotEmpty),
-      if (legacyChurchTopic != null && legacyChurchTopic.isNotEmpty)
-        legacyChurchTopic,
-    };
-  }
-
-  Future<void> saveSubscribedNotificationTopics(Set<String> topics) async {
-    final prefs = await SharedPreferences.getInstance();
-    final sortedTopics = topics.toList()..sort();
-    await prefs.setStringList(_notificationTopicsKey, sortedTopics);
     await prefs.remove(_churchTopicKey);
   }
 

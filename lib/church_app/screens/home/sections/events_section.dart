@@ -69,12 +69,8 @@ class EventsList extends StatelessWidget {
     }
 
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final viewportFraction = screenWidth >= 1400
-        ? 0.72
-        : screenWidth >= 1024
-            ? 0.82
-            : 0.92;
-    final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+    final viewportFraction = homeCarouselViewportFraction(screenWidth);
+    final maxWidth = homeSectionMaxWidth(screenWidth);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +90,7 @@ class EventsList extends StatelessWidget {
                 height: cardHeight(EventsSection().id),
                 itemCount: items.length,
                 viewportFraction: viewportFraction,
-                spacing: 12,
+                spacing: homeCarouselSpacing,
                 itemBuilder: (_, i) => EventsCard(items[i]),
               ),
             ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -55,7 +56,7 @@ class _LearningPathContent extends ConsumerWidget {
     final totalSections = modules.expand((module) => module.sections).length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+      padding: const EdgeInsets.symmetric(horizontal: forYouSidePadding),
       child: Container(
         decoration: carouselBoxDecoration(context),
         child: InkWell(
@@ -73,13 +74,15 @@ class _LearningPathContent extends ConsumerWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                   
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SectionHeader(text: context.t('learning.member_heading'), padding: 0.0,),
+                          SectionHeader(
+                            text: context.t('learning.member_heading'),
+                            padding: 0.0,
+                          ),
                           const SizedBox(height: 3),
                           Text(context.t('learning.overview_hint')),
                         ],

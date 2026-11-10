@@ -10,7 +10,8 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "build:scripts": "tsc -p tsconfig.scripts.json",
-    "migrate": "npm run build:scripts && node lib-scripts/migrate/run.js"
+    "migrate": "npm run build:scripts && node lib-scripts/migrate/run.js",
+    "repair:reactions": "npm run build:scripts && node lib-scripts/repair/reactionAggregates.js"
   },
   "engines": {
     "node": "24"

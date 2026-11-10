@@ -35,7 +35,10 @@ this.
 - Live Church YouTube configuration.
 - Home, For You and Faith Engagement sub-item enable/order controls.
 - Topic notification composer.
-- Session prompt configuration.
+- Important Alerts configuration — the urgent pop-up card shown to
+  members. Named "Important Alerts" in the UI as of 2026-11-10; the
+  text-content keys stay `studio.tab_prompt` / `studio.prompt_*`, so a
+  church that has overridden the wording keeps its own.
 
 ### Admin controls
 
@@ -83,7 +86,7 @@ can manage it.
 | STUDIO-10 | Reorder/disable sections/sub-items | Member Home/For You reflects exact order and visibility live. |
 | STUDIO-11 | Live Church settings | Channel validation, auto-detect and notification toggles persist. |
 | STUDIO-12 | Notification composer | Required fields validate; one request sends to correct church topic. |
-| STUDIO-13 | Prompt/admin mode | Prompt deduplicates; maintenance blocks members but not admins. |
+| STUDIO-13 | Important Alerts/admin mode | The alert deduplicates; maintenance blocks members but not admins. The tab, its title, its save button and its confirmation all read "Important Alerts". |
 | STUDIO-14 | Admin email add/edit/delete/duplicate | CRUD is clear, normalized and prevents duplicate/removing final admin. |
 | STUDIO-14b | Admin count at/over super-admin limit | Adding a new admin is blocked with a clear message once at the limit; editing/removing existing admins (even past a lowered limit) still works. |
 | STUDIO-15 | Keyboard/small screen/large text | Every editor remains scrollable with visible actions and no overlap. |

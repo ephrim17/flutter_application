@@ -10,10 +10,13 @@ import 'package:flutter_application/church_app/providers/authentication/firebase
 import 'package:flutter_application/church_app/providers/church_provider.dart';
 import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart'
-    show selectedChurchProvider;
+    show churchRepositoryProvider, selectedChurchProvider;
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/church_side_drawer.dart';
+// Parked with the Community tab; kept so re-enabling is one line.
+// ignore: unused_import
 import 'package:flutter_application/church_app/screens/community/community_feed_screen.dart';
+import 'package:flutter_application/church_app/screens/communication/communication_screen.dart';
 import 'package:flutter_application/church_app/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_application/church_app/screens/entry/app_entry.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_screen.dart';
@@ -73,6 +76,32 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     }
   }
 
+  /// Switches to the church a tapped notification came from, if it is not
+  /// the one already open.
+  ///
+  /// Members of several churches are notified about all of them, so a tap can
+  /// legitimately refer to a church that is not on screen. Routing to the
+  /// destination without this showed the right screen of the wrong church.
+  Future<void> _handleNotificationChurchRequest() async {
+    final requestedId = notificationChurchRequest.value;
+    if (requestedId == null || !mounted) return;
+    if (requestedId == ref.read(selectedChurchProvider)?.id) {
+      notificationChurchRequest.value = null;
+      return;
+    }
+
+    final church = await ref
+        .read(churchRepositoryProvider)
+        .getChurchById(requestedId);
+    if (!mounted) return;
+    // Unknown church, or one this person has since left: stay put rather
+    // than drop them somewhere they cannot read.
+    notificationChurchRequest.value = null;
+    if (church == null) return;
+
+    await _switchToChurch(church);
+  }
+
   void _handleNotificationTabRequest() {
     final requestedIndex = notificationTabRequest.value;
     if (requestedIndex == null || !mounted) return;
@@ -102,9 +131,16 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     notificationTabRequest.addListener(_handleNotificationTabRequest);
     notificationDestinationRequest
         .addListener(_handleNotificationDestinationRequest);
+    notificationChurchRequest.addListener(_handleNotificationChurchRequest);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // A tap that arrived before this screen existed — a cold start, or the
+      // rebuild that follows switching church — set these notifiers while
+      // nothing was listening, so apply whatever is still pending.
+      _handleNotificationChurchRequest();
+      _handleNotificationTabRequest();
+      _handleNotificationDestinationRequest();
       ref.read(notificationPromptCompletedProvider.notifier).state = false;
       try {
         await handleNotificationSetup(
@@ -127,6 +163,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     notificationTabRequest.removeListener(_handleNotificationTabRequest);
     notificationDestinationRequest
         .removeListener(_handleNotificationDestinationRequest);
+    notificationChurchRequest.removeListener(_handleNotificationChurchRequest);
     super.dispose();
   }
 
@@ -135,7 +172,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final eventName = switch (index) {
       0 => 'home_opened',
       1 => 'for_you_opened',
-      2 => 'community_opened',
+      // 2 => 'community_opened',
+      2 => 'communication_opened',
       _ => null,
     };
 
@@ -173,11 +211,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     final config = ref.watch(appConfigProvider).asData?.value;
     final selectedChurch = ref.watch(selectedChurchProvider);
     final canSeeDashboard = isAdmin && (config?.dashboardEnabled ?? false);
-    const communityIndex = 2;
+
+    // Community is parked, not deleted — `CommunityFeedScreen` and its
+    // providers are untouched, so restoring it is re-enabling these lines.
+    // Its slot now carries Communication, which is church staff only: a
+    // member sees Home and For You.
+    // const communityIndex = 2;
     final screens = <Widget>[
       HomeScreen(),
       ForYouScreen(),
-      const CommunityFeedScreen(),
+      // const CommunityFeedScreen(),
+      if (isAdmin) const CommunicationScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
     final items = <AppBottomTabItem>[
@@ -191,11 +235,17 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         selectedIcon: Icons.star_rounded,
         label: ref.t('church_tab.for_you'),
       ),
-      AppBottomTabItem(
-        icon: Icons.play_circle_outline_rounded,
-        selectedIcon: Icons.play_circle_rounded,
-        label: ref.t('church_tab.community'),
-      ),
+      // AppBottomTabItem(
+      //   icon: Icons.play_circle_outline_rounded,
+      //   selectedIcon: Icons.play_circle_rounded,
+      //   label: ref.t('church_tab.community'),
+      // ),
+      if (isAdmin)
+        AppBottomTabItem(
+          icon: Icons.forum_outlined,
+          selectedIcon: Icons.forum_rounded,
+          label: ref.t('church_tab.communication'),
+        ),
       if (canSeeDashboard)
         AppBottomTabItem(
           icon: Icons.dashboard_customize_outlined,
@@ -208,7 +258,10 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       selectedIndex = 0;
     }
 
-    final isCommunityTab = selectedIndex == communityIndex;
+    // The feed hid the app bar and the tab bar as you scrolled. Nothing
+    // else does, so while Community is parked that behaviour is inert —
+    // restore it with the tab:
+    // final isCommunityTab = selectedIndex == communityIndex;
 
     // Once inside a church there is no "back" out of it — switching only
     // ever happens by tapping the church name above, which navigates
@@ -219,7 +272,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
         body: Column(
           children: [
             HideableAppBar(
-              visible: _appBarVisible && !isCommunityTab,
+              visible: _appBarVisible, // && !isCommunityTab,
               appBar: AppBar(
                 centerTitle: false,
                 toolbarHeight: 40,
@@ -274,13 +327,14 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           alignment: Alignment.bottomCenter,
-          child: (isCommunityTab && !_appBarVisible)
-              ? const SizedBox(width: double.infinity, height: 0)
-              : AppBottomTabBar(
-                  currentIndex: selectedIndex,
-                  items: items,
-                  onTap: setActiveScreen,
-                ),
+          // child: (isCommunityTab && !_appBarVisible)
+          //     ? const SizedBox(width: double.infinity, height: 0)
+          //     : AppBottomTabBar(...),
+          child: AppBottomTabBar(
+            currentIndex: selectedIndex,
+            items: items,
+            onTap: setActiveScreen,
+          ),
         ),
       ),
     );

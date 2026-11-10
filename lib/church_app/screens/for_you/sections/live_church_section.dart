@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -35,7 +36,9 @@ class _LiveChurchSectionBody extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
           data: (status) => status.canPlay
               ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: forYouSidePadding,
+                  ),
                   child: _LiveChurchCard(status: status),
                 )
               : const SizedBox.shrink(),

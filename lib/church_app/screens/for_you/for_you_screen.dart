@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/live_church_provider.dart';
 import 'package:flutter_application/church_app/screens/footer_sections/footer_section.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/article_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/featured_section.dart';
@@ -114,21 +114,24 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
         final slivers = <Widget>[];
 
         for (final ordered in activeSections) {
-          final spacing = spacingForOrder(ordered.order);
-
-          // 🔹 Add spacing BEFORE section if needed
-          if (spacing > 0) {
-            slivers.add(
-              SliverToBoxAdapter(
-                child: SizedBox(height: spacing),
-              ),
-            );
+          // The one and only gap between sections, and it belongs to the
+          // section rather than sitting before it as a bare spacer: a
+          // section that renders nothing today (no published modules, no
+          // reflection) must cost nothing, not leave 24dp of empty page
+          // behind. See `ForYouSectionSpacing`.
+          for (final sliver in ordered.section.buildSlivers(context)) {
+            slivers.add(_withSectionGap(sliver));
           }
-          // 🔹 Add section slivers
-          slivers.addAll(
-            ordered.section.buildSlivers(context),
-          );
         }
+        // The last section needs the same breathing room below it that every
+        // other section gets above the next one; the footer used to supply
+        // its own and nothing else did. This one is unconditional — it
+        // trails real content by definition.
+        slivers.add(
+          const SliverToBoxAdapter(
+            child: SizedBox(height: forYouSectionGap),
+          ),
+        );
 
         return CustomScrollView(
           controller: _scrollController,
@@ -137,6 +140,27 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
       },
     );
   }
+}
+
+/// Gives one section's sliver the page's between-sections gap, in a form
+/// that disappears when the section draws nothing.
+///
+/// Every For You section currently returns a single `SliverToBoxAdapter`,
+/// whose box child can be measured; anything else falls back to ordinary
+/// padding, which is the old behaviour and still correct for a section that
+/// always renders.
+Widget _withSectionGap(Widget sliver) {
+  if (sliver is SliverToBoxAdapter && sliver.child != null) {
+    final child = sliver.child!;
+    // A group of sibling sections spaces its own parts; adding the page's
+    // gap on top would double the space above its first heading.
+    if (child is ForYouSelfSpaced) return sliver;
+    return SliverToBoxAdapter(child: ForYouSectionSpacing(child: child));
+  }
+  return SliverPadding(
+    padding: const EdgeInsets.only(top: forYouSectionGap),
+    sliver: sliver,
+  );
 }
 
 class ForYouSectionRegistry {

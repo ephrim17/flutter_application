@@ -1,6 +1,7 @@
 /* eslint-disable max-len, require-jsdoc */
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions";
+import {approvedMemberUids, sendToUids} from "./notify";
 import {defineSecret} from "firebase-functions/params";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, onRequest} from "firebase-functions/v2/https";
@@ -45,30 +46,19 @@ export const notifyChurchWhenYouTubeLive = onDocumentWritten(
     if (!shouldNotify) return;
 
     const title = String(after?.title ?? "").trim();
-    await admin.messaging().send({
-      topic: `church_${churchId}`,
-      notification: {
-        title: "Church is live",
-        body: title ?
-          `${title} is live now. Tap to watch.` :
-          "The church service is live now. Tap to watch.",
-      },
+    // Addressed to the church's approved members rather than an FCM topic,
+    // so it reaches them whichever church their app currently has selected.
+    await sendToUids({
+      uids: await approvedMemberUids(churchId),
+      title: "Church is live",
+      body: title ?
+        `${title} is live now. Tap to watch.` :
+        "The church service is live now. Tap to watch.",
       data: {
         kind: "live_church",
         churchId,
         videoId,
         tab: "for_you",
-      },
-      android: {
-        notification: {
-          channelId: "church_messages",
-          priority: "high",
-        },
-      },
-      apns: {
-        payload: {
-          aps: {sound: "default"},
-        },
       },
     });
   },

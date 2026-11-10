@@ -4,26 +4,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
-import 'package:flutter_application/church_app/widgets/blocking_percent_progress_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
-import 'package:flutter_application/church_app/widgets/modals/verse_share_modal.dart'
-    show
-        DailyVerseCacheKey,
-        VerseShareLanguage,
-        generateDailyVerseCardsBothLanguages;
 import 'package:flutter_application/church_app/models/for_you_section_models/bible_swipe_verse_model.dart';
 import 'package:flutter_application/church_app/models/for_you_section_models/for_you_section_config_model.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/social_icon_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/home_section_config_model.dart';
 import 'package:flutter_application/church_app/models/picked_image_data.dart';
-import 'package:flutter_application/church_app/helpers/verse_image_generation_progress.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
-import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart'
-    show dailyVerseGenerationUsedProvider;
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart'
     show firebaseAuthProvider;
@@ -282,7 +273,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 builder: (_) => _ConfigVerseEditor(
                   title: ref.t('studio.tab_daily_verse'),
                   configSelector: (config) => config.dailyVerseRef,
-                  showGenerateImages: true,
                   onSave: ({required book, required chapter, required verse}) {
                     return repository.updateDailyVerse(
                       book: book,
@@ -1010,7 +1000,6 @@ class _ConfigVerseEditor extends ConsumerWidget {
     required this.title,
     required this.configSelector,
     required this.onSave,
-    this.showGenerateImages = false,
   });
 
   final String title;
@@ -1020,12 +1009,6 @@ class _ConfigVerseEditor extends ConsumerWidget {
     required int chapter,
     required int verse,
   }) onSave;
-
-  /// Only the Daily Verse offers card generation — it is the one verse the
-  /// whole church shares on a given day, so its cards can be made once here
-  /// and read by every member. This editor is also used for the Promise
-  /// verse, which has no such flow.
-  final bool showGenerateImages;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1145,10 +1128,6 @@ class _ConfigVerseEditor extends ConsumerWidget {
                             context.t('ui.studio.change_book_chapter_verse')),
                       ),
                     ),
-                    if (showGenerateImages) ...[
-                      const SizedBox(height: 12),
-                      _GenerateVerseImagesButton(versePreview: versePreview),
-                    ],
                   ],
                 ),
               ),
@@ -1204,216 +1183,6 @@ class _VersePreviewLine extends StatelessWidget {
                 ),
           ),
         ],
-      ],
-    );
-  }
-}
-
-/// Generates today's shareable Daily Verse cards for the whole church, in
-/// both languages, from Studio.
-///
-/// This is the only place generation is triggered: members in the For You
-/// tab read what this produces and never generate their own, which is what
-/// keeps the cost at one set per church per day instead of one per member.
-class _GenerateVerseImagesButton extends ConsumerStatefulWidget {
-  const _GenerateVerseImagesButton({required this.versePreview});
-
-  final Future<Map<String, String>> versePreview;
-
-  @override
-  ConsumerState<_GenerateVerseImagesButton> createState() =>
-      _GenerateVerseImagesButtonState();
-}
-
-class _GenerateVerseImagesButtonState
-    extends ConsumerState<_GenerateVerseImagesButton> {
-  bool _busy = false;
-
-  /// Roughly how long one language's batch of three images takes. Only used
-  /// to keep the bar moving inside a segment — see
-  /// [verseImageGenerationProgress]; overshooting it holds rather than lies.
-  static const _expectedPerLanguage = Duration(seconds: 75);
-
-  Future<void> _generate() async {
-    final church = ref.read(selectedChurchProvider);
-    final verseRef = ref.read(appConfigProvider).maybeWhen(
-          data: (config) => config.dailyVerseRef,
-          orElse: () => null,
-        );
-    if (church == null || verseRef == null) return;
-
-    // Driven by a notifier rather than setState so each tick rebuilds only
-    // the dialog, not the editor behind it.
-    final progress = ValueNotifier<double>(0);
-    var languagesDone = 0;
-    var segmentStart = DateTime.now();
-    final ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      progress.value = verseImageGenerationProgress(
-        languagesDone: languagesDone,
-        totalLanguages: 2,
-        elapsedInSegment: DateTime.now().difference(segmentStart),
-        expectedPerLanguage: _expectedPerLanguage,
-      );
-    });
-
-    // Captured before the first await: this is what closes the dialog later,
-    // without reaching through a possibly-unmounted context.
-    final navigator = Navigator.of(context, rootNavigator: true);
-    // Generation costs the church its one allowance for the day, so the
-    // screen is blocked outright while it runs — no second press, no editing
-    // the verse mid-flight, no backing out and wondering what happened.
-    unawaited(
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        useRootNavigator: true,
-        builder: (dialogContext) => ValueListenableBuilder<double>(
-          valueListenable: progress,
-          builder: (_, value, __) => BlockingPercentProgressDialog(
-            progress: value,
-            message: dialogContext.t('ui.studio.generating_verse_images'),
-          ),
-        ),
-      ),
-    );
-
-    setState(() => _busy = true);
-    try {
-      final verse = await widget.versePreview;
-      final failed = await generateDailyVerseCardsBothLanguages(
-        churchId: church.id,
-        book: verseRef.book,
-        chapter: verseRef.chapter,
-        verse: verseRef.verse,
-        englishText: verse['english'] ?? '',
-        englishReference: verse['reference'] ?? '',
-        tamilText: verse['tamil'] ?? '',
-        tamilReference: verse['referenceTamil'] ?? '',
-        onLanguageSettled: (settled, total) {
-          languagesDone = settled;
-          segmentStart = DateTime.now();
-          progress.value = verseImageGenerationProgress(
-            languagesDone: settled,
-            totalLanguages: total,
-            elapsedInSegment: Duration.zero,
-            expectedPerLanguage: _expectedPerLanguage,
-          );
-        },
-      );
-      if (!mounted) return;
-      // The day's allowance may now be spent; re-ask so the button locks
-      // without the admin having to reopen the editor.
-      ref.invalidate(dailyVerseGenerationUsedProvider);
-      final key = failed.isEmpty
-          ? 'ui.studio.verse_images_ready'
-          : failed.length == 2
-              ? 'ui.studio.verse_images_failed'
-              : 'ui.studio.verse_images_partial';
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(context.t(key))),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(context.t('ui.studio.verse_images_failed'))),
-      );
-    } finally {
-      ticker.cancel();
-      progress.dispose();
-      // Closes the blocking dialog whether the run succeeded, failed or the
-      // editor was disposed mid-flight — the navigator was captured up front
-      // precisely so this still works when `mounted` is false.
-      if (navigator.canPop()) navigator.pop();
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final church = ref.watch(selectedChurchProvider);
-    final verseRef = ref.watch(appConfigProvider).maybeWhen(
-          data: (config) => config.dailyVerseRef,
-          orElse: () => null,
-        );
-    // One successful generation per church per day. While that is unknown
-    // (loading, or the call failed) the button stays enabled — the server
-    // enforces the same rule and rejects a spent day, so the worst case is a
-    // clear error instead of a button the admin cannot explain.
-    final used = (church == null || verseRef == null)
-        ? false
-        : ref
-            .watch(
-              dailyVerseGenerationUsedProvider(
-                DailyVerseCacheKey(
-                  churchId: church.id,
-                  language: VerseShareLanguage.english,
-                  book: verseRef.book,
-                  chapter: verseRef.chapter,
-                  verse: verseRef.verse,
-                ),
-              ),
-            )
-            .maybeWhen(data: (value) => value, orElse: () => false);
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.tonalIcon(
-            onPressed: (_busy || used) ? null : _generate,
-            icon: _busy
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                : Icon(
-                    used
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.auto_awesome_rounded,
-                  ),
-            label: Text(
-              context.t(
-                _busy
-                    ? 'ui.studio.generating_verse_images'
-                    : used
-                        ? 'ui.studio.verse_images_already_generated'
-                        : 'ui.studio.generate_verse_images',
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Once the day is spent the admin can still change the verse, so say
-        // what that change will and will not do rather than leaving a dead
-        // button unexplained.
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (used) ...[
-              Icon(
-                Icons.info_outline_rounded,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Expanded(
-              child: Text(
-                context.t(
-                  used
-                      ? 'ui.studio.verse_images_used_today'
-                      : 'ui.studio.generate_verse_images_hint',
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

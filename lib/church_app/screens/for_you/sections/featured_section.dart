@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/screens/for_you/bible_swipe/bible_verse_swipe_screen.dart';
 import 'package:flutter_application/church_app/screens/for_you/reading_plan/plan_list_screen.dart';
@@ -22,7 +23,9 @@ class FeaturedSection implements MasterSection {
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: forYouSidePadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -31,7 +34,7 @@ class FeaturedSection implements MasterSection {
                 text: context.t('for_you.featured.section_title'),
                 padding: 0.0,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: forYouHeaderGap),
               FeaturedCard(
                 badgeText: context.t('for_you.featured.plan_badge'),
                 title: context.t('for_you.featured.plan_title'),
@@ -47,7 +50,7 @@ class FeaturedSection implements MasterSection {
                   );
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: forYouCardGap),
               CardLinkButtonWidget(
                 title: context.t('for_you.featured.swipe_title'),
                 buttonText: context.t('for_you.featured.swipe_button'),

@@ -113,11 +113,6 @@ service cloud.firestore {
         request.resource.data.get('identitySyncedAt', null) == resource.data.get('identitySyncedAt', null);
     }
 
-    function isPrayerSourceOwner(sourceChurchId, sourcePrayerId) {
-      return sourceChurchId is string && sourcePrayerId is string &&
-        get(/databases/$(database)/documents/churches/$(sourceChurchId)/prayer_requests/$(sourcePrayerId)).data.userId == request.auth.uid;
-    }
-
     // ---------- churches ----------
     match /churches/{churchId} {
       // Public directory read (church picker browses all churches).
@@ -303,6 +298,32 @@ service cloud.firestore {
 
       // Prayer requests: authors see their own + church-visible ones;
       // staff can moderate everything (including hidden requests).
+      // Attendance register: one document per gathering, holding the member
+      // ids present. Church staff only, read as well as write — a register
+      // of who was in the building is not something the congregation browses,
+      // and unlike the member directory there is no reduced mirror to offer
+      // them instead. `present` is a plain array, so there is no subcollection
+      // to secure separately.
+      match /services/{serviceId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+
+      // Communication: what the church recorded as sent, and the bodies it
+      // reuses. Staff only, read as well as write — a message log names who
+      // was contacted about what, which is not something the congregation
+      // browses.
+      match /message_log/{messageId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+
+      match /message_templates/{templateId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+
+      match /whatsapp_groups/{groupId} {
+        allow read, write: if isChurchStaff(churchId);
+      }
+
       match /prayer_requests/{prayerId} {
         allow read: if isChurchStaff(churchId) ||
           (isApprovedMember(churchId) &&
@@ -449,21 +470,14 @@ service cloud.firestore {
       }
     }
 
+    // Cross-church prayer requests were removed from the app on 2026-11-10 —
+    // Pray For Others is "My Requests" and "All Requests" within one church.
+    // The collection is sealed rather than deleted: leftover documents stay
+    // readable by nobody and writable by nobody, so an older installed build
+    // that still promotes a request fails closed instead of writing into a
+    // collection nothing reads.
     match /globalPrayerRequests/{prayerId} {
-      allow read: if hasVerifiedEmail();
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.sourceChurchId is string &&
-         isChurchAdmin(request.resource.data.sourceChurchId));
-      allow update: if isSuperAdmin() ||
-        (request.resource.data.sourceChurchId is string &&
-         isChurchAdmin(request.resource.data.sourceChurchId)) ||
-        isPrayerSourceOwner(resource.data.sourceChurchId, resource.data.sourcePrayerId);
-      // deletePrayer() unconditionally tries to delete a possibly-nonexistent
-      // mirror doc as part of a batch — that must stay a harmless no-op.
-      allow delete: if !exists(/databases/$(database)/documents/globalPrayerRequests/$(prayerId)) ||
-        isSuperAdmin() ||
-        (resource.data.sourceChurchId is string && isChurchAdmin(resource.data.sourceChurchId)) ||
-        isPrayerSourceOwner(resource.data.sourceChurchId, resource.data.sourcePrayerId);
+      allow read, write: if false;
     }
 
     match /globalFeedback/{docId} {

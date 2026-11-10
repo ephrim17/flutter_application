@@ -3,15 +3,14 @@ import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/authentication/admin_provider.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
-import 'package:flutter_application/church_app/screens/community/global_feed_full_screen_viewer.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/feed_card_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// The cross-church feed, inline — `SelectChurchScreen`'s main content.
-/// Tapping a post opens `GlobalFeedFullScreenViewer` at that post; there is
-/// no create-post action here (posting is church-scoped only, from inside
-/// Community).
+/// There is no create-post action here (posting is church-scoped only, from
+/// inside Community), and tapping a card navigates nowhere: the card is the
+/// whole post, the same as in the Community tab's list.
 class GlobalFeedListView extends ConsumerStatefulWidget {
   const GlobalFeedListView({super.key});
 
@@ -44,14 +43,6 @@ class _GlobalFeedListViewState extends ConsumerState<GlobalFeedListView> {
     final position = _scrollController.position;
     if (position.maxScrollExtent - position.pixels > triggerThreshold) return;
     _notifier().loadMore();
-  }
-
-  void _openFullScreenViewer(String postId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GlobalFeedFullScreenViewer(initialPostId: postId),
-      ),
-    );
   }
 
   @override
@@ -114,7 +105,6 @@ class _GlobalFeedListViewState extends ConsumerState<GlobalFeedListView> {
             currentUid: currentUid,
             isAdmin: isAdmin,
             isGlobal: true,
-            onTap: () => _openFullScreenViewer(post.id),
           );
         },
       ),

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_application/church_app/models/app_config_model.dart';
+import 'package:flutter_application/church_app/models/attendance_service_model.dart';
+import 'package:flutter_application/church_app/models/communication_models.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,6 +53,11 @@ void main() {
       final source = entity.readAsStringSync();
       for (final match in keyPattern.allMatches(source)) {
         final key = match.group(1)!;
+        // A key built at runtime (`'prefix.$variable'`) cannot be checked
+        // against the defaults by reading the source — the variable's values
+        // are not here. Those sets get their own assertion below rather than
+        // being reported as missing.
+        if (key.contains(r'$')) continue;
         if (!knownKeys.contains(key)) {
           missing.add('${entity.path}: $key');
         }
@@ -61,6 +68,32 @@ void main() {
       missing,
       isEmpty,
       reason: 'Add every UI text key to defaultChurchTextContents.',
+    );
+  });
+
+  test('every runtime-built key set has a default for each of its values', () {
+    // The keys the scanner above has to skip, checked by their actual values.
+    final knownKeys = {
+      ...preAuthDefaultTextContents.keys,
+      ...defaultChurchTextContents.keys,
+    };
+    final missing = <String>[
+      for (final type in attendanceServiceTypeKeys)
+        if (!knownKeys.contains('attendance.service_type.$type'))
+          'attendance.service_type.$type',
+      for (final channel in MessageChannel.values)
+        if (!knownKeys.contains('communication.channel.${channel.key}'))
+          'communication.channel.${channel.key}',
+      for (final category in messageCategoryKeys)
+        if (!knownKeys.contains('communication.category.$category'))
+          'communication.category.$category',
+    ];
+
+    expect(
+      missing,
+      isEmpty,
+      reason: 'These are rendered through an interpolated key, which the '
+          'source scan above cannot see, so each set is checked by value.',
     );
   });
 

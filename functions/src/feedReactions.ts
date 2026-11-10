@@ -22,9 +22,18 @@ async function recomputeReactionAggregate(
     summary[emoji] = (summary[emoji] ?? 0) + 1;
   }
   try {
+    // `mergeFields`, NOT `merge: true`. A plain merge deep-merges map
+    // fields, so writing a summary of {thumbs-up: 1} over a stored
+    // {thumbs-up: 1, heart: 1} leaves the heart key behind:
+    // `reactionSummary` could only ever grow, and an emoji nobody still
+    // reacts with stayed on the card's pill forever. (`reactionTotal` is a
+    // scalar and always overwrote correctly, which is why the drift showed
+    // up as a summary that didn't add up to the total.) Naming the fields
+    // replaces each one wholesale while still creating the post's fields if
+    // they're absent.
     await postRef.set(
       {reactionSummary: summary, reactionTotal: snapshot.size},
-      {merge: true},
+      {mergeFields: ["reactionSummary", "reactionTotal"]},
     );
   } catch (error) {
     // The post itself may have just been deleted (its reactions get

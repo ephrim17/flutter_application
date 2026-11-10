@@ -35,12 +35,17 @@ class FaithEngagementSection implements MasterSection {
   @override
   int get order => 12;
 
+  /// Daily Faith Loop and Circles each carry their own heading, so they are
+  /// sections in all but name: each is spaced individually below, and the
+  /// page must not add a gap for the pair on top of that.
   @override
   List<Widget> buildSlivers(BuildContext context) => [
         SliverToBoxAdapter(
-          child: _FaithEngagementContent(
-            dailyFaithLoopKey: dailyFaithLoopKey,
-            circlesKey: circlesKey,
+          child: ForYouSelfSpaced(
+            child: _FaithEngagementContent(
+              dailyFaithLoopKey: dailyFaithLoopKey,
+              circlesKey: circlesKey,
+            ),
           ),
         ),
       ];
@@ -82,7 +87,17 @@ class _FaithEngagementContent extends ConsumerWidget {
     ]..sort((left, right) => left.order.compareTo(right.order));
 
     if (items.isEmpty) return const SizedBox.shrink();
-    return Column(children: items.map((item) => item.child).toList());
+    // Each item carries its own heading, so they are sections in all but
+    // name and take the page's section gap individually. The gap travels
+    // with the item and collapses when that item renders nothing: a plain
+    // separator between them appeared even when both were empty, leaving a
+    // 24dp band under Daily Verse that belonged to no visible content.
+    return Column(
+      children: [
+        for (final item in items)
+          ForYouSectionSpacing(child: item.child),
+      ],
+    );
   }
 }
 
@@ -94,21 +109,21 @@ class _DailyFaithLoopContent extends ConsumerWidget {
     final reflection = ref.watch(todayReflectionProvider).asData?.value;
     if (reflection == null) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            text: context.t('faith.today_heading'),
-            padding: 16,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          text: context.t('faith.today_heading'),
+          padding: forYouSidePadding,
+        ),
+        const SizedBox(height: forYouHeaderGap),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: forYouSidePadding,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-            child: _TodayFaithCard(reflection: reflection),
-          ),
-        ],
-      ),
+          child: _TodayFaithCard(reflection: reflection),
+        ),
+      ],
     );
   }
 }
@@ -121,40 +136,44 @@ class _CirclesContent extends ConsumerWidget {
     final circles = ref.watch(youthCirclesProvider).asData?.value ?? const [];
     if (circles.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            text: context.t('faith.circles_heading'),
-            padding: 16,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          text: context.t('faith.circles_heading'),
+          padding: forYouSidePadding,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            forYouSidePadding,
+            forYouSubtitleGap,
+            forYouSidePadding,
+            forYouHeaderGap,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-            child: Text(
-              context.t('faith.circles_subtitle'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+          child: Text(
+            context.t('faith.circles_subtitle'),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+        SizedBox(
+          height: 184,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.symmetric(
+              horizontal: forYouSidePadding,
+            ),
+            itemCount: circles.length,
+            separatorBuilder: (_, __) => const SizedBox(width: forYouCardGap),
+            itemBuilder: (context, index) => SizedBox(
+              width: 184,
+              child: _YouthCircleCard(circle: circles[index]),
             ),
           ),
-          SizedBox(
-            height: 184,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: circles.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => SizedBox(
-                width: 184,
-                child: _YouthCircleCard(circle: circles[index]),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -495,7 +514,9 @@ class _CircleDiscussionScreenState
   Future<void> _send() async {
     final member = ref.read(currentMembershipProvider).asData?.value;
     final repository = ref.read(faithEngagementRepositoryProvider);
-    if (member == null || repository == null || _controller.text.trim().isEmpty) {
+    if (member == null ||
+        repository == null ||
+        _controller.text.trim().isEmpty) {
       return;
     }
     setState(() => _sending = true);

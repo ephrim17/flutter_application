@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/about/about_screen.dart';
+import 'package:flutter_application/church_app/screens/side_drawer/attendance_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/bible_library_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/church_groups_screen.dart';
 import 'package:flutter_application/church_app/screens/side_drawer/equipment_screen.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_application/church_app/screens/side_drawer/studio_screen
 enum DrawerMenuItem {
   //events,
   studio,
+  attendance,
   equipment,
   churchGroups,
   prayerRequest,
@@ -30,6 +32,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return 'Events';
       case DrawerMenuItem.studio:
         return 'drawer.studio';
+      case DrawerMenuItem.attendance:
+        return 'drawer.attendance';
       case DrawerMenuItem.equipment:
         return 'drawer.equipment';
       case DrawerMenuItem.churchGroups:
@@ -55,6 +59,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return Icons.event;
       case DrawerMenuItem.studio:
         return Icons.design_services_outlined;
+      case DrawerMenuItem.attendance:
+        return Icons.fact_check_outlined;
       case DrawerMenuItem.equipment:
         return Icons.inventory_2_outlined;
       case DrawerMenuItem.churchGroups:
@@ -80,6 +86,8 @@ extension DrawerMenuItemX on DrawerMenuItem {
       //   return const EventsScreen();
       case DrawerMenuItem.studio:
         return const StudioScreen();
+      case DrawerMenuItem.attendance:
+        return const AttendanceScreen();
       case DrawerMenuItem.equipment:
         return const EquipmentScreen();
       case DrawerMenuItem.churchGroups:
@@ -102,6 +110,9 @@ extension DrawerMenuItemX on DrawerMenuItem {
   bool get adminOnly {
     switch (this) {
       case DrawerMenuItem.studio:
+      // Attendance is a register of who was in the building: staff-only,
+      // for the same reason the member directory's full records are.
+      case DrawerMenuItem.attendance:
       case DrawerMenuItem.equipment:
         return true;
       case DrawerMenuItem.churchGroups:
@@ -123,6 +134,10 @@ extension DrawerMenuItemX on DrawerMenuItem {
       case DrawerMenuItem.equipment:
         return config.equipmentEnabled;
       case DrawerMenuItem.members:
+        return config.membersEnabled;
+      // Attendance is marked against the member roster, so it is only
+      // meaningful where Members is switched on.
+      case DrawerMenuItem.attendance:
         return config.membersEnabled;
       case DrawerMenuItem.churchGroups:
       case DrawerMenuItem.prayerRequest:

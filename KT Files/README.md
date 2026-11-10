@@ -43,8 +43,10 @@ older flow.
 | Daily Faith and group Circles | [Faith Engagement](features/faith-engagement.md) | Member, admin | Active |
 | Super-admin Bible courses and final exams | [Bible Learning](features/bible-learning.md) | Member, super admin | Active, church-disableable |
 | YouTube live detection and playback | [Live Church](features/live-church.md) | Member, admin | Active, configurable |
-| Personal, church-visible and global prayer requests | [Prayer Requests](features/prayer-requests.md) | Member, admin | Active |
+| Personal and church-visible prayer requests | [Prayer Requests](features/prayer-requests.md) | Member, admin | Active |
 | Directory, families, approval and church groups | [Members, Families and Groups](features/members-families-groups.md) | Member, admin | Active |
+| Services and who was present | [Attendance](features/attendance.md) | Church admin | Active, needs a rules deploy |
+| Reaching members by WhatsApp, SMS or email | [Communication](features/communication.md) | Church admin | Active, needs a rules deploy |
 | Bible reader, downloads and saved verses | [Bible and Favorites](features/bible-and-favorites.md) | Member | Active |
 | Cross-church social discovery | [Go Further](features/go-further.md) | Member, admin | Active |
 | Church content and configuration management | [Studio](features/studio.md) | Church admin | Active, feature-flagged |

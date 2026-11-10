@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/footer_contacts_widget.dart';
 import 'package:flutter_application/church_app/widgets/footer_socials_widget.dart';
@@ -16,7 +17,11 @@ class FooterSection extends MasterSection {
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          // Horizontal only: the gap above the footer is the screen's one
+          // between-section gap, like every other section.
+          padding: const EdgeInsets.symmetric(
+            horizontal: forYouSidePadding,
+          ),
           child: Container(
             width: double.infinity,
             decoration: carouselBoxDecoration(context),

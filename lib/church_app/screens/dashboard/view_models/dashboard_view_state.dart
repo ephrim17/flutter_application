@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/helpers/dashboard_member_stats.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
@@ -11,6 +13,7 @@ class DashboardViewState {
     required this.churchTitle,
     required this.churchId,
     required this.memberMetrics,
+    required this.members,
     required this.prayers,
     required this.announcements,
     required this.events,
@@ -28,6 +31,7 @@ class DashboardViewState {
       churchTitle: churchTitle,
       churchId: null,
       memberMetrics: DashboardMemberMetrics.empty,
+      members: const <ChurchMembership>[],
       prayers: const <PrayerRequest>[],
       announcements: const <Announcement>[],
       events: const <Event>[],
@@ -40,7 +44,17 @@ class DashboardViewState {
   final bool isAdmin;
   final String churchTitle;
   final String? churchId;
+  /// Server-computed metrics. Only the streak numbers and the join history
+  /// are read from here now — member *composition* is derived from [members],
+  /// because a stored aggregate of a list the screen already holds is a
+  /// second answer that can disagree with the first. See
+  /// `dashboard_member_stats.dart`.
   final DashboardMemberMetrics memberMetrics;
+
+  /// The church's members, as loaded for this screen. Every chart bucket and
+  /// headline count below is a grouping of this list.
+  final List<ChurchMembership> members;
+
   final List<PrayerRequest> prayers;
   final List<Announcement> announcements;
   final List<Event> events;
@@ -49,7 +63,7 @@ class DashboardViewState {
   final int selectedChartIndex;
 
   DashboardOverviewMetrics get metrics => DashboardOverviewMetrics.fromState(
-        memberMetrics: memberMetrics,
+        counts: dashboardMemberCounts(members),
         prayers: prayers,
         announcements: announcements,
         events: events,
@@ -77,19 +91,20 @@ class DashboardViewState {
 
   List<DashboardMemberGroup> get memberGroups {
     final buckets = switch (selectedChartMode) {
-      DashboardMemberChartMode.gender => memberMetrics.genderBuckets,
-      DashboardMemberChartMode.age => memberMetrics.ageBuckets,
-      DashboardMemberChartMode.family => memberMetrics.familyModeBuckets,
-      DashboardMemberChartMode.solemnized => memberMetrics.solemnizedBuckets,
+      DashboardMemberChartMode.gender => dashboardGenderBuckets(members),
+      DashboardMemberChartMode.age => dashboardAgeBuckets(members),
+      DashboardMemberChartMode.family => dashboardFamilyModeBuckets(members),
+      DashboardMemberChartMode.solemnized =>
+        dashboardSolemnizedBuckets(members),
     };
 
     return buckets
         .map(
           (bucket) => DashboardMemberGroup(
-            label: bucket.label,
-            color: dashboardBucketColor(selectedChartMode, bucket.label),
+            id: bucket.id,
+            labelKey: dashboardBucketLabelKey(selectedChartMode, bucket.id),
+            color: dashboardBucketColor(selectedChartMode, bucket.id),
             count: bucket.count,
-            previewMembers: bucket.previewMembers,
           ),
         )
         .where((group) => group.count > 0)
@@ -102,18 +117,12 @@ class DashboardViewState {
     return selectedChartIndex.clamp(0, groups.length - 1);
   }
 
-  DashboardMemberGroup? get selectedMemberGroup {
-    final groups = memberGroups;
-    final safeIndex = selectedChartSafeIndex;
-    if (safeIndex < 0 || safeIndex >= groups.length) return null;
-    return groups[safeIndex];
-  }
-
   DashboardViewState copyWith({
     bool? isAdmin,
     String? churchTitle,
     String? churchId,
     DashboardMemberMetrics? memberMetrics,
+    List<ChurchMembership>? members,
     List<PrayerRequest>? prayers,
     List<Announcement>? announcements,
     List<Event>? events,
@@ -126,6 +135,7 @@ class DashboardViewState {
       churchTitle: churchTitle ?? this.churchTitle,
       churchId: churchId ?? this.churchId,
       memberMetrics: memberMetrics ?? this.memberMetrics,
+      members: members ?? this.members,
       prayers: prayers ?? this.prayers,
       announcements: announcements ?? this.announcements,
       events: events ?? this.events,
@@ -170,16 +180,22 @@ enum DashboardMemberChartMode {
 @immutable
 class DashboardMemberGroup {
   const DashboardMemberGroup({
-    required this.label,
+    required this.id,
+    required this.labelKey,
     required this.color,
     required this.count,
-    required this.previewMembers,
   });
 
-  final String label;
+  /// Stable bucket key (`male`, `seniors`, `not_solemnized`). Used for
+  /// colours, for the drill-down's filter, and for analytics — never shown.
+  final String id;
+
+  /// Text-content key for the visible label, resolved with `context.t()`.
+  /// The label itself is never stored or compared.
+  final String labelKey;
+
   final Color color;
   final int count;
-  final List<DashboardPreviewMember> previewMembers;
 }
 
 @immutable
@@ -211,24 +227,24 @@ class DashboardOverviewMetrics {
   final int groupParticipationRate;
 
   factory DashboardOverviewMetrics.fromState({
-    required DashboardMemberMetrics memberMetrics,
+    required DashboardMemberCounts counts,
     required List<PrayerRequest> prayers,
     required List<Announcement> announcements,
     required List<Event> events,
     required List<String> admins,
   }) {
     return DashboardOverviewMetrics(
-      memberCount: memberMetrics.memberCount,
-      approvedMembers: memberMetrics.approvedMembers,
-      pendingApprovals: memberMetrics.pendingApprovals,
-      familyCount: memberMetrics.familyCount,
-      individualCount: memberMetrics.individualCount,
+      memberCount: counts.memberCount,
+      approvedMembers: counts.approvedMembers,
+      pendingApprovals: counts.pendingApprovals,
+      familyCount: counts.familyCount,
+      individualCount: counts.individualCount,
       prayerCount: prayers.length,
       adminCount: admins.length,
       announcementCount: announcements.length,
       eventCount: events.length,
-      membersWithGroups: memberMetrics.membersWithGroups,
-      groupParticipationRate: memberMetrics.groupParticipationRate,
+      membersWithGroups: counts.membersWithGroups,
+      groupParticipationRate: counts.groupParticipationRate,
     );
   }
 }
@@ -241,49 +257,47 @@ String formatDashboardCategory(String value) {
   return normalized[0].toUpperCase() + normalized.substring(1);
 }
 
-Color dashboardBucketColor(DashboardMemberChartMode mode, String label) {
+/// Text-content key for a bucket's visible label.
+///
+/// Keyed off the bucket id, not the label — the label is the thing being
+/// looked up, and a church may have renamed it.
+String dashboardBucketLabelKey(DashboardMemberChartMode mode, String id) {
+  return 'dashboard.${mode.name}_bucket.$id';
+}
+
+/// A bucket's chart colour, keyed off its stable id.
+///
+/// This used to switch on the English label, which meant any church running
+/// in another language got grey for every segment.
+Color dashboardBucketColor(DashboardMemberChartMode mode, String id) {
+  const fallback = Colors.grey;
   switch (mode) {
     case DashboardMemberChartMode.gender:
-      switch (label) {
-        case 'Male':
-          return Colors.blue;
-        case 'Female':
-          return Colors.pink;
-        default:
-          return Colors.grey;
-      }
+      return switch (id) {
+        'male' => Colors.blue,
+        'female' => Colors.pink,
+        _ => fallback,
+      };
     case DashboardMemberChartMode.age:
-      switch (label) {
-        case 'Children':
-          return Colors.orange;
-        case 'Youth':
-          return Colors.purple;
-        case 'Adults':
-          return Colors.green;
-        case 'Seniors':
-          return Colors.teal;
-        default:
-          return Colors.grey;
-      }
+      return switch (id) {
+        'children' => Colors.orange,
+        'youth' => Colors.purple,
+        'adults' => Colors.green,
+        'seniors' => Colors.teal,
+        _ => fallback,
+      };
     case DashboardMemberChartMode.family:
-      switch (label) {
-        case 'Family':
-          return Colors.indigo;
-        case 'Individual':
-          return Colors.cyan;
-        case 'Other':
-          return Colors.amber;
-        default:
-          return Colors.grey;
-      }
+      return switch (id) {
+        'family' => Colors.indigo,
+        'individual' => Colors.cyan,
+        'other' => Colors.amber,
+        _ => fallback,
+      };
     case DashboardMemberChartMode.solemnized:
-      switch (label) {
-        case 'Solemnized':
-          return Colors.deepPurple;
-        case 'Not solemnized':
-          return Colors.blueGrey;
-        default:
-          return Colors.grey;
-      }
+      return switch (id) {
+        'solemnized' => Colors.deepPurple,
+        'not_solemnized' => Colors.blueGrey,
+        _ => fallback,
+      };
   }
 }

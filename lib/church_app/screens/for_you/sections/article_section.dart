@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/date_formatter.dart';
@@ -37,13 +38,15 @@ class ArticleSection implements MasterSection {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
             SectionHeader(
               text: context.t('for_you.article.section_title'),
-              padding: 16.0,
+              padding: forYouSidePadding,
             ),
+            const SizedBox(height: forYouHeaderGap),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: forYouSidePadding,
+              ),
               child: CardLinkButtonWidget(
                 title: context.t(
                     'ui.article_section.browse_article_notes_and_open_the_full_message'),
@@ -63,7 +66,6 @@ class ArticleSection implements MasterSection {
                 },
               ),
             ),
-            const SizedBox(height: 10),
             //const ArticleSectionWidget(),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter_application/church_app/models/church_membership_model.dart';
 import 'package:flutter_application/church_app/models/dashboard_member_metrics_model.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/models/home_section_models/announcement_model.dart';
@@ -45,6 +46,10 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
 
     final results = await Future.wait<Object>([
       ref.watch(dashboardMemberMetricsProvider.future),
+      // The member list is what every chart bucket and headline count is
+      // grouped from, so the view model owns it rather than letting the
+      // widget tree and the state disagree about which members are loaded.
+      ref.watch(dashboardMembersProvider.future),
       ref.watch(dashboardPrayerRequestsProvider.future),
       ref.watch(dashboardAnnouncementsProvider.future),
       ref.watch(dashboardEventsProvider.future),
@@ -58,10 +63,11 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
           : title,
       churchId: churchId,
       memberMetrics: results[0] as DashboardMemberMetrics,
-      prayers: results[1] as List<PrayerRequest>,
-      announcements: results[2] as List<Announcement>,
-      events: results[3] as List<Event>,
-      admins: (results[4] as dynamic).admins as List<String>,
+      members: results[1] as List<ChurchMembership>,
+      prayers: results[2] as List<PrayerRequest>,
+      announcements: results[3] as List<Announcement>,
+      events: results[4] as List<Event>,
+      admins: (results[5] as dynamic).admins as List<String>,
       selectedChartMode:
           previous?.selectedChartMode ?? DashboardMemberChartMode.gender,
       selectedChartIndex: previous?.selectedChartIndex ?? 0,
@@ -72,6 +78,7 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
 
   Future<void> refresh() async {
     ref.invalidate(dashboardMemberMetricsProvider);
+    ref.invalidate(dashboardMembersProvider);
     ref.invalidate(dashboardPrayerRequestsProvider);
     ref.invalidate(dashboardAnnouncementsProvider);
     ref.invalidate(dashboardEventsProvider);
@@ -105,7 +112,7 @@ class DashboardViewModel extends AsyncNotifier<DashboardViewState> {
     await _logChartInteraction(
       churchId: current.churchId,
       mode: current.selectedChartMode,
-      segment: groups[index].label,
+      segment: groups[index].id,
     );
     state = AsyncData(current.copyWith(selectedChartIndex: index));
   }

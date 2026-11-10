@@ -65,12 +65,8 @@ class _AnnouncementList extends StatelessWidget {
     }
 
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final viewportFraction = screenWidth >= 1400
-        ? 0.72
-        : screenWidth >= 1024
-            ? 0.82
-            : 0.92;
-    final maxWidth = screenWidth >= 1024 ? 1100.0 : null;
+    final viewportFraction = homeCarouselViewportFraction(screenWidth);
+    final maxWidth = homeSectionMaxWidth(screenWidth);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +85,7 @@ class _AnnouncementList extends StatelessWidget {
               itemCount: items.length,
               viewportFraction: viewportFraction,
               autoScroll: true,
-              spacing: 12,
+              spacing: homeCarouselSpacing,
               itemBuilder: (_, i) => _AnnouncementCard(items[i]),
             ),
           ),

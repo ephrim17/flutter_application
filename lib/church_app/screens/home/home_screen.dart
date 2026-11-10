@@ -510,3 +510,46 @@ class _WelcomeCard extends StatelessWidget {
     );
   }
 }
+
+/// Shared geometry for the Home page's cards.
+///
+/// Events and Announcements are carousels; Promise Word is a single card
+/// between them. Their left and right edges have to agree, and a carousel
+/// card does not sit flush with its carousel — a `PageView` with a
+/// viewport fraction below 1 insets the current page, and each page is then
+/// padded by half the spacing. These functions are the one place that
+/// arithmetic lives, so the single card can line itself up with cards it
+/// cannot see. `test/home_card_alignment_test.dart` asserts the alignment at
+/// both a phone and a desktop width.
+
+/// Gap between two carousel cards. Each page carries half of it per side,
+/// which is why the inset below adds `spacing / 2` rather than `spacing`.
+const double homeCarouselSpacing = 12.0;
+
+/// Past this width the page stops stretching and centres its content; a
+/// full-bleed card on a desktop window reads as a banner, not a card.
+const double _homeWideBreakpoint = 700.0;
+
+/// Widest the Home content is allowed to get.
+const double _homeMaxContentWidth = 700.0;
+
+/// The cap a Home section's content is laid out within, or null on a narrow
+/// screen where it simply fills the width.
+double? homeSectionMaxWidth(double screenWidth) =>
+    screenWidth > _homeWideBreakpoint ? _homeMaxContentWidth : null;
+
+/// How much of the carousel a single card occupies. Below 1 so the next
+/// card peeks in and the carousel reads as scrollable without a hint.
+double homeCarouselViewportFraction(double screenWidth) => 0.9;
+
+/// Distance from a carousel's own left edge to the left edge of the card
+/// inside it: half the viewport the card does not fill, plus the page's
+/// half-spacing. Promise Word pads itself by this much so its edges land on
+/// the carousel cards above and below it.
+double homeCarouselCardInset(double screenWidth) {
+  final carouselWidth = homeSectionMaxWidth(screenWidth) ?? screenWidth;
+  final unfilled = carouselWidth *
+      (1 - homeCarouselViewportFraction(screenWidth)) /
+      2;
+  return unfilled + homeCarouselSpacing / 2;
+}

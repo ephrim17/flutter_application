@@ -1,15 +1,11 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/device_installation_id.dart';
-import 'package:flutter_application/church_app/helpers/selected_church_local_storage.dart';
 import 'package:flutter_application/church_app/models/text_content_defaults.dart';
 import 'package:flutter_application/church_app/providers/authentication/firebaseAuth_provider.dart';
-import 'package:flutter_application/church_app/providers/church_provider.dart';
-import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/notification_reprompt_sheet.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -242,78 +238,18 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
   await _tokenRefreshSubscription?.cancel();
   _tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
     (newToken) async {
+      // Re-register and stop. There are no topic subscriptions to repair:
+      // the server resolves who to notify from church membership at send
+      // time, so a device is reachable the moment its token is on record.
       await identityRepo.registerDevice(
         uid: firebaseUser.uid,
         installationId: installationId,
         fcmToken: newToken,
         platform: defaultTargetPlatform.name,
       );
-      final refreshedChurchId =
-          await container.read(currentChurchIdProvider.future);
-      if (refreshedChurchId == null) return;
-      final topics = await _desiredChurchTopics(
-        firestore: firestore,
-        churchId: refreshedChurchId,
-        uid: firebaseUser.uid,
-      );
-      await Future.wait(topics.map(messaging.subscribeToTopic));
     },
   );
-
-  final churchId = await container.read(currentChurchIdProvider.future);
-  if (churchId == null) return;
-
-  final localStorage = ChurchLocalStorage();
-  final desiredTopics = await _desiredChurchTopics(
-    firestore: firestore,
-    churchId: churchId,
-    uid: firebaseUser.uid,
-  );
-  final previousTopics = await localStorage.getSubscribedNotificationTopics();
-
-  await Future.wait(
-    previousTopics
-        .difference(desiredTopics)
-        .map(messaging.unsubscribeFromTopic),
-  );
-  await Future.wait(
-    desiredTopics.difference(previousTopics).map(messaging.subscribeToTopic),
-  );
-  await localStorage.saveSubscribedNotificationTopics(desiredTopics);
 }
-
-Future<Set<String>> _desiredChurchTopics({
-  required FirebaseFirestore firestore,
-  required String churchId,
-  required String uid,
-}) async {
-  final memberSnapshot = await FirestorePaths.churchMemberDoc(
-    firestore,
-    churchId,
-    uid,
-  ).get();
-  final churchGroupIds =
-      (memberSnapshot.data()?['churchGroupIds'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .where((item) => item.trim().isNotEmpty);
-
-  return <String>{
-    'church_$churchId',
-    _churchUserTopic(churchId, uid),
-    ...churchGroupIds.map((groupId) => _churchGroupTopic(churchId, groupId)),
-  };
-}
-
-String _churchGroupTopic(String churchId, String groupId) =>
-    'church_${_notificationTopicSegment(churchId)}_group_'
-    '${_notificationTopicSegment(groupId)}';
-
-String _churchUserTopic(String churchId, String uid) =>
-    'church_${_notificationTopicSegment(churchId)}_user_'
-    '${_notificationTopicSegment(uid)}';
-
-String _notificationTopicSegment(String value) =>
-    value.trim().replaceAll(RegExp(r'[^a-zA-Z0-9\-_.~%]'), '_');
 
 Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
   if (_notificationListenersAttached) {
@@ -343,12 +279,40 @@ Future<void> _attachNotificationListeners(FirebaseMessaging messaging) async {
   _notificationListenersAttached = true;
 }
 
+/// The church a tapped notification belongs to, when it is not the one the
+/// app currently has open.
+///
+/// Notifications are addressed to people, not to the church they happen to
+/// have selected, so a member of several churches is told about all of them.
+/// That makes the payload's `churchId` load-bearing: routing a church-B
+/// prayer request to the Pray For Others screen while church A is open shows
+/// the wrong church's data. [ChurchTabScreen] switches church on this before
+/// honouring the destination below.
+final ValueNotifier<String?> notificationChurchRequest =
+    ValueNotifier<String?>(null);
+
 void _handleNotificationNavigation(RemoteMessage message) {
-  _handleNotificationKind(message.data['kind']?.toString());
+  applyNotificationPayload(message.data);
+}
+
+/// Turns a tapped notification's data payload into the two requests the app
+/// shell acts on: which church it belongs to, and where inside that church it
+/// points.
+///
+/// Split out from [_handleNotificationNavigation] so the routing table can be
+/// exercised without a live push — FCM delivery needs a device with working
+/// Play Services, which rules out testing this on a plain emulator image.
+@visibleForTesting
+void applyNotificationPayload(Map<String, dynamic> data) {
+  final churchId = data['churchId']?.toString().trim() ?? '';
+  if (churchId.isNotEmpty) notificationChurchRequest.value = churchId;
+  _handleNotificationKind(data['kind']?.toString());
 }
 
 void _handleNotificationKind(String? kind) {
   switch (kind) {
+    case 'feed_post_created':
+      notificationTabRequest.value = 2;
     case 'live_church':
       notificationTabRequest.value = 1;
     case 'article_created':

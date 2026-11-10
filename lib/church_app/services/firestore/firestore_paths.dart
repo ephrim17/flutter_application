@@ -7,7 +7,6 @@ class FirestorePaths {
   static const churches = 'churches';
   static const users = 'users';
   static const globalFeeds = 'globalFeeds';
-  static const globalPrayerRequests = 'globalPrayerRequests';
   static const globalFeedback = 'globalFeedback';
   static const mail = 'mail';
   static const bibleVersions = 'bible_versions';
@@ -95,6 +94,7 @@ class FirestorePaths {
 
   static const about = 'about';
   static const prayerRequests = 'prayer_requests';
+  static const services = 'services';
   static const articles = 'articles';
   static const announcements = 'announcements';
   static const events = 'events';
@@ -304,6 +304,43 @@ class FirestorePaths {
   }
 
   /// church based prayer
+  /// Attendance: one document per gathering, with the member ids present.
+  static CollectionReference<Map<String, dynamic>> churchServices(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return firestore.collection('churches').doc(churchId).collection(services);
+  }
+
+  static const messageLog = 'message_log';
+  static const messageTemplates = 'message_templates';
+
+  /// What the church recorded as sent, and the bodies it reuses. Staff
+  /// only — a message log names who was contacted about what.
+  static CollectionReference<Map<String, dynamic>> churchMessageLog(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return churchDoc(firestore, churchId).collection(messageLog);
+  }
+
+  static CollectionReference<Map<String, dynamic>> churchMessageTemplates(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return churchDoc(firestore, churchId).collection(messageTemplates);
+  }
+
+  static const whatsappGroups = 'whatsapp_groups';
+
+  /// Invite links for the WhatsApp groups a church already runs.
+  static CollectionReference<Map<String, dynamic>> churchWhatsAppGroups(
+    FirebaseFirestore firestore,
+    String churchId,
+  ) {
+    return churchDoc(firestore, churchId).collection(whatsappGroups);
+  }
+
   static CollectionReference<Map<String, dynamic>> churchPrayerRequests(
     FirebaseFirestore firestore,
     String churchId,
@@ -383,7 +420,6 @@ class FirestorePaths {
         .doc(swipeVersesDoc);
   }
 
-
   /// feeds under church
   static CollectionReference feedCollection(
     FirebaseFirestore firestore,
@@ -414,12 +450,6 @@ class FirestorePaths {
                 .collection('feeds')
                 .doc(postId);
     return postRef.collection('reactions');
-  }
-
-  static CollectionReference<Map<String, dynamic>> globalPrayerCollection(
-    FirebaseFirestore firestore,
-  ) {
-    return firestore.collection(globalPrayerRequests);
   }
 
   static CollectionReference<Map<String, dynamic>> globalFeedbackCollection(

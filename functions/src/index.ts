@@ -36,6 +36,12 @@ export {
   onGlobalFeedReactionWrite,
 } from "./feedReactions";
 import {firestoreDatabaseIdParam, firestoreDb} from "./firestoreDb";
+import {
+  allApprovedMemberUids,
+  approvedMemberUids,
+  churchGroupMemberUids,
+  sendToUids,
+} from "./notify";
 
 admin.initializeApp();
 
@@ -71,12 +77,6 @@ type MailJobData = {
   status?: string;
 };
 
-type TopicNotificationPayload = {
-  title: string;
-  body: string;
-  topic: string;
-  data?: Record<string, string>;
-};
 
 type FeedPostNotificationPayload = {
   churchId: string;
@@ -861,76 +861,11 @@ export const verifySignupEmailVerificationCode = onCall(
 );
 
 /**
- * Sends a topic notification through FCM.
- * @param payload Notification payload.
- * @return Promise that resolves when the notification is sent.
+ * Notifies a church's approved members that a feed post went live, giving
+ * the author their own confirmation copy.
+ * @param {FeedPostNotificationPayload} payload Church, post, author and copy.
+ * @return {Promise<number>} How many devices accepted the message.
  */
-async function sendTopicNotification(
-  payload: TopicNotificationPayload,
-): Promise<void> {
-  await admin.messaging().send({
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
-    data: payload.data,
-    topic: payload.topic,
-  });
-}
-
-function notificationTopicSegment(value: string): string {
-  return value.trim().replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
-}
-
-function churchGroupTopic(churchId: string, groupId: string): string {
-  return `church_${notificationTopicSegment(churchId)}_group_` +
-    notificationTopicSegment(groupId);
-}
-
-function churchUserTopic(churchId: string, uid: string): string {
-  return `church_${notificationTopicSegment(churchId)}_user_` +
-    notificationTopicSegment(uid);
-}
-
-/**
- * Resolves every FCM token registered across every device
- * (`users/{uid}/devices/{installationId}`) for a set of person uids.
- * One person can have several devices, and their token set doesn't depend
- * on which church happens to be selected on any of them (§2.6/Phase 5) — a
- * post in church A must still reach a device currently sitting in church B.
- * @param uids The linked person uids to resolve devices for.
- * @return Map of uid -> that person's distinct fcm tokens.
- */
-async function resolveDeviceTokensByUid(
-  uids: string[],
-): Promise<Map<string, string[]>> {
-  const tokensByUid = new Map<string, string[]>();
-  const distinctUids = Array.from(new Set(uids))
-    .filter((uid) => uid.length > 0);
-  if (distinctUids.length === 0) return tokensByUid;
-
-  const chunkSize = 30; // Firestore "in" query limit.
-  for (let index = 0; index < distinctUids.length; index += chunkSize) {
-    const chunk = distinctUids.slice(index, index + chunkSize);
-    const snapshot = await firestoreDb()
-      .collectionGroup("devices")
-      .where("uid", "in", chunk)
-      .get();
-
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const uid = readUnknownString(data["uid"]);
-      const token = readUnknownString(data["fcmToken"]);
-      if (!uid || !token) return;
-      const existing = tokensByUid.get(uid) ?? [];
-      if (!existing.includes(token)) existing.push(token);
-      tokensByUid.set(uid, existing);
-    });
-  }
-
-  return tokensByUid;
-}
-
 async function sendFeedPostNotification(
   payload: FeedPostNotificationPayload,
 ): Promise<number> {
@@ -940,43 +875,29 @@ async function sendFeedPostNotification(
     .collection("members")
     .get();
 
-  const linkedUids = membersSnapshot.docs
-    .map((doc) => readUnknownString(doc.data()["linkedUid"]))
+  // Approved members only: someone still pending is not yet part of the
+  // church and should not be told about its posts.
+  const uids = membersSnapshot.docs
+    .filter((doc) => doc.data()["approved"] === true)
+    .map((doc) => readUnknownString(doc.data()["linkedUid"]) || doc.id)
     .filter((uid) => uid.length > 0);
-  const tokensByUid = await resolveDeviceTokensByUid(linkedUids);
 
-  const messages: admin.messaging.Message[] = [];
-  const seenTokens = new Set<string>();
+  const result = await sendToUids({
+    uids,
+    title: payload.memberTitle,
+    body: payload.memberBody,
+    overrideFor: (uid) => uid === payload.authorId ?
+      {title: payload.authorTitle, body: payload.authorBody} :
+      null,
+    data: {
+      kind: "feed_post_created",
+      churchId: payload.churchId,
+      feedId: payload.feedId,
+      authorId: payload.authorId,
+    },
+  });
 
-  for (const uid of tokensByUid.keys()) {
-    const isAuthor = uid === payload.authorId;
-    for (const token of tokensByUid.get(uid) ?? []) {
-      if (seenTokens.has(token)) continue;
-      seenTokens.add(token);
-      messages.push({
-        token,
-        notification: {
-          title: isAuthor ? payload.authorTitle : payload.memberTitle,
-          body: isAuthor ? payload.authorBody : payload.memberBody,
-        },
-        data: {
-          kind: "feed_post_created",
-          churchId: payload.churchId,
-          feedId: payload.feedId,
-          authorId: payload.authorId,
-        },
-      });
-    }
-  }
-
-  let successCount = 0;
-  for (let index = 0; index < messages.length; index += 500) {
-    const batch = messages.slice(index, index + 500);
-    const response = await admin.messaging().sendEach(batch);
-    successCount += response.successCount;
-  }
-
-  return successCount;
+  return result.successCount;
 }
 
 async function sendPrayerRequestAdminNotification(
@@ -1012,41 +933,16 @@ async function sendPrayerRequestAdminNotification(
     })
     .map((doc) => readUnknownString(doc.data()["linkedUid"]))
     .filter((uid) => uid.length > 0);
-  const tokensByUid = await resolveDeviceTokensByUid(adminLinkedUids);
-
-  const messages: admin.messaging.Message[] = [];
-  const seenTokens = new Set<string>();
-
-  for (const tokens of tokensByUid.values()) {
-    for (const token of tokens) {
-      if (seenTokens.has(token)) continue;
-      seenTokens.add(token);
-      messages.push({
-        token,
-        notification: {
-          title: "New prayer request",
-          body: "A new prayer request was added to your church.",
-        },
-        data: {
-          kind: "prayer_request_created",
-          churchId,
-          prayerId,
-        },
-      });
-    }
-  }
-
-  let successCount = 0;
-  let failureCount = 0;
-  for (let index = 0; index < messages.length; index += 500) {
-    const response = await admin.messaging().sendEach(
-      messages.slice(index, index + 500),
-    );
-    successCount += response.successCount;
-    failureCount += response.failureCount;
-  }
-
-  return {successCount, failureCount};
+  return sendToUids({
+    uids: adminLinkedUids,
+    title: "New prayer request",
+    body: "A new prayer request was added to your church.",
+    data: {
+      kind: "prayer_request_created",
+      churchId,
+      prayerId,
+    },
+  });
 }
 
 export const notifyChurchAdminsOnPrayerCreated = onDocumentCreated(
@@ -1118,12 +1014,12 @@ export const notifyChurchMembersOnArticleCreated = onDocumentCreated(
     }
 
     const articleTitle = readUnknownString(snapshot.data().title);
-    await sendTopicNotification({
+    await sendToUids({
+      uids: await approvedMemberUids(churchId),
       title: "New article",
       body: articleTitle ?
         `${articleTitle} is ready to read.` :
         "A new article is ready to read.",
-      topic: `church_${churchId}`,
       data: {
         kind: "article_created",
         churchId,
@@ -1186,21 +1082,21 @@ export const notifyCircleMembersOnResponseCreated = onDocumentCreated(
       return;
     }
 
-    const groupTopic = churchGroupTopic(churchId, groupId);
-    const authorTopic = churchUserTopic(churchId, authorId);
-    await admin.messaging().send({
-      notification: {
-        title: circleTitle,
-        body: notificationBody || "A new response was shared in your Circle.",
-      },
+    // Was an FCM topic condition ("in the group topic and not the author's
+    // own topic"). Reading the group's membership says the same thing from
+    // current data, and excludes the author without needing a topic per
+    // person.
+    await sendToUids({
+      uids: await churchGroupMemberUids(churchId, groupId),
+      excludeUid: authorId,
+      title: circleTitle,
+      body: notificationBody || "A new response was shared in your Circle.",
       data: {
         kind: "circle_response_created",
         churchId,
         circleId,
         groupId,
       },
-      condition: `'${groupTopic}' in topics && ` +
-        `!('${authorTopic}' in topics)`,
     });
 
     logger.info("Circle response notification sent to its group.", {
@@ -1237,10 +1133,10 @@ export const notifyChurchMembersWhenPrayerVisible = onDocumentWritten(
       return;
     }
 
-    await sendTopicNotification({
+    await sendToUids({
+      uids: await approvedMemberUids(churchId),
       title: "Pray for someone in your church",
       body: "A prayer request was shared. Join your church in prayer.",
-      topic: `church_${churchId}`,
       data: {
         kind: "prayer_request_visible",
         churchId,
@@ -1279,7 +1175,11 @@ export const processQueuedChurchNotification = onDocumentCreated(
     const feedId = readUnknownString(data.feedId);
     const authorId = readUnknownString(data.authorId);
 
-    if (!title || !body || !topic) {
+    // `topic` is legacy: the composer only ever wrote `church_<churchId>`,
+    // and the church is already in the document's own path. Audience is
+    // resolved from membership now, so the field is accepted and ignored.
+    const audience = readUnknownString(data.audience);
+    if (!title || !body) {
       await snapshot.ref.update({
         status: "failed",
         error: "Missing required notification fields",
@@ -1300,10 +1200,12 @@ export const processQueuedChurchNotification = onDocumentCreated(
             memberTitle: title,
             memberBody: body,
           }) :
-          (await sendTopicNotification({
+          (await sendToUids({
+            uids: audience === "global" ?
+              await allApprovedMemberUids() :
+              await approvedMemberUids(event.params.churchId),
             title,
             body,
-            topic,
             data: {
               ...(kind ? {kind} : {}),
               churchId: event.params.churchId,
@@ -1385,21 +1287,25 @@ export const rebuildChurchDashboardMemberMetrics = onDocumentWritten(
         });
       }
 
-      // Adapt the new members/{uid} shape (displayName, displayDob,
-      // joinedAt, no dayStreak) back onto the field names
-      // normalizeDashboardMember/buildDashboardMemberMetrics already expect
-      // — those stay unchanged; only this trigger's input shape moved.
+      // Adapt the stored members/{uid} shape back onto the field names
+      // normalizeDashboardMember/buildDashboardMemberMetrics expect — those
+      // stay unchanged; only this trigger's input shape moved. The aliases
+      // live in one table (dashboardMemberFieldAliases) so that a mirrored
+      // field cannot be forgotten here while the bucket that reads it
+      // silently sees undefined.
       const members = membersSnapshot.docs.map((doc) => {
         const data = doc.data();
         const linkedUid = readUnknownString(data["linkedUid"]);
-        return {
+        const adapted: Record<string, unknown> = {
           ...data,
           uid: doc.id,
-          name: data["displayName"],
-          dob: data["displayDob"],
-          createdAt: data["joinedAt"],
           dayStreak: linkedUid ? streakByUid.get(linkedUid) ?? 0 : 0,
         };
+        for (const [target, source] of
+          Object.entries(dashboardMemberFieldAliases)) {
+          adapted[target] = data[source];
+        }
+        return adapted;
       });
 
       const metrics = buildDashboardMemberMetrics(members);
@@ -1465,19 +1371,16 @@ export const notifyMemberOnApproval = onDocumentWritten(
       const email = readUnknownString(identityDoc.data()?.email) ||
         readUnknownString(after.data()?.displayEmail);
 
-      const tokensByUid = await resolveDeviceTokensByUid([uid]);
-      const tokens = tokensByUid.get(uid) ?? [];
       const title = "You're in!";
       const body = `${churchName} approved your request. Welcome!`;
 
-      if (tokens.length > 0) {
-        const response = await admin.messaging().sendEach(
-          tokens.map((token) => ({
-            token,
-            notification: {title, body},
-            data: {kind: "membership_approved", churchId},
-          })),
-        );
+      {
+        const response = await sendToUids({
+          uids: [uid],
+          title,
+          body,
+          data: {kind: "membership_approved", churchId},
+        });
         logger.info("Sent membership-approved push.", {
           churchId,
           uid,
@@ -2089,6 +1992,24 @@ function buildDashboardMemberMetrics(
     familyBuckets: buildFamilyBuckets(members),
   };
 }
+
+/**
+ * Field aliases from the stored `members/{uid}` shape onto the names
+ * [normalizeDashboardMember] reads.
+ *
+ * The membership doc mirrors the person's identity under `display*` names,
+ * so every identity field the dashboard buckets by needs an entry here.
+ * This is a table rather than four lines at the call site because the first
+ * version simply omitted `displayGender`: a missing alias reads as
+ * `undefined`, which is not an error anywhere — it just quietly put every
+ * member in the "Unknown" gender bucket, at 100%.
+ */
+const dashboardMemberFieldAliases: Record<string, string> = {
+  name: "displayName",
+  dob: "displayDob",
+  gender: "displayGender",
+  createdAt: "joinedAt",
+};
 
 function normalizeDashboardMember(raw: Record<string, unknown>) {
   const dob = readUnknownDate(raw["dob"]);

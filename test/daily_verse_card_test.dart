@@ -1,22 +1,19 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/models/church_model.dart';
-import 'package:flutter_application/church_app/models/picked_image_data.dart';
 import 'package:flutter_application/church_app/providers/app_config_provider.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/daily_verse_providers.dart';
 import 'package:flutter_application/church_app/providers/language_provider.dart';
 import 'package:flutter_application/church_app/widgets/language_toggle_widget.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
 import 'package:flutter_application/church_app/screens/for_you/sections/daily_verse_section.dart';
+import 'package:flutter_application/church_app/widgets/decorated_scripture_card_widget.dart';
 
-/// The Daily Verse card's last-resort state: when the church has no generated
-/// cards for today *and* none on any earlier day the server falls back to, the
-/// section shows the verse as plain text rather than an apology, with the
-/// language toggle still driving it.
+/// The Daily Verse card shows the verse as text in whichever language the
+/// toggle is set to, and its share icon offers the AI prompt builder or the
+/// manual editor — the app no longer renders AI poster images itself.
 const _verse = {
   'english': 'But I will sacrifice to you with the voice of thanksgiving.',
   'reference': 'Jonah 2:9',
@@ -68,13 +65,12 @@ AppConfig _configWithVerse() {
   );
 }
 
-Widget _harness({required List<PickedImageData> cards}) {
+Widget _harness() {
   return ProviderScope(
     overrides: [
       selectedChurchProvider.overrideWith((ref) => _church()),
       appConfigProvider.overrideWith((ref) => Stream.value(_configWithVerse())),
       dailyVerseProviderLocal.overrideWith((ref) async => _verse),
-      dailyVerseCardsProvider.overrideWith((ref, key) async => cards),
     ],
     child: const MaterialApp(
       home: Scaffold(
@@ -85,21 +81,19 @@ Widget _harness({required List<PickedImageData> cards}) {
 }
 
 void main() {
-  testWidgets('shows the verse as text when there are no cards at all',
+  testWidgets('shows the verse as text in the toggled language',
       (tester) async {
-    await tester.pumpWidget(_harness(cards: const []));
+    await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
 
-    // The toggle defaults to Tamil, so that is the language the fallback
-    // renders without any interaction.
+    // The toggle defaults to Tamil.
     expect(find.textContaining('பலியிடுவேன்'), findsOneWidget);
     expect(find.text('யோனா 2:9'), findsOneWidget);
-    // The "not created yet" apology is what this replaced.
-    expect(find.textContaining("haven't been created yet"), findsNothing);
+    expect(find.byType(PageView), findsNothing);
   });
 
-  testWidgets('the language toggle drives the text fallback', (tester) async {
-    await tester.pumpWidget(_harness(cards: const []));
+  testWidgets('the language toggle switches the verse', (tester) async {
+    await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
@@ -114,31 +108,62 @@ void main() {
     expect(find.text('யோனா 2:9'), findsNothing);
   });
 
-  testWidgets('cards win over the text fallback when the church has them',
-      (tester) async {
-    await tester.pumpWidget(
-      _harness(
-        cards: [
-          PickedImageData(bytes: _pngPixel, name: 'card'),
-        ],
-      ),
-    );
+  testWidgets('the card carries no title of its own', (tester) async {
+    await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('பலியிடுவேன்'), findsNothing);
-    expect(find.byType(PageView), findsOneWidget);
+    // "Daily verse" belongs above the card, as a section header, the same as
+    // every other For You section. Only the section renders it; the card on
+    // its own must not.
+    expect(find.text('Daily verse'), findsNothing);
+  });
+
+  testWidgets('reference, language toggle and share sit below the verse',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    final verseBottom =
+        tester.getRect(find.textContaining('பலியிடுவேன்')).bottom;
+    for (final control in <Finder>[
+      find.byType(ScriptureReferencePill),
+      find.byType(BibleLanguageToggle),
+      find.byIcon(Icons.share_outlined),
+    ]) {
+      expect(
+        tester.getRect(control).top,
+        greaterThanOrEqualTo(verseBottom),
+        reason: '$control must be in the bottom bar, not above the verse',
+      );
+    }
+  });
+
+  testWidgets('the bottom bar reads reference, then language, then share',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    final reference = tester.getRect(find.byType(ScriptureReferencePill));
+    final toggle = tester.getRect(find.byType(BibleLanguageToggle));
+    final share = tester.getRect(find.byIcon(Icons.share_outlined));
+
+    expect(reference.left, lessThan(toggle.left));
+    expect(toggle.left, lessThan(share.left));
+    // One bar: all three share a line rather than stacking.
+    expect((toggle.center.dy - share.center.dy).abs(), lessThan(1));
+    expect((reference.center.dy - toggle.center.dy).abs(), lessThan(1));
+  });
+
+  testWidgets('share offers the AI prompt builder and the manual editor',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.share_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create an AI prompt'), findsOneWidget);
+    expect(find.text('Create manually'), findsOneWidget);
+    expect(find.text('Generate with AI'), findsNothing);
   });
 }
-
-/// Smallest decodable PNG — a 1x1 transparent pixel.
-final _pngPixel = Uint8List.fromList(<int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
-  0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-  0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
-  0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
-  0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-  0x42, 0x60, 0x82,
-]);

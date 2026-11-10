@@ -71,10 +71,15 @@ class _FeedReactionsSheetState extends ConsumerState<_FeedReactionsSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t(
-                    'ui.feed_reactions.title',
-                    parameters: {'count': reactions.length},
-                  ),
+                  // `t()` substitutes parameters but has no plural support,
+                  // so the one-reaction case gets its own key rather than
+                  // reading "1 Reactions".
+                  reactions.length == 1
+                      ? context.t('ui.feed_reactions.title_one')
+                      : context.t(
+                          'ui.feed_reactions.title',
+                          parameters: {'count': reactions.length},
+                        ),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),

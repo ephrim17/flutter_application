@@ -1400,6 +1400,15 @@ Community), which was already true before this pass — nothing to remove.
 ### Addendum (all-churches feed moved from an inline preview to a
 dedicated full-screen viewer; "Register for another church" is root-only)
 
+> **Superseded, for the viewer only.** Everything below about
+> `GlobalFeedFullScreenViewer` / `CommunityFullScreenViewer` /
+> `CommunityViewerPageView` is history: those files were later deleted
+> outright, because an ordinary tap on a feed card silently replaced the feed
+> with a Reels-style pager over the same posts. Tapping a card now navigates
+> nowhere, in both feed lists. The rest of this section — the
+> `SelectChurchScreen` restructuring — still holds. See
+> [Feeds](../features/feeds.md).
+
 Two more refinements, again from direct feedback on the previous addendum:
 
 1. **All-churches feed is a destination, not an inline section.**

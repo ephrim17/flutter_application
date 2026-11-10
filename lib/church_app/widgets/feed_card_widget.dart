@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
@@ -15,11 +16,13 @@ import 'package:flutter_application/church_app/providers/feed_reaction_provider.
 import 'package:flutter_application/church_app/providers/feeds_provider.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/helpers/feed_link_utils.dart';
+import 'package:flutter_application/church_app/helpers/feed_reaction_summary.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/services/analytics/firebase_analytics_helper.dart';
 import 'package:flutter_application/church_app/services/feed_repository.dart';
 import 'package:flutter_application/church_app/services/firestore/firestore_paths.dart';
 import 'package:flutter_application/church_app/widgets/feed_post_modal.dart';
+import 'package:flutter_application/church_app/widgets/feed_reaction_summary_pill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
@@ -42,11 +45,8 @@ class FeedCard extends ConsumerStatefulWidget {
   final String? currentUid;
   final bool isAdmin;
   final bool isGlobal;
-  final bool fullBleed;
   final ValueChanged<String>? onHashtagTap;
   final VoidCallback? onPostChanged;
-  final VoidCallback? onDescriptionTap;
-  final VoidCallback? onTap;
 
   const FeedCard({
     super.key,
@@ -54,11 +54,8 @@ class FeedCard extends ConsumerStatefulWidget {
     required this.currentUid,
     required this.isAdmin,
     this.isGlobal = false,
-    this.fullBleed = false,
     this.onHashtagTap,
     this.onPostChanged,
-    this.onDescriptionTap,
-    this.onTap,
   });
 
   @override
@@ -71,14 +68,32 @@ class _FeedCardState extends ConsumerState<FeedCard> {
 
   bool _isBusy = false;
 
+  /// The reactor's own reaction as the post's denormalized aggregate saw it:
+  /// the first value their live single-doc listener produced for this post,
+  /// which is the same server truth the Cloud Function counted. Held so the
+  /// pill can apply just their subsequent change on top of a snapshot
+  /// aggregate that never updates itself — see [feedReactionPillSummary].
+  bool _baselineReactionCaptured = false;
+  String? _baselineReactionEmoji;
+
   FeedPost get post => widget.post;
   String? get currentUid => widget.currentUid;
   bool get isAdmin => widget.isAdmin;
   bool get isGlobal => widget.isGlobal;
   ValueChanged<String>? get onHashtagTap => widget.onHashtagTap;
   VoidCallback? get onPostChanged => widget.onPostChanged;
-  VoidCallback? get onDescriptionTap => widget.onDescriptionTap;
-  VoidCallback? get onTap => widget.onTap;
+
+  @override
+  void didUpdateWidget(covariant FeedCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A refetched post brings a fresh aggregate that already counts the
+    // reactor's current reaction, so the old baseline would double-count it.
+    if (oldWidget.post.reactionTotal != post.reactionTotal ||
+        !mapEquals(oldWidget.post.reactionSummary, post.reactionSummary)) {
+      _baselineReactionCaptured = false;
+      _baselineReactionEmoji = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,10 +112,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
         (isGlobal ? isPostChurchAdmin && isPromotedGlobal : isAdmin);
     final canDelete = !isPromotedGlobal &&
         (isOwner || (isGlobal ? isPostChurchAdmin : isAdmin));
-    // Reaction breakdown ("who reacted") is only for the post's own author
-    // and admins — everyone else can only see/set their own reaction via
-    // the button itself (its emoji, once set), never the full list.
-    final canViewReactors = isOwner || (isGlobal ? isPostChurchAdmin : isAdmin);
     final canEdit =
         isOwner && !isPromotedGlobal && post.canEditAt(DateTime.now());
     final theme = Theme.of(context);
@@ -112,8 +123,19 @@ class _FeedCardState extends ConsumerState<FeedCard> {
             : ref.watch(currentChurchIdProvider).value;
     final reactionTarget =
         FeedReactionTarget(churchId: reactionChurchId, postId: post.id);
-    final myReactionEmoji =
-        ref.watch(myFeedReactionProvider(reactionTarget)).value?.emoji;
+    final myReactionAsync = ref.watch(myFeedReactionProvider(reactionTarget));
+    final myReactionEmoji = myReactionAsync.value?.emoji;
+    if (!_baselineReactionCaptured && myReactionAsync.hasValue) {
+      // Memoizing the first resolved value, not driving a rebuild — so this
+      // belongs here rather than in a listener that would need one.
+      _baselineReactionCaptured = true;
+      _baselineReactionEmoji = myReactionEmoji;
+    }
+    final pillSummary = feedReactionPillSummary(
+      serverSummary: post.reactionSummary,
+      serverMyEmoji: _baselineReactionEmoji,
+      myEmoji: myReactionEmoji,
+    );
     final youtubePreview = FeedLinkUtils.youtubePreviewFromText(
       '${post.title}\n${post.description}',
     );
@@ -168,17 +190,7 @@ class _FeedCardState extends ConsumerState<FeedCard> {
       }
     }
 
-    if (widget.fullBleed) {
-      return _buildFullBleed(
-        context,
-        theme: theme,
-        hasImage: hasImage,
-        actions: actions,
-        onAction: handlePostAction,
-      );
-    }
-
-    final card = Container(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: carouselBoxDecoration(context),
       child: Stack(
@@ -291,6 +303,18 @@ class _FeedCardState extends ConsumerState<FeedCard> {
               ),
             ],
           ),
+          // Who reacted, bottom-left; react yourself, bottom-right. The pill
+          // is the discoverable way into the reactor list — long-pressing
+          // the button does the same thing for anyone who already knows the
+          // gesture, but nothing about a 34px circle advertises it.
+          Positioned(
+            left: 14,
+            bottom: 10,
+            child: FeedReactionSummaryPill(
+              summary: pillSummary,
+              onTap: () => _showReactors(reactionTarget),
+            ),
+          ),
           Positioned(
             right: 14,
             bottom: 10,
@@ -302,24 +326,24 @@ class _FeedCardState extends ConsumerState<FeedCard> {
                 reactionTarget,
                 myReactionEmoji,
               ),
-              onLongPress: canViewReactors
-                  ? () => showFeedReactionsSheet(
-                        context,
-                        churchId: reactionTarget.churchId,
-                        postId: reactionTarget.postId,
-                      )
-                  : null,
+              onLongPress: () => _showReactors(reactionTarget),
             ),
           ),
         ],
       ),
     );
+  }
 
-    if (onTap == null) return card;
-    return InkWell(
-      borderRadius: BorderRadius.circular(cornerRadius),
-      onTap: onTap,
-      child: card,
+  /// The "who reacted" sheet. Open to every member who can see the post:
+  /// `firestore.rules` already lets any approved member (any verified-email
+  /// user, on the global feed) read the whole `reactions` subcollection, so
+  /// hiding the list from them bought no privacy — it only made a count
+  /// nobody could account for.
+  void _showReactors(FeedReactionTarget target) {
+    showFeedReactionsSheet(
+      context,
+      churchId: target.churchId,
+      postId: target.postId,
     );
   }
 
@@ -327,164 +351,6 @@ class _FeedCardState extends ConsumerState<FeedCard> {
     final datePart = _feedDateFormat.format(createdAt);
     final timePart = _feedTimeFormat.format(createdAt);
     return "$datePart at $timePart";
-  }
-
-  Widget _buildFullBleed(
-    BuildContext context, {
-    required ThemeData theme,
-    required bool hasImage,
-    required List<AppPopupMenuAction<_FeedPostAction>> actions,
-    required Future<void> Function(_FeedPostAction) onAction,
-  }) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(
-          child: hasImage
-              ? _FeedFullBleedImages(imageUrls: post.imageUrls)
-              : ColoredBox(
-                  color: Colors.black,
-                  child: Center(
-                    child: Icon(
-                      Icons.church_outlined,
-                      size: 72,
-                      color: Colors.white.withValues(alpha: 0.25),
-                    ),
-                  ),
-                ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.78),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                // A little bottom clearance keeps the caption just clear of
-                // the floating (frosted, extended-body) bottom nav bar that
-                // sits over this layout in the Community tab.
-                padding: const EdgeInsets.fromLTRB(16, 70, 12, 56),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: () => _showPostAuthorDetails(context, ref),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AppProfileAvatar(
-                                  name: post.userName,
-                                  imageUrl: post.userPhoto,
-                                  radius: 16,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.16),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    post.userName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                if (!isGlobal && post.isGlobal) ...[
-                                  const SizedBox(width: 8),
-                                  _GlobalFeedBadge(
-                                      label: ref.t('feed.global_badge')),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: onDescriptionTap,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (post.title.trim().isNotEmpty)
-                                  Text(
-                                    post.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        theme.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                if (post.description.trim().isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      post.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.92),
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_isBusy)
-                      const Padding(
-                        padding: EdgeInsets.all(9),
-                        child: SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    else if (actions.isNotEmpty)
-                      AppPopupMenu<_FeedPostAction>(
-                        onSelected: onAction,
-                        trigger: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        actions: actions,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Future<void> _editPost(BuildContext context, WidgetRef ref) async {
@@ -1026,6 +892,15 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
 
   @override
   Widget build(BuildContext context) {
+    // Decode to the width this card actually paints at, not the camera's.
+    // A 12MP phone photo is ~48MB once decoded to ARGB, and the feed holds
+    // several of these live at once while scrolling — that is what makes a
+    // long feed stutter and, on a modest device, die. The full-screen viewer
+    // is where the full detail belongs.
+    final devicePixelWidth = (MediaQuery.of(context).size.width *
+            MediaQuery.of(context).devicePixelRatio)
+        .round();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 6),
       clipBehavior: Clip.antiAlias,
@@ -1059,6 +934,24 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
                       child: CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
+                        // Fill the reserved box from the first frame. Left
+                        // unconstrained, the image had no size until it
+                        // arrived and then snapped into place, which reads
+                        // as the picture sliding in rather than appearing.
+                        width: double.infinity,
+                        height: double.infinity,
+                        memCacheWidth: devicePixelWidth,
+                        fadeInDuration: appImageFadeDuration,
+                        fadeInCurve: Curves.easeOut,
+                        fadeOutDuration: Duration.zero,
+                        placeholder: (context, url) => const SizedBox.expand(),
+                        errorWidget: (context, url, error) => Center(
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: Theme.of(context).colorScheme.outline,
+                            size: 36,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1088,102 +981,6 @@ class _FeedImageGalleryState extends State<_FeedImageGallery> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Fills the entire post frame edge-to-edge, cropping any image whose aspect
-/// ratio doesn't match — the Instagram-Reels look this layout is built for.
-class _FeedFullBleedImages extends StatefulWidget {
-  const _FeedFullBleedImages({required this.imageUrls});
-
-  final List<String> imageUrls;
-
-  @override
-  State<_FeedFullBleedImages> createState() => _FeedFullBleedImagesState();
-}
-
-class _FeedFullBleedImagesState extends State<_FeedFullBleedImages> {
-  int _page = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        PageView.builder(
-          itemCount: widget.imageUrls.length,
-          onPageChanged: (value) => setState(() => _page = value),
-          itemBuilder: (context, index) {
-            final imageUrl = widget.imageUrls[index];
-            // A raw CachedNetworkImage rather than the shared helper: this
-            // full-bleed feed needs its own black backdrop and a decode size
-            // capped to the device's pixel width, so swiping doesn't stall on
-            // full-resolution camera photos. The fade matches the rest of the
-            // app — a photo appearing out of black is abrupt at this size.
-            final devicePixelWidth = (MediaQuery.of(context).size.width *
-                    MediaQuery.of(context).devicePixelRatio)
-                .round();
-            return GestureDetector(
-              onTap: () => showAppImageGallery(
-                context,
-                imageUrls: widget.imageUrls,
-                initialIndex: index,
-                heroTagBuilder: (url, _) => 'feed-gallery-$url',
-              ),
-              child: _InlinePinchZoomImage(
-                child: Hero(
-                  tag: 'feed-gallery-$imageUrl',
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    memCacheWidth: devicePixelWidth,
-                    fadeInDuration: appImageFadeDuration,
-                    fadeInCurve: Curves.easeOut,
-                    fadeOutDuration: Duration.zero,
-                    placeholder: (context, url) =>
-                        const ColoredBox(color: Colors.black),
-                    errorWidget: (context, url, error) => const ColoredBox(
-                      color: Colors.black,
-                      child: Center(
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.white38,
-                          size: 40,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        if (widget.imageUrls.length > 1)
-          Positioned(
-            top: 56,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.imageUrls.length, (index) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  height: 4,
-                  width: index == _page ? 16 : 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white
-                        .withValues(alpha: index == _page ? 0.95 : 0.45),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                );
-              }),
-            ),
-          ),
-      ],
     );
   }
 }
@@ -1320,19 +1117,18 @@ class _GlobalFeedBadge extends StatelessWidget {
 
 /// The corner reaction button — a neutral "react" icon with no reaction
 /// yet, or the reactor's own chosen emoji once they've reacted. Tapping
-/// toggles (open the picker / remove); long-pressing shows who reacted,
-/// gated by the caller to the post's author and admins only ([onLongPress]
-/// is null for anyone else, so long-press is silently a no-op for them).
+/// toggles (open the picker / remove); long-pressing shows who reacted, the
+/// same sheet [FeedReactionSummaryPill] opens.
 class _FeedReactionButton extends StatelessWidget {
   const _FeedReactionButton({
     required this.emoji,
     required this.onTapUp,
-    this.onLongPress,
+    required this.onLongPress,
   });
 
   final String? emoji;
   final ValueChanged<Offset> onTapUp;
-  final VoidCallback? onLongPress;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,13 @@
 # Daily Verse AI Card Caching — Implementation Plan
 
+> **Retired 2026-11-09.** The app no longer shows or generates AI verse
+> cards: the For You card is the verse text again, Studio's "Generate
+> images" button is gone, and "Create an AI prompt" builds a prompt the
+> person pastes into ChatGPT or Gemini instead (see
+> [For You Content](../features/for-you-content.md)). The Cloud Function
+> described here is still deployed for older installed app versions and can
+> be deleted once they have aged out. Kept as a historical record only.
+
 Authored: 2026-09-18.
 
 | Phase | Scope | Status |

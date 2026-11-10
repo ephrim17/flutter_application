@@ -1,14 +1,12 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
-import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/side_drawer_models/prayer_request_model.dart';
 import 'package:flutter_application/church_app/providers/side_drawer/prayer_providers.dart';
 import 'package:flutter_application/church_app/providers/user_provider.dart';
 import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/widgets/prayer_request_card.dart';
 import 'package:flutter_application/church_app/widgets/section_header_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -50,158 +48,65 @@ class _PrayForOthersContent extends ConsumerWidget {
       data: (prayers) {
         if (prayers.isEmpty) return const SizedBox.shrink();
 
+        // Exactly the width a card gets in the Prayer Requests list, whose
+        // ListView uses the same 16pt side padding. Together with
+        // PrayerRequestCard's own intrinsic height, that makes a request
+        // render identically in both places instead of shrinking into a
+        // narrow fixed-height carousel tile here.
         final cardWidth =
-            math.min(MediaQuery.sizeOf(context).width * 0.82, 330.0);
-        return Padding(
-          padding: const EdgeInsets.only(top: 10, bottom: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionHeader(
-                text: context.t('for_you.pray_for_others.title'),
-                padding: 16,
+            MediaQuery.sizeOf(context).width - forYouSidePadding * 2;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              text: context.t('for_you.pray_for_others.title'),
+              padding: forYouSidePadding,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                forYouSidePadding,
+                forYouSubtitleGap,
+                forYouSidePadding,
+                forYouHeaderGap,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 3, 16, 14),
-                child: Text(
-                  context.t('for_you.pray_for_others.subtitle'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child: Text(
+                context.t('for_you.pray_for_others.subtitle'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+            // A Row rather than a horizontal ListView: the section's height
+            // now comes from the tallest card instead of a fixed constant,
+            // which is the whole point. Laziness is no loss — this is the
+            // active, church-visible, unexpired set, which is small.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: forYouSidePadding,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < prayers.length; index++) ...[
+                    if (index > 0) const SizedBox(width: forYouCardGap),
+                    SizedBox(
+                      width: cardWidth,
+                      child: PrayerRequestCard(
+                        prayer: prayers[index],
+                        onTap: () => _showPrayerForOthersDetails(
+                          context,
+                          prayers[index],
+                        ),
                       ),
-                ),
+                    ),
+                  ],
+                ],
               ),
-              SizedBox(
-                height: forYouPrimaryCardHeight,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: prayers.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) => SizedBox(
-                    width: cardWidth,
-                    child: _PrayerForOthersCard(prayer: prayers[index]),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
-    );
-  }
-}
-
-class _PrayerForOthersCard extends ConsumerWidget {
-  const _PrayerForOthersCard({required this.prayer});
-
-  final PrayerRequest prayer;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final daysLeft = prayerDaysLeft(prayer.expiryDate);
-
-    return Container(
-      decoration: carouselBoxDecoration(context),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(cornerRadius),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => _showPrayerForOthersDetails(context, prayer),
-          child: Padding(
-            padding: const EdgeInsets.all(17),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.volunteer_activism_outlined,
-                            color: colors.onSurfaceVariant,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 7),
-                          Flexible(
-                            child: Text(
-                              context.t(
-                                'for_you.pray_for_others.request_label',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colors.onSurfaceVariant,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _ExpiryPill(daysLeft: daysLeft),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  prayer.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    height: 1.18,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Text(
-                    prayer.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colors.onSurfaceVariant,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
-                Divider(color: colors.outlineVariant, height: 18),
-                Row(
-                  children: [
-                    Icon(
-                      prayer.isAnonymous
-                          ? Icons.visibility_off_outlined
-                          : Icons.person_outline_rounded,
-                      size: 19,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: _PrayerAuthorLabel(prayer: prayer),
-                    ),
-                    Text(
-                      context.t('for_you.pray_for_others.open_action'),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 17,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -243,39 +148,6 @@ class _PrayerAuthorLabel extends ConsumerWidget {
             style: style,
           ),
         );
-  }
-}
-
-class _ExpiryPill extends StatelessWidget {
-  const _ExpiryPill({required this.daysLeft});
-
-  final int daysLeft;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final text = daysLeft == 0
-        ? context.t('for_you.pray_for_others.ends_today')
-        : context.t(
-            daysLeft == 1
-                ? 'for_you.pray_for_others.one_day_left'
-                : 'for_you.pray_for_others.days_left',
-            parameters: {'count': daysLeft},
-          );
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: colors.outlineVariant),
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colors.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
   }
 }
 

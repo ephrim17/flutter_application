@@ -11,13 +11,11 @@ import 'package:flutter_application/church_app/models/side_drawer_models/prayer_
 import 'package:flutter_application/church_app/providers/dashboard/dashboard_providers.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/for_you_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
-import 'package:flutter_application/church_app/screens/dashboard/dashboard_gender_members_screen.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_model.dart';
 import 'package:flutter_application/church_app/screens/dashboard/view_models/dashboard_view_state.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/app_profile_avatar.dart';
-import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/disabled_feature_tips.dart';
 import 'package:flutter_application/church_app/widgets/modals/today_birthdays_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -200,6 +198,7 @@ class DashboardScreen extends ConsumerWidget {
             subtitle: context.t('dashboard.join_history_subtitle'),
             child: _DashboardMemberJoinHistory(
               summary: dashboardState.memberMetrics,
+              memberCount: dashboardState.metrics.memberCount,
             ),
           ),
           const SizedBox(height: sectionSpacing),
@@ -208,6 +207,7 @@ class DashboardScreen extends ConsumerWidget {
             subtitle: context.t('dashboard.streaks_subtitle'),
             child: _DashboardMemberStreakPanel(
               summary: dashboardState.memberMetrics,
+              memberCount: dashboardState.metrics.memberCount,
             ),
           ),
           const SizedBox(height: sectionSpacing),
