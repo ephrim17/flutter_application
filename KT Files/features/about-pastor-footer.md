@@ -68,8 +68,7 @@ pretending to be pressable.
 | PROFILE-07 | Invalid external/contact data | Validation or safe launch failure; no crash. |
 | PROFILE-08 | Church switch | Identity/contact data follows active church only. |
 | PROFILE-09 | Long translated/user content | Cards wrap/scroll without clipping. |
-
-| PROFILE-09 | Open the footer on a desktop-width browser window | Contacts and socials sit as two centred groups of equal tiles, not spread into the corners; a hairline divider separates them. |
-| PROFILE-10 | Narrow the window to a phone width | Tiles reflow onto further lines and stay centred; no overflow and no clipped labels. |
-| PROFILE-11 | Tap a social item with a valid http(s) URL | The link opens externally; a failure shows "Unable to open link" rather than doing nothing. |
-| PROFILE-12 | Social item whose URL is empty, relative or non-http | The tile renders dimmed and does not respond to taps. |
+| PROFILE-10 | Open the footer on a desktop-width browser window | Contacts and socials sit as two centred groups of equal tiles, not spread into the corners; a hairline divider separates them. |
+| PROFILE-11 | Narrow the window to a phone width | Tiles reflow onto further lines and stay centred; no overflow and no clipped labels. |
+| PROFILE-12 | Tap a social item with a valid http(s) URL | The link opens externally; a failure shows "Unable to open link" rather than doing nothing. |
+| PROFILE-13 | Social item whose URL is empty, relative or non-http | The tile renders dimmed and does not respond to taps. |
