@@ -1078,13 +1078,13 @@ const Map<String, String> defaultChurchTextContents = {
   'drawer.attendance': 'Attendance',
   // Communication — WhatsApp/SMS/email hand-off, church staff only.
   'church_tab.communication': 'Messages',
-  'communication.title': 'Communication',
-  'communication.subtitle':
-      'WhatsApp, SMS and email for your members.',
-  'communication.stat_messages': 'Messages this month',
-  'communication.stat_reached': 'People reached this month',
-  'communication.stat_with_phone': 'Have a phone number',
-  'communication.stat_without_phone': 'Missing a phone number',
+  // The screen carries no heading of its own: the tab is already called
+  // Messages. These short forms sit on one line beside their number in the
+  // stat strip, so they read as "12 sent", not as box captions.
+  'communication.stat_messages_short': 'sent this month',
+  'communication.stat_reached_short': 'reached',
+  'communication.stat_with_phone_short': 'with phone',
+  'communication.stat_without_phone_short': 'no phone',
   'communication.tab_compose': 'Compose',
   'communication.tab_history': 'History',
   'communication.tab_templates': 'Templates',
@@ -1136,8 +1136,7 @@ const Map<String, String> defaultChurchTextContents = {
   'communication.wa_group_link_invalid':
       'Give the group a name and paste its chat.whatsapp.com invite link.',
   'communication.wa_group_copied': 'Message copied — paste it in WhatsApp',
-  'communication.batch_title':
-      '{count} people — sent in {batches} batches',
+  'communication.batch_title': '{count} people — sent in {batches} batches',
   'communication.batch_hint':
       'Too many for one hand-off. Open each batch, send it, then come '
           'back for the next. Ticks show what you have already opened.',

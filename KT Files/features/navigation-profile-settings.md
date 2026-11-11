@@ -19,6 +19,12 @@ links).
   not the selected church's identity — the church switcher (that church's
   logo + a chevron) lives in a right-side action button instead, opening the
   same `ChurchQuickSwitcherSheet`.
+- The app bar stands at `kToolbarHeight` (56), the Material standard. It
+  previously hard-coded 40, which is shorter than the 48dp minimum touch
+  target, so both the drawer button and the church switcher were undersized
+  and the bar read as a cramped strip rather than a navigation bar. The
+  switcher's tap target is held at a minimum of 48×48 regardless of the
+  artwork inside it.
 - The bottom tab bar's individual tabs float directly on the page background
   — there is no surrounding solid card/pill behind them, only the selected
   tab's own highlight.
@@ -108,3 +114,4 @@ links).
 | NAV-05 | Large text/small phone | Labels, membership dates, badges and settings sheets render cleanly without stray text or overflow. |
 | NAV-06 | Open screens with initial or paginated loading states | Progress indicator renders without animation/runtime exceptions. |
 | NAV-07 | Open light and dark screens on Android | Status/navigation icons contrast with the app surface. |
+| NAV-08 | Open the app at 393x852 (iPhone 16) | The app bar is a full-height navigation bar, not a thin strip; the drawer button and church switcher are both comfortably tappable. |

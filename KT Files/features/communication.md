@@ -104,12 +104,25 @@ failing validation later. A clipboard holding anything else is ignored, so
 the field is never silently filled with the wrong thing — and a `wa.me`
 link is refused, because that is one person, not a group.
 
-## Small screens
+## Header and small screens
 
-The four header statistics sit in one row above 420dp and go two-by-two
-below it. At 320dp — the narrow end of Android still in use — four across
-gives each chip about 70dp, and "Messages this month" broke mid-word into
-"Messag / es this". Verified on a 320dp device 2026-11-11.
+The screen carries **no title or description of its own**. The tab the
+reader pressed is already called Messages and the segmented control says
+which part they are in, so a heading plus a line of explanatory text only
+pushed the compose form further down every time the tab was opened.
+
+The four statistics are one wrapping line of pills — number and short label
+on a single line — rather than boxes. As boxes they were two deep on a
+phone, roughly 140dp of standing furniture above a form people come here to
+type in; they are reference, not the task. Pills size to their own content
+and wrap like words, so nothing is squeezed and nothing scrolls out of
+reach.
+
+The old boxes split an equal share of the row between four chips, which at
+320dp gave each about 70dp and broke "Messages this month" mid-word into
+"Messag / es this". The short labels (`communication.stat_*_short`) and the
+content sizing both exist so that cannot recur. Verified at 393×852
+(iPhone 16) 2026-11-11.
 
 ## Groups
 
@@ -212,7 +225,8 @@ members.
 | COM-19 | Open batch 1, leave, come back | Batch 1 is still ticked and the same people are still in it. |
 | COM-20 | Choose Email and check the subject line | Reads "<church> — <chosen subject>". |
 | COM-21 | Choose a template from the dropdown | The message body and the subject both fill in. |
-| COM-22 | Open the tab on a 320dp phone | The four statistics lay out two-by-two and every label reads in full, with no mid-word break. |
+| COM-22 | Open the tab on a 320dp phone | The four statistic pills wrap onto further lines and every label reads in full, with no mid-word break. |
+| COM-30 | Open the Messages tab at 393x852 (iPhone 16) | No screen heading or description; the stat strip is one or two lines of pills and the compose form starts near the top. |
 | COM-23 | Copy a group's invite link in WhatsApp, then tap Add group | The link box is already filled, with "Link filled in from your clipboard". |
 | COM-24 | Tap Add group with something else on the clipboard | Both boxes are empty; nothing is guessed. The Paste button explains where to get the link. |
 | COM-25 | Paste the invite link into the Group name box | It moves to the link box and asks for a name. |

@@ -90,72 +90,41 @@ class _CommunicationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = communicationStats(members: members, log: log);
-    final theme = Theme.of(context);
 
+    // No screen title here. The tab the reader just pressed is called
+    // Messages and the segmented control below says which part they are in,
+    // so a heading and a one-line description of the feature only pushed the
+    // compose form further down every time they opened it.
+    //
+    // The four numbers used to be boxes two deep on a phone — roughly 140dp
+    // of standing furniture above a form people came here to type in. They
+    // are reference, not the task, so they are now one wrapping line of
+    // pills: the same four facts in about a quarter of the height, with
+    // nothing scrolled out of reach.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          Text(
-            context.t('communication.title'),
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w900),
+          _StatPill(
+            value: '${stats.messagesThisMonth}',
+            label: context.t('communication.stat_messages_short'),
           ),
-          const SizedBox(height: 2),
-          Text(
-            context.t('communication.subtitle'),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          _StatPill(
+            value: '${stats.peopleReachedThisMonth}',
+            label: context.t('communication.stat_reached_short'),
           ),
-          const SizedBox(height: 12),
-          // Four across needs about 105dp each to hold "Messages this
-          // month" on two lines. On a 320dp phone that is 70dp and the
-          // label breaks mid-word — "Messag / es this" — so below this
-          // width they go two-by-two instead.
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final chips = <Widget>[
-                _StatChip(
-                  value: '${stats.messagesThisMonth}',
-                  label: context.t('communication.stat_messages'),
-                ),
-                _StatChip(
-                  value: '${stats.peopleReachedThisMonth}',
-                  label: context.t('communication.stat_reached'),
-                ),
-                _StatChip(
-                  value: '${stats.withPhone}',
-                  label: context.t('communication.stat_with_phone'),
-                ),
-                _StatChip(
-                  value: '${stats.withoutPhone}',
-                  label: context.t('communication.stat_without_phone'),
-                  // Not an error, but the number a church should want to
-                  // see shrink: these people cannot be reached this way.
-                  attention: stats.withoutPhone > 0,
-                ),
-              ];
-
-              if (constraints.maxWidth >= 420) {
-                return Row(
-                  children: [
-                    for (var i = 0; i < chips.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 8),
-                      chips[i],
-                    ],
-                  ],
-                );
-              }
-
-              return Column(
-                children: [
-                  Row(children: [chips[0], const SizedBox(width: 8), chips[1]]),
-                  const SizedBox(height: 8),
-                  Row(children: [chips[2], const SizedBox(width: 8), chips[3]]),
-                ],
-              );
-            },
+          _StatPill(
+            value: '${stats.withPhone}',
+            label: context.t('communication.stat_with_phone_short'),
+          ),
+          _StatPill(
+            value: '${stats.withoutPhone}',
+            label: context.t('communication.stat_without_phone_short'),
+            // Not an error, but the number a church should want to see
+            // shrink: these people cannot be reached this way.
+            attention: stats.withoutPhone > 0,
           ),
         ],
       ),
@@ -163,8 +132,14 @@ class _CommunicationHeader extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({
+/// One figure on the Messages strip — the number and what it counts, on a
+/// single line.
+///
+/// Sized to its own content rather than an equal share of the row, so the
+/// four of them wrap like words instead of each being squeezed to a quarter
+/// of a 320dp phone, which is what broke "Messages this month" mid-word.
+class _StatPill extends StatelessWidget {
+  const _StatPill({
     required this.value,
     required this.label,
     this.attention = false,
@@ -176,36 +151,34 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: attention
-              ? colors.errorContainer.withValues(alpha: 0.45)
-              : colors.surfaceContainerHighest.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w900),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: attention
+            ? colors.errorContainer.withValues(alpha: 0.45)
+            : colors.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: attention ? colors.onErrorContainer : colors.onSurface,
             ),
-            Text(
-              label,
-              maxLines: 2,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: colors.onSurfaceVariant),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium
+                ?.copyWith(color: colors.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

@@ -90,9 +90,8 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       return;
     }
 
-    final church = await ref
-        .read(churchRepositoryProvider)
-        .getChurchById(requestedId);
+    final church =
+        await ref.read(churchRepositoryProvider).getChurchById(requestedId);
     if (!mounted) return;
     // Unknown church, or one this person has since left: stay put rather
     // than drop them somewhere they cannot read.
@@ -275,7 +274,12 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
               visible: _appBarVisible, // && !isCommunityTab,
               appBar: AppBar(
                 centerTitle: false,
-                toolbarHeight: 40,
+                // `kToolbarHeight`, the Material standard, rather than the
+                // 40 this used to hard-code. At 40 the bar was shorter than
+                // the 48dp minimum touch target, so the drawer button and
+                // the church switcher were both undersized and the bar read
+                // as a cramped strip rather than a navigation bar.
+                toolbarHeight: kToolbarHeight,
                 title: ChurchAppBarBrandTitle(
                   text: ref.t('guest_shell.title'),
                   logo: AppAssets.churchTreeAppIcon,
@@ -284,29 +288,33 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       onTap: _openChurchSwitcher,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
+                      child: ConstrainedBox(
+                        // A real target, not just the size of the artwork.
+                        constraints: const BoxConstraints(
+                          minHeight: 48,
+                          minWidth: 48,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ChurchLogoAvatar(
-                              logo: selectedChurch?.logo ?? '',
-                              size: 28,
-                            ),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 20,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ChurchLogoAvatar(
+                                logo: selectedChurch?.logo ?? '',
+                                size: 32,
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 20,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
