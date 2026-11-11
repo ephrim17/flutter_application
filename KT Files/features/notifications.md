@@ -32,6 +32,39 @@ Cloud Functions.
 
 Studio also supports a general church-topic notification composer.
 
+## Web push
+
+Web push is **on**. It was never unavailable — the FCM pipeline was already
+whole (the server resolves audience from membership to uids to registered
+tokens, and `topic` is legacy and ignored), and the browser half was simply
+switched off.
+
+- `web/firebase-messaging-sw.js` is the service worker the SDK registers by
+  name at the site root. Without it the browser has nowhere to deliver a
+  push while the tab is closed, so `getToken()` fails and the web app is
+  unreachable. It only initialises messaging: every payload this app sends
+  carries a `notification` block, which the SDK's own handler displays, and
+  an `onBackgroundMessage` that also called `showNotification` would show
+  each notification twice.
+- Its Firebase config duplicates `lib/firebase_options.dart` because a
+  service worker has no bundler. Those values are public identifiers that
+  already ship in every web build, but they must be kept in step by hand.
+- `showRemoteMessageNotification` still returns early on web, deliberately:
+  the service worker draws the background case, and the SDK withholds
+  foreground messages because the person is already looking at the app.
+- Devices register with platform `web`; `defaultTargetPlatform` in a browser
+  reports the host OS, so a Mac browser used to file itself as "macOS".
+- No server change was needed, and no functions deploy.
+
+**iPhone is the one real limit.** Safari delivers web push only to a site
+added to the Home Screen; Chrome, Edge, Firefox and Android need just the
+permission prompt.
+
+`webPushVapidKey` is null on purpose: with no key the SDK falls back to
+Firebase's own default application server key. Setting the project's own
+Web Push certificate stops relying on that, at the cost of invalidating
+tokens issued under the old one.
+
 ## Technical map
 
 - Client: `services/notification_service.dart`, `FCM_notification_service.dart`,
@@ -58,3 +91,8 @@ Studio also supports a general church-topic notification composer.
 | NOTIFY-11 | Duplicate queue/event delivery | Idempotency prevents duplicate fan-out. |
 | NOTIFY-12 | Invalid/missing `kind` | App opens safely without wrong navigation. |
 | NOTIFY-13 | Open permission prompt over Home | Sheet surface is opaque with one grab handle; Home content does not show through. |
+| NOTIFY-14 | Allow notifications in a desktop browser, then background the tab and have the church post | The push appears as a system notification; clicking it focuses the app. |
+| NOTIFY-15 | Allow notifications, keep the tab focused, then have the church post | No duplicate system notification — the SDK withholds foreground messages by design. |
+| NOTIFY-16 | Check the device registry after granting on web | The device is recorded with platform `web`, not the host operating system. |
+| NOTIFY-17 | Add the site to the Home Screen on iPhone, then allow | Push arrives; without the Home Screen step Safari offers no permission at all. |
+| NOTIFY-18 | Tap a feed-post notification as a member with only Home and For You | Opens Home. It must not throw a RangeError reaching for the old Community tab. |

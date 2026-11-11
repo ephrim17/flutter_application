@@ -25,6 +25,40 @@ links).
   and the bar read as a cramped strip rather than a navigation bar. The
   switcher's tap target is held at a minimum of 48×48 regardless of the
   artwork inside it.
+## Desktop shell
+
+Past `desktopShellBreakpoint` (1280) the shell rearranges itself for a mouse
+and a wide window. The phone layout is right for a phone and a tablet and
+wrong for a desktop: a top app bar across 1,600px, a bottom tab bar whose
+selected pill stretched to a third of the screen, and a drawer hidden behind
+a hamburger with room to spare beside it.
+
+- Destinations move from the bottom of the screen into a permanent 268pt
+  sidebar (`ChurchDesktopSidebar`), as rows with icon and label.
+- The drawer stops sliding over the page and sits in that sidebar beneath
+  them, scrolling on its own while the destinations stay put.
+- The top app bar goes entirely; the brand and the church switcher move to
+  the top of the sidebar, where the switcher can show the church's **name**
+  rather than only a logo and a chevron.
+
+The sidebar renders the identical `AppBottomTabItem` list the bottom bar
+does and embeds the very same `AppDrawer`, so a tab or a menu entry added
+for the phone cannot go missing on desktop.
+
+`AppDrawer.embedded` exists for this. It drops the `Drawer` shell, which
+would impose its own surface and fixed 304 width inside a column that
+already has both, and it stops `_handleTap` popping the route — there is no
+drawer to close when it is permanent, so that pop would take the current
+page off the stack instead.
+
+The breakpoint sits above a tablet in landscape deliberately: an iPad is
+about 1180–1194 points and wants the touch layout, where a bottom bar falls
+under the thumb and a sidebar does not. A 12.9" iPad (1366) crosses the
+line, which is a judgement call at that size. `safeTabIndex` guards the
+shell against an index that no longer exists — a notification payload or a
+selection carried across a church switch can both name a tab this person
+does not have.
+
 - The bottom tab bar's individual tabs float directly on the page background
   — there is no surrounding solid card/pill behind them, only the selected
   tab's own highlight.
@@ -115,3 +149,8 @@ links).
 | NAV-06 | Open screens with initial or paginated loading states | Progress indicator renders without animation/runtime exceptions. |
 | NAV-07 | Open light and dark screens on Android | Status/navigation icons contrast with the app surface. |
 | NAV-08 | Open the app at 393x852 (iPhone 16) | The app bar is a full-height navigation bar, not a thin strip; the drawer button and church switcher are both comfortably tappable. |
+| NAV-09 | Open the app in a browser window 1280 wide or more | A left sidebar carries brand, church switcher, destinations and the menu; there is no top app bar and no bottom tab bar. |
+| NAV-10 | Drag that window below 1280 | The phone layout returns: app bar with hamburger, bottom tab bar, drawer slides over. Nothing is lost in either direction. |
+| NAV-11 | Open an iPad in landscape (about 1194) | Still the touch layout, unchanged. |
+| NAV-12 | Tap a menu entry in the desktop sidebar | It opens as a full page; the sidebar stays and the shell is not popped. |
+| NAV-13 | Switch to a church where you are not an admin while Dashboard is selected | The shell falls back to Home rather than throwing a RangeError on a tab that no longer exists. |
