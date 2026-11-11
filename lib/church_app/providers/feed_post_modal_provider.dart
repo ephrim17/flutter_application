@@ -145,7 +145,6 @@ class FeedController extends StateNotifier<AsyncValue<void>> {
       );
     });
   }
-
 }
 
 class FeedEditWindowExpiredException implements Exception {

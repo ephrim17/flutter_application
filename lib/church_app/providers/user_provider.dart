@@ -51,8 +51,7 @@ final myMembershipsProvider =
       .snapshots()
       .map((snapshot) => snapshot.docs.map((doc) {
             final churchId = doc.reference.parent.parent?.id ?? '';
-            return ChurchMembership.fromFirestore(
-                doc.id, churchId, doc.data());
+            return ChurchMembership.fromFirestore(doc.id, churchId, doc.data());
           }).toList());
 });
 
@@ -69,7 +68,8 @@ final userIdentityProvider = StreamProvider<UserIdentity?>((ref) async* {
       .snapshots()
       .map((doc) {
     if (!doc.exists) return null;
-    return UserIdentity.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+    return UserIdentity.fromFirestore(
+        doc.id, doc.data() as Map<String, dynamic>);
   });
 });
 

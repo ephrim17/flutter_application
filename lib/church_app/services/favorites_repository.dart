@@ -36,9 +36,12 @@ class FavoritesRepository {
     if (keys.isEmpty) return;
     final batch = firestore.batch();
     for (final key in keys) {
-      batch.set(_collection.doc(key), {
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          _collection.doc(key),
+          {
+            'createdAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
     }
     await batch.commit();
   }

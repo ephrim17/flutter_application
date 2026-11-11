@@ -332,78 +332,80 @@ class _VerseShareModalState extends State<VerseShareModal> {
         child: _showFullPreview
             ? _buildFullPreviewOverlay()
             : LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight.isFinite
-                ? constraints.maxHeight
-                : MediaQuery.of(context).size.height;
-            final panelHeight = screenHeight;
-            final bottomReserve = _editorPanelVisible ? 24.0 : 54.0 + 16.0;
-            const stripsHeight = 104.0 + 88.0;
-            final previewHeight = math.max(
-              200.0,
-              screenHeight - bottomReserve - 18.0 - stripsHeight,
-            );
+                builder: (context, constraints) {
+                  final screenHeight = constraints.maxHeight.isFinite
+                      ? constraints.maxHeight
+                      : MediaQuery.of(context).size.height;
+                  final panelHeight = screenHeight;
+                  final bottomReserve =
+                      _editorPanelVisible ? 24.0 : 54.0 + 16.0;
+                  const stripsHeight = 104.0 + 88.0;
+                  final previewHeight = math.max(
+                    200.0,
+                    screenHeight - bottomReserve - 18.0 - stripsHeight,
+                  );
 
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(0, 12, 0, bottomReserve),
-                    child: Column(
-                      children: [
-                        _buildTemplateStrip(),
-                        const SizedBox(height: 8),
-                        _buildLayoutStrip(),
-                        const SizedBox(height: 12),
-                        RepaintBoundary(
-                          key: _previewKey,
-                          child: _buildPreview(previewHeight),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  left: 0,
-                  right: 0,
-                  bottom: _editorPanelVisible ? 0 : -panelHeight,
-                  height: panelHeight,
-                  child: _buildInlineEditorPanel(),
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  left: 16,
-                  right: 16,
-                  bottom: _editorPanelVisible ? -70 : 16,
-                  child: Row(
+                  return Stack(
                     children: [
-                      Expanded(
-                        child: _buildFrostedActionButton(
-                          icon: Icons.tune_rounded,
-                          label: context.t('ui.verse_share.show_editor'),
-                          onPressed: () =>
-                              setState(() => _editorPanelVisible = true),
+                      Positioned.fill(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(0, 12, 0, bottomReserve),
+                          child: Column(
+                            children: [
+                              _buildTemplateStrip(),
+                              const SizedBox(height: 8),
+                              _buildLayoutStrip(),
+                              const SizedBox(height: 12),
+                              RepaintBoundary(
+                                key: _previewKey,
+                                child: _buildPreview(previewHeight),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildFrostedActionButton(
-                          icon: Icons.download_rounded,
-                          label: context.t('common.download'),
-                          busy: _isDownloading,
-                          onPressed: _isDownloading ? null : downloadImage,
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        left: 0,
+                        right: 0,
+                        bottom: _editorPanelVisible ? 0 : -panelHeight,
+                        height: panelHeight,
+                        child: _buildInlineEditorPanel(),
+                      ),
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        left: 16,
+                        right: 16,
+                        bottom: _editorPanelVisible ? -70 : 16,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildFrostedActionButton(
+                                icon: Icons.tune_rounded,
+                                label: context.t('ui.verse_share.show_editor'),
+                                onPressed: () =>
+                                    setState(() => _editorPanelVisible = true),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildFrostedActionButton(
+                                icon: Icons.download_rounded,
+                                label: context.t('common.download'),
+                                busy: _isDownloading,
+                                onPressed:
+                                    _isDownloading ? null : downloadImage,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -574,7 +576,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(icon, size: 18, color: theme.colorScheme.onSurface),
+                        Icon(icon,
+                            size: 18, color: theme.colorScheme.onSurface),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
@@ -652,7 +655,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 Text(
                   context.t(template.nameKey),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w500,
                         color: selected
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -714,7 +718,8 @@ class _VerseShareModalState extends State<VerseShareModal> {
                   context.t(style.nameKey),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontSize: 10,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w500,
                         color: selected
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -892,8 +897,10 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 onPressed: () => setState(() => _showFullPreview = false),
                 icon: const Icon(Icons.visibility_outlined),
                 style: IconButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: 0.55),
                 ),
               ),
             ),
@@ -1043,12 +1050,14 @@ class _VerseShareModalState extends State<VerseShareModal> {
     );
   }
 
-  Widget _buildReferenceLine(double fittedSize, {TextAlign align = TextAlign.center}) {
+  Widget _buildReferenceLine(double fittedSize,
+      {TextAlign align = TextAlign.center}) {
     return Text.rich(
       TextSpan(
         children: [
           TextSpan(text: '- ', style: _referenceTextStyle(fittedSize)),
-          TextSpan(text: _referenceText, style: _referenceTextStyle(fittedSize)),
+          TextSpan(
+              text: _referenceText, style: _referenceTextStyle(fittedSize)),
         ],
       ),
       textAlign: align,
@@ -2183,10 +2192,9 @@ class _VerseShareModalState extends State<VerseShareModal> {
                 rule,
                 (current) => current.copyWith(
                   borderColor: color,
-                  fillColor:
-                      color == Colors.transparent
-                          ? current.fillColor
-                          : Colors.transparent,
+                  fillColor: color == Colors.transparent
+                      ? current.fillColor
+                      : Colors.transparent,
                 ),
               );
             },

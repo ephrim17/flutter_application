@@ -184,7 +184,8 @@ class ChurchMembership {
       financialStabilityRating: _int(data['financialStabilityRating']),
       financialSupportRequired: _bool(data['financialSupportRequired']),
       joinedAt: _date(data['joinedAt']),
-      schemaVersion: data['schemaVersion'] == null ? 1 : _int(data['schemaVersion']),
+      schemaVersion:
+          data['schemaVersion'] == null ? 1 : _int(data['schemaVersion']),
       displayName: _string(data['displayName']),
       displayEmail: _string(data['displayEmail']),
       displayPhone: _string(data['displayPhone']),
@@ -225,7 +226,9 @@ class ChurchMembership {
       'marriageSolemnizationChurchName': marriageSolemnizationChurchName,
       'financialStabilityRating': financialStabilityRating,
       'financialSupportRequired': financialSupportRequired,
-      'joinedAt': joinedAt != null ? Timestamp.fromDate(joinedAt!) : FieldValue.serverTimestamp(),
+      'joinedAt': joinedAt != null
+          ? Timestamp.fromDate(joinedAt!)
+          : FieldValue.serverTimestamp(),
       'schemaVersion': schemaVersion,
       'displayName': displayName,
       'displayEmail': displayEmail,

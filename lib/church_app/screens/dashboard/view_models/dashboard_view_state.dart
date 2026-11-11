@@ -44,6 +44,7 @@ class DashboardViewState {
   final bool isAdmin;
   final String churchTitle;
   final String? churchId;
+
   /// Server-computed metrics. Only the streak numbers and the join history
   /// are read from here now — member *composition* is derived from [members],
   /// because a stored aggregate of a list the screen already holds is a

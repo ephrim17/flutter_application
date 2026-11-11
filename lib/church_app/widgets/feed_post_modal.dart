@@ -302,7 +302,8 @@ class _CreatePostModalState extends ConsumerState<CreatePostModal> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(theme, globalFeedEnabled, state.isLoading, currentUser),
+            _buildTopBar(
+                theme, globalFeedEnabled, state.isLoading, currentUser),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),

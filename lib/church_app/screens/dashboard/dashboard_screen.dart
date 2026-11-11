@@ -64,16 +64,19 @@ class DashboardScreen extends ConsumerWidget {
     }
     final dashboardMembers =
         dashboardMembersAsync.asData?.value ?? const <ChurchMembership>[];
-    final birthdayMembers =
-        dashboardMembers.where((member) => isBirthdayToday(member.displayDob)).toList()
-          ..sort(
-            (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-          );
+    final birthdayMembers = dashboardMembers
+        .where((member) => isBirthdayToday(member.displayDob))
+        .toList()
+      ..sort(
+        (a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      );
     final anniversaryMembers = dashboardMembers
         .where((member) => isAnniversaryToday(member.displayWeddingDay))
         .toList()
       ..sort(
-        (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+        (a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
       );
     bool homeSectionDisabled(String id) => !(homeSectionConfigs
             .where((config) => config.id == id)

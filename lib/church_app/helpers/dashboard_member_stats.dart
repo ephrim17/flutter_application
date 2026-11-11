@@ -77,8 +77,8 @@ int? dashboardMemberAge(DateTime? dob, {DateTime? asOf}) {
   if (dob == null) return null;
   final now = asOf ?? DateTime.now();
   var age = now.year - dob.year;
-  final hadBirthday = now.month > dob.month ||
-      (now.month == dob.month && now.day >= dob.day);
+  final hadBirthday =
+      now.month > dob.month || (now.month == dob.month && now.day >= dob.day);
   if (!hadBirthday) age -= 1;
   return age < 0 ? null : age;
 }
@@ -183,12 +183,12 @@ DashboardMemberCounts dashboardMemberCounts(List<ChurchMembership> members) {
   if (members.isEmpty) return DashboardMemberCounts.empty;
 
   final approved = members.where((member) => member.approved).length;
-  final families =
-      members.where((member) => _normalized(member.category) == 'family')
-          .length;
-  final individuals =
-      members.where((member) => _normalized(member.category) == 'individual')
-          .length;
+  final families = members
+      .where((member) => _normalized(member.category) == 'family')
+      .length;
+  final individuals = members
+      .where((member) => _normalized(member.category) == 'individual')
+      .length;
   final withGroups =
       members.where((member) => member.churchGroupIds.isNotEmpty).length;
 

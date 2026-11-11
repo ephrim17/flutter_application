@@ -93,9 +93,19 @@ class ChurchSideDrawer extends StatelessWidget {
 }
 
 class AppDrawer extends ConsumerWidget {
-  const AppDrawer({super.key, required this.onSelectedMenu});
+  const AppDrawer({
+    super.key,
+    required this.onSelectedMenu,
+    this.embedded = false,
+  });
 
   final void Function(String menu) onSelectedMenu;
+
+  /// True when this is a permanent sidebar rather than a drawer that slides
+  /// over the page — the desktop layout. It changes two things: there is no
+  /// `Drawer` shell to supply a surface and a fixed width, and there is
+  /// nothing to close, so tapping an item must not pop the route.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -132,90 +142,96 @@ class AppDrawer extends ConsumerWidget {
       DrawerMenuItem.equipment: equipmentCount,
     };
 
-    return Drawer(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          userAsync.when(
-            loading: () => const DrawerHeader(
-              child: Center(child: AppLoadingIndicator()),
+    final content = ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        userAsync.when(
+          loading: () => const DrawerHeader(
+            child: Center(child: AppLoadingIndicator()),
+          ),
+          error: (_, __) => DrawerHeader(
+            child: Text(
+              context.t('drawer.error_loading_user'),
             ),
-            error: (_, __) => DrawerHeader(
-              child: Text(
-                context.t('drawer.error_loading_user'),
-              ),
-            ),
-            data: (user) {
-              final theme = Theme.of(context);
-              // A plain Container (not DrawerHeader) — DrawerHeader enforces
-              // a fixed height sized for the old name/email/chip-only
-              // content and clips/overflows once the avatar adds to it;
-              // this sizes to whatever the content actually needs.
-              return Container(
-                width: double.infinity,
-                color: theme.scaffoldBackgroundColor,
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppProfileAvatar(
-                          name: user?.name ?? '',
-                          imageUrl: user?.profilePhotoUrl,
-                          radius: 28,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          user?.name ?? '',
-                          style: theme.textTheme.titleLarge,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          user?.email ?? '',
-                          style: theme.textTheme.bodyMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        MemberSinceChip(date: user?.createdAt),
-                      ],
-                    ),
+          ),
+          data: (user) {
+            final theme = Theme.of(context);
+            // A plain Container (not DrawerHeader) — DrawerHeader enforces
+            // a fixed height sized for the old name/email/chip-only
+            // content and clips/overflows once the avatar adds to it;
+            // this sizes to whatever the content actually needs.
+            return Container(
+              width: double.infinity,
+              color: theme.scaffoldBackgroundColor,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppProfileAvatar(
+                        name: user?.name ?? '',
+                        imageUrl: user?.profilePhotoUrl,
+                        radius: 28,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        user?.name ?? '',
+                        style: theme.textTheme.titleLarge,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        user?.email ?? '',
+                        style: theme.textTheme.bodyMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      MemberSinceChip(date: user?.createdAt),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
-
-          /// 🧭 Menu items
-          ...items.map(
-            (item) => ListTile(
-              leading: Icon(
-                item.icon,
               ),
-              title: Text(context.t(item.labelKey)),
-              trailing: badgeCounts[item] == null
-                  ? null
-                  : AppCountBadge(
-                      count: badgeCounts[item]!,
-                      semanticLabel: context.t(item.labelKey),
-                    ),
-              onTap: () => _handleTap(context, item),
+            );
+          },
+        ),
+
+        /// 🧭 Menu items
+        ...items.map(
+          (item) => ListTile(
+            leading: Icon(
+              item.icon,
             ),
+            title: Text(context.t(item.labelKey)),
+            trailing: badgeCounts[item] == null
+                ? null
+                : AppCountBadge(
+                    count: badgeCounts[item]!,
+                    semanticLabel: context.t(item.labelKey),
+                  ),
+            onTap: () => _handleTap(context, item),
           ),
-        ],
-      ),
+        ),
+      ],
     );
+
+    return embedded
+        ? content
+        : Drawer(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            child: content,
+          );
   }
 
   void _handleTap(BuildContext context, DrawerMenuItem item) {
     if (_shouldDebounceDrawerNavigation()) return;
-    Navigator.pop(context);
+    // Nothing to close when the sidebar is permanent: popping here would
+    // take the current page off the stack instead of shutting a drawer.
+    if (!embedded) Navigator.pop(context);
 
     if (item.route != null) {
       Navigator.of(context).push(MaterialPageRoute(

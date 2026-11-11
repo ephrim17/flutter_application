@@ -14,8 +14,7 @@ class CommunityUploadBanner extends ConsumerStatefulWidget {
       _CommunityUploadBannerState();
 }
 
-class _CommunityUploadBannerState
-    extends ConsumerState<CommunityUploadBanner> {
+class _CommunityUploadBannerState extends ConsumerState<CommunityUploadBanner> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(communityUploadControllerProvider);
@@ -61,8 +60,7 @@ class _CommunityUploadBannerState
             borderRadius: BorderRadius.circular(999),
             color: theme.colorScheme.surface,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

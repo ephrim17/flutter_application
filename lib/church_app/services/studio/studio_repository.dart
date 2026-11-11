@@ -135,9 +135,9 @@ class StudioRepository {
   }) async {
     final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
         .httpsCallable(
-          'setLiveChurchBroadcast',
-          options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
-        )
+      'setLiveChurchBroadcast',
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 60)),
+    )
         .call<Map<String, dynamic>>({
       'churchId': churchId,
       'action': live ? 'start' : 'stop',

@@ -146,8 +146,7 @@ class _LearningModulesAdminScreenState
                         ),
                   onTap: isBusy
                       ? null
-                      : () =>
-                          _openEditor(context, repository, module: module),
+                      : () => _openEditor(context, repository, module: module),
                 ),
               );
             },
@@ -1434,8 +1433,7 @@ class _QuestionDraft {
       );
 
   factory _QuestionDraft.fromQuestion(LearningQuizQuestion question) {
-    final optionCount =
-        question.options.length.clamp(minOptions, maxOptions);
+    final optionCount = question.options.length.clamp(minOptions, maxOptions);
     return _QuestionDraft(
       prompt: TextEditingController(text: question.prompt),
       options: List.generate(
@@ -1444,8 +1442,7 @@ class _QuestionDraft {
           text: index < question.options.length ? question.options[index] : '',
         ),
       ),
-      correctOptionIndex:
-          question.correctOptionIndex.clamp(0, optionCount - 1),
+      correctOptionIndex: question.correctOptionIndex.clamp(0, optionCount - 1),
     );
   }
 

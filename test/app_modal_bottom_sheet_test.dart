@@ -69,8 +69,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-      'dismissing via system back does not throw with a focused field',
+  testWidgets('dismissing via system back does not throw with a focused field',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -49,8 +49,8 @@ void main() {
         for (var i = 0; i < 14; i++) _member('m$i', gender: 'male'),
         for (var i = 0; i < 4; i++) _member('f$i', gender: 'female'),
       ];
-      expect(_counts(dashboardGenderBuckets(members)),
-          {'male': 14, 'female': 4});
+      expect(
+          _counts(dashboardGenderBuckets(members)), {'male': 14, 'female': 4});
     });
 
     test('is case and whitespace insensitive', () {
@@ -58,8 +58,8 @@ void main() {
         _member('a', gender: 'Male'),
         _member('b', gender: ' FEMALE '),
       ];
-      expect(_counts(dashboardGenderBuckets(members)),
-          {'male': 1, 'female': 1});
+      expect(
+          _counts(dashboardGenderBuckets(members)), {'male': 1, 'female': 1});
     });
 
     test('only members with no usable gender land in unknown', () {
@@ -68,8 +68,8 @@ void main() {
         _member('b', gender: ''),
         _member('c', gender: 'prefer not to say'),
       ];
-      expect(_counts(dashboardGenderBuckets(members)),
-          {'male': 1, 'unknown': 2});
+      expect(
+          _counts(dashboardGenderBuckets(members)), {'male': 1, 'unknown': 2});
     });
 
     test('an empty bucket is not drawn at all', () {
@@ -150,8 +150,7 @@ void main() {
       }
     });
 
-    test('every member is counted exactly once, never twice or not at all',
-        () {
+    test('every member is counted exactly once, never twice or not at all', () {
       final members = [
         _member('a', dob: DateTime(2014, 11, 10)),
         _member('b', dob: DateTime(2013, 11, 10)),
@@ -230,10 +229,14 @@ void main() {
     // labelled with their raw id. This asserts the real contract by
     // generating members that populate every bucket of every view.
     final everyBucket = <ChurchMembership>[
-      _member('m', gender: 'male', category: 'family', solemnized: true,
-          dob: DateTime(1990, 1, 1), familyId: 'family_a'),
-      _member('f', gender: 'female', category: 'individual',
-          dob: DateTime(2015, 1, 1)),
+      _member('m',
+          gender: 'male',
+          category: 'family',
+          solemnized: true,
+          dob: DateTime(1990, 1, 1),
+          familyId: 'family_a'),
+      _member('f',
+          gender: 'female', category: 'individual', dob: DateTime(2015, 1, 1)),
       _member('u', category: 'visitor', dob: DateTime(2008, 1, 1)),
       _member('s', gender: 'male', dob: DateTime(1950, 1, 1)),
       _member('n'),
@@ -242,8 +245,7 @@ void main() {
     final bucketsByMode = {
       DashboardMemberChartMode.gender: dashboardGenderBuckets(everyBucket),
       DashboardMemberChartMode.age: dashboardAgeBuckets(everyBucket),
-      DashboardMemberChartMode.family:
-          dashboardFamilyModeBuckets(everyBucket),
+      DashboardMemberChartMode.family: dashboardFamilyModeBuckets(everyBucket),
       DashboardMemberChartMode.solemnized:
           dashboardSolemnizedBuckets(everyBucket),
     };

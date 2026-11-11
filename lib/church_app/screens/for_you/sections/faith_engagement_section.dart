@@ -94,8 +94,7 @@ class _FaithEngagementContent extends ConsumerWidget {
     // 24dp band under Daily Verse that belonged to no visible content.
     return Column(
       children: [
-        for (final item in items)
-          ForYouSectionSpacing(child: item.child),
+        for (final item in items) ForYouSectionSpacing(child: item.child),
       ],
     );
   }

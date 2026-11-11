@@ -108,9 +108,8 @@ class MembersRepository extends ChurchScopedRepository {
           .get();
 
       final members = snapshot.docs.map((doc) => doc.data()).toList()
-        ..sort((a, b) => a.displayName
-            .toLowerCase()
-            .compareTo(b.displayName.toLowerCase()));
+        ..sort((a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
       return members;
     }
 
@@ -325,15 +324,17 @@ class MembersRepository extends ChurchScopedRepository {
     final identityDoc = FirestorePaths.userDoc(firestore, newUid);
     final identitySnapshot = await identityDoc.get();
     if (!identitySnapshot.exists) {
-      batch.set(identityDoc, UserIdentity(
-        uid: newUid,
-        name: displayName,
-        email: email.trim().toLowerCase(),
-        phone: displayPhone,
-        profilePhotoUrl: displayPhotoUrl,
-        gender: displayGender,
-        dob: displayDob is Timestamp ? displayDob.toDate() : null,
-      ).toMap());
+      batch.set(
+          identityDoc,
+          UserIdentity(
+            uid: newUid,
+            name: displayName,
+            email: email.trim().toLowerCase(),
+            phone: displayPhone,
+            profilePhotoUrl: displayPhotoUrl,
+            gender: displayGender,
+            dob: displayDob is Timestamp ? displayDob.toDate() : null,
+          ).toMap());
     }
 
     batch.set(newDoc, {

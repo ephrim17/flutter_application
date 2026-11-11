@@ -22,8 +22,7 @@ class ChurchMemberDirectoryEntry {
   final String displayGender;
   final String displayMaritalStatus;
 
-  static String _string(dynamic value) =>
-      value is String ? value.trim() : '';
+  static String _string(dynamic value) => value is String ? value.trim() : '';
 
   static DateTime? _date(dynamic value) {
     if (value is Timestamp) return value.toDate();

@@ -108,7 +108,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('admin-email-submit')));
     await tester.pump();
 
-    expect(find.text('Admin limit reached (3 max). Remove an admin before adding a new one.'),
+    expect(
+        find.text(
+            'Admin limit reached (3 max). Remove an admin before adding a new one.'),
         findsOneWidget);
     expect(saveCalls, 0);
 

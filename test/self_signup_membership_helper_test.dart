@@ -39,7 +39,8 @@ void main() {
         '',
       );
       expect(
-        resolveSelfSignupFamilyId(category: 'individual', name: '', churchId: 'c'),
+        resolveSelfSignupFamilyId(
+            category: 'individual', name: '', churchId: 'c'),
         '',
       );
     });

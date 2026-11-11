@@ -84,8 +84,9 @@ class FeedRepository {
       limit: limit,
     ).get();
 
-    final posts =
-        snapshot.docs.map((doc) => FeedPost.fromJson(doc.id, doc.data())).toList();
+    final posts = snapshot.docs
+        .map((doc) => FeedPost.fromJson(doc.id, doc.data()))
+        .toList();
 
     return FeedPageResult(
       posts: posts,
@@ -489,7 +490,6 @@ class FeedRepository {
       'isGlobal': isGlobal,
     });
   }
-
 }
 
 List<FeedPost> sortFeedPosts(Iterable<FeedPost> posts) {

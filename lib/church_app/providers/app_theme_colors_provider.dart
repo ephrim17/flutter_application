@@ -8,7 +8,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// `onBoarding/appTheme`. Falls back to the hardcoded `AppColors` defaults
 /// on a missing doc, a missing/blank field, or `permission-denied` (mirrors
 /// `onboardingPagesProvider`'s fallback for the same collection).
-final appThemeColorsProvider = FutureProvider<AppThemeColorsConfig>((ref) async {
+final appThemeColorsProvider =
+    FutureProvider<AppThemeColorsConfig>((ref) async {
   try {
     final doc = await ref
         .read(firestoreProvider)

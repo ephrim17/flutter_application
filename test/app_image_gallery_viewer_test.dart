@@ -60,7 +60,8 @@ void main() {
     await tester.pumpWidget(_viewer(const ['https://example.com/a.jpg']));
     await tester.pump();
 
-    await _doubleTapAt(tester, tester.getCenter(find.byType(InteractiveViewer)));
+    await _doubleTapAt(
+        tester, tester.getCenter(find.byType(InteractiveViewer)));
     expect(_transform(tester).getMaxScaleOnAxis(), greaterThan(1));
 
     final before = _transform(tester).getTranslation();

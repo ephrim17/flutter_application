@@ -26,6 +26,7 @@ import 'package:flutter_application/church_app/services/analytics/firebase_analy
 import 'package:flutter_application/church_app/services/notification_service.dart';
 import 'package:flutter_application/church_app/services/user_identity_repository.dart';
 import 'package:flutter_application/church_app/widgets/app_bottom_tab_bar.dart';
+import 'package:flutter_application/church_app/widgets/church_desktop_sidebar.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget.dart';
 import 'package:flutter_application/church_app/widgets/church_quick_switcher_sheet.dart';
@@ -273,86 +274,172 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
     // Once inside a church there is no "back" out of it — switching only
     // ever happens by tapping the church name above, which navigates
     // deliberately rather than relying on the system back gesture/button.
+    final isDesktop = useDesktopShell(MediaQuery.sizeOf(context).width);
+
+    // Built once and placed by whichever layout is in play: across the
+    // top on a phone, and not at all on desktop, where the brand and the
+    // church switcher sit at the top of the sidebar instead.
+    final appBar = HideableAppBar(
+      visible: _appBarVisible, // && !isCommunityTab,
+      appBar: AppBar(
+        centerTitle: false,
+        // `kToolbarHeight`, the Material standard, rather than the
+        // 40 this used to hard-code. At 40 the bar was shorter than
+        // the 48dp minimum touch target, so the drawer button and
+        // the church switcher were both undersized and the bar read
+        // as a cramped strip rather than a navigation bar.
+        toolbarHeight: kToolbarHeight,
+        title: ChurchAppBarBrandTitle(
+          text: ref.t('guest_shell.title'),
+          logo: AppAssets.churchTreeAppIcon,
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: _openChurchSwitcher,
+              child: ConstrainedBox(
+                // A real target, not just the size of the artwork.
+                constraints: const BoxConstraints(
+                  minHeight: 48,
+                  minWidth: 48,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ChurchLogoAvatar(
+                        logo: selectedChurch?.logo ?? '',
+                        size: 32,
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final content = Expanded(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _handleScrollNotification,
+        child: screens[safeIndex],
+      ),
+    );
+
     return PopScope(
       canPop: false,
       child: Scaffold(
-        body: Column(
-          children: [
-            HideableAppBar(
-              visible: _appBarVisible, // && !isCommunityTab,
-              appBar: AppBar(
-                centerTitle: false,
-                // `kToolbarHeight`, the Material standard, rather than the
-                // 40 this used to hard-code. At 40 the bar was shorter than
-                // the 48dp minimum touch target, so the drawer button and
-                // the church switcher were both undersized and the bar read
-                // as a cramped strip rather than a navigation bar.
-                toolbarHeight: kToolbarHeight,
-                title: ChurchAppBarBrandTitle(
-                  text: ref.t('guest_shell.title'),
-                  logo: AppAssets.churchTreeAppIcon,
+        body: isDesktop
+            ? Row(
+                children: [
+                  ChurchDesktopSidebar(
+                    items: items,
+                    currentIndex: safeIndex,
+                    onSelect: setActiveScreen,
+                    onSelectedMenu: _onSelectedMenu,
+                    header: _desktopSidebarHeader(selectedChurch),
+                  ),
+                  Expanded(child: Column(children: [content])),
+                ],
+              )
+            : Column(
+                children: [
+                  appBar,
+                  content,
+                ],
+              ),
+        // On desktop both of these are gone: the drawer is permanently open
+        // inside the sidebar, and the tabs are rows in it. Leaving the
+        // bottom bar in place as well would show every destination twice.
+        drawer: isDesktop ? null : AppDrawer(onSelectedMenu: _onSelectedMenu),
+        bottomNavigationBar: isDesktop
+            ? null
+            : AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.bottomCenter,
+                // child: (isCommunityTab && !_appBarVisible)
+                //     ? const SizedBox(width: double.infinity, height: 0)
+                //     : AppBottomTabBar(...),
+                child: AppBottomTabBar(
+                  currentIndex: safeIndex,
+                  items: items,
+                  onTap: setActiveScreen,
                 ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: _openChurchSwitcher,
-                      child: ConstrainedBox(
-                        // A real target, not just the size of the artwork.
-                        constraints: const BoxConstraints(
-                          minHeight: 48,
-                          minWidth: 48,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ChurchLogoAvatar(
-                                logo: selectedChurch?.logo ?? '',
-                                size: 32,
-                              ),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 20,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.6),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+              ),
+      ),
+    );
+  }
+
+  /// Brand and church switcher for the top of the desktop sidebar.
+  ///
+  /// The phone's app bar can only afford the church's logo and a chevron.
+  /// A 268pt sidebar can afford its name, which matters most to someone who
+  /// belongs to more than one church and is reading, not thumbing.
+  Widget _desktopSidebarHeader(Church? selectedChurch) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ChurchAppBarBrandTitle(
+          text: ref.t('guest_shell.title'),
+          logo: AppAssets.churchTreeAppIcon,
+        ),
+        const SizedBox(height: 14),
+        Material(
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: _openChurchSwitcher,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
+              child: Row(
+                children: [
+                  ChurchLogoAvatar(
+                    logo: selectedChurch?.logo ?? '',
+                    size: 30,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedChurch?.name ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
+                  ),
+                  Icon(
+                    Icons.unfold_more_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _handleScrollNotification,
-                child: screens[safeIndex],
-              ),
-            ),
-          ],
-        ),
-        drawer: AppDrawer(onSelectedMenu: _onSelectedMenu),
-        bottomNavigationBar: AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          alignment: Alignment.bottomCenter,
-          // child: (isCommunityTab && !_appBarVisible)
-          //     ? const SizedBox(width: double.infinity, height: 0)
-          //     : AppBottomTabBar(...),
-          child: AppBottomTabBar(
-            currentIndex: safeIndex,
-            items: items,
-            onTap: setActiveScreen,
           ),
         ),
-      ),
+      ],
     );
   }
 

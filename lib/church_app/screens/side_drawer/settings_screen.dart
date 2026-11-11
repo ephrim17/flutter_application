@@ -1670,8 +1670,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     super.dispose();
   }
 
-  String _category() =>
-      _maritalStatus.trim().toLowerCase() == 'married' ? 'family' : 'individual';
+  String _category() => _maritalStatus.trim().toLowerCase() == 'married'
+      ? 'family'
+      : 'individual';
 
   String _normalizeFamilySeed(String value, String churchId) =>
       normalizeMembershipSeed(value, churchId);
@@ -1982,7 +1983,8 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
 
     if (_familyIdsFutureChurchId != churchId) {
       _familyIdsFutureChurchId = churchId;
-      _familyIdsFuture = ref.read(authRepositoryProvider).getFamilyIds(churchId);
+      _familyIdsFuture =
+          ref.read(authRepositoryProvider).getFamilyIds(churchId);
     }
 
     return Padding(

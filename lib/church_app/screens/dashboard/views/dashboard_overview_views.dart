@@ -686,26 +686,26 @@ class _DashboardStatRow extends StatelessWidget {
             .withValues(alpha: 0.24),
         borderRadius: BorderRadius.circular(18),
       ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: onSurface.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w800,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: onSurface,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
-          ],
-        ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: onSurface.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }

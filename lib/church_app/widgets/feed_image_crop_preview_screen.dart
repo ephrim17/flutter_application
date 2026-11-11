@@ -26,7 +26,8 @@ Future<List<PickedImageData>> pickAndPreviewFeedImages(
   }
   if (pickedImages.isEmpty || !context.mounted) return const [];
 
-  final confirmed = await showFeedImageCropPreview(context, images: pickedImages);
+  final confirmed =
+      await showFeedImageCropPreview(context, images: pickedImages);
   return confirmed ?? const [];
 }
 
@@ -70,13 +71,11 @@ Future<List<PickedImageData>> _pickImagesWeb({required int maxAssets}) async {
 Future<List<PickedImageData>> captureAndPreviewFeedImage(
   BuildContext context,
 ) async {
-  final file =
-      await ImagePicker().pickImage(source: ImageSource.camera);
+  final file = await ImagePicker().pickImage(source: ImageSource.camera);
   final picked = await PickedImageData.fromXFile(file);
   if (picked == null || !context.mounted) return const [];
 
-  final confirmed =
-      await showFeedImageCropPreview(context, images: [picked]);
+  final confirmed = await showFeedImageCropPreview(context, images: [picked]);
   return confirmed ?? const [];
 }
 
@@ -157,7 +156,8 @@ class _FeedImageCropPreviewScreenState
                     top: 4,
                     left: 4,
                     child: IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon:
+                          const Icon(Icons.close_rounded, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),

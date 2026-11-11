@@ -85,8 +85,7 @@ class CommunicationRepository {
   }
 
   Future<void> saveWhatsAppGroup(WhatsAppGroupLink group) {
-    final collection =
-        FirestorePaths.churchWhatsAppGroups(firestore, churchId);
+    final collection = FirestorePaths.churchWhatsAppGroups(firestore, churchId);
     if (group.id.isEmpty) return collection.add(group.toMap());
     return collection.doc(group.id).update(group.toMap());
   }

@@ -248,7 +248,9 @@ void main() {
   });
 
   group('learning progress split (§5.6, D9)', () {
-    test('merges global and church progress without either overwriting the other', () {
+    test(
+        'merges global and church progress without either overwriting the other',
+        () {
       const global = LearningProgress(
         completedSectionIds: {'global-section'},
         completedModuleIds: {'module-1'},

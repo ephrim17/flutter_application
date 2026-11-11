@@ -18,8 +18,7 @@ final communicationRepositoryProvider =
 });
 
 /// What the church recorded as sent, newest first.
-final messageLogProvider =
-    StreamProvider.autoDispose<List<SentMessage>>((ref) {
+final messageLogProvider = StreamProvider.autoDispose<List<SentMessage>>((ref) {
   final churchIdAsync = ref.watch(currentChurchIdProvider);
 
   return churchIdAsync.when(

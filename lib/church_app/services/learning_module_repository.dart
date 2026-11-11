@@ -52,13 +52,15 @@ class LearningModuleRepository {
 
   Stream<List<LearningModule>> watchPublishedModules() =>
       _modules.orderBy('order').snapshots().map((snapshot) => snapshot.docs
-          .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
+          .map(
+              (doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
           .where((module) => module.enabled && module.isConfigured)
           .toList(growable: false));
 
   Stream<List<LearningModule>> watchAllModules() =>
       _modules.orderBy('order').snapshots().map((snapshot) => snapshot.docs
-          .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
+          .map(
+              (doc) => LearningModule.fromDoc(doc, source: ModuleSource.global))
           .toList(growable: false));
 
   Stream<ChurchLearningConfig> watchChurchConfig(String churchId) =>
@@ -71,7 +73,8 @@ class LearningModuleRepository {
           .orderBy('order')
           .snapshots()
           .map((snapshot) => snapshot.docs
-              .map((doc) => LearningModule.fromDoc(doc, source: ModuleSource.church))
+              .map((doc) =>
+                  LearningModule.fromDoc(doc, source: ModuleSource.church))
               .toList(growable: false));
 
   Stream<List<LearningModule>> watchResolvedPublishedModules(

@@ -74,8 +74,8 @@ class _TodayBirthdaysModal extends StatelessWidget {
                             imageUrl: member.displayPhotoUrl,
                           ),
                           title: Text(member.displayName),
-                          subtitle:
-                              Text(_formatBirthdayMoment(context, member.displayDob)),
+                          subtitle: Text(_formatBirthdayMoment(
+                              context, member.displayDob)),
                           trailing: FilledButton(
                             onPressed: () {
                               showAppModalBottomSheet<void>(
@@ -158,7 +158,8 @@ class _BirthdayPostComposerModalState
     _titleController.text = _isAnniversary
         ? buildAnniversaryPostTitle(
             widget.member.displayName, widget.member.displayWeddingDay)
-        : buildBirthdayPostTitle(widget.member.displayName, widget.member.displayDob);
+        : buildBirthdayPostTitle(
+            widget.member.displayName, widget.member.displayDob);
     _descriptionController.text = _isAnniversary
         ? defaultChurchTextContents['anniversary.post_description']!
             .replaceAll('{name}', widget.member.displayName)
