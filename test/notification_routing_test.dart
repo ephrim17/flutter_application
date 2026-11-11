@@ -47,12 +47,16 @@ void main() {
   });
 
   group('destination routing', () {
-    test('a feed post opens the Community tab', () {
+    test('a feed post opens Home, because Community is gone', () {
+      // It used to ask for tab 2, the Community feed. That tab is commented
+      // out of `ChurchTabScreen`, so 2 became Messages for an admin and out
+      // of range for a member with only Home and For You — a RangeError on
+      // the tap. See `safeTabIndex`, which is the belt to this braces.
       applyNotificationPayload({
         'kind': 'feed_post_created',
         'churchId': 'tnbm',
       });
-      expect(notificationTabRequest.value, 2);
+      expect(notificationTabRequest.value, 0);
     });
 
     test('live church opens the For You tab', () {

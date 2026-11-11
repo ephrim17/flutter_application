@@ -33,7 +33,12 @@ void main() async {
     '${firestoreDatabaseId == defaultFirestoreDatabaseId ? '' : ' (OVERRIDE — not production)'}',
   );
   await initializeNotificationPresentation();
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Mobile only: on the web the background path belongs to
+  // `web/firebase-messaging-sw.js`, which runs when no Dart is alive to
+  // handle anything.
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   if (kDebugMode) {
     await FirebaseAuth.instance.setSettings(

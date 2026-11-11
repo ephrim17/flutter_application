@@ -73,6 +73,11 @@ Future<void> initializeNotificationPresentation() async {
 }
 
 Future<void> showRemoteMessageNotification(RemoteMessage message) async {
+  // Web shows nothing from here on purpose. While the tab is closed or in
+  // the background the service worker displays the push itself; while it is
+  // focused the SDK hands the message to `onMessage` and deliberately does
+  // not display it, because the person is already looking at the app. Using
+  // the Notification API here as well would double up the background case.
   if (kIsWeb) {
     return;
   }
@@ -116,10 +121,6 @@ Future<void> handleNotificationSetup({
   required ProviderContainer container,
   bool promptIfNeeded = true,
 }) async {
-  if (kIsWeb) {
-    return;
-  }
-
   final activeSetup = _activeNotificationSetup;
   if (activeSetup != null) {
     return activeSetup;
@@ -186,10 +187,6 @@ Future<void> _runNotificationSetup({
 Future<void> syncNotificationTopicIfAuthorized(
   ProviderContainer container,
 ) async {
-  if (kIsWeb) {
-    return;
-  }
-
   final messaging = FirebaseMessaging.instance;
 
   try {
@@ -209,9 +206,28 @@ Future<void> syncNotificationTopicIfAuthorized(
   }
 }
 
+/// What the device registry records this device as.
+///
+/// `defaultTargetPlatform` on the web reports the host operating system, so
+/// a browser on a Mac registered itself as "macOS" and the registry could
+/// not tell a web session from the desktop app it does not have.
+String get _devicePlatformName => kIsWeb ? 'web' : defaultTargetPlatform.name;
+
+/// The project's Web Push certificate (Firebase console → Project settings →
+/// Cloud Messaging → Web configuration), if one has been generated.
+///
+/// Left null deliberately: with no key the JS SDK falls back to Firebase's
+/// own default application server key, which is what makes web push work
+/// without a trip to the console. Set this to the project's own key to stop
+/// relying on that default — tokens issued under the old key stop working
+/// when it changes, so expect existing web devices to re-register.
+const String? webPushVapidKey = null;
+
 Future<void> _syncNotificationState(ProviderContainer container) async {
   final messaging = FirebaseMessaging.instance;
-  final token = await messaging.getToken();
+  final token = await messaging.getToken(
+    vapidKey: kIsWeb ? webPushVapidKey : null,
+  );
   if (token == null) return;
 
   final firebaseUser = FirebaseAuth.instance.currentUser;
@@ -232,7 +248,7 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
     uid: firebaseUser.uid,
     installationId: installationId,
     fcmToken: token,
-    platform: defaultTargetPlatform.name,
+    platform: _devicePlatformName,
   );
 
   await _tokenRefreshSubscription?.cancel();
@@ -245,7 +261,7 @@ Future<void> _syncNotificationState(ProviderContainer container) async {
         uid: firebaseUser.uid,
         installationId: installationId,
         fcmToken: newToken,
-        platform: defaultTargetPlatform.name,
+        platform: _devicePlatformName,
       );
     },
   );
@@ -311,8 +327,13 @@ void applyNotificationPayload(Map<String, dynamic> data) {
 
 void _handleNotificationKind(String? kind) {
   switch (kind) {
+    // Tab 2 while the Community feed existed. That tab is commented out of
+    // `ChurchTabScreen`, so 2 is now Messages for an admin and out of range
+    // for an ordinary member — the feed itself is not reachable from
+    // anywhere. Home is the honest destination until Community returns, at
+    // which point this goes back to the feed's index.
     case 'feed_post_created':
-      notificationTabRequest.value = 2;
+      notificationTabRequest.value = 0;
     case 'live_church':
       notificationTabRequest.value = 1;
     case 'article_created':

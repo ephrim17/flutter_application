@@ -223,6 +223,14 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
       if (isAdmin) const CommunicationScreen(),
       if (canSeeDashboard) const DashboardScreen(),
     ];
+    // The tab list is not a fixed length: Messages and Dashboard appear only
+    // for the people entitled to them, so an index that was valid for an
+    // admin is out of range for an ordinary member. A notification carries a
+    // tab index, and `feed_post_created` asks for 2 — which for a member
+    // with only Home and For You would have thrown a RangeError here, on the
+    // tap, rather than anywhere near the code that chose the number.
+    final safeIndex = safeTabIndex(selectedIndex, screens.length);
+
     final items = <AppBottomTabItem>[
       AppBottomTabItem(
         icon: Icons.home_outlined,
@@ -325,7 +333,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
             Expanded(
               child: NotificationListener<ScrollNotification>(
                 onNotification: _handleScrollNotification,
-                child: screens[selectedIndex],
+                child: screens[safeIndex],
               ),
             ),
           ],
@@ -339,7 +347,7 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
           //     ? const SizedBox(width: double.infinity, height: 0)
           //     : AppBottomTabBar(...),
           child: AppBottomTabBar(
-            currentIndex: selectedIndex,
+            currentIndex: safeIndex,
             items: items,
             onTap: setActiveScreen,
           ),
@@ -391,4 +399,22 @@ class _ChurchTabScreenState extends ConsumerState<ChurchTabScreen> {
 
   bool _sameGroups(List<String> left, List<String> right) =>
       left.length == right.length && left.toSet().containsAll(right);
+}
+
+/// The tab index actually safe to show, given how many tabs this person has.
+///
+/// Tab indices arrive from two places that cannot see the tab list: a
+/// notification payload (`notificationTabRequest`) and whatever index was
+/// selected before a church switch changed the person's entitlements. Both
+/// can name a tab that does not exist for this person — Messages and
+/// Dashboard are conditional — and an unchecked index is a `RangeError` on
+/// the tap, far from the code that chose it.
+///
+/// Out-of-range falls back to Home rather than to the nearest tab: landing
+/// on Dashboard because a feed notification asked for a tab you do not have
+/// would be a confident wrong answer, where Home is an obvious neutral one.
+int safeTabIndex(int requested, int tabCount) {
+  if (tabCount <= 0) return 0;
+  if (requested < 0 || requested >= tabCount) return 0;
+  return requested;
 }
