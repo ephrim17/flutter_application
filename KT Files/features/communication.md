@@ -33,6 +33,15 @@ was taken and what was deliberately left out is in [Scope](#scope-v1).
   present the group buttons are disabled and each recipient row offers its
   own send, which is how WhatsApp works anyway. One tap strips the names out
   if a group message was what was wanted.
+- **Every channel has one primary action**, so a chosen list of recipients
+  leads somewhere. SMS and email open one hand-off for the whole list;
+  WhatsApp has no such link, so its button walks the list — "Open chat 3 of
+  8" — opening the next person who has not been opened yet and ticking each
+  off as it goes. Without it the recipient list just sat there and the only
+  way through was tapping each row, which does not read as "now send it".
+- **Copy numbers was removed.** Copy message and Log as sent are the two
+  secondary actions; a bare list of phone numbers had no use once the
+  per-person and per-batch hand-offs existed.
 - **Email recipients go in bcc**, never to — a church announcement must not
   hand every member's address to every other member.
 
@@ -78,6 +87,29 @@ stays a single button.
 
 `communicationBatchLimit` holds the three numbers, with the reasoning in its
 doc comment.
+
+## Adding a WhatsApp group
+
+**A group's invite link cannot be generated from its name.** The code in
+`chat.whatsapp.com/<code>` is a secret WhatsApp issues per group, with no
+public lookup and no relation to the name — two groups can share a name,
+and anyone holding a code can join. It has to come from WhatsApp itself:
+Group info → Invite via link → Copy link.
+
+What the app does instead is remove the typing. Whoever adds a group has
+just copied that link, so the dialog reads the clipboard: a valid group
+link fills the box on open, there is a Paste button to do it again, and a
+link pasted into the *name* box is moved to the link box rather than
+failing validation later. A clipboard holding anything else is ignored, so
+the field is never silently filled with the wrong thing — and a `wa.me`
+link is refused, because that is one person, not a group.
+
+## Small screens
+
+The four header statistics sit in one row above 420dp and go two-by-two
+below it. At 320dp — the narrow end of Android still in use — four across
+gives each chip about 70dp, and "Messages this month" broke mid-word into
+"Messag / es this". Verified on a 320dp device 2026-11-11.
 
 ## Groups
 
@@ -169,7 +201,6 @@ members.
 | COM-07 | Send to one person on WhatsApp | WhatsApp opens on that person's chat with their name filled in. |
 | COM-08 | Use "Open SMS to everyone" | The SMS app opens addressed to every reachable member, message pre-filled. |
 | COM-09 | Use "Open email to everyone" | Addresses are in bcc, not to. |
-| COM-10 | Copy numbers | The clipboard holds the normalized numbers, comma separated. |
 | COM-11 | Tap "Log as sent" | The History tab shows it with channel, category, recipient count and time. |
 | COM-12 | Save a template, then tap it in Compose | The body and category fill in. |
 | COM-13 | Delete a template | It disappears; history entries already logged are unaffected. |
@@ -181,3 +212,11 @@ members.
 | COM-19 | Open batch 1, leave, come back | Batch 1 is still ticked and the same people are still in it. |
 | COM-20 | Choose Email and check the subject line | Reads "<church> — <chosen subject>". |
 | COM-21 | Choose a template from the dropdown | The message body and the subject both fill in. |
+| COM-22 | Open the tab on a 320dp phone | The four statistics lay out two-by-two and every label reads in full, with no mid-word break. |
+| COM-23 | Copy a group's invite link in WhatsApp, then tap Add group | The link box is already filled, with "Link filled in from your clipboard". |
+| COM-24 | Tap Add group with something else on the clipboard | Both boxes are empty; nothing is guessed. The Paste button explains where to get the link. |
+| COM-25 | Paste the invite link into the Group name box | It moves to the link box and asks for a name. |
+| COM-26 | Choose WhatsApp with 8 recipients and write a message | A primary "Open chat 1 of 8" button appears; each press opens the next unopened person. |
+| COM-27 | Open three chats, then look at the list | Those three rows show a tick, the button reads "Open chat 4 of 8", and leaving the tab and coming back does not lose the count within the sitting. |
+| COM-28 | Open every chat | The button becomes "All 8 chats opened" and is disabled. |
+| COM-29 | Change the group or the channel mid-send | The progress resets, because the recipient list it was counting through has changed. |

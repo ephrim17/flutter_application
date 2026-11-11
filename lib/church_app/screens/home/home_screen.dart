@@ -186,8 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _WelcomeCard(
                   userName: userName,
                   dayStreak: appUser?.dayStreak ?? 10,
-                  showSetupProfilePrompt: appUser != null &&
-                      !appUser.profileComplete,
+                  showSetupProfilePrompt:
+                      appUser != null && !appUser.profileComplete,
                   onSetupProfile: appUser == null
                       ? null
                       : () => showEditProfileSheet(context, appUser),
@@ -417,14 +417,20 @@ class _WelcomeCard extends StatelessWidget {
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                context.t(
-                                  'home.current_streak',
-                                  parameters: {'count': '$dayStreak'},
-                                ),
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: onPrimary,
-                                  fontWeight: FontWeight.w800,
+                              // Flexible, or the pill overflows its card on
+                              // a narrow phone: at 320dp this row was 61px
+                              // wider than the space it had. Wrapping keeps
+                              // every word, which ellipsis would not.
+                              Flexible(
+                                child: Text(
+                                  context.t(
+                                    'home.current_streak',
+                                    parameters: {'count': '$dayStreak'},
+                                  ),
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: onPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                             ],
@@ -548,8 +554,7 @@ double homeCarouselViewportFraction(double screenWidth) => 0.9;
 /// the carousel cards above and below it.
 double homeCarouselCardInset(double screenWidth) {
   final carouselWidth = homeSectionMaxWidth(screenWidth) ?? screenWidth;
-  final unfilled = carouselWidth *
-      (1 - homeCarouselViewportFraction(screenWidth)) /
-      2;
+  final unfilled =
+      carouselWidth * (1 - homeCarouselViewportFraction(screenWidth)) / 2;
   return unfilled + homeCarouselSpacing / 2;
 }

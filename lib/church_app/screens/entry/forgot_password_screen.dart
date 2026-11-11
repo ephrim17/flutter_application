@@ -10,6 +10,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({
@@ -103,46 +104,48 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.churchName.trim().isNotEmpty) ...[
-                Text(
-                  widget.churchName,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 14),
-              ],
-              AppTextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: context.t('auth.email_label'),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || !InputValidators.isValidEmail(value)) {
-                    return context.t('auth.email_invalid');
-                  }
-                  return null;
-                },
-                keyboardType: TextInputType.emailAddress,
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: EntryWidthLimit(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (widget.churchName.trim().isNotEmpty) ...[
+                    Text(
+                      widget.churchName,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  AppTextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: context.t('auth.email_label'),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          !InputValidators.isValidEmail(value)) {
+                        return context.t('auth.email_invalid');
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 20),
+                  SolidButton(
+                    label: context.t('auth.send_reset_code'),
+                    isLoading: _isLoading,
+                    onPressed: _sendResetCode,
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              SolidButton(
-                label: context.t('auth.send_reset_code'),
-                isLoading: _isLoading,
-                onPressed: _sendResetCode,
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
+          )),
     );
   }
 }

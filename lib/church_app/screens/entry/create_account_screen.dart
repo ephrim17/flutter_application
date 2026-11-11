@@ -19,6 +19,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// Last step of sign-up (§5.5): the [ProfileDraft] collected by
 /// `CompleteProfileScreen` already has everything except email/password, so
@@ -157,81 +158,83 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                Container(
-                  decoration: carouselBoxDecoration(context),
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.t('auth.create_account_heading'),
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        context.t('auth.register_subtitle'),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 20),
-                      AppTextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: context.t('auth.email_address_label'),
+            child: EntryWidthLimit(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
+                  Container(
+                    decoration: carouselBoxDecoration(context),
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.t('auth.create_account_heading'),
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _passwordController,
-                        obscureText: _hidePassword,
-                        decoration: InputDecoration(
-                          labelText: context.t('auth.password_label'),
-                          helperText: context.t('auth.password_helper'),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(
-                              () => _hidePassword = !_hidePassword,
-                            ),
-                            icon: Icon(
-                              _hidePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                        const SizedBox(height: 10),
+                        Text(
+                          context.t('auth.register_subtitle'),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 20),
+                        AppTextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: context.t('auth.email_address_label'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _passwordController,
+                          obscureText: _hidePassword,
+                          decoration: InputDecoration(
+                            labelText: context.t('auth.password_label'),
+                            helperText: context.t('auth.password_helper'),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => _hidePassword = !_hidePassword,
+                              ),
+                              icon: Icon(
+                                _hidePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _confirmPasswordController,
-                        obscureText: _hideConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: context.t('auth.confirm_password_label'),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(
-                              () =>
-                                  _hideConfirmPassword = !_hideConfirmPassword,
-                            ),
-                            icon: Icon(
-                              _hideConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _hideConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: context.t('auth.confirm_password_label'),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => _hideConfirmPassword =
+                                    !_hideConfirmPassword,
+                              ),
+                              icon: Icon(
+                                _hideConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                SolidButton(
-                  label: context.t('auth.register'),
-                  isLoading: isLoading,
-                  onPressed: isLoading ? null : _submit,
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  SolidButton(
+                    label: context.t('auth.register'),
+                    isLoading: isLoading,
+                    onPressed: isLoading ? null : _submit,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

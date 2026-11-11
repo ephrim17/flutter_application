@@ -17,6 +17,7 @@ import 'package:flutter_application/church_app/widgets/app_bar_title_widget.dart
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// Dedicated sign-in — reached by tapping "Sign In" on `AuthChoiceScreen`
 /// (the intent is already known there, so unlike the old combined screen
@@ -125,8 +126,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: EntryWidthLimit(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -201,7 +203,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ],
             ),
           ),
-        ),
+        )),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/screens/entry/complete_profile_sc
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// First screen after onboarding for anyone signed out — an explicit
 /// Sign In / Sign Up choice, replacing the old email-first screen that
@@ -64,57 +65,59 @@ class _AuthChoiceScreenState extends ConsumerState<AuthChoiceScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: welcomeBackCardDecoration(context, radius: 44),
-                  child: const Icon(
-                    Icons.church_rounded,
-                    color: Colors.white,
-                    size: 42,
+        child: EntryWidthLimit(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 88,
+                    height: 88,
+                    decoration: welcomeBackCardDecoration(context, radius: 44),
+                    child: const Icon(
+                      Icons.church_rounded,
+                      color: Colors.white,
+                      size: 42,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                context.t('auth.email_step_heading'),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.t('auth.choice_subtitle'),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                const SizedBox(height: 28),
+                Text(
+                  context.t('auth.email_step_heading'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-              ),
-              const SizedBox(height: 40),
-              SolidButton(
-                label: context.t('auth.register'),
-                onPressed: () => goToSignUp(context),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => goToSignIn(context),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                  side: BorderSide(color: theme.colorScheme.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(cornerRadius),
+                const SizedBox(height: 8),
+                Text(
+                  context.t('auth.choice_subtitle'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
-                child: Text(context.t('auth.login')),
-              ),
-            ],
+                const SizedBox(height: 40),
+                SolidButton(
+                  label: context.t('auth.register'),
+                  onPressed: () => goToSignUp(context),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => goToSignIn(context),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    side: BorderSide(color: theme.colorScheme.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(cornerRadius),
+                    ),
+                  ),
+                  child: Text(context.t('auth.login')),
+                ),
+              ],
+            ),
           ),
         ),
       ),

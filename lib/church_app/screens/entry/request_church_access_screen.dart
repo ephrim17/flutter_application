@@ -23,6 +23,7 @@ import 'package:flutter_application/church_app/widgets/linear_screen_background_
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// The self-service "request access" step (§5.5) for a person who already
 /// has an identity doc (`users/{uid}`) — every signed-in, profile-complete
@@ -253,87 +254,89 @@ class _RequestChurchAccessScreenState
               }
               return Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 12),
-                    Center(
-                      child: ChurchLogoAvatar(
-                        logo: widget.churchLogo,
-                        size: 72,
+                child: EntryWidthLimit(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 12),
+                      Center(
+                        child: ChurchLogoAvatar(
+                          logo: widget.churchLogo,
+                          size: 72,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.churchName,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.t('auth.request_access_explainer'),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(16),
+                      const SizedBox(height: 16),
+                      Text(
+                        widget.churchName,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
-                      child: Row(
-                        children: [
-                          AppProfileAvatar(
-                            name: identity.name,
-                            imageUrl: identity.profilePhotoUrl.trim().isEmpty
-                                ? null
-                                : identity.profilePhotoUrl,
-                            radius: 26,
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  identity.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                if (identity.email.trim().isNotEmpty)
-                                  Text(
-                                    identity.email,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                if (identity.phone.trim().isNotEmpty)
-                                  Text(
-                                    identity.phone,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                              ],
+                      const SizedBox(height: 8),
+                      Text(
+                        context.t('auth.request_access_explainer'),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            AppProfileAvatar(
+                              name: identity.name,
+                              imageUrl: identity.profilePhotoUrl.trim().isEmpty
+                                  ? null
+                                  : identity.profilePhotoUrl,
+                              radius: 26,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    identity.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  if (identity.email.trim().isNotEmpty)
+                                    Text(
+                                      identity.email,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  if (identity.phone.trim().isNotEmpty)
+                                    Text(
+                                      identity.phone,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    SolidButton(
-                      label: context.t('auth.request_access'),
-                      isLoading: _submitting,
-                      onPressed: _submitting ? null : () => _submit(identity),
-                    ),
-                  ],
+                      const Spacer(),
+                      SolidButton(
+                        label: context.t('auth.request_access'),
+                        isLoading: _submitting,
+                        onPressed: _submitting ? null : () => _submit(identity),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

@@ -27,6 +27,7 @@ import 'package:flutter_application/church_app/widgets/solid_button_widget.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:async';
 import 'package:flutter_application/church_app/widgets/app_text_field.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 class LoginRequestScreen extends ConsumerStatefulWidget {
   final String churchId;
@@ -813,658 +814,394 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
         scrolledUnderElevation: 0,
       ),
       body: LinearScreenBackground(
-        solidBackground: true,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: _showAdminSections
-                        ? [
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title: context.t('members.basic_details_title'),
-                                subtitle:
-                                    context.t('members.basic_details_subtitle'),
-                                child: Column(
-                                  children: [
-                                    if (_isEditMode) ...[
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primaryContainer
-                                              .withValues(alpha: 0.38),
-                                          borderRadius:
-                                              BorderRadius.circular(18),
-                                          border: Border.all(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withValues(alpha: 0.16),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.history_rounded,
+          solidBackground: true,
+          child: SafeArea(
+            child: EntryWidthLimit(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: _showAdminSections
+                            ? [
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context
+                                        .t('members.basic_details_title'),
+                                    subtitle: context
+                                        .t('members.basic_details_subtitle'),
+                                    child: Column(
+                                      children: [
+                                        if (_isEditMode) ...[
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
                                               color: Theme.of(context)
                                                   .colorScheme
-                                                  .primary,
+                                                  .primaryContainer
+                                                  .withValues(alpha: 0.38),
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
+                                              border: Border.all(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    .withValues(alpha: 0.16),
+                                              ),
                                             ),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    context.t(
-                                                        'members.member_since_label'),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelLarge
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w800,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.history_rounded,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        context.t(
+                                                            'members.member_since_label'),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelLarge
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        _formatMemberSince(
+                                                          widget.existingMember
+                                                              ?.joinedAt,
                                                         ),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    _formatMemberSince(
-                                                      widget.existingMember
-                                                          ?.joinedAt,
-                                                    ),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyMedium
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                        ),
-                                                  ),
-                                                ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                        ],
+                                        AppTextField(
+                                          controller: _nameController,
+                                          textInputAction: TextInputAction.next,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                context.t('members.name_label'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        InkWell(
+                                          onTap: _pickDob,
+                                          child: InputDecorator(
+                                            decoration: appTextFieldDecoration(
+                                              context,
+                                              labelText:
+                                                  context.t('auth.dob_label'),
+                                              suffixIcon: const Icon(
+                                                  Icons.calendar_today),
+                                            ),
+                                            child: Text(
+                                              _dob == null
+                                                  ? context.t('auth.dob_select')
+                                                  : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                                      '${_dob!.month.toString().padLeft(2, '0')}/'
+                                                      '${_dob!.year}',
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        InputDecorator(
+                                          decoration: appTextFieldDecoration(
+                                            context,
+                                            labelText:
+                                                context.t('auth.age_label'),
+                                          ),
+                                          child: Text(
+                                            _calculatedAge()?.toString() ??
+                                                context.t('auth.age_hint'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        AppDropdownField<String>(
+                                          initialValue:
+                                              _gender.isEmpty ? null : _gender,
+                                          labelText:
+                                              context.t('members.gender_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'male',
+                                              child: Text(
+                                                context.t('common.male'),
+                                              ),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'female',
+                                              child: Text(
+                                                context.t('common.female'),
                                               ),
                                             ),
                                           ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _gender = value ?? '';
+                                            });
+                                          },
                                         ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                    ],
-                                    AppTextField(
-                                      controller: _nameController,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            context.t('members.name_label'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    InkWell(
-                                      onTap: _pickDob,
-                                      child: InputDecorator(
-                                        decoration: appTextFieldDecoration(
-                                          context,
-                                          labelText:
-                                              context.t('auth.dob_label'),
-                                          suffixIcon:
-                                              const Icon(Icons.calendar_today),
-                                        ),
-                                        child: Text(
-                                          _dob == null
-                                              ? context.t('auth.dob_select')
-                                              : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                                  '${_dob!.month.toString().padLeft(2, '0')}/'
-                                                  '${_dob!.year}',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    InputDecorator(
-                                      decoration: appTextFieldDecoration(
-                                        context,
-                                        labelText: context.t('auth.age_label'),
-                                      ),
-                                      child: Text(
-                                        _calculatedAge()?.toString() ??
-                                            context.t('auth.age_hint'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppDropdownField<String>(
-                                      initialValue:
-                                          _gender.isEmpty ? null : _gender,
-                                      labelText:
-                                          context.t('members.gender_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'male',
-                                          child: Text(
-                                            context.t('common.male'),
-                                          ),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'female',
-                                          child: Text(
-                                            context.t('common.female'),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _gender = value ?? '';
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _phoneController,
-                                      keyboardType: TextInputType.phone,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            context.t('members.contact_label'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _addressController,
-                                      keyboardType: TextInputType.streetAddress,
-                                      maxLines: 3,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            context.t('members.address_label'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppDropdownField<String>(
-                                      initialValue: _maritalStatus.isEmpty
-                                          ? null
-                                          : _maritalStatus,
-                                      labelText: context
-                                          .t('members.marital_status_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'individual',
-                                          child: Text(
-                                            context.t('common.individual'),
-                                          ),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'married',
-                                          child: Text(
-                                            context.t('common.married'),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _maritalStatus = value ?? '';
-                                          _syncCategoryWithMaritalStatus();
-                                          if (_maritalStatus != 'married') {
-                                            _weddingDay = null;
-                                            _marriageSolemnizationChurchType =
-                                                '';
-                                            _marriageOtherChurchNameController
-                                                .clear();
-                                          }
-                                        });
-                                      },
-                                    ),
-                                    if (_maritalStatus == 'married') ...[
-                                      const SizedBox(height: 16),
-                                      InkWell(
-                                        onTap: _pickWeddingDay,
-                                        child: InputDecorator(
-                                          decoration: appTextFieldDecoration(
-                                            context,
-                                            labelText: context
-                                                .t('members.wedding_day_label'),
-                                            suffixIcon: const Icon(
-                                              Icons.calendar_today,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            _weddingDay == null
-                                                ? context.t(
-                                                    'members.wedding_day_hint')
-                                                : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
-                                                    '${_weddingDay!.month.toString().padLeft(2, '0')}/'
-                                                    '${_weddingDay!.year}',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    if (_maritalStatus.isNotEmpty) ...[
-                                      const SizedBox(height: 16),
-                                      FutureBuilder<List<String>>(
-                                        future: _familyIdsFuture,
-                                        builder: (context, snapshot) {
-                                          final familyIds =
-                                              snapshot.data ?? const <String>[];
-                                          final selectedFamilyValue =
-                                              familyIds.contains(
-                                                      _selectedExistingFamilyId)
-                                                  ? _selectedExistingFamilyId
-                                                  : null;
-
-                                          return Column(
-                                            children: [
-                                              if (familyIds.isNotEmpty)
-                                                SwitchListTile(
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                    horizontal: 8,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      20,
-                                                    ),
-                                                    side: BorderSide(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .outlineVariant,
-                                                    ),
-                                                  ),
-                                                  title: Text(
-                                                    context.t(
-                                                        'auth.family_existing_toggle'),
-                                                  ),
-                                                  value: _useExistingFamilyId,
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _useExistingFamilyId =
-                                                          value;
-                                                      if (!value) {
-                                                        _selectedExistingFamilyId =
-                                                            null;
-                                                      }
-                                                    });
-                                                  },
-                                                ),
-                                              if (familyIds.isNotEmpty)
-                                                const SizedBox(height: 12),
-                                              if (familyIds.isNotEmpty &&
-                                                  _useExistingFamilyId)
-                                                AppDropdownField<String>(
-                                                  initialValue:
-                                                      selectedFamilyValue,
-                                                  labelText: context.t(
-                                                      'members.family_id_label'),
-                                                  items: familyIds
-                                                      .map(
-                                                        (familyId) =>
-                                                            DropdownMenuItem(
-                                                          value: familyId,
-                                                          child: Text(
-                                                            _formatFamilyOptionLabel(
-                                                              familyId,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      )
-                                                      .toList(),
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _selectedExistingFamilyId =
-                                                          value;
-                                                    });
-                                                  },
-                                                )
-                                              else if (_category == 'family')
-                                                AppTextField(
-                                                  controller:
-                                                      _familyNameController,
-                                                  decoration: InputDecoration(
-                                                    labelText: context.t(
-                                                        'members.family_name_label'),
-                                                    helperText: context.t(
-                                                        'auth.family_name_helper'),
-                                                  ),
-                                                ),
-                                              if (_category == 'individual' &&
-                                                  !_useExistingFamilyId)
-                                                Align(
-                                                  alignment:
-                                                      Alignment.centerLeft,
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                      left: 8,
-                                                    ),
-                                                    child: Text(
-                                                      familyIds.isEmpty
-                                                          ? 'No existing families are available to join.'
-                                                          : 'You can join an existing family, but new families can only be created for married members.',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall
-                                                          ?.copyWith(
-                                                            color: Theme.of(
-                                                              context,
-                                                            )
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title: context
-                                    .t('members.extended_information_title'),
-                                subtitle: context
-                                    .t('members.extended_information_subtitle'),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(14),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                            .withValues(alpha: 0.38),
-                                        borderRadius: BorderRadius.circular(18),
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.16),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.notes_rounded,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: Text(
-                                              context.t(
-                                                  'members.extended_information_note'),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface,
-                                                    height: 1.35,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        context
-                                            .t(
-                                              'members.financial_stability_rating',
-                                              fallback:
-                                                  'Financial Stability Rating: {rating}/5',
-                                            )
-                                            .replaceAll(
-                                              '{rating}',
-                                              _financialStabilityRating
-                                                  .toString(),
-                                            ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                      ),
-                                    ),
-                                    Slider(
-                                      value:
-                                          _financialStabilityRating.toDouble(),
-                                      min: 0,
-                                      max: 5,
-                                      divisions: 5,
-                                      label: '$_financialStabilityRating',
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _financialStabilityRating =
-                                              value.round();
-                                        });
-                                      },
-                                    ),
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(
-                                        context.t(
-                                            'members.financial_support_required'),
-                                      ),
-                                      value: _financialSupportRequired,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _financialSupportRequired = value;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 8),
-                                    AppTextField(
-                                      controller:
-                                          _educationalQualificationController,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                            'members.educational_qualification'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _talentsAndGiftsController,
-                                      minLines: 2,
-                                      maxLines: 4,
-                                      decoration: InputDecoration(
-                                        labelText: context
-                                            .t('members.talents_and_gifts'),
-                                        helperText: context.t(
-                                            'members.talents_and_gifts_helper'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _additionalNotesController,
-                                      minLines: 2,
-                                      maxLines: 4,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                            'members.additional_notes_label'),
-                                        helperText: context.t(
-                                            'members.additional_notes_helper'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title:
-                                    context.t('members.church_records_title'),
-                                subtitle: context
-                                    .t('members.church_records_subtitle'),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    AppDropdownField<String>(
-                                      initialValue:
-                                          _solemnizedBaptism ? 'yes' : 'no',
-                                      labelText: context.t(
-                                          'members.solemnized_baptism_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'yes',
-                                          child: Text(
-                                            context.t('common.yes'),
-                                          ),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'no',
-                                          child: Text(
-                                            context.t('common.no'),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _solemnizedBaptism = value == 'yes';
-                                          if (!_solemnizedBaptism) {
-                                            _baptismDate = null;
-                                            _baptismCertificateNumberController
-                                                .clear();
-                                            _baptismChurchNameController
-                                                .clear();
-                                            _baptismPastorNameController
-                                                .clear();
-                                          }
-                                        });
-                                      },
-                                    ),
-                                    if (_solemnizedBaptism) ...[
-                                      const SizedBox(height: 16),
-                                      InkWell(
-                                        onTap: _pickBaptismDate,
-                                        child: InputDecorator(
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller: _phoneController,
+                                          keyboardType: TextInputType.phone,
+                                          textInputAction: TextInputAction.next,
                                           decoration: InputDecoration(
-                                            labelText: context.t(
-                                                'members.baptism_date_label'),
-                                            suffixIcon: const Icon(
-                                                Icons.calendar_today),
-                                          ),
-                                          child: Text(
-                                            _formatDate(_baptismDate).isEmpty
-                                                ? context.t(
-                                                    'members.baptism_date_hint')
-                                                : _formatDate(_baptismDate),
+                                            labelText: context
+                                                .t('members.contact_label'),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      AppTextField(
-                                        controller:
-                                            _baptismCertificateNumberController,
-                                        textInputAction: TextInputAction.next,
-                                        decoration: InputDecoration(
-                                          labelText: context.t(
-                                              'members.baptism_certificate_number_label'),
-                                          helperText: context.t(
-                                              'members.baptism_certificate_number_helper'),
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller: _addressController,
+                                          keyboardType:
+                                              TextInputType.streetAddress,
+                                          maxLines: 3,
+                                          decoration: InputDecoration(
+                                            labelText: context
+                                                .t('members.address_label'),
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      AppTextField(
-                                        controller:
-                                            _baptismChurchNameController,
-                                        textInputAction: TextInputAction.next,
-                                        decoration: InputDecoration(
+                                        const SizedBox(height: 16),
+                                        AppDropdownField<String>(
+                                          initialValue: _maritalStatus.isEmpty
+                                              ? null
+                                              : _maritalStatus,
                                           labelText: context.t(
-                                              'members.baptism_church_name_label'),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      AppTextField(
-                                        controller:
-                                            _baptismPastorNameController,
-                                        decoration: InputDecoration(
-                                          labelText: context.t(
-                                              'members.baptism_pastor_name_label'),
-                                        ),
-                                      ),
-                                    ],
-                                    if (_maritalStatus == 'married') ...[
-                                      const SizedBox(height: 24),
-                                      Text(
-                                        context.t(
-                                            'members.marriage_solemnization_title'),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w800,
+                                              'members.marital_status_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'individual',
+                                              child: Text(
+                                                context.t('common.individual'),
+                                              ),
                                             ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      AppDropdownField<String>(
-                                        initialValue:
-                                            _marriageSolemnizationChurchType
-                                                    .isEmpty
-                                                ? null
-                                                : _marriageSolemnizationChurchType,
-                                        labelText: context.t(
-                                            'members.marriage_solemnization_church_label'),
-                                        items: [
-                                          DropdownMenuItem(
-                                            value: 'current_church',
-                                            child: Text(
-                                              context.t(
-                                                  'members.current_church_option'),
+                                            DropdownMenuItem(
+                                              value: 'married',
+                                              child: Text(
+                                                context.t('common.married'),
+                                              ),
                                             ),
-                                          ),
-                                          DropdownMenuItem(
-                                            value: 'other_church',
-                                            child: Text(
-                                              context.t(
-                                                  'members.other_church_option'),
+                                          ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _maritalStatus = value ?? '';
+                                              _syncCategoryWithMaritalStatus();
+                                              if (_maritalStatus != 'married') {
+                                                _weddingDay = null;
+                                                _marriageSolemnizationChurchType =
+                                                    '';
+                                                _marriageOtherChurchNameController
+                                                    .clear();
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        if (_maritalStatus == 'married') ...[
+                                          const SizedBox(height: 16),
+                                          InkWell(
+                                            onTap: _pickWeddingDay,
+                                            child: InputDecorator(
+                                              decoration:
+                                                  appTextFieldDecoration(
+                                                context,
+                                                labelText: context.t(
+                                                    'members.wedding_day_label'),
+                                                suffixIcon: const Icon(
+                                                  Icons.calendar_today,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _weddingDay == null
+                                                    ? context.t(
+                                                        'members.wedding_day_hint')
+                                                    : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                                                        '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                                                        '${_weddingDay!.year}',
+                                              ),
                                             ),
                                           ),
                                         ],
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _marriageSolemnizationChurchType =
-                                                value ?? '';
-                                            if (_marriageSolemnizationChurchType !=
-                                                'other_church') {
-                                              _marriageOtherChurchNameController
-                                                  .clear();
-                                            }
-                                          });
-                                        },
-                                      ),
-                                      if (_marriageSolemnizationChurchType ==
-                                          'current_church') ...[
-                                        const SizedBox(height: 12),
+                                        if (_maritalStatus.isNotEmpty) ...[
+                                          const SizedBox(height: 16),
+                                          FutureBuilder<List<String>>(
+                                            future: _familyIdsFuture,
+                                            builder: (context, snapshot) {
+                                              final familyIds = snapshot.data ??
+                                                  const <String>[];
+                                              final selectedFamilyValue =
+                                                  familyIds.contains(
+                                                          _selectedExistingFamilyId)
+                                                      ? _selectedExistingFamilyId
+                                                      : null;
+
+                                              return Column(
+                                                children: [
+                                                  if (familyIds.isNotEmpty)
+                                                    SwitchListTile(
+                                                      contentPadding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: 8,
+                                                      ),
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                          20,
+                                                        ),
+                                                        side: BorderSide(
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .colorScheme
+                                                              .outlineVariant,
+                                                        ),
+                                                      ),
+                                                      title: Text(
+                                                        context.t(
+                                                            'auth.family_existing_toggle'),
+                                                      ),
+                                                      value:
+                                                          _useExistingFamilyId,
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          _useExistingFamilyId =
+                                                              value;
+                                                          if (!value) {
+                                                            _selectedExistingFamilyId =
+                                                                null;
+                                                          }
+                                                        });
+                                                      },
+                                                    ),
+                                                  if (familyIds.isNotEmpty)
+                                                    const SizedBox(height: 12),
+                                                  if (familyIds.isNotEmpty &&
+                                                      _useExistingFamilyId)
+                                                    AppDropdownField<String>(
+                                                      initialValue:
+                                                          selectedFamilyValue,
+                                                      labelText: context.t(
+                                                          'members.family_id_label'),
+                                                      items: familyIds
+                                                          .map(
+                                                            (familyId) =>
+                                                                DropdownMenuItem(
+                                                              value: familyId,
+                                                              child: Text(
+                                                                _formatFamilyOptionLabel(
+                                                                  familyId,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList(),
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          _selectedExistingFamilyId =
+                                                              value;
+                                                        });
+                                                      },
+                                                    )
+                                                  else if (_category ==
+                                                      'family')
+                                                    AppTextField(
+                                                      controller:
+                                                          _familyNameController,
+                                                      decoration:
+                                                          InputDecoration(
+                                                        labelText: context.t(
+                                                            'members.family_name_label'),
+                                                        helperText: context.t(
+                                                            'auth.family_name_helper'),
+                                                      ),
+                                                    ),
+                                                  if (_category ==
+                                                          'individual' &&
+                                                      !_useExistingFamilyId)
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                          left: 8,
+                                                        ),
+                                                        child: Text(
+                                                          familyIds.isEmpty
+                                                              ? 'No existing families are available to join.'
+                                                              : 'You can join an existing family, but new families can only be created for married members.',
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodySmall
+                                                              ?.copyWith(
+                                                                color: Theme.of(
+                                                                  context,
+                                                                )
+                                                                    .colorScheme
+                                                                    .onSurfaceVariant,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context.t(
+                                        'members.extended_information_title'),
+                                    subtitle: context.t(
+                                        'members.extended_information_subtitle'),
+                                    child: Column(
+                                      children: [
                                         Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.all(14),
@@ -1472,388 +1209,691 @@ class _LoginRequestScreenState extends ConsumerState<LoginRequestScreen> {
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .primaryContainer
-                                                .withValues(alpha: 0.32),
+                                                .withValues(alpha: 0.38),
                                             borderRadius:
-                                                BorderRadius.circular(16),
+                                                BorderRadius.circular(18),
+                                            border: Border.all(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withValues(alpha: 0.16),
+                                            ),
                                           ),
-                                          child: Text(
-                                            widget.churchName,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(
+                                                Icons.notes_rounded,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  context.t(
+                                                      'members.extended_information_note'),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface,
+                                                        height: 1.35,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
                                                 ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
-                                      if (_marriageSolemnizationChurchType ==
-                                          'other_church') ...[
+                                        const SizedBox(height: 16),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            context
+                                                .t(
+                                                  'members.financial_stability_rating',
+                                                  fallback:
+                                                      'Financial Stability Rating: {rating}/5',
+                                                )
+                                                .replaceAll(
+                                                  '{rating}',
+                                                  _financialStabilityRating
+                                                      .toString(),
+                                                ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium,
+                                          ),
+                                        ),
+                                        Slider(
+                                          value: _financialStabilityRating
+                                              .toDouble(),
+                                          min: 0,
+                                          max: 5,
+                                          divisions: 5,
+                                          label: '$_financialStabilityRating',
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _financialStabilityRating =
+                                                  value.round();
+                                            });
+                                          },
+                                        ),
+                                        SwitchListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          title: Text(
+                                            context.t(
+                                                'members.financial_support_required'),
+                                          ),
+                                          value: _financialSupportRequired,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _financialSupportRequired = value;
+                                            });
+                                          },
+                                        ),
+                                        const SizedBox(height: 8),
+                                        AppTextField(
+                                          controller:
+                                              _educationalQualificationController,
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                                'members.educational_qualification'),
+                                          ),
+                                        ),
                                         const SizedBox(height: 16),
                                         AppTextField(
                                           controller:
-                                              _marriageOtherChurchNameController,
+                                              _talentsAndGiftsController,
+                                          minLines: 2,
+                                          maxLines: 4,
+                                          decoration: InputDecoration(
+                                            labelText: context
+                                                .t('members.talents_and_gifts'),
+                                            helperText: context.t(
+                                                'members.talents_and_gifts_helper'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller:
+                                              _additionalNotesController,
+                                          minLines: 2,
+                                          maxLines: 4,
                                           decoration: InputDecoration(
                                             labelText: context.t(
-                                                'members.other_church_name_label'),
+                                                'members.additional_notes_label'),
+                                            helperText: context.t(
+                                                'members.additional_notes_helper'),
                                           ),
                                         ),
                                       ],
-                                    ],
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      context.t(
-                                          'members.membership_section_title'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
                                     ),
-                                    const SizedBox(height: 12),
-                                    AppDropdownField<String>(
-                                      initialValue:
-                                          _membershipCurrentStatus.isEmpty
-                                              ? null
-                                              : _membershipCurrentStatus,
-                                      labelText: context.t(
-                                          'members.membership_current_status_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'active',
-                                          child: Text(context
-                                              .t('ui.login_request.active')),
+                                  ),
+                                ),
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context
+                                        .t('members.church_records_title'),
+                                    subtitle: context
+                                        .t('members.church_records_subtitle'),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        AppDropdownField<String>(
+                                          initialValue:
+                                              _solemnizedBaptism ? 'yes' : 'no',
+                                          labelText: context.t(
+                                              'members.solemnized_baptism_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'yes',
+                                              child: Text(
+                                                context.t('common.yes'),
+                                              ),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'no',
+                                              child: Text(
+                                                context.t('common.no'),
+                                              ),
+                                            ),
+                                          ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _solemnizedBaptism =
+                                                  value == 'yes';
+                                              if (!_solemnizedBaptism) {
+                                                _baptismDate = null;
+                                                _baptismCertificateNumberController
+                                                    .clear();
+                                                _baptismChurchNameController
+                                                    .clear();
+                                                _baptismPastorNameController
+                                                    .clear();
+                                              }
+                                            });
+                                          },
                                         ),
-                                        DropdownMenuItem(
-                                          value: 'transfered',
-                                          child: Text(context.t(
-                                              'ui.login_request.transfered')),
+                                        if (_solemnizedBaptism) ...[
+                                          const SizedBox(height: 16),
+                                          InkWell(
+                                            onTap: _pickBaptismDate,
+                                            child: InputDecorator(
+                                              decoration: InputDecoration(
+                                                labelText: context.t(
+                                                    'members.baptism_date_label'),
+                                                suffixIcon: const Icon(
+                                                    Icons.calendar_today),
+                                              ),
+                                              child: Text(
+                                                _formatDate(_baptismDate)
+                                                        .isEmpty
+                                                    ? context.t(
+                                                        'members.baptism_date_hint')
+                                                    : _formatDate(_baptismDate),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          AppTextField(
+                                            controller:
+                                                _baptismCertificateNumberController,
+                                            textInputAction:
+                                                TextInputAction.next,
+                                            decoration: InputDecoration(
+                                              labelText: context.t(
+                                                  'members.baptism_certificate_number_label'),
+                                              helperText: context.t(
+                                                  'members.baptism_certificate_number_helper'),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          AppTextField(
+                                            controller:
+                                                _baptismChurchNameController,
+                                            textInputAction:
+                                                TextInputAction.next,
+                                            decoration: InputDecoration(
+                                              labelText: context.t(
+                                                  'members.baptism_church_name_label'),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          AppTextField(
+                                            controller:
+                                                _baptismPastorNameController,
+                                            decoration: InputDecoration(
+                                              labelText: context.t(
+                                                  'members.baptism_pastor_name_label'),
+                                            ),
+                                          ),
+                                        ],
+                                        if (_maritalStatus == 'married') ...[
+                                          const SizedBox(height: 24),
+                                          Text(
+                                            context.t(
+                                                'members.marriage_solemnization_title'),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          AppDropdownField<String>(
+                                            initialValue:
+                                                _marriageSolemnizationChurchType
+                                                        .isEmpty
+                                                    ? null
+                                                    : _marriageSolemnizationChurchType,
+                                            labelText: context.t(
+                                                'members.marriage_solemnization_church_label'),
+                                            items: [
+                                              DropdownMenuItem(
+                                                value: 'current_church',
+                                                child: Text(
+                                                  context.t(
+                                                      'members.current_church_option'),
+                                                ),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'other_church',
+                                                child: Text(
+                                                  context.t(
+                                                      'members.other_church_option'),
+                                                ),
+                                              ),
+                                            ],
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _marriageSolemnizationChurchType =
+                                                    value ?? '';
+                                                if (_marriageSolemnizationChurchType !=
+                                                    'other_church') {
+                                                  _marriageOtherChurchNameController
+                                                      .clear();
+                                                }
+                                              });
+                                            },
+                                          ),
+                                          if (_marriageSolemnizationChurchType ==
+                                              'current_church') ...[
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.all(14),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primaryContainer
+                                                    .withValues(alpha: 0.32),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              child: Text(
+                                                widget.churchName,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                          if (_marriageSolemnizationChurchType ==
+                                              'other_church') ...[
+                                            const SizedBox(height: 16),
+                                            AppTextField(
+                                              controller:
+                                                  _marriageOtherChurchNameController,
+                                              decoration: InputDecoration(
+                                                labelText: context.t(
+                                                    'members.other_church_name_label'),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                        const SizedBox(height: 24),
+                                        Text(
+                                          context.t(
+                                              'members.membership_section_title'),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w800,
+                                              ),
                                         ),
-                                        DropdownMenuItem(
-                                          value: 'quit_the_church',
-                                          child: Text(context.t(
-                                              'ui.login_request.quit_the_church')),
+                                        const SizedBox(height: 12),
+                                        AppDropdownField<String>(
+                                          initialValue:
+                                              _membershipCurrentStatus.isEmpty
+                                                  ? null
+                                                  : _membershipCurrentStatus,
+                                          labelText: context.t(
+                                              'members.membership_current_status_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'active',
+                                              child: Text(context.t(
+                                                  'ui.login_request.active')),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'transfered',
+                                              child: Text(context.t(
+                                                  'ui.login_request.transfered')),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'quit_the_church',
+                                              child: Text(context.t(
+                                                  'ui.login_request.quit_the_church')),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'not_known',
+                                              child: Text(context.t(
+                                                  'ui.login_request.not_known')),
+                                            ),
+                                          ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _membershipCurrentStatus =
+                                                  value ?? '';
+                                            });
+                                          },
                                         ),
-                                        DropdownMenuItem(
-                                          value: 'not_known',
-                                          child: Text(context
-                                              .t('ui.login_request.not_known')),
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller:
+                                              _membershipNotesController,
+                                          minLines: 2,
+                                          maxLines: 4,
+                                          decoration: InputDecoration(
+                                            labelText: context.t(
+                                                'members.membership_notes_label'),
+                                            helperText: context.t(
+                                                'members.membership_notes_helper'),
+                                          ),
                                         ),
                                       ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _membershipCurrentStatus =
-                                              value ?? '';
-                                        });
-                                      },
                                     ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _membershipNotesController,
-                                      minLines: 2,
-                                      maxLines: 4,
-                                      decoration: InputDecoration(
-                                        labelText: context.t(
-                                            'members.membership_notes_label'),
-                                        helperText: context.t(
-                                            'members.membership_notes_helper'),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title: context.t('members.church_groups_title'),
-                                subtitle:
-                                    context.t('members.church_groups_subtitle'),
-                                child: Column(
-                                  children: [
-                                    ...churchGroupDefinitions.map(
-                                      (group) => CheckboxListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(group.label),
-                                        value: _selectedChurchGroupIds
-                                            .contains(group.id),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            if (value == true) {
-                                              _selectedChurchGroupIds
-                                                  .add(group.id);
-                                            } else {
-                                              _selectedChurchGroupIds
-                                                  .remove(group.id);
-                                            }
-                                          });
-                                        },
-                                      ),
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context
+                                        .t('members.church_groups_title'),
+                                    subtitle: context
+                                        .t('members.church_groups_subtitle'),
+                                    child: Column(
+                                      children: [
+                                        ...churchGroupDefinitions.map(
+                                          (group) => CheckboxListTile(
+                                            contentPadding: EdgeInsets.zero,
+                                            title: Text(group.label),
+                                            value: _selectedChurchGroupIds
+                                                .contains(group.id),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                if (value == true) {
+                                                  _selectedChurchGroupIds
+                                                      .add(group.id);
+                                                } else {
+                                                  _selectedChurchGroupIds
+                                                      .remove(group.id);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ]
-                        : [
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title: context.t('members.basic_details_title'),
-                                subtitle: context.t(
-                                    'members.request_basic_details_subtitle'),
-                                child: Column(
-                                  children: [
-                                    AppTextField(
-                                      controller: _nameController,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: InputDecoration(
-                                        labelText: context.t('auth.name_label'),
-                                        helperText:
-                                            context.t('auth.name_helper'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    InkWell(
-                                      onTap: _pickDob,
-                                      child: InputDecorator(
-                                        decoration: appTextFieldDecoration(
-                                          context,
+                              ]
+                            : [
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context
+                                        .t('members.basic_details_title'),
+                                    subtitle: context.t(
+                                        'members.request_basic_details_subtitle'),
+                                    child: Column(
+                                      children: [
+                                        AppTextField(
+                                          controller: _nameController,
+                                          textInputAction: TextInputAction.next,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                context.t('auth.name_label'),
+                                            helperText:
+                                                context.t('auth.name_helper'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        InkWell(
+                                          onTap: _pickDob,
+                                          child: InputDecorator(
+                                            decoration: appTextFieldDecoration(
+                                              context,
+                                              labelText:
+                                                  context.t('auth.dob_label'),
+                                              suffixIcon: const Icon(
+                                                  Icons.calendar_today),
+                                            ),
+                                            child: Text(
+                                              _dob == null
+                                                  ? context.t('auth.dob_hint')
+                                                  : '${_dob!.day.toString().padLeft(2, '0')}/'
+                                                      '${_dob!.month.toString().padLeft(2, '0')}/'
+                                                      '${_dob!.year}',
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        InputDecorator(
+                                          decoration: appTextFieldDecoration(
+                                            context,
+                                            labelText:
+                                                context.t('auth.age_label'),
+                                          ),
+                                          child: Text(
+                                            _calculatedAge()?.toString() ??
+                                                context.t('auth.age_hint'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        AppDropdownField<String>(
+                                          initialValue:
+                                              _gender.isEmpty ? null : _gender,
                                           labelText:
-                                              context.t('auth.dob_label'),
-                                          suffixIcon:
-                                              const Icon(Icons.calendar_today),
+                                              context.t('auth.gender_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'male',
+                                              child: Text(
+                                                context.t('common.male'),
+                                              ),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'female',
+                                              child: Text(
+                                                context.t('common.female'),
+                                              ),
+                                            ),
+                                          ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _gender = value ?? '';
+                                            });
+                                          },
                                         ),
-                                        child: Text(
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller: _phoneController,
+                                          keyboardType: TextInputType.phone,
+                                          textInputAction: TextInputAction.next,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                context.t('auth.phone_label'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        AppTextField(
+                                          controller: _addressController,
+                                          keyboardType:
+                                              TextInputType.streetAddress,
+                                          maxLines: 3,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                context.t('auth.address_label'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        AppDropdownField<String>(
+                                          initialValue: _maritalStatus.isEmpty
+                                              ? null
+                                              : _maritalStatus,
+                                          labelText: context.t(
+                                              'members.marital_status_label'),
+                                          items: [
+                                            DropdownMenuItem(
+                                              value: 'individual',
+                                              child: Text(
+                                                context.t('common.individual'),
+                                              ),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'married',
+                                              child: Text(
+                                                context.t('common.married'),
+                                              ),
+                                            ),
+                                          ],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _maritalStatus = value ?? '';
+                                              _syncCategoryWithMaritalStatus();
+                                              if (_maritalStatus != 'married') {
+                                                _weddingDay = null;
+                                                _marriageSolemnizationChurchType =
+                                                    '';
+                                                _marriageOtherChurchNameController
+                                                    .clear();
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        if (_maritalStatus == 'married') ...[
+                                          const SizedBox(height: 16),
+                                          InkWell(
+                                            onTap: _pickWeddingDay,
+                                            child: InputDecorator(
+                                              decoration:
+                                                  appTextFieldDecoration(
+                                                context,
+                                                labelText: context.t(
+                                                    'members.wedding_day_label'),
+                                                suffixIcon: const Icon(
+                                                  Icons.calendar_today,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _weddingDay == null
+                                                    ? context.t(
+                                                        'members.wedding_day_hint')
+                                                    : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
+                                                        '${_weddingDay!.month.toString().padLeft(2, '0')}/'
+                                                        '${_weddingDay!.year}',
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                _StepViewport(
+                                  churchLogo: widget.churchLogo,
+                                  churchName: widget.churchName,
+                                  stepIndex: _stepIndex,
+                                  stepCount: _stepCount,
+                                  progress: progress,
+                                  child: _StepShell(
+                                    title: context.t('members.review_title'),
+                                    subtitle:
+                                        context.t('members.review_subtitle'),
+                                    child: _ReviewCard(
+                                      rows: [
+                                        _ReviewRow(
+                                          context.t('members.name_label'),
+                                          _nameController.text.trim(),
+                                        ),
+                                        _ReviewRow(
+                                          context.t('members.contact_label'),
+                                          _phoneController.text.trim(),
+                                        ),
+                                        _ReviewRow(
+                                          context.t('members.gender_label'),
+                                          _gender,
+                                        ),
+                                        _ReviewRow(
+                                          context
+                                              .t('members.date_of_birth_label'),
                                           _dob == null
-                                              ? context.t('auth.dob_hint')
+                                              ? ''
                                               : '${_dob!.day.toString().padLeft(2, '0')}/'
                                                   '${_dob!.month.toString().padLeft(2, '0')}/'
                                                   '${_dob!.year}',
                                         ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    InputDecorator(
-                                      decoration: appTextFieldDecoration(
-                                        context,
-                                        labelText: context.t('auth.age_label'),
-                                      ),
-                                      child: Text(
-                                        _calculatedAge()?.toString() ??
-                                            context.t('auth.age_hint'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppDropdownField<String>(
-                                      initialValue:
-                                          _gender.isEmpty ? null : _gender,
-                                      labelText: context.t('auth.gender_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'male',
-                                          child: Text(
-                                            context.t('common.male'),
-                                          ),
+                                        _ReviewRow(
+                                          context.t(
+                                              'members.marital_status_label'),
+                                          _maritalStatus,
                                         ),
-                                        DropdownMenuItem(
-                                          value: 'female',
-                                          child: Text(
-                                            context.t('common.female'),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _gender = value ?? '';
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _phoneController,
-                                      keyboardType: TextInputType.phone,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            context.t('auth.phone_label'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppTextField(
-                                      controller: _addressController,
-                                      keyboardType: TextInputType.streetAddress,
-                                      maxLines: 3,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            context.t('auth.address_label'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    AppDropdownField<String>(
-                                      initialValue: _maritalStatus.isEmpty
-                                          ? null
-                                          : _maritalStatus,
-                                      labelText: context
-                                          .t('members.marital_status_label'),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'individual',
-                                          child: Text(
-                                            context.t('common.individual'),
-                                          ),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'married',
-                                          child: Text(
-                                            context.t('common.married'),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _maritalStatus = value ?? '';
-                                          _syncCategoryWithMaritalStatus();
-                                          if (_maritalStatus != 'married') {
-                                            _weddingDay = null;
-                                            _marriageSolemnizationChurchType =
-                                                '';
-                                            _marriageOtherChurchNameController
-                                                .clear();
-                                          }
-                                        });
-                                      },
-                                    ),
-                                    if (_maritalStatus == 'married') ...[
-                                      const SizedBox(height: 16),
-                                      InkWell(
-                                        onTap: _pickWeddingDay,
-                                        child: InputDecorator(
-                                          decoration: appTextFieldDecoration(
-                                            context,
-                                            labelText: context
+                                        if (_maritalStatus == 'married')
+                                          _ReviewRow(
+                                            context
                                                 .t('members.wedding_day_label'),
-                                            suffixIcon: const Icon(
-                                              Icons.calendar_today,
-                                            ),
-                                          ),
-                                          child: Text(
                                             _weddingDay == null
-                                                ? context.t(
-                                                    'members.wedding_day_hint')
+                                                ? ''
                                                 : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.month.toString().padLeft(2, '0')}/'
                                                     '${_weddingDay!.year}',
                                           ),
+                                        _ReviewRow(
+                                          context.t('members.address_label'),
+                                          _addressController.text.trim(),
                                         ),
-                                      ),
-                                    ],
-                                  ],
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            _StepViewport(
-                              churchLogo: widget.churchLogo,
-                              churchName: widget.churchName,
-                              stepIndex: _stepIndex,
-                              stepCount: _stepCount,
-                              progress: progress,
-                              child: _StepShell(
-                                title: context.t('members.review_title'),
-                                subtitle: context.t('members.review_subtitle'),
-                                child: _ReviewCard(
-                                  rows: [
-                                    _ReviewRow(
-                                      context.t('members.name_label'),
-                                      _nameController.text.trim(),
-                                    ),
-                                    _ReviewRow(
-                                      context.t('members.contact_label'),
-                                      _phoneController.text.trim(),
-                                    ),
-                                    _ReviewRow(
-                                      context.t('members.gender_label'),
-                                      _gender,
-                                    ),
-                                    _ReviewRow(
-                                      context.t('members.date_of_birth_label'),
-                                      _dob == null
-                                          ? ''
-                                          : '${_dob!.day.toString().padLeft(2, '0')}/'
-                                              '${_dob!.month.toString().padLeft(2, '0')}/'
-                                              '${_dob!.year}',
-                                    ),
-                                    _ReviewRow(
-                                      context.t('members.marital_status_label'),
-                                      _maritalStatus,
-                                    ),
-                                    if (_maritalStatus == 'married')
-                                      _ReviewRow(
-                                        context.t('members.wedding_day_label'),
-                                        _weddingDay == null
-                                            ? ''
-                                            : '${_weddingDay!.day.toString().padLeft(2, '0')}/'
-                                                '${_weddingDay!.month.toString().padLeft(2, '0')}/'
-                                                '${_weddingDay!.year}',
-                                      ),
-                                    _ReviewRow(
-                                      context.t('members.address_label'),
-                                      _addressController.text.trim(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    if (_stepIndex > 0)
-                      Expanded(
-                        child: SolidButton(
-                          label: context.t('common.back'),
-                          onPressed: isLoading
-                              ? null
-                              : () => _goToStep(_stepIndex - 1),
-                        ),
-                      ),
-                    if (_stepIndex > 0) const SizedBox(width: 12),
-                    Expanded(
-                      child: SolidButton(
-                        label: _stepIndex == _stepCount - 1
-                            ? _isEditMode
-                                ? context.t('common.save')
-                                : context.t('common.submit')
-                            : context.t('onboarding.next'),
-                        isLoading: isLoading,
-                        onPressed: isLoading
-                            ? null
-                            : _stepIndex == _stepCount - 1
-                                ? _submit
-                                : _handleNext,
+                              ],
                       ),
                     ),
-                    const SizedBox(
-                      height: 30,
-                    )
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        if (_stepIndex > 0)
+                          Expanded(
+                            child: SolidButton(
+                              label: context.t('common.back'),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _goToStep(_stepIndex - 1),
+                            ),
+                          ),
+                        if (_stepIndex > 0) const SizedBox(width: 12),
+                        Expanded(
+                          child: SolidButton(
+                            label: _stepIndex == _stepCount - 1
+                                ? _isEditMode
+                                    ? context.t('common.save')
+                                    : context.t('common.submit')
+                                : context.t('onboarding.next'),
+                            isLoading: isLoading,
+                            onPressed: isLoading
+                                ? null
+                                : _stepIndex == _stepCount - 1
+                                    ? _submit
+                                    : _handleNext,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 30,
+                        )
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 }

@@ -35,6 +35,13 @@ session.
 - Backend recurrence: `advanceRecurringEventOnWrite`,
   `advanceRecurringEventsHourly`.
 
+## Small screens
+
+The greeting card's streak pill holds its text in a `Flexible`, so it wraps
+rather than overflowing. Without it the row overflowed its card by 61px at
+320dp — Flutter paints that as a striped banner in debug and silently clips
+it in release. Wrapping keeps every word, which an ellipsis would not.
+
 ## Test flows
 
 | ID | Scenario | Expected result |

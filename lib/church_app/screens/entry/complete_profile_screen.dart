@@ -8,6 +8,7 @@ import 'package:flutter_application/church_app/widgets/app_text_field.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// The essentials collected once ever (D5): name, phone, dob, gender.
 /// Carried forward to `CreateAccountScreen` when collected pre-account (the
@@ -149,8 +150,9 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         scrolledUnderElevation: 0,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+          child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+        child: EntryWidthLimit(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -234,7 +236,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }

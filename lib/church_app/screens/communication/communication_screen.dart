@@ -109,31 +109,53 @@ class _CommunicationHeader extends StatelessWidget {
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _StatChip(
-                value: '${stats.messagesThisMonth}',
-                label: context.t('communication.stat_messages'),
-              ),
-              const SizedBox(width: 8),
-              _StatChip(
-                value: '${stats.peopleReachedThisMonth}',
-                label: context.t('communication.stat_reached'),
-              ),
-              const SizedBox(width: 8),
-              _StatChip(
-                value: '${stats.withPhone}',
-                label: context.t('communication.stat_with_phone'),
-              ),
-              const SizedBox(width: 8),
-              _StatChip(
-                value: '${stats.withoutPhone}',
-                label: context.t('communication.stat_without_phone'),
-                // Not an error, but the number a church should want to see
-                // shrink: these people cannot be reached this way at all.
-                attention: stats.withoutPhone > 0,
-              ),
-            ],
+          // Four across needs about 105dp each to hold "Messages this
+          // month" on two lines. On a 320dp phone that is 70dp and the
+          // label breaks mid-word — "Messag / es this" — so below this
+          // width they go two-by-two instead.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chips = <Widget>[
+                _StatChip(
+                  value: '${stats.messagesThisMonth}',
+                  label: context.t('communication.stat_messages'),
+                ),
+                _StatChip(
+                  value: '${stats.peopleReachedThisMonth}',
+                  label: context.t('communication.stat_reached'),
+                ),
+                _StatChip(
+                  value: '${stats.withPhone}',
+                  label: context.t('communication.stat_with_phone'),
+                ),
+                _StatChip(
+                  value: '${stats.withoutPhone}',
+                  label: context.t('communication.stat_without_phone'),
+                  // Not an error, but the number a church should want to
+                  // see shrink: these people cannot be reached this way.
+                  attention: stats.withoutPhone > 0,
+                ),
+              ];
+
+              if (constraints.maxWidth >= 420) {
+                return Row(
+                  children: [
+                    for (var i = 0; i < chips.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      chips[i],
+                    ],
+                  ],
+                );
+              }
+
+              return Column(
+                children: [
+                  Row(children: [chips[0], const SizedBox(width: 8), chips[1]]),
+                  const SizedBox(height: 8),
+                  Row(children: [chips[2], const SizedBox(width: 8), chips[3]]),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -202,10 +224,16 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
   String _category = messageCategoryKeys.first;
   String? _groupId;
   final Set<String> _excluded = <String>{};
+
   /// Batches already handed off, so a long run can be resumed rather than
   /// restarted — the one thing a church cannot recover from is sending the
   /// same notice to the same people twice.
   final Set<int> _doneBatches = <int>{};
+
+  /// Recipients whose chat has already been opened. WhatsApp takes one
+  /// person per link, so a 10-person send is ten hand-offs and the sender
+  /// needs to see where they got to.
+  final Set<String> _opened = <String>{};
   bool _isLogging = false;
 
   @override
@@ -264,6 +292,7 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
               onChanged: (value) => setState(() {
                 _groupId = value;
                 _doneBatches.clear();
+                _opened.clear();
               }),
             ),
             const SizedBox(height: 14),
@@ -283,6 +312,7 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
                   _channel = value;
                   _excluded.clear();
                   _doneBatches.clear();
+                  _opened.clear();
                 });
               },
             ),
@@ -379,8 +409,7 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
                 churchName: churchName,
                 emailSubject: _emailSubject(context, churchName),
                 done: _doneBatches,
-                onBatchDone: (index) =>
-                    setState(() => _doneBatches.add(index)),
+                onBatchDone: (index) => setState(() => _doneBatches.add(index)),
               ),
             _ComposeActions(
               channel: _channel,
@@ -390,6 +419,8 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
               emailSubject: _emailSubject(context, churchName),
               hasPerPerson: hasPerPerson,
               isLogging: _isLogging,
+              opened: _opened,
+              onOpened: (id) => setState(() => _opened.add(id)),
               onLogged: () => _logSent(recipients.length, churchName),
             ),
             const SizedBox(height: 18),
@@ -402,6 +433,8 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
                 body: _body.text,
                 churchName: churchName,
                 emailSubject: _emailSubject(context, churchName),
+                opened: _opened.contains(member.docId),
+                onOpened: () => setState(() => _opened.add(member.docId)),
                 excluded: _excluded.contains(member.docId),
                 onToggle: () => setState(() {
                   if (!_excluded.remove(member.docId)) {
@@ -419,6 +452,8 @@ class _ComposeTabState extends ConsumerState<_ComposeTab> {
                 body: _body.text,
                 churchName: churchName,
                 emailSubject: _emailSubject(context, churchName),
+                opened: _opened.contains(member.docId),
+                onOpened: () => setState(() => _opened.add(member.docId)),
                 excluded: true,
                 onToggle: () => setState(() => _excluded.remove(member.docId)),
               ),
@@ -560,6 +595,8 @@ class _ComposeActions extends StatelessWidget {
     required this.emailSubject,
     required this.hasPerPerson,
     required this.isLogging,
+    required this.opened,
+    required this.onOpened,
     required this.onLogged,
   });
 
@@ -574,6 +611,11 @@ class _ComposeActions extends StatelessWidget {
   final String emailSubject;
   final bool hasPerPerson;
   final bool isLogging;
+
+  /// Document ids whose chat has already been opened this sitting.
+  final Set<String> opened;
+  final ValueChanged<String> onOpened;
+
   final VoidCallback onLogged;
 
   @override
@@ -606,6 +648,12 @@ class _ComposeActions extends StatelessWidget {
             icon: const Icon(Icons.mail_outline_rounded, size: 18),
             label: Text(context.t('communication.open_email_all')),
           ),
+        // WhatsApp has no link that reaches a group of people, so a send to
+        // ten is ten hand-offs. Without a primary action the selection
+        // above just sits there and the only way through is tapping each
+        // row, which does not read as "now send it". This walks the list
+        // in order and says how far it has got.
+        if (channel == MessageChannel.whatsapp) _whatsAppNextButton(context),
         OutlinedButton.icon(
           onPressed: body.trim().isEmpty
               ? null
@@ -614,21 +662,6 @@ class _ComposeActions extends StatelessWidget {
           icon: const Icon(Icons.copy_rounded, size: 18),
           label: Text(context.t('communication.copy_message')),
         ),
-        if (channel.needsPhone)
-          OutlinedButton.icon(
-            onPressed: recipients.isEmpty
-                ? null
-                : () => _copy(
-                      context,
-                      recipients
-                          .map((m) => normalizePhoneNumber(m.displayPhone))
-                          .whereType<String>()
-                          .join(', '),
-                      context.t('communication.numbers_copied'),
-                    ),
-            icon: const Icon(Icons.dialpad_rounded, size: 18),
-            label: Text(context.t('communication.copy_numbers')),
-          ),
         OutlinedButton.icon(
           onPressed: ready && !isLogging ? onLogged : null,
           icon: isLogging
@@ -641,6 +674,51 @@ class _ComposeActions extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// "Open next chat (3 of 8)" — the one button that moves a WhatsApp send
+  /// forward. Each press opens the next person who has not been opened
+  /// yet, so the sender never has to remember where they were.
+  Widget _whatsAppNextButton(BuildContext context) {
+    final remaining = recipients
+        .where((member) => !opened.contains(member.docId))
+        .toList(growable: false);
+    final done = recipients.length - remaining.length;
+    final ready = body.trim().isNotEmpty && recipients.isNotEmpty;
+
+    if (ready && remaining.isEmpty) {
+      return FilledButton.icon(
+        onPressed: null,
+        icon: const Icon(Icons.check_circle_rounded, size: 18),
+        label: Text(
+          context.t(
+            'communication.wa_all_opened',
+            parameters: {'count': recipients.length},
+          ),
+        ),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: ready ? () => _openOne(context, remaining.first) : null,
+      icon: const Icon(Icons.chat_rounded, size: 18),
+      label: Text(
+        context.t(
+          'communication.wa_open_next',
+          parameters: {'done': done + 1, 'count': recipients.length},
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openOne(BuildContext context, ChurchMembership member) async {
+    final uri = whatsAppUri(
+      member.displayPhone,
+      resolveMessageBody(body, member: member, churchName: churchName),
+    );
+    if (uri == null) return;
+    final launched = await launchExternalUri(context, uri);
+    if (launched) onOpened(member.docId);
   }
 
   Future<void> _openGroupSms(BuildContext context, String text) async {
@@ -681,6 +759,8 @@ class _RecipientRow extends StatelessWidget {
     required this.body,
     required this.churchName,
     required this.emailSubject,
+    required this.opened,
+    required this.onOpened,
     required this.excluded,
     required this.onToggle,
   });
@@ -690,6 +770,11 @@ class _RecipientRow extends StatelessWidget {
   final String body;
   final String churchName;
   final String emailSubject;
+
+  /// Whether this person's chat has already been opened this sitting.
+  final bool opened;
+  final VoidCallback onOpened;
+
   final bool excluded;
   final VoidCallback onToggle;
 
@@ -738,14 +823,19 @@ class _RecipientRow extends StatelessWidget {
             // only way a {name} placeholder can be filled in.
             if (!excluded && body.trim().isNotEmpty)
               IconButton(
-                tooltip: context.t('communication.send_to_one'),
+                tooltip: opened
+                    ? context.t('communication.opened_already')
+                    : context.t('communication.send_to_one'),
                 icon: Icon(
-                  switch (channel) {
-                    MessageChannel.whatsapp => Icons.chat_outlined,
-                    MessageChannel.sms => Icons.sms_outlined,
-                    MessageChannel.email => Icons.mail_outline_rounded,
-                  },
+                  opened
+                      ? Icons.check_circle_rounded
+                      : switch (channel) {
+                          MessageChannel.whatsapp => Icons.chat_outlined,
+                          MessageChannel.sms => Icons.sms_outlined,
+                          MessageChannel.email => Icons.mail_outline_rounded,
+                        },
                   size: 20,
+                  color: opened ? colors.primary : null,
                 ),
                 onPressed: () => _openForOne(context, personal),
               ),
@@ -763,7 +853,8 @@ class _RecipientRow extends StatelessWidget {
         emailUri([member.displayEmail], emailSubject, text),
     };
     if (uri == null) return;
-    await launchExternalUri(context, uri);
+    final launched = await launchExternalUri(context, uri);
+    if (launched) onOpened();
   }
 }
 
@@ -777,7 +868,8 @@ class _HistoryTab extends ConsumerWidget {
 
     return logAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
-      error: (_, __) => Center(child: Text(context.t('communication.load_failed'))),
+      error: (_, __) =>
+          Center(child: Text(context.t('communication.load_failed'))),
       data: (log) {
         if (log.isEmpty) {
           return Center(
@@ -1150,9 +1242,8 @@ class _WhatsAppGroupsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groups =
-        ref.watch(whatsAppGroupsProvider).asData?.value ??
-            const <WhatsAppGroupLink>[];
+    final groups = ref.watch(whatsAppGroupsProvider).asData?.value ??
+        const <WhatsAppGroupLink>[];
     final colors = Theme.of(context).colorScheme;
     final ready = body.trim().isNotEmpty && !hasPerPerson;
 
@@ -1200,8 +1291,8 @@ class _WhatsAppGroupsSection extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   children: [
-                    Icon(Icons.groups_2_outlined, size: 20,
-                        color: colors.primary),
+                    Icon(Icons.groups_2_outlined,
+                        size: 20, color: colors.primary),
                     const SizedBox(width: 10),
                     Expanded(child: Text(group.label)),
                     TextButton(
@@ -1245,10 +1336,23 @@ class _WhatsAppGroupsSection extends ConsumerWidget {
     WidgetRef ref,
     WhatsAppGroupLink? existing,
   ) async {
+    // A group's invite link cannot be derived from its name — the code in
+    // it is a secret WhatsApp generates per group, with no public lookup.
+    // What can be avoided is retyping it: whoever is adding a group has
+    // just copied the link in WhatsApp, so it is already on the clipboard.
+    final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+    final fromClipboard = normalizeWhatsAppGroupLink(clipboard?.text ?? '');
+
     final labelController = TextEditingController(text: existing?.label ?? '');
-    final linkController =
-        TextEditingController(text: existing?.inviteUrl ?? '');
+    final linkController = TextEditingController(
+      text: existing?.inviteUrl ?? fromClipboard ?? '',
+    );
+    if (!context.mounted) return;
+
     String? error;
+    String? notice = existing == null && fromClipboard != null
+        ? context.t('communication.wa_group_link_pasted')
+        : null;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -1261,6 +1365,20 @@ class _WhatsAppGroupsSection extends ConsumerWidget {
               AppTextField(
                 controller: labelController,
                 label: dialogContext.t('communication.wa_group_name'),
+                // Pasting the link into the name box is the obvious slip,
+                // since the clipboard holds the link. Move it rather than
+                // failing validation on it later.
+                onChanged: (value) {
+                  final link = normalizeWhatsAppGroupLink(value);
+                  if (link == null) return;
+                  setDialogState(() {
+                    linkController.text = link;
+                    labelController.clear();
+                    error = null;
+                    notice =
+                        dialogContext.t('communication.wa_group_link_moved');
+                  });
+                },
               ),
               const SizedBox(height: 12),
               AppTextField(
@@ -1268,10 +1386,31 @@ class _WhatsAppGroupsSection extends ConsumerWidget {
                 label: dialogContext.t('communication.wa_group_link'),
                 hintText:
                     dialogContext.t('communication.wa_group_link_example'),
+                suffixIcon: IconButton(
+                  tooltip: dialogContext.t('communication.wa_group_paste'),
+                  icon: const Icon(Icons.content_paste_rounded, size: 20),
+                  onPressed: () async {
+                    final data = await Clipboard.getData(Clipboard.kTextPlain);
+                    final link = normalizeWhatsAppGroupLink(data?.text ?? '');
+                    setDialogState(() {
+                      if (link == null) {
+                        error = dialogContext
+                            .t('communication.wa_group_clipboard_empty');
+                        return;
+                      }
+                      linkController.text = link;
+                      error = null;
+                      notice =
+                          dialogContext.t('communication.wa_group_link_pasted');
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: 8),
               Text(
-                error ?? dialogContext.t('communication.wa_group_link_hint'),
+                error ??
+                    notice ??
+                    dialogContext.t('communication.wa_group_link_hint'),
                 style: TextStyle(
                   fontSize: 12,
                   color: error == null

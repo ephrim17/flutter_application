@@ -1123,6 +1123,14 @@ const Map<String, String> defaultChurchTextContents = {
   'communication.wa_group_name': 'Group name',
   'communication.wa_group_link': 'Invite link',
   'communication.wa_group_link_example': 'https://chat.whatsapp.com/...',
+  'communication.wa_group_paste': 'Paste the link',
+  'communication.wa_group_link_pasted': 'Link filled in from your clipboard.',
+  'communication.wa_group_link_moved':
+      'That was the link, so it has moved to the box below. Give the '
+          'group a name.',
+  'communication.wa_group_clipboard_empty':
+      'Your clipboard has no WhatsApp group link. In WhatsApp: Group '
+          'info -> Invite via link -> Copy link.',
   'communication.wa_group_link_hint':
       'In WhatsApp: Group info -> Invite via link -> Copy link.',
   'communication.wa_group_link_invalid':
@@ -1144,11 +1152,12 @@ const Map<String, String> defaultChurchTextContents = {
   'communication.open_sms_all': 'Open SMS to everyone',
   'communication.open_email_all': 'Open email to everyone',
   'communication.copy_message': 'Copy message',
-  'communication.copy_numbers': 'Copy numbers',
   'communication.log_as_sent': 'Log as sent',
   'communication.message_copied': 'Message copied',
-  'communication.numbers_copied': 'Numbers copied',
   'communication.send_to_one': 'Send to this person',
+  'communication.opened_already': 'Already opened',
+  'communication.wa_open_next': 'Open chat {done} of {count}',
+  'communication.wa_all_opened': 'All {count} chats opened',
   'communication.logged': 'Recorded in the history',
   'communication.log_failed': "Couldn't record it. Please try again.",
   'communication.load_failed':

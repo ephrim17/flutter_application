@@ -7,6 +7,7 @@ import 'package:flutter_application/church_app/widgets/church_logo_avatar_widget
 import 'package:flutter_application/church_app/widgets/linear_screen_background_widget.dart';
 import 'package:flutter_application/church_app/widgets/solid_button_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_application/church_app/screens/entry/entry_layout.dart';
 
 /// Shown after requesting access to a church, and again if the person comes
 /// back to a church they already have a pending row in — replaces a bare
@@ -83,8 +84,9 @@ class _RequestPendingScreenState extends ConsumerState<RequestPendingScreen> {
       body: LinearScreenBackground(
         solidBackground: true,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+            child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: EntryWidthLimit(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -153,7 +155,7 @@ class _RequestPendingScreenState extends ConsumerState<RequestPendingScreen> {
               ],
             ),
           ),
-        ),
+        )),
       ),
     );
   }
