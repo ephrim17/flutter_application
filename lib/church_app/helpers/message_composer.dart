@@ -180,10 +180,12 @@ Uri? smsUri(List<String> numbers, String message) {
       .whereType<String>()
       .toList(growable: false);
   if (dialable.isEmpty) return null;
-  return Uri(
-    scheme: 'sms',
-    path: dialable.join(','),
-    queryParameters: <String, String>{'body': message},
+  // Built by hand rather than with `Uri(queryParameters: …)`, which encodes
+  // the query as HTML form data and so turns every space into a `+`. The
+  // SMS app does not decode that back, so "Dear Archana, Welcome" arrived
+  // as "Dear+Archana,+Welcome". `encodeComponent` uses %20.
+  return Uri.parse(
+    'sms:${dialable.join(',')}?body=${Uri.encodeComponent(message)}',
   );
 }
 
@@ -195,13 +197,14 @@ Uri? emailUri(List<String> addresses, String subject, String message) {
       .where((address) => address.contains('@'))
       .toList(growable: false);
   if (valid.isEmpty) return null;
-  return Uri(
-    scheme: 'mailto',
-    queryParameters: <String, String>{
-      'bcc': valid.join(','),
-      'subject': subject,
-      'body': message,
-    },
+  // Same reason as `smsUri`: the form encoding behind `queryParameters`
+  // turns spaces into `+`, which a mail client shows literally in the
+  // subject and body.
+  final bcc = valid.map(Uri.encodeComponent).join(',');
+  return Uri.parse(
+    'mailto:?bcc=$bcc'
+    '&subject=${Uri.encodeComponent(subject)}'
+    '&body=${Uri.encodeComponent(message)}',
   );
 }
 

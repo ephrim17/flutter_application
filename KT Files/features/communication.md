@@ -124,6 +124,19 @@ The old boxes split an equal share of the row between four chips, which at
 content sizing both exist so that cannot recur. Verified at 393×852
 (iPhone 16) 2026-11-11.
 
+## Link encoding
+
+`sms:` and `mailto:` links are built by hand with `Uri.encodeComponent`, not
+with `Uri(queryParameters: …)`. That constructor encodes the query as HTML
+form data, where a space becomes `+`; the receiving app does not decode it
+back, so "Dear Archana, Welcome to our church" arrived in the SMS app as
+"Dear+Archana,+Welcome+to+our+church". `wa.me` was always built by hand and
+was never affected.
+
+Tests assert on the link text, not on `uri.queryParameters`, which decodes
+`+` back into a space and therefore cannot see this at all — the original
+tests read `queryParameters` with single-word bodies and passed throughout.
+
 ## Groups
 
 Recipients can be narrowed to one church group (`churchGroupDefinitions`,
@@ -227,6 +240,8 @@ members.
 | COM-21 | Choose a template from the dropdown | The message body and the subject both fill in. |
 | COM-22 | Open the tab on a 320dp phone | The four statistic pills wrap onto further lines and every label reads in full, with no mid-word break. |
 | COM-30 | Open the Messages tab at 393x852 (iPhone 16) | No screen heading or description; the stat strip is one or two lines of pills and the compose form starts near the top. |
+| COM-31 | Send a multi-word message by SMS or email | The receiving app shows real spaces, not `+` between every word. |
+| COM-32 | Type a message containing `{name}` and look at Copy message | It is disabled along with the group sends; "Remove names" re-enables both. |
 | COM-23 | Copy a group's invite link in WhatsApp, then tap Add group | The link box is already filled, with "Link filled in from your clipboard". |
 | COM-24 | Tap Add group with something else on the clipboard | Both boxes are empty; nothing is guessed. The Paste button explains where to get the link. |
 | COM-25 | Paste the invite link into the Group name box | It moves to the link box and asks for a name. |

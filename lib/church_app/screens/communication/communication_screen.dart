@@ -627,8 +627,13 @@ class _ComposeActions extends StatelessWidget {
         // row, which does not read as "now send it". This walks the list
         // in order and says how far it has got.
         if (channel == MessageChannel.whatsapp) _whatsAppNextButton(context),
+        // Disabled for the same reason as the group sends above. Copy hands
+        // back one body for pasting somewhere else, and with `{name}` still
+        // in it that paste reads "Dear {name}, …" — the placeholder is only
+        // ever filled when the app opens one person's chat. Copying it
+        // looked like it had worked, which is the confusing part.
         OutlinedButton.icon(
-          onPressed: body.trim().isEmpty
+          onPressed: body.trim().isEmpty || hasPerPerson
               ? null
               : () => _copy(context, groupBody,
                   context.t('communication.message_copied')),

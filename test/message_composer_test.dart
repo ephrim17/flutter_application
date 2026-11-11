@@ -158,6 +158,55 @@ void main() {
       expect(uri.queryParameters['to'], isNull);
       expect(uri.queryParameters['subject'], 'Sunday');
     });
+
+    // Spaces must travel as %20, not as the `+` that HTML form encoding
+    // uses. `Uri(queryParameters: …)` encodes as form data, so "Dear
+    // Archana, Welcome to our church" reached the SMS app as
+    // "Dear+Archana,+Welcome+to+our+church" — the receiving app does not
+    // decode `+` back to a space, so the member read the pluses.
+    //
+    // These assert on the link text rather than on `queryParameters`,
+    // which decodes `+` back into a space and so cannot see the bug at
+    // all. That is why the tests above, which use single-word bodies and
+    // read `queryParameters`, went on passing throughout.
+    const sentence = 'Dear Archana, Welcome to our church';
+
+    test('sms sends spaces as %20, never as +', () {
+      final uri = smsUri(['9876543210'], sentence);
+
+      expect(uri.toString(), contains('Dear%20Archana'));
+      expect(uri.toString(), isNot(contains('+919876543210?body=Dear+')));
+      expect(
+        uri!.query.contains('+'),
+        isFalse,
+        reason: 'a + in the body is shown literally by the SMS app',
+      );
+      expect(uri.queryParameters['body'], sentence);
+    });
+
+    test('email sends spaces as %20 in both subject and body', () {
+      final uri = emailUri(['a@x.com'], 'This Sunday', sentence);
+
+      expect(uri.toString(), contains('This%20Sunday'));
+      expect(uri.toString(), contains('Dear%20Archana'));
+      expect(uri!.query.contains('+'), isFalse);
+      expect(uri.queryParameters['subject'], 'This Sunday');
+      expect(uri.queryParameters['body'], sentence);
+    });
+
+    test('whatsapp was already correct and stays that way', () {
+      final uri = whatsAppUri('9876543210', sentence);
+
+      expect(uri.toString(), contains('Dear%20Archana'));
+      expect(uri!.query.contains('+'), isFalse);
+    });
+
+    test('sms still reaches several numbers after the encoding change', () {
+      final uri = smsUri(['9876543210', 'rubbish', '09876543211'], sentence);
+
+      expect(uri!.path, '919876543210,919876543211');
+      expect(uri.queryParameters['body'], sentence);
+    });
   });
 
   group('communicationStats', () {
@@ -293,7 +342,8 @@ void main() {
         expected,
       );
       expect(
-        normalizeWhatsAppGroupLink('  https://chat.whatsapp.com/ABCdef123456/  '),
+        normalizeWhatsAppGroupLink(
+            '  https://chat.whatsapp.com/ABCdef123456/  '),
         expected,
       );
     });
@@ -308,7 +358,8 @@ void main() {
       expect(normalizeWhatsAppGroupLink(''), isNull);
       expect(normalizeWhatsAppGroupLink('not a link'), isNull);
       expect(normalizeWhatsAppGroupLink('https://chat.whatsapp.com/'), isNull);
-      expect(normalizeWhatsAppGroupLink('https://chat.whatsapp.com/abc'), isNull);
+      expect(
+          normalizeWhatsAppGroupLink('https://chat.whatsapp.com/abc'), isNull);
       expect(
         normalizeWhatsAppGroupLink('https://example.com/ABCdef123456'),
         isNull,
