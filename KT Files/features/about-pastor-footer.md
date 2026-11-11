@@ -28,6 +28,25 @@ their data in Studio.
   `churches/{churchId}/footerSupport/social/socialItems/{id}`.
 - Items support active state and order; member pages show only applicable items.
 
+### Layout
+
+Contacts and socials are laid out by one rule — `FooterActionTile` inside a
+centred `FooterActionWrap`. Each tile is a fixed 96 wide with a circular
+tinted icon above its label, so the two groups form an even grid at any
+width and reflow onto a second line on a phone. A hairline divider separates
+how to reach the church from where to follow it.
+
+Previously the two groups followed different rules: contacts were `Expanded`
+across the whole row, which on a desktop-width footer left three items
+marooned in the corners, while the socials were a centred row with a fixed
+20pt gap. `buildContacts` keeps its original `Expanded` behaviour, because
+`DetailWidget` uses it in a narrow row where spreading is right.
+
+**Social links are tappable.** They previously rendered an icon and a label
+and carried a `url` that nothing ever opened. A tile whose stored URL is
+missing, relative or not http(s) is left visibly inert rather than
+pretending to be pressable.
+
 ## Technical map
 
 - Member UI: `screens/side_drawer/about/`, `pastor_section.dart`,
@@ -50,3 +69,7 @@ their data in Studio.
 | PROFILE-08 | Church switch | Identity/contact data follows active church only. |
 | PROFILE-09 | Long translated/user content | Cards wrap/scroll without clipping. |
 
+| PROFILE-09 | Open the footer on a desktop-width browser window | Contacts and socials sit as two centred groups of equal tiles, not spread into the corners; a hairline divider separates them. |
+| PROFILE-10 | Narrow the window to a phone width | Tiles reflow onto further lines and stay centred; no overflow and no clipped labels. |
+| PROFILE-11 | Tap a social item with a valid http(s) URL | The link opens externally; a failure shows "Unable to open link" rather than doing nothing. |
+| PROFILE-12 | Social item whose URL is empty, relative or non-http | The tile renders dimmed and does not respond to taps. |

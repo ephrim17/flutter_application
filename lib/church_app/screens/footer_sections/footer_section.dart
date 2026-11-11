@@ -24,12 +24,32 @@ class FooterSection extends MasterSection {
             width: double.infinity,
             decoration: carouselBoxDecoration(context),
             child: Padding(
-              padding: const EdgeInsets.all(18.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 18,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  FooterContactsWidget(),
-                  FooterSocialIconsWidget(),
+                children: [
+                  const FooterContactsWidget(),
+                  // Separates how to reach the church from where to follow
+                  // it. Inset so it reads as a hairline inside the card
+                  // rather than cutting it in two.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.15),
+                    ),
+                  ),
+                  const FooterSocialIconsWidget(),
                 ],
               ),
             ),

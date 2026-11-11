@@ -4,20 +4,23 @@ import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
 import 'package:flutter_application/church_app/models/footer_support_models/contact_item_model.dart';
 import 'package:flutter_application/church_app/providers/footer/footer_provider.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
+import 'package:flutter_application/church_app/widgets/footer_action_tile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Icon _iconForType(String type) {
+IconData contactIconData(String type) {
   switch (type) {
     case 'email':
-      return const Icon(Icons.email);
+      return Icons.email;
     case 'phone':
-      return const Icon(Icons.phone);
+      return Icons.phone;
     case 'location':
-      return const Icon(Icons.location_on);
+      return Icons.location_on;
     default:
-      return const Icon(Icons.link);
+      return Icons.link;
   }
 }
+
+Icon _iconForType(String type) => Icon(contactIconData(type));
 
 List<Widget> buildContacts(
   List<ContactItem> contacts,
@@ -100,25 +103,23 @@ class FooterContactsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contactsAsync = ref.watch(footerContactsProvider);
 
-    return Column(
-      children: [
-        const SizedBox(
-          height: 10,
-        ),
-        Row(
-          children: contactsAsync.when(
-            loading: () => const [AppLoadingIndicator(size: 64)],
-            error: (e, _) => [
-              Text(
-                '${context.t('common.error_prefix')}: $e',
-              ),
-            ],
-            data: (contacts) {
-              return buildContacts(contacts, context);
-            },
-          ),
-        ),
-      ],
+    // A centred wrap rather than a row of `Expanded`s: three contacts
+    // stretched across a desktop-width footer left each one marooned in a
+    // corner. `buildContacts` keeps its old behaviour for `DetailWidget`,
+    // where the row is narrow and spreading is right.
+    return contactsAsync.when(
+      loading: () => const AppLoadingIndicator(size: 64),
+      error: (e, _) => Text('${context.t('common.error_prefix')}: $e'),
+      data: (contacts) => FooterActionWrap(
+        children: [
+          for (final contact in contacts)
+            FooterActionTile(
+              icon: contactIconData(contact.type),
+              label: contact.label,
+              onTap: () => onContactTap(context, contact),
+            ),
+        ],
+      ),
     );
   }
 }
