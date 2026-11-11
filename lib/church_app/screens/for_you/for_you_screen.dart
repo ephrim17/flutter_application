@@ -149,21 +149,13 @@ class _ForYouScreenState extends ConsumerState<ForYouScreen> {
 /// whose box child can be measured; anything else falls back to ordinary
 /// padding, which is the old behaviour and still correct for a section that
 /// always renders.
-/// The width cap is applied here too, in the one place every section passes
-/// through, so no section has to remember it. It goes inside the spacing so
-/// `ForYouSectionSpacing` still measures the content's real height.
 Widget _withSectionGap(Widget sliver) {
   if (sliver is SliverToBoxAdapter && sliver.child != null) {
     final child = sliver.child!;
     // A group of sibling sections spaces its own parts; adding the page's
-    // gap on top would double the space above its first heading. The marker
-    // is checked before wrapping, since wrapping would hide it.
-    if (child is ForYouSelfSpaced) {
-      return SliverToBoxAdapter(child: ForYouContentWidth(child: child));
-    }
-    return SliverToBoxAdapter(
-      child: ForYouSectionSpacing(child: ForYouContentWidth(child: child)),
-    );
+    // gap on top would double the space above its first heading.
+    if (child is ForYouSelfSpaced) return sliver;
+    return SliverToBoxAdapter(child: ForYouSectionSpacing(child: child));
   }
   return SliverPadding(
     padding: const EdgeInsets.only(top: forYouSectionGap),

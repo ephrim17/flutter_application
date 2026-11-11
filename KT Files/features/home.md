@@ -42,37 +42,39 @@ rather than overflowing. Without it the row overflowed its card by 61px at
 320dp — Flutter paints that as a striped banner in debug and silently clips
 it in release. Wrapping keeps every word, which an ellipsis would not.
 
-## Wide windows and one left edge
+## Page width and one left edge
 
-Past `_homeWideBreakpoint` (700) the page stops stretching: its content is
-capped at `_homeMaxContentWidth` and centred, because a full-bleed card in a
-desktop window reads as a banner rather than a card.
+**Home has no maximum width.** Every section is laid out against the screen
+it is on — phone, simulator or a browser window of any size — and the cards
+grow and shrink with it, the way For You's always have. There is no
+breakpoint, no content column and no centring.
 
-Everything on the page then shares one left edge, and that edge is the
-card's, not the column's. A carousel card does not sit flush with its
-carousel — a `PageView` below a viewport fraction of 1 insets the page, and
-the page is padded by half the carousel spacing — so `homeCarouselCardInset`
-is the one place that arithmetic lives and every other surface defers to it:
+What the sections do share is one left edge, and that edge is the card's. A
+carousel card does not sit flush with its carousel — a `PageView` below a
+viewport fraction of 1 insets the page, and the page is padded by half the
+carousel spacing — so `homeCarouselCardInset` is the one place that
+arithmetic lives and every other surface defers to it:
 
-- Events and Announcements put their heading **inside** the centred column,
-  padded by that inset. Previously the heading sat outside the column, so on
-  a desktop window it stayed pinned 16px from the window edge while its cards
-  centred themselves — 315px adrift at 1280, and more on a wider monitor.
-- Promise Word pads its heading by the same inset as its own card. It used to
-  pad by 0, putting it on the column edge, 41px left of the card beneath it.
+- Events and Announcements pad their heading by that inset. The heading used
+  to sit at a flat 16, which is not where the card starts.
+- Promise Word pads both its heading and its card by the same inset, instead
+  of carrying its own 16pt gutter and its own centring maths.
 - The welcome card and the footer go through `HomeCardAlign`, which applies
-  the cap and the inset together. Neither had any cap before, so both
-  stretched to the full window while the carousels did not.
-- For You caps itself at `homeCardWidth` plus its own gutter
-  (`ForYouContentWidth`), so cards on the two tabs land on the same edges
-  instead of For You filling the whole window.
+  that inset, so a single card lands on the same edges as the carousel cards
+  above and below it.
 
-Below the breakpoint none of this changes the width, only the inset: headings
-move from 16 to the card edge (26.55 at 411dp), which is what they should
-always have lined up with.
+Because the inset is a fraction of the screen, Home's gutter is wider than
+For You's flat 16 on a large window (76 at 1400). That is the carousel peek,
+not a cap — the cards still take the window.
 
-`test/home_card_alignment_test.dart` and `test/for_you_content_width_test.dart`
-pin these edges at a phone and a desktop width.
+`DecoratedScriptureCard` sets `width: double.infinity` on its inner
+container: it is a non-positioned child of a `Stack`, so it is given loose
+constraints and would otherwise shrink-wrap its text and end short of the
+card it is supposed to fill.
+
+`test/home_card_alignment_test.dart` pins every heading to its own card, pins
+Promise Word to the Events card, and checks that nothing overflows at 320,
+411, 768, 1280 and 1920.
 
 ## Test flows
 
@@ -89,7 +91,7 @@ pin these edges at a phone and a desktop width.
 | HOME-09 | Welcome/streak around day boundaries | Greeting and streak remain correct for local timezone. |
 | HOME-11 | Sign in with `profileComplete: false` / `true` | Welcome card shows/hides the Setup Profile pill to match; tapping it opens Edit Profile. |
 | HOME-10 | Contact/social action | Confirmation precedes external app and cancellation stays in app. |
-| HOME-12 | Open Home in a desktop browser window (1280 or wider) | Welcome card, Events, Promise Word, Announcements and footer all share one left and right edge; nothing stretches to the window. |
-| HOME-13 | Read each section heading against the card below it in a wide window | Every heading starts exactly where its own card starts — no heading stranded near the window edge. |
-| HOME-14 | Switch Home → For You in a wide window | Cards on both tabs sit on the same edges; the page does not change width between tabs. |
-| HOME-15 | Narrow the browser back below 700 | Content returns to full width with no horizontal scroll; headings stay on their cards' edge. |
+| HOME-12 | Open Home in a desktop browser window (1280 or wider) | Welcome card, Events, Promise Word, Announcements and footer all grow with the window and share one left and right edge; no centred column, no fixed-width card. |
+| HOME-13 | Read each section heading against the card below it | Every heading starts exactly where its own card starts, at any width. |
+| HOME-14 | Drag the browser window from wide to phone width and back | Cards resize smoothly throughout; no overflow stripe and no horizontal scroll at any point. |
+| HOME-15 | Open Home on a wide window with a short Promise Word verse | The verse card still spans the full card width rather than shrinking to fit its text. |

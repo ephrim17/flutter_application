@@ -69,7 +69,12 @@ class DecoratedScriptureCard extends StatelessWidget {
               color: secondary.withValues(alpha: 0.68),
             ),
           ),
+          // A Stack gives its non-positioned children loose constraints, so
+          // without an explicit width this shrink-wraps the verse instead of
+          // filling [width] — on a wide window the text fits on one line and
+          // the card ended well short of the cards above and below it.
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: carouselBoxDecoration(context).copyWith(
               gradient: LinearGradient(

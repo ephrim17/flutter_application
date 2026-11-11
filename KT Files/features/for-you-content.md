@@ -100,29 +100,10 @@ documents.
   local data.
 - Reading-plan progress is scoped to church and user.
 
-## Page width
-
-Every section passes through `_withSectionGap` in `for_you_screen.dart`, which
-is also where the page's width cap is applied, so no section has to remember
-it. `ForYouContentWidth` centres the content and caps it at Home's card width
-plus this page's own gutter, which keeps the two tabs' cards on the same edges
-rather than restating a second magic number. Before this, For You had no cap
-at all and every card stretched to the full window on a desktop width while
-Home's cards centred themselves.
-
-The cap sits inside the gap so `ForYouSectionSpacing` still measures the real
-content height and a section that draws nothing still costs nothing. A
-`ForYouSelfSpaced` group is checked for before wrapping, since wrapping would
-hide the marker. Below Home's wide breakpoint there is no cap and nothing
-changes, so a phone is unaffected. See
-[Home](home.md) for the shared edge rule and
-`test/for_you_content_width_test.dart`.
-
 ## Technical map
 
 - Registry: `screens/for_you/for_you_screen.dart`.
 - Sections: `screens/for_you/sections/`.
-- Page width cap: `ForYouContentWidth` in `screens/for_you/for_you_card_layout.dart`.
 - Reading plans: `screens/for_you/reading_plan/`.
 - Bible swipe: `screens/for_you/bible_swipe/`.
 - Providers: `providers/for_you_sections/`.
@@ -164,6 +145,3 @@ changes, so a phone is unaffected. See
 | FORYOU-20 | Admin opens Studio → Daily Verse | English and Tamil text and references are previewed; there is no "Generate images" button. |
 | FORYOU-21 | Daily Verse whose text cannot be loaded | The card shows "Today's verse couldn't be loaded" and no share icon; no crash, no raw error text. |
 
-| FORYOU-22 | Open For You in a desktop browser window (1280 or wider) | Cards cap and centre instead of stretching to the window. |
-| FORYOU-23 | Switch For You → Home in a wide window | Cards on both tabs sit on the same left and right edges. |
-| FORYOU-24 | Scroll For You in a wide window with a section that renders nothing | Gaps between sections stay even and the empty section still costs no space. |

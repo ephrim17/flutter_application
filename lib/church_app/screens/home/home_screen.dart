@@ -534,49 +534,31 @@ class _WelcomeCard extends StatelessWidget {
 /// which is why the inset below adds `spacing / 2` rather than `spacing`.
 const double homeCarouselSpacing = 12.0;
 
-/// Past this width the page stops stretching and centres its content; a
-/// full-bleed card on a desktop window reads as a banner, not a card.
-const double _homeWideBreakpoint = 700.0;
-
-/// Widest the Home content is allowed to get.
-const double _homeMaxContentWidth = 700.0;
-
-/// The cap a Home section's content is laid out within, or null on a narrow
-/// screen where it simply fills the width.
-double? homeSectionMaxWidth(double screenWidth) =>
-    screenWidth > _homeWideBreakpoint ? _homeMaxContentWidth : null;
-
 /// How much of the carousel a single card occupies. Below 1 so the next
 /// card peeks in and the carousel reads as scrollable without a hint.
 double homeCarouselViewportFraction(double screenWidth) => 0.9;
 
-/// Distance from a carousel's own left edge to the left edge of the card
-/// inside it: half the viewport the card does not fill, plus the page's
-/// half-spacing. Promise Word pads itself by this much so its edges land on
-/// the carousel cards above and below it.
+/// Distance from the screen's left edge to the left edge of a carousel card:
+/// half the viewport the card does not fill, plus the page's half-spacing.
+///
+/// Home has no maximum width. Every section is laid out against the screen
+/// it is on — a phone, a simulator or a browser window of any size — and the
+/// cards grow and shrink with it, the way For You's always have. Each
+/// section defers to this one function so a heading, a single card and a
+/// carousel card all land on the same edge instead of each working it out
+/// for itself.
 double homeCarouselCardInset(double screenWidth) {
-  final carouselWidth = homeSectionMaxWidth(screenWidth) ?? screenWidth;
   final unfilled =
-      carouselWidth * (1 - homeCarouselViewportFraction(screenWidth)) / 2;
+      screenWidth * (1 - homeCarouselViewportFraction(screenWidth)) / 2;
   return unfilled + homeCarouselSpacing / 2;
 }
 
-/// The width a Home card actually occupies — the content column less the
-/// inset a carousel page imposes on both sides. This is the page's real
-/// visible card edge, which is what every other surface should line up
-/// with, rather than the column that contains it.
-double homeCardWidth(double screenWidth) {
-  final columnWidth = homeSectionMaxWidth(screenWidth) ?? screenWidth;
-  return columnWidth - homeCarouselCardInset(screenWidth) * 2;
-}
+/// The width a Home card actually occupies on this screen.
+double homeCardWidth(double screenWidth) =>
+    screenWidth - homeCarouselCardInset(screenWidth) * 2;
 
-/// Puts a section's content on the page's shared card edges: centred within
-/// the content column, then inset to where a carousel page puts its card.
-///
-/// A heading wrapped in this lands on the left edge of the card it labels,
-/// and a single full-width card (the welcome card, the footer) lands on the
-/// same edges as the carousel cards above and below it. Below the wide
-/// breakpoint the column is the screen, so this is only the inset.
+/// Puts a single full-width card (the welcome card, the footer) on the same
+/// edges as the carousel cards above and below it.
 class HomeCardAlign extends StatelessWidget {
   const HomeCardAlign({super.key, required this.child});
 
@@ -585,19 +567,12 @@ class HomeCardAlign extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final maxWidth = homeSectionMaxWidth(screenWidth);
 
-    return Align(
-      alignment: Alignment.center,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: homeCarouselCardInset(screenWidth),
-          ),
-          child: child,
-        ),
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: homeCarouselCardInset(screenWidth),
       ),
+      child: child,
     );
   }
 }

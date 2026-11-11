@@ -66,33 +66,26 @@ class _AnnouncementList extends StatelessWidget {
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final viewportFraction = homeCarouselViewportFraction(screenWidth);
-    final maxWidth = homeSectionMaxWidth(screenWidth);
 
-    // Heading inside the centred column and inset to the card's own left
-    // edge — see the note in `EventsList`.
-    return Align(
-      alignment: Alignment.center,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              text: context.t('announcements.section_title'),
-              padding: homeCarouselCardInset(screenWidth),
-            ),
-            const SizedBox(height: 10),
-            AutoScrollCarousel(
-              height: cardHeight(AnnouncementSection().id),
-              itemCount: items.length,
-              viewportFraction: viewportFraction,
-              autoScroll: true,
-              spacing: homeCarouselSpacing,
-              itemBuilder: (_, i) => _AnnouncementCard(items[i]),
-            ),
-          ],
+    // Heading inset to the card's own left edge — see the note in
+    // `EventsList`.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          text: context.t('announcements.section_title'),
+          padding: homeCarouselCardInset(screenWidth),
         ),
-      ),
+        const SizedBox(height: 10),
+        AutoScrollCarousel(
+          height: cardHeight(AnnouncementSection().id),
+          itemCount: items.length,
+          viewportFraction: viewportFraction,
+          autoScroll: true,
+          spacing: homeCarouselSpacing,
+          itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+        ),
+      ],
     );
   }
 }

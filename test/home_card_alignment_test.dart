@@ -134,18 +134,45 @@ void main() {
     });
   }
 
-  testWidgets('a desktop window centres the content instead of stretching',
-      (tester) async {
+  testWidgets('cards grow with the window rather than capping', (tester) async {
+    // Home has no maximum width: a card takes the screen it is given, the
+    // way For You's cards always have. A fixed cap here would centre a
+    // narrow column in a wide browser window and leave the rest empty.
     await pumpHome(tester, 1280);
+    final wide = tester.getRect(find.byType(MediaDetailCard));
 
-    final eventCard = tester.getRect(find.byType(MediaDetailCard));
+    await pumpHome(tester, 411);
+    final narrow = tester.getRect(find.byType(MediaDetailCard));
 
-    // Centred, and nothing like the full 1280.
-    expect(eventCard.width, lessThan(700));
     expect(
-      eventCard.center.dx,
-      moreOrLessEquals(640, epsilon: 0.5),
-      reason: 'the card should be centred in the window',
+      wide.width,
+      greaterThan(narrow.width * 2),
+      reason: 'a card should scale with the window, not sit at a fixed width',
     );
+    expect(
+      wide.width,
+      greaterThan(1100),
+      reason: 'a 1280 window should give a card most of its width',
+    );
+  });
+
+  testWidgets('no section overflows its screen at any width', (tester) async {
+    for (final width in [320.0, 411.0, 768.0, 1280.0, 1920.0]) {
+      await pumpHome(tester, width);
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'Home overflowed at $width',
+      );
+
+      for (final rect in [
+        tester.getRect(find.byType(MediaDetailCard)),
+        tester.getRect(find.byType(DecoratedScriptureCard)),
+      ]) {
+        expect(rect.left, greaterThanOrEqualTo(-0.5), reason: 'at $width');
+        expect(rect.right, lessThanOrEqualTo(width + 0.5), reason: 'at $width');
+      }
+    }
   });
 }
