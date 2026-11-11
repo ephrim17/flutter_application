@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/select_church_provider.dart';
@@ -461,7 +462,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           appBar: AppBar(
             title: Text(ref.t('studio.title')),
           ),
-          body: ListView(
+          body: DesktopContentWidth(
+              child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               _StudioOverviewCard(
@@ -475,7 +477,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 const SizedBox(height: sectionSpacing),
               ],
             ],
-          ),
+          )),
         );
       },
     );

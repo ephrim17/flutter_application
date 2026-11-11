@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/helpers/contact_launcher.dart';
@@ -189,104 +190,110 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                   ),
                 ),
               ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-                    child: Container(
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(cornerRadius),
-                        border: Border.all(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.08),
+              // Capped to match the list beneath it. Left full width, the
+              // search box ran the whole 1,568px while the members it
+              // searched sat in a 1,100px column under it.
+              child: DesktopContentWidth(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                      child: Container(
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(cornerRadius),
+                          border: Border.all(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.08),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x12000000),
+                              blurRadius: 18,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x12000000),
-                            blurRadius: 18,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: AppTextField(
-                        variant: AppTextFieldVariant.search,
-                        controller: _searchController,
-                        onChanged: (value) {
-                          setState(() {
-                            _query = value.trim().toLowerCase();
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: context.t('members.search_hint'),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.only(left: 10, right: 6),
-                            child: Icon(
-                              Icons.search_rounded,
-                              color: theme.colorScheme.primary,
+                        child: AppTextField(
+                          variant: AppTextFieldVariant.search,
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _query = value.trim().toLowerCase();
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: context.t('members.search_hint'),
+                            prefixIcon: Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 10, right: 6),
+                              child: Icon(
+                                Icons.search_rounded,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
-                          ),
-                          prefixIconConstraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
-                          ),
-                          suffixIcon: _query.isEmpty
-                              ? null
-                              : IconButton(
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _query = '';
-                                    });
-                                  },
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(cornerRadius),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(cornerRadius),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(cornerRadius),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.35),
-                              width: 1.2,
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 44,
+                              minHeight: 44,
                             ),
-                          ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 16,
+                            suffixIcon: _query.isEmpty
+                                ? null
+                                : IconButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _query = '';
+                                      });
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(cornerRadius),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(cornerRadius),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(cornerRadius),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.35),
+                                width: 1.2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 16,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  TabBar(
-                    isScrollable: true,
-                    tabs: [
-                      Tab(text: context.t('members.all_tab')),
-                      Tab(
-                        text: context.t('members.families_tab'),
-                      ),
-                      Tab(
-                        text: context.t('members.individuals_tab'),
-                      ),
-                      Tab(
-                        child: _CountBadgeTabLabel(
-                          label: context.t('members.special_days_tab'),
-                          count: specialDayCount,
+                    TabBar(
+                      isScrollable: true,
+                      tabs: [
+                        Tab(text: context.t('members.all_tab')),
+                        Tab(
+                          text: context.t('members.families_tab'),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        Tab(
+                          text: context.t('members.individuals_tab'),
+                        ),
+                        Tab(
+                          child: _CountBadgeTabLabel(
+                            label: context.t('members.special_days_tab'),
+                            count: specialDayCount,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -314,63 +321,65 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               groupedFamilies
             ) = _computeFilteredMembers(members, _query);
 
-            return RefreshIndicator(
-              onRefresh: () => ref.refresh(membersProvider.future),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Column(
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _CountChip(
-                              label: context.t('members.all_tab'),
-                              count: filteredMembers.length,
-                            ),
-                            _CountChip(
-                              label: context.t('members.families_tab'),
-                              count: groupedFamilies.length,
-                            ),
-                            _CountChip(
-                              label: context.t('members.individuals_tab'),
-                              count: individualMembers.length,
-                            ),
-                          ],
-                        ),
-                      ],
+            return DesktopContentWidth(
+              child: RefreshIndicator(
+                onRefresh: () => ref.refresh(membersProvider.future),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Column(
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _CountChip(
+                                label: context.t('members.all_tab'),
+                                count: filteredMembers.length,
+                              ),
+                              _CountChip(
+                                label: context.t('members.families_tab'),
+                                count: groupedFamilies.length,
+                              ),
+                              _CountChip(
+                                label: context.t('members.individuals_tab'),
+                                count: individualMembers.length,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _MembersListView(
-                          members: filteredMembers,
-                          isAdmin: isAdmin,
-                          currentUid: currentUid,
-                        ),
-                        _FamilyGroupsView(
-                          groups: groupedFamilies,
-                          isAdmin: isAdmin,
-                          currentUid: currentUid,
-                        ),
-                        _MembersListView(
-                          members: individualMembers,
-                          isAdmin: isAdmin,
-                          currentUid: currentUid,
-                        ),
-                        _SpecialDaysView(
-                          birthdays: todayBirthdays,
-                          anniversaries: todayAnniversaries,
-                          isAdmin: isAdmin,
-                          currentUid: currentUid,
-                        ),
-                      ],
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _MembersListView(
+                            members: filteredMembers,
+                            isAdmin: isAdmin,
+                            currentUid: currentUid,
+                          ),
+                          _FamilyGroupsView(
+                            groups: groupedFamilies,
+                            isAdmin: isAdmin,
+                            currentUid: currentUid,
+                          ),
+                          _MembersListView(
+                            members: individualMembers,
+                            isAdmin: isAdmin,
+                            currentUid: currentUid,
+                          ),
+                          _SpecialDaysView(
+                            birthdays: todayBirthdays,
+                            anniversaries: todayAnniversaries,
+                            isAdmin: isAdmin,
+                            currentUid: currentUid,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

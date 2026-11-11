@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/church_group_definitions.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
@@ -299,31 +300,33 @@ class _ChurchGroupsScreenState extends ConsumerState<ChurchGroupsScreen>
             ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-            child: _GroupOverviewCard(
-              currentGroup: currentGroup,
-              totalGroupCount: visibleGroups.length,
-              onOpenAllGroups: () =>
-                  _showGroupPickerSheet(context, visibleGroups),
+      body: DesktopContentWidth(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              child: _GroupOverviewCard(
+                currentGroup: currentGroup,
+                totalGroupCount: visibleGroups.length,
+                onOpenAllGroups: () =>
+                    _showGroupPickerSheet(context, visibleGroups),
+              ),
             ),
-          ),
-          Expanded(
-            child: _GroupMembersTab(
-              group: currentGroup,
-              onMemberTap: _canManageGroupMembership(
+            Expanded(
+              child: _GroupMembersTab(
                 group: currentGroup,
-                isAdmin: isAdmin,
-                currentUser: currentUser,
-              )
-                  ? (member) =>
-                      _showMemberActionsSheet(context, member, currentGroup)
-                  : null,
+                onMemberTap: _canManageGroupMembership(
+                  group: currentGroup,
+                  isAdmin: isAdmin,
+                  currentUser: currentUser,
+                )
+                    ? (member) =>
+                        _showMemberActionsSheet(context, member, currentGroup)
+                    : null,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

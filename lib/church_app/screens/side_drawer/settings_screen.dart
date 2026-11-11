@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/self_signup_membership_helper.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
@@ -59,7 +60,8 @@ class SettingsScreen extends ConsumerWidget {
           text: ref.t('settings.title'),
         ),
       ),
-      body: Scrollbar(
+      body: DesktopContentWidth(
+          child: Scrollbar(
         thumbVisibility: true,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -125,7 +127,7 @@ class SettingsScreen extends ConsumerWidget {
             const CopyrightWidget(),
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -146,7 +148,8 @@ class GuestSettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: AppBarTitle(text: ref.t('settings.title')),
       ),
-      body: Scrollbar(
+      body: DesktopContentWidth(
+          child: Scrollbar(
         thumbVisibility: true,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -204,7 +207,7 @@ class GuestSettingsScreen extends ConsumerWidget {
             const PraiseTheLordCard(),
           ],
         ),
-      ),
+      )),
     );
   }
 }

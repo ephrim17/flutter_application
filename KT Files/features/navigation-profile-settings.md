@@ -59,6 +59,29 @@ shell against an index that no longer exists — a notification payload or a
 selection carried across a church switch can both name a tab this person
 does not have.
 
+### Content width on a desktop
+
+Two different rules, on purpose:
+
+- **Home and For You have no cap.** They are cards and pictures, and they
+  look right filling whatever window they are given. This was asked for
+  explicitly and must not be "tidied" into a column.
+- **Lists, forms and tables cap at `desktopReadableWidth` (1100)** via
+  `DesktopContentWidth`. A member row whose name sits at the far left and
+  whose toggle sits 1,400px away at the far right is not using the width,
+  it is making the eye travel for nothing and inviting a tap on the wrong
+  row. Applied to Attendance, Members (body *and* its search/tab header, or
+  they disagree with each other), Church Groups, Settings and Studio.
+
+Below 1100 `DesktopContentWidth` does nothing at all — no centring, no
+padding — so phones and tablets keep exactly the layout they had.
+
+Grids of small stat tiles choose their column count from the available
+width (`statGridColumns`, 2/3/4) with a fixed tile height rather than an
+aspect ratio. Attendance had `crossAxisCount: 2` at a 1.75 ratio, which on
+a 1,568px window gave each tile about 770 by 440 — an enormous box around
+the word "16".
+
 - The bottom tab bar's individual tabs float directly on the page background
   — there is no surrounding solid card/pill behind them, only the selected
   tab's own highlight.
@@ -154,3 +177,7 @@ does not have.
 | NAV-11 | Open an iPad in landscape (about 1194) | Still the touch layout, unchanged. |
 | NAV-12 | Tap a menu entry in the desktop sidebar | It opens as a full page; the sidebar stays and the shell is not popped. |
 | NAV-13 | Switch to a church where you are not an admin while Dashboard is selected | The shell falls back to Home rather than throwing a RangeError on a tab that no longer exists. |
+| NAV-14 | Open Attendance on a desktop window | Four compact stat tiles in one row, not a 2x2 grid of large empty boxes. |
+| NAV-15 | Open Members, Church Groups, Settings and Studio on a desktop window | Content sits in one readable column; trailing controls stay near the rows they belong to. |
+| NAV-16 | Compare the Members search box with the list under it on desktop | Both are the same width; the search must not run the full window while the list is capped. |
+| NAV-17 | Open the same screens on a phone and a tablet | Identical to before — the cap is inert below 1100. |

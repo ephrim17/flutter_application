@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/attendance_stats.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/attendance_service_model.dart';
@@ -74,34 +75,36 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   .where((service) => service.type == _typeFilter)
                   .toList(growable: false);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-            children: [
-              _SummaryGrid(summary: summary),
-              if (services.length >= 2) ...[
-                const SizedBox(height: 18),
-                _TrendChart(services: services),
-              ],
-              const SizedBox(height: 18),
-              _TypeFilter(
-                value: _typeFilter,
-                onChanged: (value) => setState(() => _typeFilter = value),
-              ),
-              const SizedBox(height: 12),
-              if (services.isEmpty)
-                _EmptyState(onRecord: () => _recordService(context))
-              else
-                for (final service in visible) ...[
-                  _ServiceTile(
-                    service: service,
-                    rosterSize: roster.length,
-                    dayFormat: _dayFormat,
-                    monthFormat: _monthFormat,
-                    onTap: () => _openService(service.id),
-                  ),
-                  const SizedBox(height: 10),
+          return DesktopContentWidth(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+              children: [
+                _SummaryGrid(summary: summary),
+                if (services.length >= 2) ...[
+                  const SizedBox(height: 18),
+                  _TrendChart(services: services),
                 ],
-            ],
+                const SizedBox(height: 18),
+                _TypeFilter(
+                  value: _typeFilter,
+                  onChanged: (value) => setState(() => _typeFilter = value),
+                ),
+                const SizedBox(height: 12),
+                if (services.isEmpty)
+                  _EmptyState(onRecord: () => _recordService(context))
+                else
+                  for (final service in visible) ...[
+                    _ServiceTile(
+                      service: service,
+                      rosterSize: roster.length,
+                      dayFormat: _dayFormat,
+                      monthFormat: _monthFormat,
+                      onTap: () => _openService(service.id),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+              ],
+            ),
           );
         },
       ),
@@ -144,32 +147,49 @@ class _SummaryGrid extends StatelessWidget {
     String value(int? number, {String suffix = ''}) =>
         number == null ? '—' : '$number$suffix';
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.75,
-      children: [
-        _StatBox(
-          value: value(summary.lastServicePresent),
-          label: context.t('attendance.stat_last'),
-        ),
-        _StatBox(
-          value: value(summary.averagePresent),
-          label: context.t('attendance.stat_average'),
-        ),
-        _StatBox(
-          value: value(summary.lastServicePercent, suffix: '%'),
-          label: context.t('attendance.stat_percent'),
-        ),
-        _StatBox(
-          value: summary.isEmpty ? '—' : '${summary.absentCount}',
-          label: context.t('attendance.stat_absent'),
-          highlight: summary.absentCount > 0,
-        ),
-      ],
+    final boxes = [
+      _StatBox(
+        value: value(summary.lastServicePresent),
+        label: context.t('attendance.stat_last'),
+      ),
+      _StatBox(
+        value: value(summary.averagePresent),
+        label: context.t('attendance.stat_average'),
+      ),
+      _StatBox(
+        value: value(summary.lastServicePercent, suffix: '%'),
+        label: context.t('attendance.stat_percent'),
+      ),
+      _StatBox(
+        value: summary.isEmpty ? '—' : '${summary.absentCount}',
+        label: context.t('attendance.stat_absent'),
+        highlight: summary.absentCount > 0,
+      ),
+    ];
+
+    // The column count follows the width, and the tile height is fixed
+    // rather than an aspect ratio. Two fixed columns at a 1.75 ratio gave
+    // each tile about 770 by 440 on a desktop window — an enormous box
+    // around the word "16", with the number stranded in one corner.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = statGridColumns(
+          constraints.maxWidth,
+          itemCount: boxes.length,
+        );
+
+        return GridView.count(
+          crossAxisCount: columns,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: (constraints.maxWidth - (columns - 1) * 10) /
+              columns /
+              statGridTileHeight(columns),
+          children: boxes,
+        );
+      },
     );
   }
 }
