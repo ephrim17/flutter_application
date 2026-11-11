@@ -1,4 +1,5 @@
 import 'package:flutter_application/church_app/helpers/event_builders.dart';
+import 'package:flutter_application/church_app/screens/for_you/for_you_card_layout.dart';
 import 'package:flutter_application/church_app/models/home_section_models/event_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/promise_provider.dart';
 import 'package:flutter_application/church_app/screens/home/sections/events_section.dart';
@@ -133,6 +134,33 @@ void main() {
       );
     });
   }
+
+  testWidgets('the gutter is a flat 16 at every width, as For You is',
+      (tester) async {
+    // A gutter that is a share of the screen looks right on a phone and
+    // becomes a wide empty margin on a desktop window. Tying the expected
+    // value to `forYouSidePadding` is the point: the two tabs have to agree,
+    // so if one moves this fails rather than drifting quietly.
+    for (final width in [320.0, 411.0, 768.0, 1280.0, 1920.0]) {
+      await pumpHome(tester, width);
+
+      for (final rect in [
+        tester.getRect(find.byType(MediaDetailCard)),
+        tester.getRect(find.byType(DecoratedScriptureCard)),
+      ]) {
+        expect(
+          rect.left,
+          moreOrLessEquals(forYouSidePadding, epsilon: 0.5),
+          reason: 'left gutter at $width',
+        );
+        expect(
+          rect.right,
+          moreOrLessEquals(width - forYouSidePadding, epsilon: 0.5),
+          reason: 'right gutter at $width',
+        );
+      }
+    }
+  });
 
   testWidgets('cards grow with the window rather than capping', (tester) async {
     // Home has no maximum width: a card takes the screen it is given, the

@@ -49,23 +49,26 @@ it is on — phone, simulator or a browser window of any size — and the cards
 grow and shrink with it, the way For You's always have. There is no
 breakpoint, no content column and no centring.
 
-What the sections do share is one left edge, and that edge is the card's. A
-carousel card does not sit flush with its carousel — a `PageView` below a
-viewport fraction of 1 insets the page, and the page is padded by half the
-carousel spacing — so `homeCarouselCardInset` is the one place that
-arithmetic lives and every other surface defers to it:
+Every section leaves the same gutter at both edges: `homeSidePadding`, a flat
+**16**, which is the same value For You uses (`forYouSidePadding`). Headings,
+carousel cards, the Promise Word card, the welcome card and the footer all
+land on it, so the two tabs read as one page instead of changing shape when
+you switch between them.
 
-- Events and Announcements pad their heading by that inset. The heading used
-  to sit at a flat 16, which is not where the card starts.
-- Promise Word pads both its heading and its card by the same inset, instead
-  of carrying its own 16pt gutter and its own centring maths.
-- The welcome card and the footer go through `HomeCardAlign`, which applies
-  that inset, so a single card lands on the same edges as the carousel cards
-  above and below it.
+The gutter is a constant, not a share of the screen. It was briefly a
+fraction (`viewportFraction: 0.9`, giving `screenWidth * 0.05 + 6`), which
+looks right on a phone and becomes a wide empty margin on a desktop window —
+76 at 1400 against For You's 16.
 
-Because the inset is a fraction of the screen, Home's gutter is wider than
-For You's flat 16 on a large window (76 at 1400). That is the carousel peek,
-not a cap — the cards still take the window.
+That means **one card fills the carousel** (`viewportFraction: 1.0`). A peek
+and a constant gutter cannot both hold: the peek is what pushed the card
+inwards by a share of the screen. The dots under a multi-card carousel carry
+the "there is more" affordance instead.
+
+A carousel page pads its own card by half the carousel spacing (6), so the
+carousel is wrapped in `homeCarouselOuterPadding` — the remaining 10 — to
+land the card on 16 rather than on 6. The welcome card and the footer go
+through `HomeCardAlign`, which is just that 16.
 
 `DecoratedScriptureCard` sets `width: double.infinity` on its inner
 container: it is a non-positioned child of a `Stack`, so it is given loose
@@ -73,8 +76,9 @@ constraints and would otherwise shrink-wrap its text and end short of the
 card it is supposed to fill.
 
 `test/home_card_alignment_test.dart` pins every heading to its own card, pins
-Promise Word to the Events card, and checks that nothing overflows at 320,
-411, 768, 1280 and 1920.
+Promise Word to the Events card, asserts the gutter equals `forYouSidePadding`
+at 320/411/768/1280/1920 — so the two tabs fail loudly rather than drifting
+apart — and checks that nothing overflows at those widths.
 
 ## Test flows
 
@@ -91,7 +95,9 @@ Promise Word to the Events card, and checks that nothing overflows at 320,
 | HOME-09 | Welcome/streak around day boundaries | Greeting and streak remain correct for local timezone. |
 | HOME-11 | Sign in with `profileComplete: false` / `true` | Welcome card shows/hides the Setup Profile pill to match; tapping it opens Edit Profile. |
 | HOME-10 | Contact/social action | Confirmation precedes external app and cancellation stays in app. |
-| HOME-12 | Open Home in a desktop browser window (1280 or wider) | Welcome card, Events, Promise Word, Announcements and footer all grow with the window and share one left and right edge; no centred column, no fixed-width card. |
+| HOME-12 | Open Home in a desktop browser window (1280 or wider) | Welcome card, Events, Promise Word, Announcements and footer all grow with the window, leaving the same 16 gutter at both edges; no centred column, no fixed-width card. |
+| HOME-16 | Switch Home → For You in the same window | The gutter does not change between the two tabs; cards start and end on the same pixels. |
+| HOME-17 | Open a carousel section holding more than one card | Dots appear under the carousel and swiping moves one full-width card at a time. |
 | HOME-13 | Read each section heading against the card below it | Every heading starts exactly where its own card starts, at any width. |
 | HOME-14 | Drag the browser window from wide to phone width and back | Cards resize smoothly throughout; no overflow stripe and no horizontal scroll at any point. |
 | HOME-15 | Open Home on a wide window with a short Promise Word verse | The verse card still spans the full card width rather than shrinking to fit its text. |

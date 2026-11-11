@@ -50,7 +50,7 @@ class PromiseVerseCard extends ConsumerWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             final availableWidth = constraints.maxWidth;
-            final cardInset = homeCarouselCardInset(availableWidth);
+            const cardInset = homeSidePadding;
             final isTabletWidth = availableWidth >= 700;
             final tamilStyle =
                 Theme.of(context).textTheme.titleMedium?.copyWith(

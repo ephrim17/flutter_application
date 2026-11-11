@@ -534,28 +534,35 @@ class _WelcomeCard extends StatelessWidget {
 /// which is why the inset below adds `spacing / 2` rather than `spacing`.
 const double homeCarouselSpacing = 12.0;
 
-/// How much of the carousel a single card occupies. Below 1 so the next
-/// card peeks in and the carousel reads as scrollable without a hint.
-double homeCarouselViewportFraction(double screenWidth) => 0.9;
-
-/// Distance from the screen's left edge to the left edge of a carousel card:
-/// half the viewport the card does not fill, plus the page's half-spacing.
+/// The gutter Home leaves at both screen edges, at every width.
 ///
-/// Home has no maximum width. Every section is laid out against the screen
+/// Home has no maximum width: every section is laid out against the screen
 /// it is on — a phone, a simulator or a browser window of any size — and the
-/// cards grow and shrink with it, the way For You's always have. Each
-/// section defers to this one function so a heading, a single card and a
-/// carousel card all land on the same edge instead of each working it out
-/// for itself.
-double homeCarouselCardInset(double screenWidth) {
-  final unfilled =
-      screenWidth * (1 - homeCarouselViewportFraction(screenWidth)) / 2;
-  return unfilled + homeCarouselSpacing / 2;
-}
+/// cards grow and shrink with it. This is the same flat 16 For You uses
+/// (`forYouSidePadding`), so the two tabs read as one page rather than
+/// changing shape when you switch between them.
+///
+/// It is a constant rather than a fraction of the screen on purpose. A
+/// fraction looks right on a phone and turns into a wide empty margin on a
+/// desktop window.
+const double homeSidePadding = 16.0;
 
-/// The width a Home card actually occupies on this screen.
-double homeCardWidth(double screenWidth) =>
-    screenWidth - homeCarouselCardInset(screenWidth) * 2;
+/// One card fills the carousel.
+///
+/// This used to be 0.9 so the next card peeked in. A peek and a constant
+/// gutter cannot both hold: the peek is what pushed the card inwards by a
+/// share of the screen, which is exactly the growing margin that had to go.
+/// The dots under a multi-card carousel carry that affordance instead.
+double homeCarouselViewportFraction(double screenWidth) => 1.0;
+
+/// A carousel page pads its own card by half the carousel spacing, so the
+/// carousel itself is padded by the remainder to land that card on
+/// [homeSidePadding] — not on 6, which is all the page's own padding gives.
+const double homeCarouselOuterPadding =
+    homeSidePadding - homeCarouselSpacing / 2;
+
+/// The width a Home card occupies on this screen.
+double homeCardWidth(double screenWidth) => screenWidth - homeSidePadding * 2;
 
 /// Puts a single full-width card (the welcome card, the footer) on the same
 /// edges as the carousel cards above and below it.
@@ -566,12 +573,8 @@ class HomeCardAlign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: homeCarouselCardInset(screenWidth),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: homeSidePadding),
       child: child,
     );
   }

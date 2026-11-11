@@ -71,25 +71,30 @@ class EventsList extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final viewportFraction = homeCarouselViewportFraction(screenWidth);
 
-    // The carousel fills the screen; the heading is inset to the carousel
-    // card's own left edge so the two share one edge at any width. The
-    // heading used to sit at a flat 16, which is not where the card starts.
+    // Heading and card both sit on `homeSidePadding`. The carousel is padded
+    // by the remainder its pages do not supply, so the card lands on that
+    // gutter rather than on half the carousel spacing.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           text: context.t('events.section_title'),
-          padding: homeCarouselCardInset(screenWidth),
+          padding: homeSidePadding,
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: cardHeight(EventsSection().id),
-          child: AutoScrollCarousel(
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: homeCarouselOuterPadding,
+          ),
+          child: SizedBox(
             height: cardHeight(EventsSection().id),
-            itemCount: items.length,
-            viewportFraction: viewportFraction,
-            spacing: homeCarouselSpacing,
-            itemBuilder: (_, i) => EventsCard(items[i]),
+            child: AutoScrollCarousel(
+              height: cardHeight(EventsSection().id),
+              itemCount: items.length,
+              viewportFraction: viewportFraction,
+              spacing: homeCarouselSpacing,
+              itemBuilder: (_, i) => EventsCard(items[i]),
+            ),
           ),
         ),
       ],

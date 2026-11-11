@@ -67,23 +67,28 @@ class _AnnouncementList extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final viewportFraction = homeCarouselViewportFraction(screenWidth);
 
-    // Heading inset to the card's own left edge — see the note in
+    // Heading and card both on `homeSidePadding` — see the note in
     // `EventsList`.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           text: context.t('announcements.section_title'),
-          padding: homeCarouselCardInset(screenWidth),
+          padding: homeSidePadding,
         ),
         const SizedBox(height: 10),
-        AutoScrollCarousel(
-          height: cardHeight(AnnouncementSection().id),
-          itemCount: items.length,
-          viewportFraction: viewportFraction,
-          autoScroll: true,
-          spacing: homeCarouselSpacing,
-          itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: homeCarouselOuterPadding,
+          ),
+          child: AutoScrollCarousel(
+            height: cardHeight(AnnouncementSection().id),
+            itemCount: items.length,
+            viewportFraction: viewportFraction,
+            autoScroll: true,
+            spacing: homeCarouselSpacing,
+            itemBuilder: (_, i) => _AnnouncementCard(items[i]),
+          ),
         ),
       ],
     );
