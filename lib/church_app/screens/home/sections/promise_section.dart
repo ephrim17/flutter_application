@@ -50,10 +50,10 @@ class PromiseVerseCard extends ConsumerWidget {
       data: (verse) {
         final screenWidth = MediaQuery.sizeOf(context).width;
         final maxWidth = homeSectionMaxWidth(screenWidth);
-        // The header lines up with the other section headers (16, from the
-        // sliver padding); the card lines up with the Events/Announcements
-        // carousel cards, which sit further in than their headers. Both boxes
-        // are centred, so the difference is between their left edges.
+        // Both the header and the card line up with the Events/Announcements
+        // carousel cards: the header is padded by the same inset as the card
+        // below it, so the two share one left edge. Both boxes are centred,
+        // so the inset is the difference between their left edges.
         final carouselWidth = maxWidth ?? screenWidth;
         final carouselCardLeft = (screenWidth - carouselWidth) / 2 +
             homeCarouselCardInset(screenWidth);
@@ -88,7 +88,7 @@ class PromiseVerseCard extends ConsumerWidget {
                   children: [
                     SectionHeader(
                       text: context.t('promise.section_title'),
-                      padding: 0.0,
+                      padding: cardInset,
                     ),
                     const SizedBox(height: 10),
                     Padding(

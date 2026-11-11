@@ -72,19 +72,23 @@ class EventsList extends StatelessWidget {
     final viewportFraction = homeCarouselViewportFraction(screenWidth);
     final maxWidth = homeSectionMaxWidth(screenWidth);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          text: context.t('events.section_title'),
-          padding: 16.0,
-        ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.center,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-            child: SizedBox(
+    // The heading sits inside the same centred column as the carousel and is
+    // inset to the carousel card's own left edge, so heading and card share
+    // one edge. Outside the column it would stay pinned to the window edge
+    // while the cards centred themselves, which is what it used to do.
+    return Align(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              text: context.t('events.section_title'),
+              padding: homeCarouselCardInset(screenWidth),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
               height: cardHeight(EventsSection().id),
               child: AutoScrollCarousel(
                 height: cardHeight(EventsSection().id),
@@ -94,9 +98,9 @@ class EventsList extends StatelessWidget {
                 itemBuilder: (_, i) => EventsCard(items[i]),
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

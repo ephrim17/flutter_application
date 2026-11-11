@@ -68,19 +68,21 @@ class _AnnouncementList extends StatelessWidget {
     final viewportFraction = homeCarouselViewportFraction(screenWidth);
     final maxWidth = homeSectionMaxWidth(screenWidth);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          text: context.t('announcements.section_title'),
-          padding: 16.0,
-        ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.center,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-            child: AutoScrollCarousel(
+    // Heading inside the centred column and inset to the card's own left
+    // edge — see the note in `EventsList`.
+    return Align(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              text: context.t('announcements.section_title'),
+              padding: homeCarouselCardInset(screenWidth),
+            ),
+            const SizedBox(height: 10),
+            AutoScrollCarousel(
               height: cardHeight(AnnouncementSection().id),
               itemCount: items.length,
               viewportFraction: viewportFraction,
@@ -88,9 +90,9 @@ class _AnnouncementList extends StatelessWidget {
               spacing: homeCarouselSpacing,
               itemBuilder: (_, i) => _AnnouncementCard(items[i]),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

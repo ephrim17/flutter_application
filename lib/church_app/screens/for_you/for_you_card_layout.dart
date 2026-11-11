@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_application/church_app/screens/home/home_screen.dart';
 
 /// Between the end of one section and the start of the next. Applied once,
 /// by `ForYouScreen`, never by a section.
@@ -30,6 +31,38 @@ const double forYouCardGap = 12;
 
 /// The side gutter every section's content sits in.
 const double forYouSidePadding = 16;
+
+/// Centres a For You section's content and stops it growing past the width
+/// a Home card occupies, so the two tabs' cards land on the same edges
+/// instead of For You stretching to the whole window on a desktop width.
+///
+/// The cap is the Home card width plus this page's own gutter, because each
+/// section pads itself by [forYouSidePadding] inside this box. Below Home's
+/// wide breakpoint there is no cap and this changes nothing, so a phone is
+/// unaffected.
+class ForYouContentWidth extends StatelessWidget {
+  const ForYouContentWidth({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final capped = homeSectionMaxWidth(screenWidth) != null;
+
+    return Align(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: capped
+              ? homeCardWidth(screenWidth) + forYouSidePadding * 2
+              : double.infinity,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
 
 /// Height of a fixed-height carousel tile (the Circles rail). Cards that can
 /// size to their own content do not use this.

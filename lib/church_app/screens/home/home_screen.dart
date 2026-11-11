@@ -182,15 +182,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           slivers.add(
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: _WelcomeCard(
-                  userName: userName,
-                  dayStreak: appUser?.dayStreak ?? 10,
-                  showSetupProfilePrompt:
-                      appUser != null && !appUser.profileComplete,
-                  onSetupProfile: appUser == null
-                      ? null
-                      : () => showEditProfileSheet(context, appUser),
+                padding: const EdgeInsets.only(top: 16),
+                child: HomeCardAlign(
+                  child: _WelcomeCard(
+                    userName: userName,
+                    dayStreak: appUser?.dayStreak ?? 10,
+                    showSetupProfilePrompt:
+                        appUser != null && !appUser.profileComplete,
+                    onSetupProfile: appUser == null
+                        ? null
+                        : () => showEditProfileSheet(context, appUser),
+                  ),
                 ),
               ),
             ),
@@ -557,4 +559,45 @@ double homeCarouselCardInset(double screenWidth) {
   final unfilled =
       carouselWidth * (1 - homeCarouselViewportFraction(screenWidth)) / 2;
   return unfilled + homeCarouselSpacing / 2;
+}
+
+/// The width a Home card actually occupies — the content column less the
+/// inset a carousel page imposes on both sides. This is the page's real
+/// visible card edge, which is what every other surface should line up
+/// with, rather than the column that contains it.
+double homeCardWidth(double screenWidth) {
+  final columnWidth = homeSectionMaxWidth(screenWidth) ?? screenWidth;
+  return columnWidth - homeCarouselCardInset(screenWidth) * 2;
+}
+
+/// Puts a section's content on the page's shared card edges: centred within
+/// the content column, then inset to where a carousel page puts its card.
+///
+/// A heading wrapped in this lands on the left edge of the card it labels,
+/// and a single full-width card (the welcome card, the footer) lands on the
+/// same edges as the carousel cards above and below it. Below the wide
+/// breakpoint the column is the screen, so this is only the inset.
+class HomeCardAlign extends StatelessWidget {
+  const HomeCardAlign({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final maxWidth = homeSectionMaxWidth(screenWidth);
+
+    return Align(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: homeCarouselCardInset(screenWidth),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 }
