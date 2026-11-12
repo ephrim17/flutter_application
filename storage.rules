@@ -13,10 +13,19 @@ service firebase.storage {
 
     // Mirrors churches/{churchId}/config/app.admins in firestore.rules —
     // Storage rules can read Firestore data via the firestore.* functions.
+    // The exists() guard and .data.get() default are load-bearing: get()
+    // on a missing document returns null, and reading .data off null is an
+    // ERROR, which denies the whole request rather than evaluating false.
+    // Unguarded, this took isChurchStaff() down with it for any church
+    // whose config/app does not exist — including every church at the
+    // moment it is created, which is when the logo and pastor photo are
+    // uploaded. See the Firestore-side twin of this function.
     function isChurchAdmin(churchId) {
       return isSignedIn() &&
+        firestore.exists(/databases/(default)/documents/churches/$(churchId)/config/app) &&
         request.auth.token.email.lower() in
-          firestore.get(/databases/(default)/documents/churches/$(churchId)/config/app).data.admins;
+          firestore.get(/databases/(default)/documents/churches/$(churchId)/config/app)
+            .data.get('admins', []);
     }
 
     function isSuperAdmin() {
@@ -25,8 +34,10 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/superAdmins/$(request.auth.token.email.lower())).data.enabled == true;
     }
 
+    // Super admin first, so the check short-circuits before anything has
+    // to be read about a church that may not exist yet.
     function isChurchStaff(churchId) {
-      return isChurchAdmin(churchId) || isSuperAdmin();
+      return isSuperAdmin() || isChurchAdmin(churchId);
     }
 
     // Mirrors firestore.rules' hasVerifiedEmail() — `.get(key, default)`,

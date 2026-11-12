@@ -47,9 +47,18 @@ service cloud.firestore {
            .data.get('emailVerified', true) != false);
     }
 
+    // The exists() guard and .data.get() default are not belt-and-braces:
+    // get() on a missing document returns null, and reading .data off null
+    // is an ERROR, not false. An error anywhere in a condition denies the
+    // whole request — so an unguarded read here took isChurchStaff() down
+    // with it for any church whose config/app does not exist yet, which is
+    // every church at the moment it is being created. A super admin was
+    // refused the creation uploads for that reason alone.
     function isChurchAdmin(churchId) {
       return hasVerifiedEmail() &&
-        myEmail() in get(/databases/$(database)/documents/churches/$(churchId)/config/app).data.admins;
+        exists(/databases/$(database)/documents/churches/$(churchId)/config/app) &&
+        myEmail() in get(/databases/$(database)/documents/churches/$(churchId)/config/app)
+          .data.get('admins', []);
     }
 
     function isSuperAdmin() {
@@ -69,8 +78,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/churches/$(churchId)/members/$(request.auth.uid)).data.approved == true;
     }
 
+    // Super admin first: it reads two documents that always exist for a
+    // super admin, so it short-circuits before anything has to be read
+    // about a church that may not exist yet, and costs one less lookup in
+    // the common case.
     function isChurchStaff(churchId) {
-      return isChurchAdmin(churchId) || isSuperAdmin();
+      return isSuperAdmin() || isChurchAdmin(churchId);
     }
 
     // Bootstrap window for SuperAdminChurchService.createChurch(): the top-
@@ -411,7 +424,20 @@ service cloud.firestore {
     // docs under churches/{cid}/members).
     match /users/{uid} {
       allow read: if isSelf(uid);
-      allow create, update: if isSelf(uid) &&
+      // A super admin creating a church also creates the Auth account for
+      // that church's admin and seeds their profile document — someone
+      // else's uid, by definition. isSelf() alone denied that one write,
+      // and since the whole bootstrap is a single atomic batch, it took
+      // the entire church creation down with it: the church, its config,
+      // its sections and its groups were all allowed, and none of them
+      // landed. Create only, and only up to the moment that person's own
+      // document exists; every later change is theirs alone.
+      allow create: if (isSelf(uid) || isSuperAdmin()) &&
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        (!('dayStreak' in request.resource.data) ||
+         request.resource.data.dayStreak is int);
+      allow update: if isSelf(uid) &&
         request.resource.data.name is string &&
         request.resource.data.email is string &&
         (!('dayStreak' in request.resource.data) ||

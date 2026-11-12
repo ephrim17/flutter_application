@@ -1,0 +1,12 @@
+{
+  "name": "church-tree-rules-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-rules \"node create-church.test.mjs\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.0.0"
+  }
+}

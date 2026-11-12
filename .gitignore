@@ -53,3 +53,7 @@ CLAUDE.local.md
 *-admin-key.json
 tools/admin/backup-*/
 tools/admin/node_modules
+tools/rules-tests/node_modules
+tools/rules-tests/.npmcache
+tools/rules-tests/package-lock.json
+firestore-debug.log
