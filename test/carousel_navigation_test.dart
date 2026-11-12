@@ -14,6 +14,7 @@ void main() {
     WidgetTester tester, {
     required double width,
     required int itemCount,
+    bool autoScroll = false,
   }) async {
     tester.view.physicalSize = Size(width, 900);
     tester.view.devicePixelRatio = 1;
@@ -25,12 +26,20 @@ void main() {
           body: AutoScrollCarousel(
             height: 240,
             itemCount: itemCount,
+            autoScroll: autoScroll,
             itemBuilder: (_, index) => Center(child: Text('card $index')),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  /// Unmounts the carousel and lets its pending auto-advance delay fire, so
+  /// the loop sees `!mounted` and stops rather than outliving the test.
+  Future<void> stopAutoScroll(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
   }
 
   Finder nextArrow() => find.byIcon(Icons.chevron_right_rounded);
@@ -125,5 +134,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('card 2'), findsOneWidget);
+  });
+
+  group('auto-advance yields to the reader', () {
+    // Announcements used to advance on a timer. It moved the card out from
+    // under whoever was reading it as they scrolled Home, with nothing on
+    // screen saying why — so Home no longer asks for it. Where it is asked
+    // for, it has to stop the moment the reader takes the wheel.
+    testWidgets('a carousel left alone does advance', (tester) async {
+      await pumpCarousel(tester, width: 1512, itemCount: 3, autoScroll: true);
+      expect(find.text('card 0'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(find.text('card 1'), findsOneWidget);
+      await stopAutoScroll(tester);
+    });
+
+    testWidgets('but stops for good once a card has been chosen',
+        (tester) async {
+      await pumpCarousel(tester, width: 1512, itemCount: 3, autoScroll: true);
+
+      await tester.tap(nextArrow());
+      await tester.pumpAndSettle();
+      expect(find.text('card 1'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 12));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('card 1'),
+        findsOneWidget,
+        reason: 'the timer must not take the carousel back',
+      );
+      await stopAutoScroll(tester);
+    });
+
+    testWidgets('and it is off unless a caller asks for it', (tester) async {
+      await pumpCarousel(tester, width: 1512, itemCount: 3);
+
+      await tester.pump(const Duration(seconds: 12));
+      await tester.pumpAndSettle();
+
+      expect(find.text('card 0'), findsOneWidget);
+    });
   });
 }

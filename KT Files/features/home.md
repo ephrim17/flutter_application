@@ -45,8 +45,8 @@ it in release. Wrapping keeps every word, which an ellipsis would not.
 ## Reaching the second card
 
 Every carousel (Events, Announcements, the pastor cards) is an
-`AutoScrollCarousel`, and the Pray For Others rail follows the same rules
-by hand.
+`AutoScrollCarousel`. The Pray For Others rail is a `SnappingCardRail`,
+which is a different widget but follows the same rules.
 
 A `PageView` only advances once a drag passes **half a page**. On a phone
 that is a flick. On a desktop, where a card can be 1,300px wide, it means
@@ -61,16 +61,26 @@ these" while the second one was effectively unreachable with a pointer.
   way across without a long swipe.
 - Below 700 there are no arrows, so the touch layout is unchanged.
 
-The Pray For Others rail is a plain scroll view rather than a `PageView`,
-so a wheel does move it. It settles on the nearest card on a debounce —
-a wheel produces scroll updates without the clean end notification a
-finger lift gives, so settling only on `ScrollEndNotification` left it
-parked half-way between two cards. It advances on a quarter of a card's
-movement rather than half, for the same reason the arrows exist, and the
-card is narrowed so the next one peeks past the edge.
+The Pray For Others rail is a scroll view rather than a `PageView`, and
+lives in For You — see
+[For You content](for-you-content.md#the-pray-for-others-rail) for how it
+settles and why its cards are all one height.
+
+**Nothing on Home advances by itself.** Announcements used to rotate every
+four seconds. That moved the card out from under whoever was reading it
+while they scrolled Home, with nothing on screen saying why it had moved
+or how to stop it. The dots and, on a pointer, the arrows carry "there is
+more than one of these" instead.
+
+`AutoScrollCarousel` still takes an `autoScroll` flag, off by default, and
+it now stops for good the moment the reader moves the carousel themselves
+— by an arrow, a dot or a swipe. A carousel that takes itself back after
+someone has chosen a card is the same complaint as one that moves while
+they are reading.
 
 `test/carousel_navigation_test.dart` pins the breakpoint, the arrow
-behaviour at the ends, and that the dots move the carousel.
+behaviour at the ends, that the dots move the carousel, and that
+auto-advance both works and yields.
 
 ## Page width and one left edge
 
@@ -133,6 +143,7 @@ apart — and checks that nothing overflows at those widths.
 | HOME-20 | Tap a dot under any carousel, on any device | The carousel moves to that card. |
 | HOME-21 | Open the same carousel on a phone | No arrows over the card; swipe and dots only. |
 | HOME-22 | Scroll the Pray For Others rail with a wheel and with a drag | It settles on a card either way, and the next card peeks past the edge beforehand. |
+| HOME-23 | Leave Home open on the Announcements section for a minute, reading | The card never changes on its own; it moves only when you swipe, press an arrow or tap a dot. |
 | HOME-13 | Read each section heading against the card below it | Every heading starts exactly where its own card starts, at any width. |
 | HOME-14 | Drag the browser window from wide to phone width and back | Cards resize smoothly throughout; no overflow stripe and no horizontal scroll at any point. |
 | HOME-15 | Open Home on a wide window with a short Promise Word verse | The verse card still spans the full card width rather than shrinking to fit its text. |

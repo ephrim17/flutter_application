@@ -100,9 +100,40 @@ documents.
   local data.
 - Reading-plan progress is scoped to church and user.
 
+## The Pray for others rail
+
+The rail is a `SnappingCardRail` (`widgets/snapping_card_rail.dart`), not a
+`PageView`. It has no fixed height: it takes the height of its **tallest**
+card and gives every card that height, so a request with a one-line
+description renders at the same size as one with three. Before that, each
+card ended wherever its own text stopped, and two cards side by side in the
+same rail had different bottom edges — the same content at two different
+sizes, next to each other.
+
+`PrayerRequestCard` takes a `fillHeight` flag for this. The rail sets it, so
+the rule and the author/expiry line are pinned to the card's own bottom edge
+rather than floating wherever the description ended. The Prayer Requests
+screen leaves it off, because there a card is only as tall as its content.
+
+Three things say there is more than one card: the next card peeks 30px past
+the edge, the rail settles on a card rather than wherever it was released,
+and the dots say how many there are. The dots are tappable, which is the way
+across without a long swipe.
+
+The settle runs on a 140ms debounce rather than on `ScrollEndNotification`
+alone: a wheel or trackpad produces scroll updates without the clean end
+notification a finger lift gives, so waiting for that notification left the
+rail parked half-way between two cards. It advances on a quarter of a card's
+movement rather than the nearest card, because a card is nearly the full
+width and "nearest" would mean travelling 600px before anything happened.
+
+`test/snapping_card_rail_test.dart` pins the equal heights, the peek and the
+dots; `test/prayer_card_fill_height_test.dart` pins the footer.
+
 ## Technical map
 
 - Registry: `screens/for_you/for_you_screen.dart`.
+- Equal-height rail: `widgets/snapping_card_rail.dart`.
 - Sections: `screens/for_you/sections/`.
 - Reading plans: `screens/for_you/reading_plan/`.
 - Bible swipe: `screens/for_you/bible_swipe/`.
@@ -144,4 +175,7 @@ documents.
 | FORYOU-19 | Tap Reset after editing | Every field and dropdown returns to its prefilled default. |
 | FORYOU-20 | Admin opens Studio → Daily Verse | English and Tamil text and references are previewed; there is no "Generate images" button. |
 | FORYOU-21 | Daily Verse whose text cannot be loaded | The card shows "Today's verse couldn't be loaded" and no share icon; no crash, no raw error text. |
-
+| FORYOU-22 | Pray for others holding two requests of very different lengths | Both cards are the same height and width, with one bottom edge across the rail; each card's author/expiry line sits on its own bottom edge. |
+| FORYOU-23 | Scroll the Pray for others rail with a wheel, a trackpad and a drag | It settles on a card every time, never half-way between two; the next card peeks past the right edge beforehand. |
+| FORYOU-24 | Tap the second dot under the rail | The rail moves to that card and the dot fills. |
+| FORYOU-25 | Open the same request in Prayer Requests and in Pray for others | Padding, type and clamps match; in the list the card is only as tall as its content. |

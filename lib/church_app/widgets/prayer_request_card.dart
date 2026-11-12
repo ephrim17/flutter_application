@@ -19,6 +19,7 @@ class PrayerRequestCard extends ConsumerWidget {
     required this.prayer,
     required this.onTap,
     this.trailing,
+    this.fillHeight = false,
   });
 
   final PrayerRequest prayer;
@@ -28,6 +29,14 @@ class PrayerRequestCard extends ConsumerWidget {
   /// overflow menu here; For You passes nothing, because a reader of someone
   /// else's request has nothing to act on.
   final Widget? trailing;
+
+  /// Push the footer to the bottom of whatever height the card is given.
+  ///
+  /// The Prayer Requests list leaves this off, so the card is as tall as its
+  /// own content. A rail sets it, because there every card is given the
+  /// height of the tallest one and a footer left where the text ended would
+  /// sit at a different height on each card.
+  final bool fillHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -109,7 +118,7 @@ class PrayerRequestCard extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              if (fillHeight) const Spacer() else const SizedBox(height: 16),
               Divider(
                 height: 1,
                 color: colors.outlineVariant.withValues(alpha: 0.65),

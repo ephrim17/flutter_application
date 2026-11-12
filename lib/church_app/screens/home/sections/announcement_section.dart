@@ -85,7 +85,10 @@ class _AnnouncementList extends StatelessWidget {
             height: cardHeight(AnnouncementSection().id),
             itemCount: items.length,
             viewportFraction: viewportFraction,
-            autoScroll: true,
+            // No auto-advance. It moved the card out from under whoever was
+            // reading it while they scrolled Home, with nothing on screen
+            // saying why or how to stop it. The dots and (on a pointer) the
+            // arrows carry "there is more than one of these" instead.
             spacing: homeCarouselSpacing,
             itemBuilder: (_, i) => _AnnouncementCard(items[i]),
           ),

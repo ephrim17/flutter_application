@@ -35,6 +35,12 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
   int _currentIndex = 0;
   bool _isAutoScrolling = false;
 
+  /// Set the moment the reader moves the carousel themselves, by an arrow,
+  /// a dot or a drag. Auto-advance then stops for good: a carousel that
+  /// takes itself back after someone has chosen a card is the same
+  /// complaint as one that moves while they are reading.
+  bool _userTookOver = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,10 +57,13 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
     if (_isAutoScrolling) return;
     _isAutoScrolling = true;
 
-    while (mounted && widget.autoScroll && widget.itemCount > 1) {
+    while (mounted &&
+        widget.autoScroll &&
+        !_userTookOver &&
+        widget.itemCount > 1) {
       await Future.delayed(widget.autoScrollDuration);
 
-      if (!mounted) break;
+      if (!mounted || _userTookOver) break;
 
       _currentIndex = (_currentIndex + 1) % widget.itemCount;
 
@@ -84,6 +93,7 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
 
   void _goTo(int index) {
     if (index < 0 || index >= widget.itemCount) return;
+    _userTookOver = true;
     _currentIndex = index;
     _controller.animateToPage(
       index,
@@ -123,19 +133,29 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
               return Stack(
                 children: [
                   Positioned.fill(
-                    child: PageView.builder(
-                      controller: _controller,
-                      itemCount: widget.itemCount,
-                      onPageChanged: (index) {
-                        setState(() => _currentIndex = index);
+                    child: NotificationListener<ScrollStartNotification>(
+                      onNotification: (notification) {
+                        // dragDetails is null for the controller's own
+                        // animations, so this is a real swipe.
+                        if (notification.dragDetails != null) {
+                          _userTookOver = true;
+                        }
+                        return false;
                       },
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: widget.spacing / 2),
-                          child: widget.itemBuilder(context, index),
-                        );
-                      },
+                      child: PageView.builder(
+                        controller: _controller,
+                        itemCount: widget.itemCount,
+                        onPageChanged: (index) {
+                          setState(() => _currentIndex = index);
+                        },
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: widget.spacing / 2),
+                            child: widget.itemBuilder(context, index),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   if (showArrows) ...[
