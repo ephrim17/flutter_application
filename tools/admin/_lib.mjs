@@ -44,10 +44,16 @@ export function parseArgs(argv) {
 
 export function admin() {
   if (getApps().length === 0) {
-    const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    // --key keeps the invocation a plain `node script.mjs ...`, with no
+    // environment prefix, so a permission rule can name it exactly.
+    const keyFlag = process.argv.indexOf('--key');
+    const keyPath = keyFlag !== -1
+      ? process.argv[keyFlag + 1]
+      : process.env.GOOGLE_APPLICATION_CREDENTIALS;
     if (!keyPath) {
       throw new Error(
-        'Set GOOGLE_APPLICATION_CREDENTIALS to the service-account key file.',
+        'Pass --key <path>, or set GOOGLE_APPLICATION_CREDENTIALS, to the '
+        + 'service-account key file.',
       );
     }
     const credential = cert(JSON.parse(readFileSync(keyPath, 'utf8')));
