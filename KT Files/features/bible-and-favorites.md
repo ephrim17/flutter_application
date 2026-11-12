@@ -93,6 +93,21 @@ verses. Bible reference pickers are reused by Studio, Daily Faith and Learning.
   fields, each against its own cap), read-only for the owner client-side —
   only the callable's Admin SDK writes it.
 
+## Chapter picker layout
+
+The chapter grid is sized by maximum tile extent (`chapterGridDelegate`),
+not by a column count. A tile is the same size on a phone and on a desktop,
+and a wider screen simply fits more per row — the way a keypad or a
+calendar behaves. Five fixed columns at a 1.2 aspect ratio grew the tile
+with the window instead: roughly 370 by 300 around a single numeral on a
+full-width desktop route, and cramped at five across on a phone. The tiles
+themselves are rounded, tinted and carry the number at `titleMedium`
+weight, rather than a bare `Card` with default body text.
+
+`test/chapter_grid_layout_test.dart` pins the tile size at 320, 393, 606,
+1100 and 1512, and asserts that a wider window changes the number of
+columns rather than the size of a tile.
+
 ## Test flows
 
 | ID | Scenario | Expected result |

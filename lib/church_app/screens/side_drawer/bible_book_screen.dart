@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
@@ -59,29 +60,31 @@ class BibleBookScreen extends StatelessWidget {
           text: context.t('bible.title'),
         ),
       ),
-      body: ListView.builder(
-        itemCount: bibleBooks.length,
-        itemBuilder: (_, index) {
-          final book = bibleBooks[index];
-          return ListTile(
-            title: Text(book.key),
-            subtitle: Text(book.name),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChapterScreen(
-                    book: book,
-                    version: version,
-                    requireDownloaded: requireDownloaded,
-                    isGuestShare: isGuestShare,
+      body: DesktopContentWidth(
+        child: ListView.builder(
+          itemCount: bibleBooks.length,
+          itemBuilder: (_, index) {
+            final book = bibleBooks[index];
+            return ListTile(
+              title: Text(book.key),
+              subtitle: Text(book.name),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChapterScreen(
+                      book: book,
+                      version: version,
+                      requireDownloaded: requireDownloaded,
+                      isGuestShare: isGuestShare,
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -156,41 +159,83 @@ class _ChapterScreenState extends State<ChapterScreen> {
               ),
             ],
           )),
-          body: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5,
-              childAspectRatio: 1.2,
-            ),
-            itemCount: chapters.length,
-            itemBuilder: (_, index) {
-              final chapterNo = chapters[index]['chapter'].toString();
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => VerseScreen(
-                        book: widget.book,
-                        version: widget.version,
-                        requireDownloaded: widget.requireDownloaded,
-                        startChapterIndex: index,
-                        isGuestShare: widget.isGuestShare,
+          // A chapter picker, not a wall of panels. Five fixed columns at a
+          // 1.2 ratio meant each tile grew with the window: on a desktop
+          // route that was roughly 370 by 300 around a single numeral, and
+          // on a phone the same five columns left them cramped. Sizing by
+          // maximum tile extent instead keeps a chapter the size of a
+          // chapter everywhere, and simply fits more of them per row on a
+          // wider screen — the way a keypad or a calendar behaves.
+          body: DesktopContentWidth(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: chapterGridDelegate,
+              itemCount: chapters.length,
+              itemBuilder: (_, index) {
+                final chapterNo = chapters[index]['chapter'].toString();
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VerseScreen(
+                          book: widget.book,
+                          version: widget.version,
+                          requireDownloaded: widget.requireDownloaded,
+                          startChapterIndex: index,
+                          isGuestShare: widget.isGuestShare,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withValues(alpha: 0.12),
                       ),
                     ),
-                  );
-                },
-                child: Card(
-                  child: Center(child: Text(chapterNo)),
-                ),
-              );
-            },
+                    child: Center(
+                      child: Text(
+                        chapterNo,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
     );
   }
 }
+
+/// How the chapter picker lays its tiles out.
+///
+/// Sized by maximum tile extent, not by a column count: a chapter tile is
+/// the same size on a phone and on a desktop, and a wider screen simply
+/// fits more per row. A fixed five columns grew the tile with the window
+/// instead — roughly 370 by 300 around one numeral on a desktop route.
+const SliverGridDelegateWithMaxCrossAxisExtent chapterGridDelegate =
+    SliverGridDelegateWithMaxCrossAxisExtent(
+  maxCrossAxisExtent: 84,
+  mainAxisExtent: 64,
+  crossAxisSpacing: 10,
+  mainAxisSpacing: 10,
+);
 
 class VerseScreen extends ConsumerStatefulWidget {
   final BibleBook book;

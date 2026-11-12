@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/widgets/app_confirm_dialog.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
@@ -88,123 +89,150 @@ class _EquipmentScreenState extends ConsumerState<EquipmentScreen> {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverToBoxAdapter(
-                  child: GridView.count(
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width >= 900 ? 4 : 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _EquipmentSummaryCard(
-                        title: context.t('ui.equipment.total_equipment'),
-                        value: equipmentState.totalCount.toString(),
-                        icon: Icons.inventory_2_outlined,
-                        colors: const [Color(0xFF5C9EFF), Color(0xFF4A6BFF)],
-                        onTap: () => _showSummaryDetails(
-                          context,
-                          title: context.t('ui.equipment.all_equipment'),
-                          subtitle: context.t(
-                              'ui.equipment.every_equipment_item_currently_tracked'),
-                          entries: equipmentState.items
-                              .map(
-                                (item) => _SummaryDetailEntry(
-                                  title: item.name,
-                                  subtitle:
-                                      '${item.category} • ${item.condition} • ${item.location} • ${_equipmentDateLabel(item.purchaseDate)}',
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                      ),
-                      _EquipmentSummaryCard(
-                        title: context.t('ui.equipment.categories'),
-                        value: '${equipmentState.categoryCount}',
-                        icon: Icons.category_outlined,
-                        colors: const [Color(0xFF3AC79B), Color(0xFF18A86A)],
-                        onTap: () => _showSummaryDetails(
-                          context,
-                          title: context.t('ui.equipment.equipment_categories'),
-                          subtitle: context.t(
-                              'ui.equipment.how_your_church_equipment_is_grouped'),
-                          entries: equipmentState.categories
-                              .where((category) => category != 'All')
-                              .map(
-                                (category) => _SummaryDetailEntry(
-                                  title: category,
-                                  subtitle: _equipmentItemCountText(
-                                    context,
-                                    equipmentState.items
-                                        .where(
-                                          (item) => item.category == category,
-                                        )
-                                        .length,
-                                  ),
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                      ),
-                      _EquipmentSummaryCard(
-                        title: context.t('ui.equipment.locations'),
-                        value: '${equipmentState.locationCount}',
-                        icon: Icons.place_outlined,
-                        colors: const [Color(0xFF8E7CFF), Color(0xFF6E54F6)],
-                        onTap: () => _showSummaryDetails(
-                          context,
-                          title: context.t('ui.equipment.equipment_locations'),
-                          subtitle: context.t(
-                              'ui.equipment.where_each_item_is_currently_kept'),
-                          entries: equipmentState.items
-                              .map((item) => item.location)
-                              .toSet()
-                              .map(
-                                (location) => _SummaryDetailEntry(
-                                  title: location,
-                                  subtitle: _equipmentItemCountText(
-                                    context,
-                                    equipmentState.items
-                                        .where(
-                                          (item) => item.location == location,
-                                        )
-                                        .length,
-                                  ),
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                      ),
-                      _EquipmentSummaryCard(
-                        title: context.t('ui.equipment.recent_additions'),
-                        value: '${equipmentState.recentCount}',
-                        icon: Icons.auto_awesome_outlined,
-                        colors: const [Color(0xFFFFA16B), Color(0xFFF47C48)],
-                        onTap: () => _showSummaryDetails(
-                          context,
-                          title:
-                              context.t('ui.equipment.recent_additions_7a89'),
-                          subtitle: context.t(
-                              'ui.equipment.items_added_in_the_last_45_days'),
-                          entries: equipmentState.items
-                              .where(
-                                (item) =>
-                                    DateTime.now()
-                                        .difference(item.purchaseDate)
-                                        .inDays <=
-                                    45,
-                              )
-                              .map(
-                                (item) => _SummaryDetailEntry(
-                                  title: item.name,
-                                  subtitle:
-                                      '${item.category} • ${item.condition} • ${item.location} • ${_equipmentDateLabel(item.purchaseDate)}',
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                      ),
-                    ],
+                  // Column count from the width, height fixed rather than
+                  // an aspect ratio. Four columns at 1.5 across a full-width
+                  // desktop route gave each card about 440 by 290 — a
+                  // billboard around a single figure.
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = statGridColumns(constraints.maxWidth);
+                      return GridView.count(
+                        crossAxisCount: columns,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio:
+                            (constraints.maxWidth - (columns - 1) * 12) /
+                                columns /
+                                128,
+                        children: [
+                          _EquipmentSummaryCard(
+                            title: context.t('ui.equipment.total_equipment'),
+                            value: equipmentState.totalCount.toString(),
+                            icon: Icons.inventory_2_outlined,
+                            colors: const [
+                              Color(0xFF5C9EFF),
+                              Color(0xFF4A6BFF)
+                            ],
+                            onTap: () => _showSummaryDetails(
+                              context,
+                              title: context.t('ui.equipment.all_equipment'),
+                              subtitle: context.t(
+                                  'ui.equipment.every_equipment_item_currently_tracked'),
+                              entries: equipmentState.items
+                                  .map(
+                                    (item) => _SummaryDetailEntry(
+                                      title: item.name,
+                                      subtitle:
+                                          '${item.category} • ${item.condition} • ${item.location} • ${_equipmentDateLabel(item.purchaseDate)}',
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
+                          ),
+                          _EquipmentSummaryCard(
+                            title: context.t('ui.equipment.categories'),
+                            value: '${equipmentState.categoryCount}',
+                            icon: Icons.category_outlined,
+                            colors: const [
+                              Color(0xFF3AC79B),
+                              Color(0xFF18A86A)
+                            ],
+                            onTap: () => _showSummaryDetails(
+                              context,
+                              title: context
+                                  .t('ui.equipment.equipment_categories'),
+                              subtitle: context.t(
+                                  'ui.equipment.how_your_church_equipment_is_grouped'),
+                              entries: equipmentState.categories
+                                  .where((category) => category != 'All')
+                                  .map(
+                                    (category) => _SummaryDetailEntry(
+                                      title: category,
+                                      subtitle: _equipmentItemCountText(
+                                        context,
+                                        equipmentState.items
+                                            .where(
+                                              (item) =>
+                                                  item.category == category,
+                                            )
+                                            .length,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
+                          ),
+                          _EquipmentSummaryCard(
+                            title: context.t('ui.equipment.locations'),
+                            value: '${equipmentState.locationCount}',
+                            icon: Icons.place_outlined,
+                            colors: const [
+                              Color(0xFF8E7CFF),
+                              Color(0xFF6E54F6)
+                            ],
+                            onTap: () => _showSummaryDetails(
+                              context,
+                              title:
+                                  context.t('ui.equipment.equipment_locations'),
+                              subtitle: context.t(
+                                  'ui.equipment.where_each_item_is_currently_kept'),
+                              entries: equipmentState.items
+                                  .map((item) => item.location)
+                                  .toSet()
+                                  .map(
+                                    (location) => _SummaryDetailEntry(
+                                      title: location,
+                                      subtitle: _equipmentItemCountText(
+                                        context,
+                                        equipmentState.items
+                                            .where(
+                                              (item) =>
+                                                  item.location == location,
+                                            )
+                                            .length,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
+                          ),
+                          _EquipmentSummaryCard(
+                            title: context.t('ui.equipment.recent_additions'),
+                            value: '${equipmentState.recentCount}',
+                            icon: Icons.auto_awesome_outlined,
+                            colors: const [
+                              Color(0xFFFFA16B),
+                              Color(0xFFF47C48)
+                            ],
+                            onTap: () => _showSummaryDetails(
+                              context,
+                              title: context
+                                  .t('ui.equipment.recent_additions_7a89'),
+                              subtitle: context.t(
+                                  'ui.equipment.items_added_in_the_last_45_days'),
+                              entries: equipmentState.items
+                                  .where(
+                                    (item) =>
+                                        DateTime.now()
+                                            .difference(item.purchaseDate)
+                                            .inDays <=
+                                        45,
+                                  )
+                                  .map(
+                                    (item) => _SummaryDetailEntry(
+                                      title: item.name,
+                                      subtitle:
+                                          '${item.category} • ${item.condition} • ${item.location} • ${_equipmentDateLabel(item.purchaseDate)}',
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
