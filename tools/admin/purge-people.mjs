@@ -90,22 +90,82 @@ const doomedFiles = userFiles.filter((file) => {
 console.log(`\nStorage under users/: ${doomedFiles.length} objects to delete`);
 for (const file of doomedFiles) console.log(`  ${file.name}`);
 
-// Everything else that still names a deleted person — reported, not
-// touched. Deleting a prayer request or a feed post is a different
-// decision from deleting the person's membership.
-console.log('\nStill referencing deleted people (not touched):');
-for (const [name, field] of [
+// Content a deleted person wrote. Off by default: deleting someone's
+// prayer request is a different decision from deleting their membership,
+// so --purge-content has to ask for it.
+const contentCollections = [
   ['prayer_requests', 'userId'],
   ['feeds', 'userId'],
   ['learning_results', 'userId'],
   ['notification_requests', 'createdBy'],
-]) {
+];
+
+const purgeContent = args.flags.has('purge-content');
+const doomedContent = [];
+console.log(
+  purgeContent
+    ? '\nContent written by deleted people (to delete):'
+    : '\nStill referencing deleted people (not touched — pass --purge-content):',
+);
+for (const [name, field] of contentCollections) {
   const snapshot = await churchRef.collection(name).get();
   const stale = snapshot.docs.filter((doc) => {
     const value = (doc.data() || {})[field];
     return typeof value === 'string' && value && !live.has(value);
   });
   console.log(`  ${name.padEnd(22)} ${stale.length} of ${snapshot.size}`);
+  if (purgeContent) doomedContent.push(...stale.map((d) => d.ref));
+}
+
+// A feed post's image is filed under the post id. Deleting the document
+// alone would leave the picture in the bucket with nothing pointing at it.
+const doomedImages = [];
+if (purgeContent) {
+  const postIds = new Set(
+    doomedContent.filter((ref) => ref.parent.id === 'feeds').map((ref) => ref.id),
+  );
+  const [feedFiles] = await bucket.getFiles({ prefix: `churches/${church}/feed/` });
+  doomedImages.push(
+    ...feedFiles.filter((file) => {
+      const name = file.name.split('/').pop() || '';
+      return postIds.has(name.replace(/\.[a-z0-9]+$/i, ''));
+    }),
+  );
+  console.log(`  feed images            ${doomedImages.length}`);
+}
+
+// Group rosters are keyed by uid, so a deleted account leaves a row that
+// names nobody.
+const doomedRoster = [];
+if (purgeContent) {
+  const groups = await churchRef.collection('groups').get();
+  for (const group of groups.docs) {
+    const roster = await group.ref.collection('groupMembers').get();
+    doomedRoster.push(
+      ...roster.docs
+        .filter((doc) => !alive(doc.id, doc.data()))
+        .map((doc) => doc.ref),
+    );
+  }
+  console.log(`  group roster rows      ${doomedRoster.length}`);
+}
+
+// Attendance is different: the gathering happened, and the record carries
+// counts and notes of its own. The deleted people are pruned out of the
+// present list rather than the service being deleted.
+const attendanceEdits = [];
+if (purgeContent) {
+  const services = await churchRef.collection('services').get();
+  for (const service of services.docs) {
+    const present = (service.data() || {}).present;
+    if (!Array.isArray(present)) continue;
+    const kept = present.filter((uid) => typeof uid === 'string' && live.has(uid));
+    if (kept.length !== present.length) {
+      attendanceEdits.push({ ref: service.ref, kept, removed: present.length - kept.length });
+    }
+  }
+  const removed = attendanceEdits.reduce((sum, edit) => sum + edit.removed, 0);
+  console.log(`  attendance entries     ${removed} pruned from ${attendanceEdits.length} service(s)`);
 }
 
 if (!args.apply) {
@@ -132,8 +192,20 @@ for (const doc of doomedUsers) {
 }
 console.log(`  ${doomedUsers.length} user documents`);
 
-for (const file of doomedFiles) {
+for (const file of [...doomedFiles, ...doomedImages]) {
   await file.delete();
 }
-console.log(`  ${doomedFiles.length} storage objects`);
+console.log(`  ${doomedFiles.length + doomedImages.length} storage objects`);
+
+for (const ref of [...doomedContent, ...doomedRoster]) {
+  // recursiveDelete, because a feed post owns a reactions subcollection.
+  await db.recursiveDelete(ref);
+}
+if (purgeContent) {
+  console.log(`  ${doomedContent.length} content documents, ${doomedRoster.length} roster rows`);
+  for (const edit of attendanceEdits) {
+    await edit.ref.update({ present: edit.kept });
+  }
+  console.log(`  ${attendanceEdits.length} attendance record(s) pruned`);
+}
 console.log('\nDone.');
