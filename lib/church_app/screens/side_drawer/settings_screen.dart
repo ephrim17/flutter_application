@@ -9,6 +9,8 @@ import 'package:flutter_application/church_app/widgets/desktop_content_width.dar
 import 'package:flutter_application/church_app/helpers/self_signup_membership_helper.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
+import 'package:flutter_application/church_app/helpers/app_install.dart';
+import 'package:flutter_application/church_app/widgets/modals/app_install_sheet.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_application/church_app/models/church_membership_model.dart';
@@ -92,6 +94,7 @@ class SettingsScreen extends ConsumerWidget {
                 _AppearanceSection(),
                 _PushNotificationSection(),
                 _PrayerReminderSection(),
+                _InstallAppSection(),
               ],
             ),
             const SizedBox(height: sectionSpacing),
@@ -177,6 +180,7 @@ class GuestSettingsScreen extends ConsumerWidget {
                 _AppearanceSection(),
                 _PushNotificationSection(),
                 _PrayerReminderSection(),
+                _InstallAppSection(),
               ],
             ),
             const SizedBox(height: sectionSpacing),
@@ -941,6 +945,49 @@ class _AppearanceSection extends ConsumerWidget {
           ref.read(themeProvider.notifier).toggle(value);
         },
       ),
+    );
+  }
+}
+
+/// "Add to home screen", kept somewhere permanent.
+///
+/// The Home banner can be dismissed for good, and a feature that only
+/// exists in a banner someone has already waved away is a feature they
+/// cannot find again. Web only: on a phone build there is nothing to
+/// install, and the tile would be a dead end.
+class _InstallAppSection extends ConsumerStatefulWidget {
+  const _InstallAppSection();
+
+  @override
+  ConsumerState<_InstallAppSection> createState() => _InstallAppSectionState();
+}
+
+class _InstallAppSectionState extends ConsumerState<_InstallAppSection> {
+  late bool _installed = isRunningAsInstalledApp();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!kIsWeb) return const SizedBox.shrink();
+
+    return _SettingsTile(
+      icon: Icons.add_to_home_screen_rounded,
+      title: ref.t('settings.install_title'),
+      subtitle: _installed
+          ? ref.t('settings.install_done_subtitle')
+          : ref.t('settings.install_subtitle'),
+      trailing: _installed
+          ? Icon(
+              Icons.check_circle_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            )
+          : null,
+      onTap: _installed
+          ? null
+          : () async {
+              await showAppInstallSheet(context);
+              if (!mounted) return;
+              setState(() => _installed = isRunningAsInstalledApp());
+            },
     );
   }
 }

@@ -32,6 +32,75 @@
   <title>Church Tree</title>
   <link rel="manifest" href="manifest.json">
 
+  <!--
+    Install-to-home-screen glue.
+
+    A browser fires `beforeinstallprompt` once, early — usually before
+    Flutter has finished booting — and it only lets you show the install
+    prompt from the event object it handed you. So the page catches that
+    event here, keeps it, and exposes three small functions for the app to
+    call. Without this the app could describe installing but never offer it.
+  -->
+  <script>
+    (function () {
+      var deferredPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', function (event) {
+        // Keeps the browser's own mini-infobar from appearing, so the offer
+        // is made once, by the app, where it can be explained.
+        event.preventDefault();
+        deferredPrompt = event;
+      });
+
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+      });
+
+      // Exposed as plain top-level functions rather than as one object:
+      // the Dart side binds to them by name, and a method on an object
+      // needs more interop machinery than this is worth.
+      window.churchTreeInstallAvailable = function () {
+        return deferredPrompt !== null;
+      };
+
+      window.churchTreeInstalled = function () {
+        try {
+          return window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+            window.navigator.standalone === true;
+        } catch (e) {
+          return false;
+        }
+      };
+
+      window.churchTreeUserAgent = function () {
+        try {
+          return window.navigator.userAgent || '';
+        } catch (e) {
+          return '';
+        }
+      };
+
+      // Resolves to 'accepted', 'dismissed' or 'unavailable'. The browser
+      // spends the event on a single use, so it is cleared either way.
+      window.churchTreeInstallPrompt = function () {
+        if (deferredPrompt === null) {
+          return Promise.resolve('unavailable');
+        }
+        var event = deferredPrompt;
+        deferredPrompt = null;
+        try {
+          event.prompt();
+          return event.userChoice.then(function (choice) {
+            return choice && choice.outcome ? choice.outcome : 'dismissed';
+          });
+        } catch (e) {
+          return Promise.resolve('unavailable');
+        }
+      };
+    })();
+  </script>
+
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

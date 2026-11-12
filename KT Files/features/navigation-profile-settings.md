@@ -135,6 +135,49 @@ the word "16".
 - Android status and navigation bar icons follow the active surface brightness
   so system controls remain legible in light and dark themes.
 
+## Installing the web app
+
+A browser tab says nothing about being keepable, and the browser's own
+install hint is a one-line bar most people never see. So the offer is made
+in the app, in words, with the steps for the browser the reader is actually
+in.
+
+- **`web/index.html` catches `beforeinstallprompt`** and keeps the event.
+  It has to: the event fires once, early, usually before Flutter has
+  booted, and a browser only lets you show the install prompt from the
+  event object it handed you. The page calls `preventDefault()` on it, so
+  the browser's own mini-infobar does not appear and the offer is made once,
+  where it can be explained. It exposes `churchTreeInstallAvailable`,
+  `churchTreeInstalled`, `churchTreeUserAgent` and `churchTreeInstallPrompt`
+  as plain functions.
+- **`helpers/app_install.dart`** is the Dart side, behind the usual
+  stub/web conditional import, so a phone build neither sees nor compiles
+  any of it. Every call is wrapped: a browser with no install support, or a
+  page served from an older `index.html` that predates the glue, reads as
+  "cannot install" rather than crashing.
+- **`helpers/install_guide.dart`** picks the written steps from the user
+  agent. Only Chromium browsers fire the prompt event; Safari and Firefox
+  never do, and there the written steps are the whole answer, which is why
+  they are not a footnote under a button. Order matters in the detection:
+  the iOS checks come first because Chrome and Edge there are Safari
+  underneath, and the Chromium checks come after Edge and Opera because
+  every one of them claims to be Chrome. Desktop Firefox cannot install a
+  web app at all, and is told so rather than given steps that lead nowhere.
+- **Where it appears:** a dismissible banner at the top of Home
+  (`widgets/app_install_banner.dart`) and a permanent entry in Settings →
+  Preferences. The banner takes "Not now" for an answer permanently, per
+  device (`app_install_banner_dismissed` in shared preferences) — which is
+  exactly why Settings keeps an entry: a feature that lives only in a
+  banner someone has waved away is a feature they cannot find again. The
+  banner carries its own top gap, so on a phone build, where it draws
+  nothing, it leaves no band of empty page behind it.
+- Neither appears once the app is already running installed
+  (`display-mode: standalone`), and the Settings tile then reads as done.
+
+`test/install_guide_test.dart` pins the browser detection against real user
+agent strings, that every guide has text for every step it claims, and the
+three reasons not to offer this at all.
+
 ## Technical map
 
 - Shell: `church_tab_screen.dart`, `widgets/app_bottom_tab_bar.dart`.
@@ -181,3 +224,7 @@ the word "16".
 | NAV-15 | Open Members, Church Groups, Settings and Studio on a desktop window | Content sits in one readable column; trailing controls stay near the rows they belong to. |
 | NAV-16 | Compare the Members search box with the list under it on desktop | Both are the same width; the search must not run the full window while the list is capped. |
 | NAV-17 | Open the same screens on a phone and a tablet | Identical to before — the cap is inert below 1100. |
+| NAV-18 | Open the site in Chrome on Android, Chrome on a desktop, Safari on iPhone, Safari on a Mac and Firefox | Home shows the install banner; opening it gives steps that match that browser, and only the Chromium ones also show a working Install button. |
+| NAV-19 | Tap "Not now", then reload | The banner stays gone; Settings → Preferences → Add to home screen still opens the same instructions. |
+| NAV-20 | Install the app, then open it from the home screen | No banner on Home; the Settings entry reads as already installed and is not tappable. |
+| NAV-21 | Open the app on a phone build (Android/iOS) | No install banner and no Settings entry anywhere. |

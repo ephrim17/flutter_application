@@ -3,6 +3,7 @@ import 'package:flutter_application/church_app/widgets/app_loading_indicator.dar
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
+import 'package:flutter_application/church_app/widgets/app_install_banner.dart';
 import 'package:flutter_application/church_app/models/app_config_model.dart';
 import 'package:flutter_application/church_app/providers/home_sections/home_section_config_providers.dart';
 import 'package:flutter_application/church_app/providers/prompt_sequence_provider.dart';
@@ -177,6 +178,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final slivers = <Widget>[];
         final appUser = userAsync.asData?.value;
         final userName = appUser?.name.trim() ?? '';
+
+        // Browser visitors first: nothing in a tab says this can live on a
+        // home screen. Draws nothing on a phone build, nothing once the app
+        // is installed, and nothing after it has been dismissed.
+        slivers.add(
+          const SliverToBoxAdapter(
+            child: HomeCardAlign(child: AppInstallBanner()),
+          ),
+        );
 
         if (userName.isNotEmpty) {
           slivers.add(

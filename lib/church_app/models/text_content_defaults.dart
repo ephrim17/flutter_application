@@ -894,6 +894,72 @@ const Map<String, String> defaultChurchTextContents = {
   'settings.push_no_church': 'Select a church before enabling notifications',
   'settings.push_status_unavailable':
       'Unable to check notification status right now',
+  'settings.install_title': 'Add to home screen',
+  'settings.install_subtitle':
+      'Keep Church Tree with your other apps, opening full screen.',
+  'settings.install_done_subtitle':
+      "You're already using Church Tree as an installed app.",
+
+  // Installing the web app. The steps differ per browser because the
+  // browsers do, and wrong steps are worse than none.
+  'install.banner_title': 'Use Church Tree like an app',
+  'install.banner_body':
+      'Add it to your home screen and it opens full screen, with no address bar, right next to your other apps.',
+  'install.banner_action': 'Add to home screen',
+  'install.banner_dismiss': 'Not now',
+  'install.sheet_title': 'Add to home screen',
+  'install.sheet_intro':
+      'Church Tree runs from your home screen like any other app — full screen, one tap away, and still signed in.',
+  'install.install_button': 'Add to home screen',
+  'install.manual_heading': 'Or add it yourself',
+  'install.accepted': 'Church Tree has been added to your home screen.',
+  'install.steps.androidChromium.title': 'In Chrome on Android',
+  'install.steps.androidChromium.1': 'Tap the three-dot menu at the top right.',
+  'install.steps.androidChromium.2':
+      'Choose "Add to Home screen", or "Install app" if you see that instead.',
+  'install.steps.androidChromium.3':
+      'Confirm, and Church Tree appears with your other apps.',
+  'install.steps.androidFirefox.title': 'In Firefox on Android',
+  'install.steps.androidFirefox.1': 'Tap the three-dot menu at the top right.',
+  'install.steps.androidFirefox.2':
+      'Choose "Install", or "Add to Home screen".',
+  'install.steps.androidFirefox.3':
+      'Confirm, and Church Tree appears with your other apps.',
+  'install.steps.iosShareSheet.title': 'On iPhone and iPad',
+  'install.steps.iosShareSheet.1':
+      'Tap the Share button — the square with an arrow pointing up.',
+  'install.steps.iosShareSheet.2':
+      'Scroll down the list and choose "Add to Home Screen".',
+  'install.steps.iosShareSheet.3':
+      'Tap Add at the top right, and Church Tree appears on your home screen.',
+  'install.steps.iosOtherBrowser.title': 'On iPhone and iPad',
+  'install.steps.iosOtherBrowser.1':
+      'This browser cannot add apps to the home screen — open this page in Safari first.',
+  'install.steps.iosOtherBrowser.2':
+      'In Safari, tap the Share button at the bottom of the screen.',
+  'install.steps.iosOtherBrowser.3': 'Choose "Add to Home Screen", then Add.',
+  'install.steps.desktopChromium.title': 'In Chrome or Edge',
+  'install.steps.desktopChromium.1':
+      'Look for the install icon at the right-hand end of the address bar.',
+  'install.steps.desktopChromium.2':
+      'Click it and choose Install. If it is not there, use the three-dot menu and look for "Install".',
+  'install.steps.desktopChromium.3':
+      'Church Tree opens in its own window, without browser tabs.',
+  'install.steps.desktopSafari.title': 'In Safari on a Mac',
+  'install.steps.desktopSafari.1': 'Open the File menu in the menu bar.',
+  'install.steps.desktopSafari.2': 'Choose "Add to Dock".',
+  'install.steps.desktopSafari.3':
+      'Church Tree sits in your Dock and opens in its own window.',
+  'install.steps.desktopFirefox.title': 'In Firefox on a computer',
+  'install.steps.desktopFirefox.1':
+      'Firefox on a computer cannot install web apps.',
+  'install.steps.desktopFirefox.2':
+      'Open Church Tree in Chrome or Edge to install it, or bookmark this page here.',
+  'install.steps.unknown.title': 'In your browser',
+  'install.steps.unknown.1':
+      'Open your browser\'s menu and look for "Add to Home screen" or "Install app".',
+  'install.steps.unknown.2':
+      'If there is no such option, Chrome, Edge and Safari all offer one.',
   'approval.pending_title': 'Approval Pending',
   'approval.waiting_title': 'Your access is waiting for approval',
   'approval.waiting_message':
