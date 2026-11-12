@@ -50,6 +50,9 @@ const [files] = await bucket.getFiles();
 let copied = 0;
 let size = 0;
 for (const file of files) {
+  // The console creates zero-byte objects whose names end in "/" to show a
+  // folder. They are not files and cannot be written as one.
+  if (file.name.endsWith('/')) continue;
   const destination = join(root, 'storage', file.name);
   mkdirSync(dirname(destination), { recursive: true });
   await new Promise((resolve, reject) => {

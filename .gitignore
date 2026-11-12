@@ -52,3 +52,4 @@ CLAUDE.local.md
 *serviceAccount*.json
 *-admin-key.json
 tools/admin/backup-*/
+tools/admin/node_modules

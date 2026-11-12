@@ -45,10 +45,25 @@ if (doomed.length === 0) console.log('  (none)');
 
 // Storage is filed as churches/{churchId}/..., with the global feed images
 // under churches/global — which belongs to no church and is left alone.
+//
+// Matched on the prefix rather than on the churches that exist in
+// Firestore: the bucket holds folders for churches that were deleted long
+// ago (test_church_1, demotestchurch, sdsdss...), and "every church except
+// this one" has to mean those too or they survive as invisible residue.
 const [allFiles] = await bucket.getFiles({ prefix: 'churches/' });
-const doomedIds = new Set(doomed.map((d) => d.id));
-const doomedFiles = allFiles.filter((file) => doomedIds.has(file.name.split('/')[1]));
+const keptPrefixes = new Set([keep, 'global']);
+const doomedFiles = allFiles.filter((file) => {
+  const segments = file.name.split('/');
+  return segments.length > 1 && segments[1] !== '' && !keptPrefixes.has(segments[1]);
+});
+const orphanIds = [...new Set(doomedFiles.map((f) => f.name.split('/')[1]))]
+  .filter((id) => !doomed.some((d) => d.id === id));
 const doomedBytes = doomedFiles.reduce((sum, f) => sum + Number(f.metadata?.size || 0), 0);
+
+if (orphanIds.length > 0) {
+  console.log(`\nStorage folders with no church document left (also deleted):`);
+  for (const id of orphanIds) console.log(`  churches/${id}`);
+}
 
 console.log(`\nStorage objects to delete: ${doomedFiles.length} (${bytes(doomedBytes)})`);
 for (const file of doomedFiles.slice(0, 15)) console.log(`  ${file.name}`);
