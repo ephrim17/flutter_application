@@ -23,6 +23,7 @@ older flow.
 ## System documentation
 
 - [System Architecture](architecture/system-architecture.md)
+- [Member record encryption plan](architecture/member-encryption-plan.md) — server-side Cloud KMS design, not yet built
 - [Testing Strategy and Release Gates](testing/README.md)
 - [Feature Traceability Matrix](testing/feature-traceability.md)
 - [Android Release Readiness — 2026-08-13](testing/android-release-readiness-2026-08-13.md)
