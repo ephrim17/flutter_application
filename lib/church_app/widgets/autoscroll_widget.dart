@@ -78,10 +78,28 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
     super.dispose();
   }
 
+  /// Width at which a pointer, rather than a thumb, is the likely input and
+  /// the arrows are worth their space.
+  static const double _arrowBreakpoint = 700;
+
+  void _goTo(int index) {
+    if (index < 0 || index >= widget.itemCount) return;
+    _currentIndex = index;
+    _controller.animateToPage(
+      index,
+      duration: widget.animationDuration,
+      curve: Curves.easeOutCubic,
+    );
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasDots = widget.itemCount > 1;
-    const dotsHeight = 18.0; // approx 8 spacing + 10 dot size
+    // 8 gap + a 10pt dot inside 8pt of vertical padding either side, which
+    // is what makes the dot tappable. Under-reserving this overflows the
+    // fixed card height the carousel is given.
+    const dotsHeight = 34.0;
 
     final pageHeight = hasDots ? (widget.height! - dotsHeight) : widget.height!;
 
@@ -90,16 +108,53 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
       children: [
         SizedBox(
           height: pageHeight,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: widget.itemCount,
-            onPageChanged: (index) {
-              setState(() => _currentIndex = index);
-            },
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.symmetric(horizontal: widget.spacing / 2),
-                child: widget.itemBuilder(context, index),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // A `PageView` only advances once a drag passes half a page.
+              // On a phone that is a flick; on a desktop, where the card can
+              // be 1,300px wide, it means dragging 650px with a mouse — and
+              // a wheel does not page it at all, it drifts and springs back.
+              // So the dots could say "there are two of these" while the
+              // second one stayed effectively unreachable. These arrows are
+              // the pointer's way in.
+              final showArrows =
+                  hasDots && constraints.maxWidth >= _arrowBreakpoint;
+
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: widget.itemCount,
+                      onPageChanged: (index) {
+                        setState(() => _currentIndex = index);
+                      },
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: widget.spacing / 2),
+                          child: widget.itemBuilder(context, index),
+                        );
+                      },
+                    ),
+                  ),
+                  if (showArrows) ...[
+                    _CarouselArrow(
+                      alignment: Alignment.centerLeft,
+                      icon: Icons.chevron_left_rounded,
+                      onTap: _currentIndex > 0
+                          ? () => _goTo(_currentIndex - 1)
+                          : null,
+                    ),
+                    _CarouselArrow(
+                      alignment: Alignment.centerRight,
+                      icon: Icons.chevron_right_rounded,
+                      onTap: _currentIndex < widget.itemCount - 1
+                          ? () => _goTo(_currentIndex + 1)
+                          : null,
+                    ),
+                  ],
+                ],
               );
             },
           ),
@@ -111,22 +166,87 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
             children: List.generate(widget.itemCount, (index) {
               final isActive = index == _currentIndex;
 
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: isActive ? 10 : 8,
-                height: isActive ? 10 : 8,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? Theme.of(context).colorScheme.onSecondaryFixedVariant
-                      : Theme.of(context).colorScheme.secondaryFixedDim,
-                  shape: BoxShape.circle,
+              // Tappable, not just an indicator. On a phone the dots are
+              // the only other way to reach a card without a long swipe,
+              // and the hit area is padded out to something a thumb can
+              // actually land on.
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _goTo(index),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 8,
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: isActive ? 10 : 8,
+                    height: isActive ? 10 : 8,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSecondaryFixedVariant
+                          : Theme.of(context).colorScheme.secondaryFixedDim,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
               );
             }),
           ),
         ],
       ],
+    );
+  }
+}
+
+/// One of the two nudge buttons a pointer uses to move a carousel on.
+///
+/// Null [onTap] means there is nothing that way, and the arrow dims rather
+/// than disappearing — a control that comes and goes is harder to aim at
+/// than one that greys out.
+class _CarouselArrow extends StatelessWidget {
+  const _CarouselArrow({
+    required this.alignment,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final Alignment alignment;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+
+    return Align(
+      alignment: alignment,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Material(
+          color: colors.surface.withValues(alpha: enabled ? 0.92 : 0.5),
+          shape: const CircleBorder(),
+          elevation: enabled ? 2 : 0,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Icon(
+                icon,
+                size: 24,
+                color: enabled
+                    ? colors.onSurface
+                    : colors.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

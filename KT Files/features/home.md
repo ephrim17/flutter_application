@@ -42,6 +42,36 @@ rather than overflowing. Without it the row overflowed its card by 61px at
 320dp — Flutter paints that as a striped banner in debug and silently clips
 it in release. Wrapping keeps every word, which an ellipsis would not.
 
+## Reaching the second card
+
+Every carousel (Events, Announcements, the pastor cards) is an
+`AutoScrollCarousel`, and the Pray For Others rail follows the same rules
+by hand.
+
+A `PageView` only advances once a drag passes **half a page**. On a phone
+that is a flick. On a desktop, where a card can be 1,300px wide, it means
+dragging 650px with a mouse — and a wheel does not page it at all, it
+drifts and springs back. So with two items the dots said "there are two of
+these" while the second one was effectively unreachable with a pointer.
+
+- **Arrows** appear at 700 and above, where a pointer rather than a thumb
+  is the likely input. At the ends they dim rather than disappear: a
+  control that comes and goes is harder to aim at than one that greys out.
+- **The dots are tappable**, with a padded hit area. That is the phone's
+  way across without a long swipe.
+- Below 700 there are no arrows, so the touch layout is unchanged.
+
+The Pray For Others rail is a plain scroll view rather than a `PageView`,
+so a wheel does move it. It settles on the nearest card on a debounce —
+a wheel produces scroll updates without the clean end notification a
+finger lift gives, so settling only on `ScrollEndNotification` left it
+parked half-way between two cards. It advances on a quarter of a card's
+movement rather than half, for the same reason the arrows exist, and the
+card is narrowed so the next one peeks past the edge.
+
+`test/carousel_navigation_test.dart` pins the breakpoint, the arrow
+behaviour at the ends, and that the dots move the carousel.
+
 ## Page width and one left edge
 
 **Home has no maximum width.** Every section is laid out against the screen
@@ -98,6 +128,11 @@ apart — and checks that nothing overflows at those widths.
 | HOME-12 | Open Home in a desktop browser window (1280 or wider) | Welcome card, Events, Promise Word, Announcements and footer all grow with the window, leaving the same 16 gutter at both edges; no centred column, no fixed-width card. |
 | HOME-16 | Switch Home → For You in the same window | The gutter does not change between the two tabs; cards start and end on the same pixels. |
 | HOME-17 | Open a carousel section holding more than one card | Dots appear under the carousel and swiping moves one full-width card at a time. |
+| HOME-18 | On a desktop window, use the carousel arrows | Each press moves one card; the arrow dims on the first and last card rather than disappearing. |
+| HOME-19 | On a desktop window, try the mouse wheel over a carousel | It does not leave the carousel parked between two cards. |
+| HOME-20 | Tap a dot under any carousel, on any device | The carousel moves to that card. |
+| HOME-21 | Open the same carousel on a phone | No arrows over the card; swipe and dots only. |
+| HOME-22 | Scroll the Pray For Others rail with a wheel and with a drag | It settles on a card either way, and the next card peeks past the edge beforehand. |
 | HOME-13 | Read each section heading against the card below it | Every heading starts exactly where its own card starts, at any width. |
 | HOME-14 | Drag the browser window from wide to phone width and back | Cards resize smoothly throughout; no overflow stripe and no horizontal scroll at any point. |
 | HOME-15 | Open Home on a wide window with a short Promise Word verse | The verse card still spans the full card width rather than shrinking to fit its text. |
