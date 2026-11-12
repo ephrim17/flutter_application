@@ -115,10 +115,19 @@ the rule and the author/expiry line are pinned to the card's own bottom edge
 rather than floating wherever the description ended. The Prayer Requests
 screen leaves it off, because there a card is only as tall as its content.
 
-Three things say there is more than one card: the next card peeks 30px past
+Four things say there is more than one card: the next card peeks 30px past
 the edge, the rail settles on a card rather than wherever it was released,
-and the dots say how many there are. The dots are tappable, which is the way
-across without a long swipe.
+the dots say how many there are, and from 700px up there are arrows. The
+dots are tappable at any width, which is the way across without a long
+swipe.
+
+The arrows are the same `CarouselArrow` the Home carousels use
+(`widgets/carousel_arrow.dart`), on the same `carouselArrowBreakpoint` —
+`AutoScrollCarousel` and `SnappingCardRail` are two different widgets, a
+`PageView` and a scroll view, which a reader has no way of telling apart
+and should not have to. They dim at the first and last card rather than
+disappearing, and below the breakpoint there are none at all, so the touch
+layout is unchanged.
 
 The settle runs on a 140ms debounce rather than on `ScrollEndNotification`
 alone: a wheel or trackpad produces scroll updates without the clean end
@@ -133,7 +142,8 @@ dots; `test/prayer_card_fill_height_test.dart` pins the footer.
 ## Technical map
 
 - Registry: `screens/for_you/for_you_screen.dart`.
-- Equal-height rail: `widgets/snapping_card_rail.dart`.
+- Equal-height rail: `widgets/snapping_card_rail.dart`; its arrows and
+  breakpoint: `widgets/carousel_arrow.dart`.
 - Sections: `screens/for_you/sections/`.
 - Reading plans: `screens/for_you/reading_plan/`.
 - Bible swipe: `screens/for_you/bible_swipe/`.
@@ -179,3 +189,5 @@ dots; `test/prayer_card_fill_height_test.dart` pins the footer.
 | FORYOU-23 | Scroll the Pray for others rail with a wheel, a trackpad and a drag | It settles on a card every time, never half-way between two; the next card peeks past the right edge beforehand. |
 | FORYOU-24 | Tap the second dot under the rail | The rail moves to that card and the dot fills. |
 | FORYOU-25 | Open the same request in Prayer Requests and in Pray for others | Padding, type and clamps match; in the list the card is only as tall as its content. |
+| FORYOU-26 | Open Pray for others on a window 700px or wider | Arrows sit over the rail; each press moves one card, and the arrow dims on the first and last card rather than disappearing. |
+| FORYOU-27 | Open the same rail on a phone | No arrows over the card; peek, swipe and tappable dots only. |

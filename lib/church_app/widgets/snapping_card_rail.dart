@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/carousel_arrow.dart';
 
 /// A horizontal run of cards that are all the same size, settles on a card
 /// rather than wherever it was released, and says how many there are.
@@ -145,43 +146,75 @@ class _SnappingCardRailState extends State<SnappingCardRail> {
             (_hasMore ? widget.peek : 0);
         _stride = cardWidth + widget.gap;
 
+        // A card here is nearly the full width, so reaching the next one
+        // with a mouse means a long drag, and a wheel only nudges it. The
+        // arrows are the pointer's way across, exactly as on the Home
+        // carousels — same breakpoint, same treatment at the ends.
+        final showArrows =
+            _hasMore && constraints.maxWidth >= carouselArrowBreakpoint;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification is ScrollUpdateNotification) {
-                  _trackIndex();
-                  _scheduleSettle();
-                } else if (notification is ScrollEndNotification) {
-                  _settleOnNearestCard();
-                }
-                return false;
-              },
-              child: SingleChildScrollView(
-                controller: _controller,
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: widget.sidePadding),
-                // The tallest card sets the height and every card is given
-                // it, so the rail has one bottom edge rather than one per
-                // card.
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var index = 0;
-                          index < widget.itemCount;
-                          index++) ...[
-                        if (index > 0) SizedBox(width: widget.gap),
-                        SizedBox(
-                          width: cardWidth,
-                          child: widget.itemBuilder(context, index),
-                        ),
-                      ],
-                    ],
+            Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollUpdateNotification) {
+                      _trackIndex();
+                      _scheduleSettle();
+                    } else if (notification is ScrollEndNotification) {
+                      _settleOnNearestCard();
+                    }
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    controller: _controller,
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: widget.sidePadding),
+                    // The tallest card sets the height and every card is given
+                    // it, so the rail has one bottom edge rather than one per
+                    // card.
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var index = 0;
+                              index < widget.itemCount;
+                              index++) ...[
+                            if (index > 0) SizedBox(width: widget.gap),
+                            SizedBox(
+                              width: cardWidth,
+                              child: widget.itemBuilder(context, index),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (showArrows)
+                  Positioned.fill(
+                    child: Row(
+                      children: [
+                        CarouselArrow(
+                          alignment: Alignment.centerLeft,
+                          icon: Icons.chevron_left_rounded,
+                          onTap: _index > 0 ? () => _goTo(_index - 1) : null,
+                        ),
+                        const Spacer(),
+                        CarouselArrow(
+                          alignment: Alignment.centerRight,
+                          icon: Icons.chevron_right_rounded,
+                          onTap: _index < widget.itemCount - 1
+                              ? () => _goTo(_index + 1)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
             if (_hasMore) ...[
               const SizedBox(height: 10),

@@ -64,7 +64,9 @@ these" while the second one was effectively unreachable with a pointer.
 The Pray For Others rail is a scroll view rather than a `PageView`, and
 lives in For You — see
 [For You content](for-you-content.md#the-pray-for-others-rail) for how it
-settles and why its cards are all one height.
+settles and why its cards are all one height. It carries the same arrows,
+from the same `CarouselArrow` at the same breakpoint, so the two kinds of
+carousel are operated the same way.
 
 **Nothing on Home advances by itself.** Announcements used to rotate every
 four seconds. That moved the card out from under whoever was reading it

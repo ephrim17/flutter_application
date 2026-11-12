@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/carousel_arrow.dart';
 
 class AutoScrollCarousel extends StatefulWidget {
   const AutoScrollCarousel({
@@ -87,10 +88,6 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
     super.dispose();
   }
 
-  /// Width at which a pointer, rather than a thumb, is the likely input and
-  /// the arrows are worth their space.
-  static const double _arrowBreakpoint = 700;
-
   void _goTo(int index) {
     if (index < 0 || index >= widget.itemCount) return;
     _userTookOver = true;
@@ -128,7 +125,7 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
               // second one stayed effectively unreachable. These arrows are
               // the pointer's way in.
               final showArrows =
-                  hasDots && constraints.maxWidth >= _arrowBreakpoint;
+                  hasDots && constraints.maxWidth >= carouselArrowBreakpoint;
 
               return Stack(
                 children: [
@@ -159,14 +156,14 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
                     ),
                   ),
                   if (showArrows) ...[
-                    _CarouselArrow(
+                    CarouselArrow(
                       alignment: Alignment.centerLeft,
                       icon: Icons.chevron_left_rounded,
                       onTap: _currentIndex > 0
                           ? () => _goTo(_currentIndex - 1)
                           : null,
                     ),
-                    _CarouselArrow(
+                    CarouselArrow(
                       alignment: Alignment.centerRight,
                       icon: Icons.chevron_right_rounded,
                       onTap: _currentIndex < widget.itemCount - 1
@@ -217,56 +214,6 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel> {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// One of the two nudge buttons a pointer uses to move a carousel on.
-///
-/// Null [onTap] means there is nothing that way, and the arrow dims rather
-/// than disappearing — a control that comes and goes is harder to aim at
-/// than one that greys out.
-class _CarouselArrow extends StatelessWidget {
-  const _CarouselArrow({
-    required this.alignment,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final Alignment alignment;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final enabled = onTap != null;
-
-    return Align(
-      alignment: alignment,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Material(
-          color: colors.surface.withValues(alpha: enabled ? 0.92 : 0.5),
-          shape: const CircleBorder(),
-          elevation: enabled ? 2 : 0,
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(
-                icon,
-                size: 24,
-                color: enabled
-                    ? colors.onSurface
-                    : colors.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

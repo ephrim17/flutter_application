@@ -111,4 +111,65 @@ void main() {
       );
     });
   });
+
+  group('a pointer gets arrows, as on the Home carousels', () {
+    Finder nextArrow() => find.byIcon(Icons.chevron_right_rounded);
+    Finder previousArrow() => find.byIcon(Icons.chevron_left_rounded);
+
+    testWidgets('none below 700, so the touch layout is untouched',
+        (tester) async {
+      await pumpRail(tester, cardHeights: [120, 120], width: 699);
+      expect(nextArrow(), findsNothing);
+      expect(previousArrow(), findsNothing);
+    });
+
+    testWidgets('none for a single card either', (tester) async {
+      await pumpRail(tester, cardHeights: [120], width: 1251);
+      expect(nextArrow(), findsNothing);
+    });
+
+    testWidgets('from 700 up, pressing next moves the rail along',
+        (tester) async {
+      await pumpRail(tester, cardHeights: [120, 120, 120], width: 700);
+      final before = cardRect(tester, 0).left;
+
+      await tester.tap(nextArrow());
+      await tester.pumpAndSettle();
+
+      expect(cardRect(tester, 0).left, lessThan(before));
+      expect(cardRect(tester, 1).left, moreOrLessEquals(16, epsilon: 1));
+    });
+
+    testWidgets('and back again', (tester) async {
+      await pumpRail(tester, cardHeights: [120, 120, 120], width: 1251);
+      final start = cardRect(tester, 0).left;
+
+      await tester.tap(nextArrow());
+      await tester.pumpAndSettle();
+      await tester.tap(previousArrow());
+      await tester.pumpAndSettle();
+
+      expect(cardRect(tester, 0).left, moreOrLessEquals(start, epsilon: 1));
+    });
+
+    testWidgets('the arrows stay put at the ends rather than vanishing',
+        (tester) async {
+      await pumpRail(tester, cardHeights: [120, 120], width: 1251);
+      expect(previousArrow(), findsOneWidget); // on the first card
+
+      await tester.tap(nextArrow());
+      await tester.pumpAndSettle();
+      final atEnd = cardRect(tester, 0).left;
+
+      expect(nextArrow(), findsOneWidget); // on the last card
+      await tester.tap(nextArrow());
+      await tester.pumpAndSettle();
+
+      expect(
+        cardRect(tester, 0).left,
+        moreOrLessEquals(atEnd, epsilon: 1),
+        reason: 'the dimmed arrow does nothing',
+      );
+    });
+  });
 }
