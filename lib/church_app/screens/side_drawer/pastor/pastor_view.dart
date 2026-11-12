@@ -51,9 +51,12 @@ class _PastorList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // No padding of its own. This sits inside About's own 16pt gutter,
+        // so a second 16 here put "Our Pastors" on a different left edge
+        // from every card above it.
         SectionHeader(
           text: context.t('pastor.section_title'),
-          padding: 16.0,
+          padding: 0,
         ),
         const SizedBox(
           height: 10,
@@ -63,8 +66,14 @@ class _PastorList extends StatelessWidget {
             child: AutoScrollCarousel(
               height: cardHeight("pastor"),
               itemCount: state.pastors.length,
-              viewportFraction: 0.92,
-              spacing: 12,
+              // One card fills the carousel, flush with the cards above it.
+              // At 0.92 the page was inset by a share of the width — about
+              // 78px on a desktop window — so the pastor card alone started
+              // a long way right of everything else on the page. A page
+              // gap would reintroduce half of that, and with one card on
+              // screen at a time it would only ever be seen mid-swipe.
+              viewportFraction: 1.0,
+              spacing: 0,
               itemBuilder: (_, i) => _PastorCard(
                 pastor: state.pastors[i],
               ),
@@ -83,136 +92,142 @@ class _PastorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final imageSize = (width - 32) * 0.30;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Container(
-        width: width - 32,
-        padding: const EdgeInsets.all(18),
-        decoration: welcomeBackCardDecoration(
-          context,
-          radius: cornerRadius + 4,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: imageSize,
-              height: imageSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  width: 2.5,
+    // Measured from the space the card is given, not from the screen. Taken
+    // from the screen, the avatar came out at 30% of the whole window —
+    // about 444px on a desktop — while the card itself was capped far
+    // narrower, which is what made this read as an enormous pale disc with
+    // the pastor's details stranded beside it. The clamp keeps it a
+    // portrait at any width rather than a feature wall.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final imageSize = (constraints.maxWidth * 0.30).clamp(72.0, 132.0);
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: welcomeBackCardDecoration(
+            context,
+            radius: cornerRadius + 4,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: imageSize,
+                height: imageSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    width: 2.5,
+                  ),
+                ),
+                child: ClipOval(
+                  child: pastor.imageUrl.trim().isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: pastor.imageUrl,
+                          fit: BoxFit.cover,
+                          memCacheWidth: (imageSize *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                          errorWidget: (_, __, ___) =>
+                              _PastorAvatarFallback(name: pastor.title),
+                        )
+                      : _PastorAvatarFallback(name: pastor.title),
                 ),
               ),
-              child: ClipOval(
-                child: pastor.imageUrl.trim().isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: pastor.imageUrl,
-                        fit: BoxFit.cover,
-                        memCacheWidth: (imageSize *
-                                MediaQuery.of(context).devicePixelRatio)
-                            .round(),
-                        errorWidget: (_, __, ___) =>
-                            _PastorAvatarFallback(name: pastor.title),
-                      )
-                    : _PastorAvatarFallback(name: pastor.title),
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (pastor.primary) ...[
-                    // Container(
-                    //   padding: const EdgeInsets.symmetric(
-                    //     horizontal: 10,
-                    //     vertical: 5,
-                    //   ),
-                    //   decoration: BoxDecoration(
-                    //     color: Colors.white.withValues(alpha: 0.18),
-                    //     borderRadius: BorderRadius.circular(999),
-                    //     border: Border.all(
-                    //       color: Colors.white.withValues(alpha: 0.22),
-                    //     ),
-                    //   ),
-                    //   child: Text(
-                    //     'Main',
-                    //     style: textTheme.labelMedium?.copyWith(
-                    //       color: Colors.white,
-                    //       fontWeight: FontWeight.w700,
-                    //     ),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 10),
-                  ],
-                  Text(
-                    pastor.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      height: 1.05,
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (pastor.primary) ...[
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //     horizontal: 10,
+                      //     vertical: 5,
+                      //   ),
+                      //   decoration: BoxDecoration(
+                      //     color: Colors.white.withValues(alpha: 0.18),
+                      //     borderRadius: BorderRadius.circular(999),
+                      //     border: Border.all(
+                      //       color: Colors.white.withValues(alpha: 0.22),
+                      //     ),
+                      //   ),
+                      //   child: Text(
+                      //     'Main',
+                      //     style: textTheme.labelMedium?.copyWith(
+                      //       color: Colors.white,
+                      //       fontWeight: FontWeight.w700,
+                      //     ),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 10),
+                    ],
+                    Text(
+                      pastor.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        height: 1.05,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(999),
-                    onTap: pastor.contact.trim().isEmpty
-                        ? null
-                        : () => launchPhoneCall(context, pastor.contact),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
+                    const SizedBox(height: 10),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(999),
+                      onTap: pastor.contact.trim().isEmpty
+                          ? null
+                          : () => launchPhoneCall(context, pastor.contact),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.call_outlined,
-                            size: 16,
-                            color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              pastor.contact.trim().isEmpty
-                                  ? 'Contact unavailable'
-                                  : pastor.contact,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.call_outlined,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                pastor.contact.trim().isEmpty
+                                    ? 'Contact unavailable'
+                                    : pastor.contact,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

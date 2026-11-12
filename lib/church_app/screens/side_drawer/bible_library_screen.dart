@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
 import 'package:flutter_application/church_app/models/bible_version_model.dart';
@@ -64,101 +65,103 @@ class _BibleLibraryScreenState extends ConsumerState<BibleLibraryScreen> {
           text: context.t('bible.available_title'),
         ),
       ),
-      body: ref.watch(bibleVersionsProvider).when(
-            loading: () => const Center(child: AppLoadingIndicator()),
-            error: (error, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  '${context.t('common.error_prefix')}: $error',
-                  textAlign: TextAlign.center,
+      body: DesktopContentWidth(
+        child: ref.watch(bibleVersionsProvider).when(
+              loading: () => const Center(child: AppLoadingIndicator()),
+              error: (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    '${context.t('common.error_prefix')}: $error',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-            data: (versions) => FutureBuilder<bool>(
-              future: _supportsLocalDownloadsFuture,
-              builder: (context, snapshot) {
-                final supportsLocalDownloads = snapshot.data ?? false;
+              data: (versions) => FutureBuilder<bool>(
+                future: _supportsLocalDownloadsFuture,
+                builder: (context, snapshot) {
+                  final supportsLocalDownloads = snapshot.data ?? false;
 
-                if (versions.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        context.t(
-                            'ui.bible_library.no_bible_versions_are_available_right_now'),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: AppLoadingIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        '${context.t('common.error_prefix')}: '
-                        '${snapshot.error}',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-
-                if (!supportsLocalDownloads) {
-                  return _BibleVersionList(
-                    versions: versions,
-                    states: const {},
-                    supportsLocalDownloads: false,
-                    downloadingVersionId: _downloadingVersionId,
-                    progress: _progress,
-                    onTap: (version, _) => _openBible(
-                      version,
-                      requireDownloaded: false,
-                    ),
-                  );
-                }
-
-                return FutureBuilder<Map<String, _BibleVersionDownloadState>>(
-                  future: _statesFor(versions),
-                  builder: (context, stateSnapshot) {
-                    if (stateSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: AppLoadingIndicator());
-                    }
-
-                    if (stateSnapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            '${context.t('common.error_prefix')}: '
-                            '${stateSnapshot.error}',
-                            textAlign: TextAlign.center,
-                          ),
+                  if (versions.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          context.t(
+                              'ui.bible_library.no_bible_versions_are_available_right_now'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
 
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: AppLoadingIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          '${context.t('common.error_prefix')}: '
+                          '${snapshot.error}',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (!supportsLocalDownloads) {
                     return _BibleVersionList(
                       versions: versions,
-                      states: stateSnapshot.data ?? {},
-                      supportsLocalDownloads: true,
+                      states: const {},
+                      supportsLocalDownloads: false,
                       downloadingVersionId: _downloadingVersionId,
                       progress: _progress,
-                      onTap: _openOrDownload,
+                      onTap: (version, _) => _openBible(
+                        version,
+                        requireDownloaded: false,
+                      ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return FutureBuilder<Map<String, _BibleVersionDownloadState>>(
+                    future: _statesFor(versions),
+                    builder: (context, stateSnapshot) {
+                      if (stateSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: AppLoadingIndicator());
+                      }
+
+                      if (stateSnapshot.hasError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              '${context.t('common.error_prefix')}: '
+                              '${stateSnapshot.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return _BibleVersionList(
+                        versions: versions,
+                        states: stateSnapshot.data ?? {},
+                        supportsLocalDownloads: true,
+                        downloadingVersionId: _downloadingVersionId,
+                        progress: _progress,
+                        onTap: _openOrDownload,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
+      ),
     );
   }
 

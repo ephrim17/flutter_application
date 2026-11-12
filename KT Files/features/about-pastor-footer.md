@@ -28,6 +28,26 @@ their data in Studio.
   `churches/{churchId}/footerSupport/social/socialItems/{id}`.
 - Items support active state and order; member pages show only applicable items.
 
+### Desktop alignment
+
+About and the pastor card go through `DesktopContentWidth` like the other
+list screens, and everything inside shares one left edge. It previously had
+**four**: the insight cards at the page gutter, the section headings a few
+pixels off, "Our Pastors" a further 16 in because `PastorWidget` added its
+own padding inside About's, and the pastor card ~78px beyond that again
+because its carousel used `viewportFraction: 0.92`, which insets by a share
+of the width.
+
+`PastorWidget` now adds no padding of its own and its carousel fills the
+page (`viewportFraction: 1.0`, no page gap — with one card on screen at a
+time a gap is only ever visible mid-swipe).
+
+`_PastorCard` measures from its constraints, not from
+`MediaQuery.size.width`. Taken from the screen the avatar came out at 30%
+of the whole window — about 444px on a desktop — inside a card capped far
+narrower, which is what made it read as an enormous pale disc with the
+pastor's details stranded beside it. It is now clamped to 72–132.
+
 ### Layout
 
 Contacts and socials are laid out by one rule — `FooterActionTile` inside a
@@ -72,3 +92,5 @@ pretending to be pressable.
 | PROFILE-11 | Narrow the window to a phone width | Tiles reflow onto further lines and stay centred; no overflow and no clipped labels. |
 | PROFILE-12 | Tap a social item with a valid http(s) URL | The link opens externally; a failure shows "Unable to open link" rather than doing nothing. |
 | PROFILE-13 | Social item whose URL is empty, relative or non-http | The tile renders dimmed and does not respond to taps. |
+| PROFILE-14 | Open About on a desktop window | Insight cards, both section headings, "Our Pastors" and the pastor card all start on the same left edge. |
+| PROFILE-15 | Look at the pastor avatar on a desktop window | A portrait, not a disc filling a third of the card. |

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/widgets/app_loading_indicator.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/helpers/constants.dart';
@@ -44,48 +45,50 @@ class AboutScreen extends ConsumerWidget {
             );
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _AboutHeroCard(state: state),
-                const SizedBox(height: 20),
-                _AboutNarrativeCard(text: state.description),
-                const SizedBox(height: 24),
-                _AboutSectionHeading(
-                  eyebrow: context.t('about.our_mission'),
-                  title: context.t('ui.about.what_guides_how_we_serve'),
-                ),
-                const SizedBox(height: 14),
-                _AboutInsightCard(
-                  icon: Icons.church_outlined,
-                  title: context.t('about.our_mission'),
-                  description: state.mission,
-                ),
-                const SizedBox(height: 14),
-                _AboutInsightCard(
-                  icon: Icons.groups_2_outlined,
-                  title: context.t('about.our_community'),
-                  description: state.community,
-                ),
-                const SizedBox(height: 14),
-                _AboutInsightCard(
-                  icon: Icons.favorite_outline,
-                  title: context.t('about.our_values'),
-                  description: state.values,
-                ),
-                const SizedBox(height: 28),
-                _AboutSectionHeading(
-                  eyebrow: context.t('about.leadership'),
-                  title: context.t(
-                      'ui.about.meet_the_people_caring_for_this_church_family'),
-                ),
-                const SizedBox(height: 14),
-                const PastorWidget(),
-                const SizedBox(height: 28),
-                const _AboutFooterSection(),
-              ],
+          return DesktopContentWidth(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AboutHeroCard(state: state),
+                  const SizedBox(height: 20),
+                  _AboutNarrativeCard(text: state.description),
+                  const SizedBox(height: 24),
+                  _AboutSectionHeading(
+                    eyebrow: context.t('about.our_mission'),
+                    title: context.t('ui.about.what_guides_how_we_serve'),
+                  ),
+                  const SizedBox(height: 14),
+                  _AboutInsightCard(
+                    icon: Icons.church_outlined,
+                    title: context.t('about.our_mission'),
+                    description: state.mission,
+                  ),
+                  const SizedBox(height: 14),
+                  _AboutInsightCard(
+                    icon: Icons.groups_2_outlined,
+                    title: context.t('about.our_community'),
+                    description: state.community,
+                  ),
+                  const SizedBox(height: 14),
+                  _AboutInsightCard(
+                    icon: Icons.favorite_outline,
+                    title: context.t('about.our_values'),
+                    description: state.values,
+                  ),
+                  const SizedBox(height: 28),
+                  _AboutSectionHeading(
+                    eyebrow: context.t('about.leadership'),
+                    title: context.t(
+                        'ui.about.meet_the_people_caring_for_this_church_family'),
+                  ),
+                  const SizedBox(height: 14),
+                  const PastorWidget(),
+                  const SizedBox(height: 28),
+                  const _AboutFooterSection(),
+                ],
+              ),
             ),
           );
         },

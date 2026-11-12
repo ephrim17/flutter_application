@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/church_app/widgets/desktop_content_width.dart';
 import 'package:flutter_application/church_app/widgets/app_modal_bottom_sheet.dart';
 import 'package:flutter_application/church_app/helpers/app_text.dart';
 import 'package:flutter_application/church_app/providers/for_you_sections/favorites_provider.dart';
@@ -26,7 +27,8 @@ class FavoritesScreen extends ConsumerWidget {
           text: context.t('favorites.title'),
         ),
       ),
-      body: favoritesAsync.when(
+      body: DesktopContentWidth(
+          child: favoritesAsync.when(
         loading: () => const Center(child: AppLoadingIndicator()),
         error: (error, stack) => Center(
           child: Text("${context.t('common.error_prefix')}: $error"),
@@ -131,7 +133,7 @@ class FavoritesScreen extends ConsumerWidget {
             },
           );
         },
-      ),
+      )),
     );
   }
 }
