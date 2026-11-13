@@ -141,7 +141,26 @@ service cloud.firestore {
          request.resource.data.registeredByUid == request.auth.uid &&
          request.resource.data.enabled == false);
       allow delete: if isSuperAdmin();
-      allow update: if isChurchStaff(churchId);
+      // A church admin edits their church's profile — name, address,
+      // contact, logo, social links. They do not decide whether the church
+      // is live: `enabled`, `approvalStatus` and the registration
+      // attribution are the super admin's alone. Without that split, a
+      // self-registrant could approve their own pending church, since
+      // their own bootstrap batch puts their address in config/app.admins
+      // and so makes them staff of it — the approval gate held only
+      // because the UI never offered the button.
+      allow update: if isSuperAdmin() ||
+        (isChurchAdmin(churchId) &&
+         request.resource.data.get('enabled', false) ==
+           resource.data.get('enabled', false) &&
+         request.resource.data.get('approvalStatus', '') ==
+           resource.data.get('approvalStatus', '') &&
+         request.resource.data.get('approvedAt', null) ==
+           resource.data.get('approvedAt', null) &&
+         request.resource.data.get('registrationSource', '') ==
+           resource.data.get('registrationSource', '') &&
+         request.resource.data.get('registeredByUid', '') ==
+           resource.data.get('registeredByUid', ''));
 
       // Admin/staff-only operational data.
       match /config/{configId} {

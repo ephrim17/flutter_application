@@ -106,3 +106,11 @@ pending church that requires super-admin approval.
 | CHURCH-18 | Sign in with `profileComplete: false` / `true` | Settings item in `GuestSideDrawer` shows/hides the red badge to match; tapping it opens `GuestSettingsScreen`. |
 | CHURCH-19 | Open `GuestSettingsScreen` from `GuestSideDrawer` | Shows only Profile/Preferences/Feedback/Account (no leave-church, register-another-church, or church-profile-editor sections); hero card shows no church chip; no church name appears anywhere on the screen (including no copyright line). |
 
+## Who may flip a church live
+
+Registration attribution and the approval gate (`enabled`, `approvalStatus`,
+`approvedAt`, `registrationSource`, `registeredByUid`) change only under a
+super admin. A church admin — including a public self-registrant, who
+becomes one the moment their own bootstrap batch writes their address into
+`config/app.admins` — can edit everything else about the church and nothing
+about whether it is live. `tools/rules-tests` covers both directions.
