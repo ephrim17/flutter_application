@@ -33,6 +33,23 @@ class MembersRepository extends ChurchScopedRepository {
     return members;
   }
 
+  /// The same roster, live.
+  ///
+  /// A membership row's `display*` fields are a cache of `users/{uid}`,
+  /// refreshed by the `fanOutIdentityChanges` Cloud Function *after* the
+  /// person saves their profile — so the moment a one-shot read returns is
+  /// exactly the moment the new phone number has not arrived yet. There is
+  /// no point at which the client can usefully re-read: it does not know
+  /// when the fan-out lands. A listener does.
+  Stream<List<ChurchMembership>> watchMembers() {
+    return collectionRef().snapshots().map((snapshot) {
+      final members = snapshot.docs.map((doc) => doc.data()).toList()
+        ..sort((a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+      return members;
+    });
+  }
+
   /// The reduced roster any approved member (not just staff) can read —
   /// see `churches/{churchId}/memberDirectory` in firestore.rules and
   /// `mirrorMemberDirectory` in functions/src/index.ts.
@@ -46,6 +63,22 @@ class MembersRepository extends ChurchScopedRepository {
       ..sort((a, b) =>
           a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return entries;
+  }
+
+  /// The reduced roster, live — `mirrorMemberDirectory` writes it from the
+  /// membership row, so it lands a step later again.
+  Stream<List<ChurchMemberDirectoryEntry>> watchMemberDirectory() {
+    return FirestorePaths.churchMemberDirectory(firestore, churchId)
+        .snapshots()
+        .map((snapshot) {
+      final entries = snapshot.docs
+          .map((doc) =>
+              ChurchMemberDirectoryEntry.fromFirestore(doc.id, doc.data()))
+          .toList()
+        ..sort((a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+      return entries;
+    });
   }
 
   /// Server-side search/pagination — must stay pointed at the display*
